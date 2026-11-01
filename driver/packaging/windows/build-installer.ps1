@@ -1,8 +1,8 @@
-# Build Windows installer: PyInstaller -> Inno Setup -> dist-installer\*setup.exe
+﻿# Build Windows installer: PyInstaller -> Inno Setup -> dist-installer\*setup.exe
 # Requires Inno Setup 6 (https://jrsoftware.org/isdl.php or: choco install innosetup)
 # Usage: powershell -ExecutionPolicy Bypass -File packaging\windows\build-installer.ps1
 $ErrorActionPreference = 'Stop'
-$here = Split-Path -Parent $PSScriptRoot
+$here = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
 Set-Location $here
 
 $venvPy = Join-Path $here '.venv\Scripts\python.exe'

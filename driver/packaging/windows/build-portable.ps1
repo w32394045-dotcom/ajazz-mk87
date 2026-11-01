@@ -1,7 +1,7 @@
-# Build Windows portable package: PyInstaller -> dist\MK87Config\ -> dist-packages\*.zip
+﻿# Build Windows portable package: PyInstaller -> dist\MK87Config\ -> dist-packages\*.zip
 # Usage: powershell -ExecutionPolicy Bypass -File packaging\windows\build-portable.ps1
 $ErrorActionPreference = 'Stop'
-$here = Split-Path -Parent $PSScriptRoot
+$here = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
 Set-Location $here
 
 # Pick interpreter: local venv if present, else the CI/system python
