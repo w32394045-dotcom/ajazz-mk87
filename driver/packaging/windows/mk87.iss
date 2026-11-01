@@ -1,8 +1,8 @@
-; MK87 Studio —— Inno Setup 安装包脚本（Windows 成品软件）
-; 编译： "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" packaging\windows\mk87.iss
-; 输出： dist-installer\MK87Studio-<版本>-win64-setup.exe
+; MK87 Studio - Inno Setup installer script (Windows)
+; MK87 Studio - Inno Setup installer script (Windows)
+; MK87 Studio - Inno Setup installer script (Windows)
 ;
-; 说明：安装包为 per-machine（需要管理员）；也支持 /CURRENTUSER 安装到用户目录。
+; MK87 Studio - Inno Setup installer script (Windows)
 
 #define MyAppName "MK87 Studio"
 #define MyAppVersion "0.1.0"

@@ -31,7 +31,7 @@ chmod +x %{buildroot}/opt/mk87/MK87Config
 install -Dm755 mk87-launcher %{buildroot}%{_bindir}/mk87
 install -Dm644 mk87.desktop %{buildroot}%{_datadir}/applications/mk87.desktop
 install -Dm644 mk87.svg %{buildroot}%{_datadir}/icons/hicolor/scalable/apps/mk87.svg
-install -Dm644 99-ajazz-mk87.rules %{buildroot}%{_udevrulesdir}/99-ajazz-mk87.rules
+install -Dm644 99-ajazz-mk87.rules %{buildroot}/usr/lib/udev/rules.d/99-ajazz-mk87.rules
 
 %post
 if command -v udevadm >/dev/null 2>&1; then
@@ -50,7 +50,7 @@ fi
 %{_bindir}/mk87
 %{_datadir}/applications/mk87.desktop
 %{_datadir}/icons/hicolor/scalable/apps/mk87.svg
-%{_udevrulesdir}/99-ajazz-mk87.rules
+/usr/lib/udev/rules.d/99-ajazz-mk87.rules
 
 %changelog
 * Sat Nov 01 2026 MK87 Studio <noreply@localhost> - 0.1.0-1

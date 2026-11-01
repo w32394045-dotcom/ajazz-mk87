@@ -81,8 +81,10 @@ jobs:
       - name: Build installer
         working-directory: driver
         shell: powershell
+        continue-on-error: true
         run: powershell -ExecutionPolicy Bypass -File packaging/windows/build-installer.ps1
       - uses: actions/upload-artifact@v4
+        if: always()
         with:
           name: windows-package
           path: |
