@@ -137,6 +137,11 @@ class NativeHidChannel:
         if not self._event:
             self.close()
             raise OSError(f"创建读事件失败: {ctypes.get_last_error()}")
+        # 持久读缓冲区 + 保管在途 OVERLAPPED 的引用。
+        # 绝不能让内核在 I/O 未完成时写进已被 Python 回收的内存：轻则丢 ACK，
+        # 重则堆损坏导致进程随机崩溃（overlapped 必须等完成/取消完成后再释放）。
+        self._buf = ctypes.create_string_buffer(self.read_len)
+        self._pending_ov = None
 
     # ------------------------------------------------------------------ 写
     def write(self, data: bytes) -> int:
@@ -152,33 +157,73 @@ class NativeHidChannel:
     def read(self, timeout: float = 0.6):
         """读一个 input report（含 report ID 首字节）；超时返回 None。"""
         deadline = time.time() + max(0.001, float(timeout))
+        if self._pending_ov is not None:
+            # 上一次超时取消的读还没被收割：先等它真正结束，不能并发复用/释放
+            self._reap_pending()
         while time.time() < deadline:
-            rbuf = ctypes.create_string_buffer(self.read_len)
             ov = OVERLAPPED()
             ov.hEvent = self._event
+            self._pending_ov = ov  # 保留引用，防止内核完成时内存已被回收
             got = wt.DWORD(0)
-            ok = kernel32.ReadFile(self._rd, ctypes.cast(rbuf, ctypes.c_void_p),
+            ok = kernel32.ReadFile(self._rd, ctypes.cast(self._buf, ctypes.c_void_p),
                                    self.read_len, ctypes.byref(got), ctypes.byref(ov))
             if not ok:
                 err = ctypes.get_last_error()
                 if err != ERROR_IO_PENDING:
+                    self._pending_ov = None
+                    try:
+                        kernel32.ResetEvent(self._event)
+                    except Exception:
+                        pass
                     raise OSError(f"ReadFile 失败: {err}")
                 wait_ms = max(10, int((deadline - time.time()) * 1000))
-                if kernel32.WaitForSingleObject(self._event, wait_ms) != WAIT_OBJECT_0:
+                waited = kernel32.WaitForSingleObject(self._event, wait_ms)
+                if waited != WAIT_OBJECT_0:
+                    # 超时：请求取消，但**不立刻释放 ov/buffer**；
+                    # 由 _reap_pending() 等到取消完成后再归还内存。
                     try:
                         kernel32.CancelIoEx(self._rd, ctypes.byref(ov))
                     except Exception:
                         pass
-                    kernel32.ResetEvent(self._event)
+                    self._reap_pending()
                     return None
-                if not kernel32.GetOverlappedResult(self._rd, ctypes.byref(ov),
-                                                    ctypes.byref(got), False):
-                    kernel32.ResetEvent(self._event)
+            success = kernel32.GetOverlappedResult(self._rd, ctypes.byref(ov),
+                                                   ctypes.byref(got), False)
+            err2 = 0 if success else ctypes.get_last_error()
+            self._pending_ov = None
+            try:
+                kernel32.ResetEvent(self._event)
+            except Exception:
+                pass
+            if not success:
+                if err2 == 995:  # ERROR_OPERATION_ABORTED：被取消/设备复位，视为无数据
                     continue
-            kernel32.ResetEvent(self._event)
+                raise OSError(f"GetOverlappedResult 失败: {err2}")
             if got.value:
-                return rbuf.raw[:got.value]
+                return self._buf.raw[:got.value]
         return None
+
+    def _reap_pending(self) -> None:
+        """等待上一笔在途/已取消的读真正完成并收割结果。
+
+        内核完成 I/O 时会写 OVERLAPPED 和读缓冲区，因此必须确认完成
+        （或取消已生效）之后才允许释放引用，否则会出现随机崩溃。
+        """
+        ov = self._pending_ov
+        if ov is None:
+            return
+        try:
+            if kernel32.WaitForSingleObject(self._event, 2000) == WAIT_OBJECT_0:
+                got = wt.DWORD(0)
+                kernel32.GetOverlappedResult(self._rd, ctypes.byref(ov), ctypes.byref(got), False)
+        except Exception:
+            pass
+        finally:
+            self._pending_ov = None
+            try:
+                kernel32.ResetEvent(self._event)
+            except Exception:
+                pass
 
     def read_normalized(self, timeout: float = 0.6):
         """读回包并去掉可能的 report ID=0 前导字节（协议回包以 0x55 开头）。"""
@@ -194,6 +239,11 @@ class NativeHidChannel:
                 break
 
     def close(self) -> None:
+        # 关句柄前先把在途/已取消的读收割干净，避免内核完成后写已释放内存
+        try:
+            self._reap_pending()
+        except Exception:
+            pass
         for h in (self._rd, self._wr):
             if h:
                 try:

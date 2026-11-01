@@ -52,3 +52,7 @@ capture/*.jsonl
 capture/profile-ajazz/
 capture/screens/
 
+
+# 日志导出临时目录
+capture/zip_mk87_logs/
+

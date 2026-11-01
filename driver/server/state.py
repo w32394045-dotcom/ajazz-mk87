@@ -13,7 +13,7 @@ from typing import Dict, List, Optional
 from mk87lib import backup, keymap, lighting, macro, music, tft, wireless
 from mk87lib import keyscan as keyscan_mod
 from mk87lib.device import MK87Device
-from mk87lib.errors import DeviceNotFound, MK87Error, UnsupportedFeature
+from mk87lib.errors import DeviceDisconnected, DeviceNotFound, MK87Error, UnsupportedFeature
 
 log = logging.getLogger("mk87.state")
 
@@ -139,35 +139,67 @@ class TftJob:
 
     def _run(self, runner) -> None:
         log.info("TFT 任务开始 kind=%s frames=%s", self.kind, self.frames)
+        attempts = 0
         try:
-            res = runner(self._progress, self._cancel.is_set)
-            with self.lock:
-                self.phase = "done"
-                self.pct = 100
-                self.elapsed = time.time() - self.started_at
-            log.info("TFT 任务完成 kind=%s frames=%s 用时 %.1fs result=%s",
-                     self.kind, self.frames, self.elapsed, {k: res.get(k) for k in
-                     ("packets", "bytes", "seconds", "acks", "frames") if k in res})
-            self.manager.emit({"type": "job", "data": {"job": "tft", "state": "done", "result": res}})
-        except Exception as exc:  # noqa: BLE001
-            cancelled = self._cancel.is_set()
-            with self.lock:
-                self.phase = "cancelled" if cancelled else "error"
-                self.error = "" if cancelled else str(exc)
-                self.elapsed = time.time() - self.started_at
-            if cancelled:
-                log.info("TFT 任务取消 kind=%s frames=%s", self.kind, self.frames)
-            else:
-                log.error("TFT 任务失败 kind=%s frames=%s: %s", self.kind, self.frames, exc,
-                          exc_info=True)
-            self.manager.emit({
-                "type": "job",
-                "data": {"job": "tft", "state": "cancelled" if cancelled else "error",
-                         "error": "" if cancelled else str(exc)},
-            })
+            while True:
+                attempts += 1
+                try:
+                    res = runner(self._progress, self._cancel.is_set)
+                except Exception as exc:  # noqa: BLE001
+                    cancelled = self._cancel.is_set()
+                    # 设备在上传中途 USB 复位（实测并发命令会触发）：等自动重连后重试一次
+                    if (not cancelled and isinstance(exc, DeviceDisconnected)
+                            and attempts == 1):
+                        log.warning("TFT 任务因设备掉线中断，等待自动重连后重试一次: %s", exc)
+                        self.manager.mark_disconnected(str(exc))
+                        if self._wait_reconnect(30.0) and not self._cancel.is_set():
+                            with self.lock:
+                                self.phase = "upload"
+                                self.pct = 0
+                                self.sent = 0
+                                self.total = 0
+                                self.error = ""
+                            continue
+                    with self.lock:
+                        self.phase = "cancelled" if cancelled else "error"
+                        self.error = "" if cancelled else str(exc)
+                        self.elapsed = time.time() - self.started_at
+                    if cancelled:
+                        log.info("TFT 任务取消 kind=%s frames=%s", self.kind, self.frames)
+                    else:
+                        log.error("TFT 任务失败 kind=%s frames=%s: %s", self.kind, self.frames,
+                                  exc, exc_info=True)
+                        self.manager.mark_disconnected(str(exc))
+                    self.manager.emit({
+                        "type": "job",
+                        "data": {"job": "tft", "state": "cancelled" if cancelled else "error",
+                                 "error": "" if cancelled else str(exc)},
+                    })
+                    return
+                with self.lock:
+                    self.phase = "done"
+                    self.pct = 100
+                    self.elapsed = time.time() - self.started_at
+                log.info("TFT 任务完成 kind=%s frames=%s 用时 %.1fs result=%s",
+                         self.kind, self.frames, self.elapsed, {k: res.get(k) for k in
+                         ("packets", "bytes", "seconds", "acks", "frames") if k in res})
+                self.manager.emit({"type": "job", "data": {"job": "tft", "state": "done",
+                                                           "result": res}})
+                return
         finally:
             with self.lock:
                 self.running = False
+
+    def _wait_reconnect(self, timeout: float) -> bool:
+        """等设备自动重连（monitor 线程负责重连），最多 timeout 秒。"""
+        deadline = time.time() + max(1.0, timeout)
+        while time.time() < deadline:
+            if self._cancel.is_set():
+                return False
+            if self.manager.connected:
+                return True
+            time.sleep(0.2)
+        return False
 
     def cancel(self) -> dict:
         self._cancel.set()
@@ -286,7 +318,12 @@ class DeviceManager:
         while not self._stop.is_set():
             try:
                 if not self.device.status.connected:
+                    # 掉线必须允许重连（TFT 任务失败后正是在等自动重连再重试一次）；
+                    # 重连不碰 TFT 通道，不会干扰进行中的上传。
                     self._try_connect(quiet=True)
+                elif self.tft_job.running:
+                    # TFT 上传进行中：绝不向设备发其它命令（并发命令会让固件 USB 复位，实测 1167）
+                    pass
                 else:
                     self._refresh_battery()
             except Exception:
@@ -336,6 +373,19 @@ class DeviceManager:
             pass
 
     # ------------------------------------------------------------------ 对外
+    def mark_disconnected(self, reason: str = "") -> None:
+        """标记设备掉线（如 TFT 上传中 USB 复位），交给 monitor 线程自动重连。"""
+        try:
+            self.device.status.connected = False
+            if reason:
+                self.device.status.last_error = reason
+        except Exception:  # noqa: BLE001
+            pass
+        try:
+            self.emit({"type": "status", "data": self.status()})
+        except Exception:  # noqa: BLE001
+            pass
+
     @property
     def connected(self) -> bool:
         return bool(self.device.status.connected)

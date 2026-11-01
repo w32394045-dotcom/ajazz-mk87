@@ -223,3 +223,70 @@ for seq in range(total):
 2. 官方默认动画是否可备份：**不能**（无读回接口），只能靠 `restore_tft_default.py` 重传内置默认素材。
 3. 上传中断电/拔线：设备内动画可能不完整，重传即可恢复。
 4. `SET_TFT_MATERIAL(0x4D)` 壁纸通道在 MK87 上写入成功但不可见，TFT 动画是唯一可见通道（见 `docs/tft-page.md`）。
+
+---
+
+## 10. 【重要】上传期间禁止任何其它 HID 命令（2026-11-01 MK87 Studio 崩溃复盘）
+
+### 10.1 现象（app 诊断日志）
+
+`MK87 Studio`（`driver/dist/MK87Config`）在上传 32 帧动画（507 包）时，两次都失败：
+
+```
+TFT 任务开始 kind=file
+TFT 包 1/507 ACK 326ms
+TFT 包 3/507 无 ACK，第 1 次重发
+TFT 任务失败 ... OSError: ReadFile 失败: 1167
+（1.6s 后）
+设备已连接: AJAZZ KEYBOARD ...
+```
+
+- `WinError 1167` = `ERROR_DEVICE_NOT_CONNECTED`（设备没有连接）→ 键盘 USB 在**上传中途复位/重新枚举**；
+- 失败点随机（第 3 包 / 第 224 包），不是数据问题；
+- 更早一次（21:33:10）甚至整个 app 进程直接消失（日志无退出记录、无异常栈），属于原生崩溃；
+- 日志里还伴随大量 `无 ACK，重发`（每 10~20 包一次）。
+
+### 10.2 复现实验（决定性证据）
+
+用 `probe/tft_poll_test.py`（直接调 `mk87lib.tft.upload_animation`，32 帧 / 507 包）：
+
+| 实验 | 条件 | 结果 |
+|---|---|---|
+| A | 上传时**另一个线程每 2s 发一次 `GET_DEVICE_INFO(0x10)`** | ❌ 第 377 包后 `ReadFile 失败: 1167`（期间 35 次轮询都成功） |
+| B | 同样上传，**不发任何轮询** | ✅ **507/507 ACK，0 重试，71.88s**，屏幕正常播放 |
+
+> 对照官方网页驱动抓包（`capture/ajazz_tft_capture.jsonl`）：官方在 1155 包、168.5s 的上传过程中
+> **没有发出任何其它命令**（分析见 `capture/tft_analysis2.txt` 的"小命令"时间线）。
+
+**结论：TFT 动画上传（0x50 逐包写 flash）期间，只要有别的命令从主协议接口（0xFF68）进来，
+SONiX 固件就会把 USB 复位 → 上传中断（1167）。**
+
+### 10.3 修复（已实现并通过真机验证）
+
+1. `mk87lib/device.py::MK87Device.tft_exclusive()`：上传全程持有协议锁 + `_tft_busy` 标记；
+   其它线程调 `request()/request_custom()` 时直接报 `TFT 上传进行中，设备忙`（不排队、不写设备）。
+2. `mk87lib/tft.py::_upload`：整个上传（含通道打开/关闭）包在 `_tft_exclusive(device)` 里；
+   `WriteFile/ReadFile` 的 `OSError` 统一转成 `DeviceDisconnected`。
+3. `server/state.py`：
+   - `_monitor` 在上传期间**完全不发** `GET_DEVICE_INFO` 电量轮询；
+   - `TftJob._run` 遇到 `DeviceDisconnected` 时：标记掉线 → 等 monitor 自动重连（30s）→ **自动重试一次**。
+4. `mk87lib/winhid.py`：修复 overlapped 读的生命周期 bug——原实现超时后 `CancelIoEx` 立刻
+   `ResetEvent` 返回，**OVERLAPPED/缓冲区可能在 I/O 尚未完成时被 Python 回收**，
+   轻则丢 ACK（就是日志里的"无 ACK 重发"），重则内核写已释放内存 → 进程随机崩溃。
+   现在：持久缓冲区 + 保留在途 OVERLAPPED 引用 + 取消后先 `_reap_pending()` 收割再返回。
+5. `shell.py`：启用 `faulthandler` → 若再发生原生崩溃，栈会写入 `%LOCALAPPDATA%\mk87\logs\crash.log`。
+
+### 10.4 验证
+
+| 测试 | 结果 |
+|---|---|
+| `probe/tft_poll_test.py`（修复后，带 2s 轮询线程） | ✅ 轮询被拒绝（`TFT 上传进行中，设备忙`），上传 **507/507 ACK、0 重试、71.9s** |
+| 打包 exe + `/api/tft/upload_file` 6 帧（95 包） | ✅ `TFT 上传完成 ... ACK 95 / 重试 0`，13.8s，job=done |
+| 打包 exe + 用户 Loli GIF 73 帧（1155 包） | ✅ `TFT 上传完成 ... ACK 1155 / 重试 0`，约 168s（2026-11-01 22:0x，屏幕恢复播放） |
+
+### 10.5 一句话总结
+
+**TFT 上传是"独占总线"操作：一包一 ACK、全程不能插任何其它命令**；
+app 后台的 2 秒电量轮询正好插进来，导致固件 USB 复位（1167），
+看起来像"上传一崩到底"，实际是并发访问把设备打掉线了。
+

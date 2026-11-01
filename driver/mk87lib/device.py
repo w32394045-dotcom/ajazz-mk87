@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import threading
 import time
+from contextlib import contextmanager
 from dataclasses import dataclass, field
 from typing import Callable, Dict, List, Optional
 
@@ -99,6 +100,9 @@ class MK87Device:
         self._ifaces: List[IfaceInfo] = []
         self._stop = threading.Event()
         self._threads: List[threading.Thread] = []
+        # TFT 上传独占标记：上传全程禁止其它线程向设备发命令（实测并发命令会让固件 USB 复位）
+        self._tft_busy = threading.Event()
+        self._tft_busy_owner: Optional[int] = None
         self._listeners: List[EventCallback] = []
         self._events: List[dict] = []
         self._event_seq = 0
@@ -227,6 +231,33 @@ class MK87Device:
         self.tft_protocol = None
 
     # ==================================================================
+    # TFT 上传独占
+    # ==================================================================
+    @property
+    def tft_busy(self) -> bool:
+        """是否有 TFT 上传正在进行（此期间禁止下发任何其它命令）。"""
+        return self._tft_busy.is_set()
+
+    @contextmanager
+    def tft_exclusive(self):
+        """TFT 上传期间独占设备：别的线程调 request() 直接报忙，不会写入设备。
+
+        真机实测（2026-11-01）：上传动画时，后台每 2s 一次 GET_DEVICE_INFO
+        电量轮询会让键盘固件在上传中途 USB 复位（ReadFile 报 WinError 1167），
+        上传必然失败；官方网页驱动在上传的 168 秒里完全不发其它命令。
+        因此上传全程持有协议锁，其它线程的请求会被拒绝而不是排队（避免 UI 卡住）。
+        """
+        self._tft_busy_owner = threading.get_ident()
+        self._tft_busy.set()
+        self._lock.acquire()
+        try:
+            yield
+        finally:
+            self._lock.release()
+            self._tft_busy_owner = None
+            self._tft_busy.clear()
+
+    # ==================================================================
     # 通知 / 事件
     # ==================================================================
     def add_listener(self, cb: EventCallback) -> None:
@@ -339,6 +370,8 @@ class MK87Device:
     ) -> bytes:
         if self.protocol is None:
             raise DeviceNotFound("设备未连接")
+        if self._tft_busy.is_set() and threading.get_ident() != self._tft_busy_owner:
+            raise MK87Error("TFT 上传进行中，设备忙；请等待上传完成后再操作")
         with self._lock:
             try:
                 return self.protocol.request(
@@ -366,6 +399,8 @@ class MK87Device:
         """带 8 字节自定义头的单包请求（如 GET_KEY 单槽读取）。"""
         if self.protocol is None:
             raise DeviceNotFound("设备未连接")
+        if self._tft_busy.is_set() and threading.get_ident() != self._tft_busy_owner:
+            raise MK87Error("TFT 上传进行中，设备忙；请等待上传完成后再操作")
         iface = self.protocol.iface
         body = iface.info.payload_len
         pkt = bytearray([0]) + bytearray(body)

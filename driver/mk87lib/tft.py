@@ -19,12 +19,13 @@ import math
 import os
 import sys
 import time
+from contextlib import contextmanager
 from typing import Callable, List, Optional, Tuple
 
 import numpy as np
 
 from . import const
-from .errors import MK87Error, UnsupportedFeature
+from .errors import DeviceDisconnected, MK87Error, UnsupportedFeature
 
 log = logging.getLogger("mk87.tft")
 
@@ -222,6 +223,23 @@ _ACK_ANIM = (const.CMD["SET_LED_USER_ANIMATION"], const.CMD["SET_TFT_USER_ANIMAT
 _ACK_MATERIAL = (const.CMD["SET_LED_USER_ANIMATION"], const.CMD["SET_TFT_MATERIAL"])
 
 
+@contextmanager
+def _tft_exclusive(device):
+    """上传全程独占设备。
+
+    真机实测（2026-11-01）：TFT 上传动画时，如果后台还在主协议接口发命令
+    （比如 app 每 2s 的 GET_DEVICE_INFO 电量轮询），键盘固件会在上传中途
+    USB 复位（ReadFile 报 WinError 1167「设备没有连接」），上传必然失败。
+    官方网页驱动在上传的 168s 里完全不发任何其它命令。
+    """
+    fn = getattr(device, "tft_exclusive", None)
+    if callable(fn):
+        with fn():
+            yield
+    else:  # 兼容 mock / 测试对象
+        yield
+
+
 def _upload(device, cmd: int, data: bytes, header_tail: bytes,
             progress: Optional[ProgressFn] = None,
             cancel_check: Optional[Callable[[], bool]] = None,
@@ -233,6 +251,21 @@ def _upload(device, cmd: int, data: bytes, header_tail: bytes,
     失败重发最多 3 次（每次间隔 200ms），仍失败**中止上传**（绝不静默硬发）。
     首包 ACK 约 326ms（设备擦写准备），后续约 140ms。
     """
+    _check_tft(device)
+    with _tft_exclusive(device):
+        return _upload_locked(
+            device, cmd, data, header_tail,
+            progress=progress, cancel_check=cancel_check,
+            first_timeout=first_timeout, ack_timeout=ack_timeout, retries=retries,
+        )
+
+
+def _upload_locked(device, cmd: int, data: bytes, header_tail: bytes,
+                   progress: Optional[ProgressFn] = None,
+                   cancel_check: Optional[Callable[[], bool]] = None,
+                   first_timeout: float = 2.0, ack_timeout: float = 2.0,
+                   retries: int = 3) -> dict:
+    """真正的上传实现；调用方必须已持有设备独占（_tft_exclusive）。"""
     _check_tft(device)
     iface = device.tft_protocol.iface
     body = iface.info.payload_len
@@ -269,14 +302,21 @@ def _upload(device, cmd: int, data: bytes, header_tail: bytes,
             got = False
             for attempt in range(retries + 1):
                 tw = time.time()
-                n = channel.write(pkt)
+                try:
+                    n = channel.write(pkt)
+                except OSError as exc:
+                    # 设备 USB 掉线（如 1167）：转成业务异常，让上层知道要重连
+                    raise DeviceDisconnected(f"TFT 通道写入失败: {exc}") from exc
                 if n != len(pkt):
                     raise MK87Error(
                         f"TFT 写入不完整：第 {k + 1}/{total} 包写入 {n}/{len(pkt)} 字节"
                     )
                 deadline = tw + timeout
                 while time.time() < deadline:
-                    r = channel.read_normalized(timeout=max(0.01, deadline - time.time()))
+                    try:
+                        r = channel.read_normalized(timeout=max(0.01, deadline - time.time()))
+                    except OSError as exc:
+                        raise DeviceDisconnected(f"TFT 通道读取失败: {exc}") from exc
                     if r is None:
                         break
                     if len(r) >= 2 and r[0] == 0x55 and r[1] in ack_cmds:

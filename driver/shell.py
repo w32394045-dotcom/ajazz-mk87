@@ -40,6 +40,9 @@ LOCK_NAME = "MK87Studio.SingleInstance"
 LOG_DIR = os.path.join(os.environ.get("LOCALAPPDATA") or os.path.expanduser("~/.cache"), "mk87")
 LOG_PATH = os.path.join(LOG_DIR, "shell.log")
 
+#: faulthandler 的崩溃日志文件句柄（必须保持引用，否则会被 GC 关闭）
+_crash_fh = None
+
 log = logging.getLogger("mk87.shell")
 
 
@@ -333,6 +336,17 @@ def setup_logging() -> None:
     from mk87lib import logsetup
 
     logsetup.setup_logging(console=False, role="shell")
+    # 原生崩溃诊断：打包程序（console=False）崩溃时控制台什么都看不到，
+    # faulthandler 会把所有线程的 Python 栈写进 crash.log，方便定位段错误/访问冲突。
+    try:
+        import faulthandler
+
+        global _crash_fh
+        _crash_fh = open(os.path.join(logsetup.log_dir(), "crash.log"), "a",
+                         buffering=1, encoding="utf-8", errors="replace")
+        faulthandler.enable(file=_crash_fh, all_threads=True)
+    except Exception:  # noqa: BLE001
+        pass
     logging.getLogger("mk87.shell").info(
         "外壳启动（tray=%s）; 日志目录=%s", "--tray" in sys.argv, logsetup.log_dir()
     )
