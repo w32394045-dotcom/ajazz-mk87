@@ -1,0 +1,9 @@
+# 运行依赖（Windows / Linux 通用）
+# 安装：pip install -r packaging/requirements.txt
+hidapi>=0.14.0
+fastapi>=0.110
+uvicorn[standard]>=0.27
+numpy>=1.26
+pillow>=10.0
+soundcard>=0.4.3 ; sys_platform == "win32"
+evdev>=1.6.1 ; sys_platform == "linux"

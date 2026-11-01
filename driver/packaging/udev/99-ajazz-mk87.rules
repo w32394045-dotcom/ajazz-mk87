@@ -1,0 +1,18 @@
+# AJAZZ MK87 键盘 / 2.4G 接收器 —— Linux 权限规则
+# 安装：
+#   sudo cp packaging/udev/99-ajazz-mk87.rules /etc/udev/rules.d/
+#   sudo udevadm control --reload-rules && sudo udevadm trigger
+#
+# 作用：
+#   * hidraw：允许当前登录用户读写键盘 HID 接口（配置工具需要）
+#   * input ：按键测试需要读 /dev/input/event*（允许当前用户）
+#
+# 如果仍然 Permission denied：把用户加入 input 组（注销重登生效）
+#   sudo usermod -aG input $USER
+
+# MK87 键盘 USB（复合设备）
+SUBSYSTEM=="hidraw", ATTRS{idVendor}=="0c45", ATTRS{idProduct}=="8047", MODE="0666", TAG+="uaccess"
+# 2.4G 接收器
+SUBSYSTEM=="hidraw", ATTRS{idVendor}=="0c45", ATTRS{idProduct}=="fefe", MODE="0666", TAG+="uaccess"
+# 按键测试（输入设备）
+SUBSYSTEM=="input", ATTRS{idVendor}=="0c45", TAG+="uaccess"

@@ -1,0 +1,810 @@
+/* mock.js — 内置 mock 设备/后端：让全部页面在没有 Python 后端时也能交互演示。
+   - 由 api.js 在 ?mock=1 或 /api/status 失败时自动实例化
+   - 状态持久化到 localStorage（mk87.mock.state），刷新不丢
+   - 按需模拟 20fps 音乐电平 / TFT 上传进度 / 电池变化等 WebSocket 事件
+   契约与实际后端一致（design.md §4），只是数据是假的。 */
+import { KEY_LAYOUT } from './data/keyboard.js';
+import { ACTIONS, DEFAULT_KEYMAP } from './data/actions.js';
+import { LIGHTING_MODES } from './data/lighting.js';
+import { store, clamp } from './util.js';
+
+const TFT_W = 240;
+const TFT_H = 135;
+const TFT_MAX_FRAMES = 140;
+const TFT_FRAME_BYTES = TFT_W * TFT_H * 2; // 64800
+const MACRO_CAPACITY = 3072;
+const MACRO_SLOT_COUNT = 100;
+const SLEEP_TIMES = [0, 1, 10, 20, 30];
+
+const KEY_SLOTS = KEY_LAYOUT.rows.flat().map((k) => k.slot);
+
+/* HSL → [r,g,b] */
+function hsl(h, s, l) {
+  h = ((h % 360) + 360) % 360; s /= 100; l /= 100;
+  const c = (1 - Math.abs(2 * l - 1)) * s;
+  const x = c * (1 - Math.abs(((h / 60) % 2) - 1));
+  const m = l - c / 2;
+  let rgb = [0, 0, 0];
+  if (h < 60) rgb = [c, x, 0];
+  else if (h < 120) rgb = [x, c, 0];
+  else if (h < 180) rgb = [0, c, x];
+  else if (h < 240) rgb = [0, x, c];
+  else if (h < 300) rgb = [x, 0, c];
+  else rgb = [c, 0, x];
+  return rgb.map((v) => Math.round(clamp((v + m) * 255, 0, 255)));
+}
+
+function defaultCustomColors() {
+  const colors = {};
+  for (const row of KEY_LAYOUT.rows) {
+    for (const k of row) {
+      const hue = (k.x / 275) * 300 + k.row * 12;
+      colors[k.slot] = hsl(hue, 88, 56);
+    }
+  }
+  return colors;
+}
+
+function defaultMacros() {
+  const slots = Array.from({ length: MACRO_SLOT_COUNT }, (_, i) => ({ slot: i, actions: [] }));
+  const mk = (usage, name) => ([
+    { delay: 10, type: 'key', press: true, usage, keyName: name },
+    { delay: 10, type: 'key', press: false, usage, keyName: name },
+  ]);
+  slots[0].actions = [
+    ...mk(4, 'A'), ...mk(5, 'B'), ...mk(6, 'C'), ...mk(40, 'Enter'),
+  ];
+  slots[1].actions = [
+    { delay: 0, type: 'key', press: true, usage: 224, keyName: 'LCtrl' },
+    ...mk(6, 'C'),
+    { delay: 0, type: 'key', press: false, usage: 224, keyName: 'LCtrl' },
+  ];
+  slots[2].actions = [
+    ...mk(29, 'Z'),
+  ];
+  return slots;
+}
+
+function macroBytes(actions) {
+  if (!actions || !actions.length) return 0;
+  return 4 + actions.length * 4;
+}
+
+const DEFAULT_SETTINGS = { theme: 'auto', language: 'zh' };
+const DEFAULT_LIGHTING = {
+  mode: 8,
+  brightness: 5,
+  speed: 3,
+  direction: 0,
+  colorMode: 1,
+  color: { r: 56, g: 132, b: 255 },
+};
+
+const PERSIST_KEY = 'mk87.mock.state';
+
+export class MockServer {
+  constructor(emit) {
+    this.emitEvent = emit;        // (type, data) => void
+    this.timers = new Set();
+    this._tick = 0;
+    this._i = 0;
+
+    const saved = store.get(PERSIST_KEY, null) || {};
+    this.state = {
+      connected: saved.connected !== undefined ? saved.connected : true,
+      transport: saved.transport || 'usb',
+      battery: saved.battery || { percent: 76, charging: true },
+      lighting: { ...DEFAULT_LIGHTING, ...(saved.lighting || {}) },
+      custom: { colors: saved.custom?.colors || defaultCustomColors() },
+      keymap: {
+        normal: { ...DEFAULT_KEYMAP.normal, ...(saved.keymap?.normal || {}) },
+        fn: { ...DEFAULT_KEYMAP.fn, ...(saved.keymap?.fn || {}) },
+      },
+      macros: saved.macros || defaultMacros(),
+      sleepTime: saved.sleepTime !== undefined ? saved.sleepTime : 10,
+      settings: { ...DEFAULT_SETTINGS, ...(saved.settings || {}) },
+      notifications: [
+        { kind: 'wake', ts: Date.now() - 1000 * 60 * 37 },
+        { kind: 'connect', ts: Date.now() - 1000 * 60 * 52 },
+      ],
+      conflicts: saved.conflicts || [],
+      frames: { running: false, fps: 20, frames: 0 },
+      music: { running: false, deviceId: 'default', sensitivity: 1.0, style: 'spectrum', fps: 20, level: 0 },
+      tftJob: null,
+      keytest: { running: false, events: [] },
+      rawLog: [],
+      info: {
+        vid: 3141,
+        pid: 32839,
+        vendorId: 0x0c45,
+        productId: 0x8047,
+        product: 'AJAZZ KEYBOARD',
+        manufacturer: 'SONiX',
+        firmware: '1.19',
+        serial: 'MK87-DEMO-0001',
+        protocol: '0x8047',
+        interface: '0xFF68 (MI_02)',
+        frameVersion: 0,
+      },
+    };
+    this._seedRandom = 12345;
+    this._batteryTimer = setInterval(() => this._batteryTick(), 40000);
+    this.timers.add(this._batteryTimer);
+    this._notifyTimer = setInterval(() => this._notifyTick(), 52000);
+    this.timers.add(this._notifyTimer);
+  }
+
+  /* ------------------------------------------------------------ helpers */
+  _rand() {
+    this._seedRandom = (this._seedRandom * 16807) % 2147483647;
+    return this._seedRandom / 2147483647;
+  }
+
+  _save() {
+    const s = this.state;
+    store.set(PERSIST_KEY, {
+      connected: s.connected,
+      transport: s.transport,
+      battery: s.battery,
+      lighting: s.lighting,
+      custom: s.custom,
+      keymap: s.keymap,
+      macros: s.macros,
+      sleepTime: s.sleepTime,
+      settings: s.settings,
+      conflicts: s.conflicts,
+    });
+  }
+
+  _emit(type, data) { this.emitEvent(type, data); }
+
+  _toast(level, message) { this._emit('toast', { level, message }); }
+
+  _mkdir(ms, fn) {
+    const id = setTimeout(() => { this.timers.delete(id); fn(); }, ms);
+    this.timers.add(id);
+    return id;
+  }
+
+  _later(ms, value) {
+    return new Promise((resolve, reject) => {
+      this._mkdir(ms, () => (value instanceof Error ? reject(value) : resolve(value)));
+    });
+  }
+
+  static fail(message, code = 'mock_error', status = 400) {
+    const e = new Error(message);
+    e.code = code;
+    e.status = status;
+    return e;
+  }
+
+  status() {
+    const s = this.state;
+    const wireless = s.transport === '2.4g'
+      ? { transport: '2.4g', connected: s.connected, sleepTime: s.sleepTime, identity: { manufacturer: 1, product: 18, workMode: 2 } }
+      : null;
+    return {
+      connected: s.connected,
+      mock: true,
+      transport: s.connected ? s.transport : 'none',
+      device: {
+        vid: s.info.vid, pid: s.info.pid,
+        product: s.info.product, manufacturer: s.info.manufacturer,
+        firmware: s.info.firmware, serial: s.info.serial,
+      },
+      battery: { percent: s.battery.percent, charging: s.battery.charging },
+      caps: {
+        keyCount: 87, tft: true, tftMaxFrames: TFT_MAX_FRAMES, ledMaxFrames: 0,
+        maxProfile: 0, music: true, wireless: true,
+      },
+      wireless,
+      conflicts: s.conflicts,
+      recentNotifications: s.notifications.slice(-8),
+    };
+  }
+
+  _pushNotification(kind) {
+    const n = { kind, ts: Date.now() };
+    this.state.notifications.push(n);
+    if (this.state.notifications.length > 60) this.state.notifications.splice(0, this.state.notifications.length - 60);
+    this._emit('notification', n);
+  }
+
+  _batteryTick() {
+    if (!this.state.connected) return;
+    const b = this.state.battery;
+    if (b.charging) {
+      b.percent = Math.min(100, b.percent + 1);
+    } else {
+      b.percent = Math.max(20, b.percent - 1);
+    }
+    this._emit('battery', { ...b });
+    this._emit('status', this.status());
+  }
+
+  _notifyTick() {
+    if (!this.state.connected) return;
+    // 低频模拟一条无线通知，让「无线」页的通知日志有内容
+    const kinds = ['wake', 'sleep', 'wake'];
+    this._pushNotification(kinds[Math.floor(this._rand() * kinds.length)]);
+  }
+
+  /* 供设置页的演示控制使用 */
+  simulateDisconnect() {
+    this.state.connected = false;
+    this._save();
+    this._emit('status', this.status());
+    this._pushNotification('disconnect');
+    return this.status();
+  }
+
+  simulateReconnect() {
+    this.state.connected = true;
+    this.state.transport = 'usb';
+    this._save();
+    this._emit('status', this.status());
+    this._pushNotification('connect');
+    return this.status();
+  }
+
+  setTransport(transport) {
+    this.state.transport = transport === '2.4g' ? '2.4g' : 'usb';
+    this.state.connected = true;
+    this._save();
+    this._emit('status', this.status());
+    return this.status();
+  }
+
+  /* ------------------------------------------------------------ router */
+  async handle(method, path, body) {
+    method = method.toUpperCase();
+    const rawPath = path.split('?')[0];
+    const m = this._match(method, rawPath);
+    if (!m) {
+      console.warn('[mock] 未实现的接口', method, rawPath);
+      throw MockServer.fail(`mock 未实现接口 ${method} ${rawPath}`, 'not_implemented', 404);
+    }
+    return m(body || {});
+  }
+
+  _match(method, path) {
+    const routes = this._routes();
+    for (const r of routes) {
+      if (r.method !== method) continue;
+      if (r.path instanceof RegExp) {
+        const mm = path.match(r.path);
+        if (mm) return (body) => r.handler(body, mm);
+      } else if (r.path === path) {
+        return (body) => r.handler(body);
+      }
+    }
+    return null;
+  }
+
+  _routes() {
+    const S = this.state;
+    return [
+      /* ---------------- 设备 / 状态 ---------------- */
+      { method: 'GET', path: '/api/status', handler: () => this.status() },
+      {
+        method: 'POST', path: '/api/device/scan', handler: async () => {
+          await this._later(220);
+          S.connected = true;
+          this._save();
+          this._emit('status', this.status());
+          this._toast('info', '已重新连接 AJAZZ KEYBOARD（mock）');
+          return this.status();
+        },
+      },
+      {
+        method: 'GET', path: '/api/device/info', handler: async () => {
+          await this._later(120);
+          const fields = {
+            sleepTime: S.sleepTime, displayTime: 0, debounceTime: 8, reportRate: 1000,
+            gameMode: 0, tftDisplayTime: 0, keyDelay: 3, powerMode: 1,
+          };
+          return {
+            ...S.info,
+            battery: { ...S.battery },
+            keyCount: 87,
+            tft: { width: TFT_W, height: TFT_H, maxFrames: TFT_MAX_FRAMES },
+            caps: { ledMaxFrames: 0, maxProfile: 0, music: true, wireless: true },
+            frameVersion: 0,
+            gameMode: { raw: this._gameModeRaw(fields), fields },
+          };
+        },
+      },
+      {
+        method: 'GET', path: '/api/device/game-mode', handler: async () => {
+          const fields = { sleepTime: S.sleepTime, displayTime: 0, debounceTime: 8, reportRate: 1000, gameMode: 0, tftDisplayTime: 0, keyDelay: 3, powerMode: 1 };
+          return { raw: this._gameModeRaw(fields), fields };
+        },
+      },
+      {
+        method: 'PUT', path: '/api/device/game-mode', handler: async (body) => {
+          const f = body.fields || body || {};
+          if (typeof f.sleepTime === 'number' && SLEEP_TIMES.includes(f.sleepTime)) S.sleepTime = f.sleepTime;
+          this._save();
+          return { ok: true, fields: f };
+        },
+      },
+      {
+        method: 'POST', path: '/api/device/time-sync', handler: async () => {
+          await this._later(90);
+          const d = new Date();
+          const frame = [0x5a, 0x01, 0x5a, d.getFullYear() % 100, d.getMonth() + 1, d.getDate(),
+            d.getHours(), d.getMinutes(), d.getSeconds(), 0];
+          return { ok: true, sent: frame, time: d.toISOString() };
+        },
+      },
+      {
+        method: 'POST', path: '/api/device/factory-reset', handler: async (body) => {
+          if (body.confirm !== true) throw MockServer.fail('恢复出厂需要 confirm:true', 'confirm_required');
+          await this._later(700);
+          this._resetState();
+          return { ok: true };
+        },
+      },
+      {
+        method: 'POST', path: '/api/device/raw', handler: async (body) => {
+          const data = (body.data || []).map((x) => Number(x) & 0xff);
+          if (!data.length) throw MockServer.fail('data 不能为空', 'bad_request');
+          await this._later(40);
+          const cmd = data[1] ?? 0;
+          const recv = [0x55, cmd, 0x20, 0x00, 0x00, 0x00, 0x00, 0x00];
+          while (recv.length < 40) recv.push(0);
+          const entry = { ts: Date.now(), sent: data, received: recv };
+          S.rawLog.unshift(entry);
+          if (S.rawLog.length > 50) S.rawLog.pop();
+          return {
+            ok: true,
+            sent: data,
+            received: recv,
+            hex: recv.map((b) => b.toString(16).toUpperCase().padStart(2, '0')).join(' '),
+            echo: data.every((v, i) => recv[i] === v) || true,
+          };
+        },
+      },
+
+      /* ---------------- 改键 ---------------- */
+      {
+        method: 'GET', path: '/api/keymap/layout', handler: () => ({
+          keys: KEY_LAYOUT.rows.flat().map((k) => ({
+            slot: k.slot, row: k.row, x: k.x, w: k.w, name: k.name, label: k.name, keyCode: k.keyCode,
+          })),
+          meta: {
+            unit: KEY_LAYOUT.unit, rowWidth: KEY_LAYOUT.rowWidth, rowPitch: KEY_LAYOUT.rowPitch,
+            keySize: KEY_LAYOUT.keySize, rows: KEY_LAYOUT.rows.length,
+            noLedSlots: KEY_LAYOUT.notes.noLed, dimLedSlots: KEY_LAYOUT.notes.dimLed,
+            emptySlots: [13, 14, 15, 29, 30, 31, 45, 46, 47, 61, 62, 63, 77, 78, 79, 93, 94, 95, 96, 97, 98, 101],
+          },
+        }),
+      },
+      { method: 'GET', path: '/api/keymap', handler: () => ({ normal: S.keymap.normal, fn: S.keymap.fn }) },
+      {
+        method: 'PUT', path: '/api/keymap/normal', handler: async (body) => {
+          const slots = body.slots || {};
+          Object.assign(S.keymap.normal, slots);
+          this._save();
+          this._mkdir(120, () => this._toast('success', `主层已写入 ${Object.keys(slots).length} 个按键（mock）`));
+          return { ok: true, changed: Object.keys(slots).length };
+        },
+      },
+      {
+        method: 'PUT', path: '/api/keymap/fn', handler: async (body) => {
+          const slots = body.slots || {};
+          Object.assign(S.keymap.fn, slots);
+          this._save();
+          return { ok: true, changed: Object.keys(slots).length };
+        },
+      },
+      {
+        method: 'GET', path: '/api/keymap/defaults', handler: async () => {
+          await this._later(150);
+          return { normal: { ...DEFAULT_KEYMAP.normal }, fn: { ...DEFAULT_KEYMAP.fn } };
+        },
+      },
+      {
+        method: 'POST', path: '/api/keymap/restore', handler: async (body) => {
+          const layer = body.layer === 'fn' ? 'fn' : 'normal';
+          await this._later(400);
+          S.keymap[layer] = { ...DEFAULT_KEYMAP[layer] };
+          this._save();
+          return { ok: true, layer };
+        },
+      },
+      {
+        method: 'GET', path: '/api/keymap/actions', handler: () => ({
+          keyboard: ACTIONS.keyboard,
+          consumer: ACTIONS.consumer,
+          mouse: ACTIONS.mouse,
+          func: ACTIONS.func,
+          macros: S.macros.filter((x) => x.actions.length).map((x) => ({
+            slot: x.slot, name: `宏 ${x.slot}`, actions: x.actions.length, bytes: macroBytes(x.actions),
+          })),
+          pageTypes: ACTIONS.pageTypes,
+        }),
+      },
+
+      /* ---------------- 灯效 ---------------- */
+      {
+        method: 'GET', path: '/api/lighting', handler: () => ({
+          ...S.lighting,
+          raw: Array.from({ length: 16 }, (_, i) => [0xff, 0xff, 0xff][i] ?? 0),
+        }),
+      },
+      {
+        method: 'PUT', path: '/api/lighting', handler: async (body) => {
+          const b = body || {};
+          if (b.mode !== undefined) S.lighting.mode = Number(b.mode) | 0;
+          if (b.brightness !== undefined) S.lighting.brightness = clamp(Number(b.brightness), 1, 6);
+          if (b.speed !== undefined) S.lighting.speed = clamp(Number(b.speed), 1, 6);
+          if (b.direction !== undefined) S.lighting.direction = clamp(Number(b.direction), 0, 3);
+          if (b.colorMode !== undefined) S.lighting.colorMode = Number(b.colorMode) ? 1 : 0;
+          if (b.color) S.lighting.color = { r: clamp(Number(b.color.r) | 0, 0, 255), g: clamp(Number(b.color.g) | 0, 0, 255), b: clamp(Number(b.color.b) | 0, 0, 255) };
+          this._save();
+          await this._later(30);
+          return { ok: true, lighting: S.lighting };
+        },
+      },
+      {
+        method: 'GET', path: '/api/lighting/modes', handler: () => LIGHTING_MODES,
+      },
+      {
+        method: 'GET', path: '/api/lighting/custom', handler: () => ({ colors: S.custom.colors, count: Object.keys(S.custom.colors).length }),
+      },
+      {
+        method: 'PUT', path: '/api/lighting/custom', handler: async (body) => {
+          const colors = body.colors || {};
+          S.custom.colors = { ...S.custom.colors, ...colors };
+          if (body.apply !== false) S.lighting.mode = 128;
+          this._save();
+          await this._later(160);
+          return { ok: true, count: Object.keys(S.custom.colors).length };
+        },
+      },
+      {
+        method: 'POST', path: '/api/lighting/frames/start', handler: async (body) => {
+          S.frames = { running: true, fps: Number(body.fps) || 20, frames: 0 };
+          return { ok: true, running: true, fps: S.frames.fps };
+        },
+      },
+      {
+        method: 'POST', path: '/api/lighting/frames/push', handler: async (body) => {
+          const keys = body.keys || {};
+          const n = Object.keys(keys).length;
+          await this._later(Math.max(14, 1000 / (S.frames.fps || 20)));
+          S.frames.frames++;
+          return { ok: true, keys: n };
+        },
+      },
+      {
+        method: 'POST', path: '/api/lighting/frames/stop', handler: async () => {
+          S.frames.running = false;
+          return { ok: true };
+        },
+      },
+      { method: 'GET', path: '/api/lighting/frames/status', handler: () => S.frames },
+
+      /* ---------------- 宏 ---------------- */
+      {
+        method: 'GET', path: '/api/macros', handler: () => {
+          const used = S.macros.reduce((sum, m) => sum + macroBytes(m.actions), 0);
+          return { capacity: MACRO_CAPACITY, used, slots: S.macros };
+        },
+      },
+      {
+        method: 'PUT', path: '/api/macros', handler: async (body) => {
+          const slots = body.slots || [];
+          const used = slots.reduce((sum, m) => sum + macroBytes(m.actions), 0);
+          if (used > MACRO_CAPACITY) throw MockServer.fail(`宏空间不足：需要 ${used}B，上限 ${MACRO_CAPACITY}B`, 'macro_full');
+          await this._later(320);
+          S.macros = Array.from({ length: MACRO_SLOT_COUNT }, (_, i) => {
+            const found = slots.find((x) => Number(x.slot) === i);
+            return { slot: i, actions: found ? structuredClone(found.actions || []) : [] };
+          });
+          this._save();
+          return { ok: true, used, capacity: MACRO_CAPACITY };
+        },
+      },
+      {
+        method: 'DELETE', path: /^\/api\/macros\/(\d+)$/, handler: async (body, mm) => {
+          const slot = Number(mm[1]);
+          const found = S.macros.find((x) => x.slot === slot);
+          if (found) found.actions = [];
+          this._save();
+          return { ok: true, slot };
+        },
+      },
+
+      /* ---------------- 屏幕 TFT ---------------- */
+      {
+        method: 'GET', path: '/api/tft', handler: () => ({
+          width: TFT_W, height: TFT_H, maxFrames: TFT_MAX_FRAMES,
+          pixelFormat: 'rgb565', byteOrder: 'little', frameBytes: TFT_FRAME_BYTES,
+        }),
+      },
+      {
+        method: 'POST', path: '/api/tft/upload', handler: async (body) => {
+          const frames = body.frames || [];
+          const mode = body.mode === 'animation' ? 'animation' : 'static';
+          if (!frames.length) throw MockServer.fail('frames 不能为空', 'bad_request');
+          if (frames.length > TFT_MAX_FRAMES) throw MockServer.fail(`最多 ${TFT_MAX_FRAMES} 帧`, 'frame_limit');
+          if (mode === 'animation' && frames.length < 2) throw MockServer.fail('动画至少需要 2 帧', 'bad_request');
+          for (const f of frames.slice(0, 3)) {
+            if (typeof f !== 'string' || f.length < 100) throw MockServer.fail('帧数据不是合法 base64', 'bad_frame');
+          }
+          this._startJob('tft', 'upload', frames.length, { mode, fps: Number(body.fps) || 10 });
+          return { job: 'tft', total: frames.length, mode };
+        },
+      },
+      {
+        method: 'POST', path: '/api/tft/default', handler: async () => {
+          this._startJob('tft', 'upload', 135, { mode: 'animation', fps: 10, default: true });
+          return { job: 'tft', total: 135, mode: 'default' };
+        },
+      },
+      { method: 'GET', path: '/api/tft/job', handler: () => this._jobSnapshot() },
+      {
+        method: 'POST', path: '/api/tft/cancel', handler: async () => {
+          this._stopJob(true);
+          return { ok: true };
+        },
+      },
+
+      /* ---------------- 音乐律动 ---------------- */
+      {
+        method: 'GET', path: '/api/music/devices', handler: async () => {
+          await this._later(120);
+          return [
+            { id: 'default', name: '系统默认输出', description: '跟随系统主输出设备（loopback）', active: true },
+            { id: 'speaker-realtek', name: '扬声器 (Realtek High Definition Audio)', description: '笔记本内置扬声器', active: false },
+            { id: 'headphone', name: '耳机 (USB Audio Device)', description: '3.5mm / USB 耳机输出', active: false },
+            { id: 'hdmi', name: '数字输出 (HDMI)', description: '显示器 HDMI 音频', active: false },
+          ];
+        },
+      },
+      {
+        method: 'POST', path: '/api/music/start', handler: async (body) => {
+          if (S.transport !== 'usb') throw MockServer.fail('音乐律动仅支持 USB 有线连接（2.4G 不支持）', 'usb_only');
+          if (!S.music.running) this._startMusic(body);
+          return { ok: true, running: true };
+        },
+      },
+      {
+        method: 'POST', path: '/api/music/stop', handler: async () => {
+          if (S.music.running) this._stopMusic();
+          return { ok: true, running: false };
+        },
+      },
+      {
+        method: 'GET', path: '/api/music/status', handler: () => ({
+          running: S.music.running, fps: S.music.fps, level: S.music.level, device: S.music.deviceId,
+        }),
+      },
+
+      /* ---------------- 无线 ---------------- */
+      {
+        method: 'GET', path: '/api/wireless', handler: async () => {
+          await this._later(100);
+          const demo = S.transport !== '2.4g';
+          return {
+            transport: '2.4g',
+            connected: S.connected,
+            sleepTime: S.sleepTime,
+            identity: { manufacturer: 1, product: 18, workMode: 2, productName: '2.4G Dongle', vid: 3141, pid: 65278 },
+            battery: { ...S.battery },
+            notifications: S.notifications.slice(-20),
+            demo,
+          };
+        },
+      },
+      {
+        method: 'PUT', path: '/api/wireless', handler: async (body) => {
+          const t = Number(body.sleepTime);
+          if (!SLEEP_TIMES.includes(t)) throw MockServer.fail('休眠时间只支持 0/1/10/20/30 分钟', 'bad_value');
+          S.sleepTime = t;
+          this._save();
+          this._pushNotification('config');
+          return { ok: true, sleepTime: t };
+        },
+      },
+
+      /* ---------------- 按键测试 ---------------- */
+      {
+        method: 'POST', path: '/api/keytest/start', handler: async () => {
+          S.keytest.running = true;
+          return { ok: true, running: true, backend: 'rawinput' };
+        },
+      },
+      {
+        method: 'POST', path: '/api/keytest/stop', handler: async () => {
+          S.keytest.running = false;
+          return { ok: true, running: false };
+        },
+      },
+      {
+        method: 'GET', path: '/api/keytest/status', handler: () => ({
+          running: S.keytest.running, backend: 'rawinput', events: S.keytest.events.slice(-50),
+          supported: true,
+        }),
+      },
+
+      /* ---------------- 备份 / 设置 ---------------- */
+      {
+        method: 'GET', path: '/api/backup', handler: async () => {
+          await this._later(150);
+          return {
+            version: 1,
+            app: 'MK87 Studio',
+            createdAt: new Date().toISOString(),
+            device: { ...S.info },
+            keymap: structuredClone(S.keymap),
+            macro: {
+              capacity: MACRO_CAPACITY,
+              used: S.macros.reduce((sum, m) => sum + macroBytes(m.actions), 0),
+              slots: structuredClone(S.macros),
+            },
+            lighting: structuredClone(S.lighting),
+            custom: structuredClone(S.custom),
+            wireless: { sleepTime: S.sleepTime },
+            settings: structuredClone(S.settings),
+          };
+        },
+      },
+      {
+        method: 'POST', path: '/api/backup/restore', handler: async (body) => {
+          if (body.confirm !== true) throw MockServer.fail('恢复备份需要 confirm:true', 'confirm_required');
+          const b = body.backup;
+          if (!b || typeof b !== 'object') throw MockServer.fail('备份内容无效', 'bad_backup');
+          await this._later(500);
+          if (b.keymap?.normal) S.keymap.normal = { ...b.keymap.normal };
+          if (b.keymap?.fn) S.keymap.fn = { ...b.keymap.fn };
+          if (Array.isArray(b.macro?.slots)) {
+            S.macros = Array.from({ length: MACRO_SLOT_COUNT }, (_, i) => {
+              const found = b.macro.slots.find((x) => Number(x.slot) === i);
+              return { slot: i, actions: found ? structuredClone(found.actions || []) : [] };
+            });
+          }
+          if (b.lighting) S.lighting = { ...S.lighting, ...b.lighting };
+          if (b.custom?.colors) S.custom.colors = { ...b.custom.colors };
+          if (typeof b.wireless?.sleepTime === 'number') S.sleepTime = b.wireless.sleepTime;
+          this._save();
+          this._emit('status', this.status());
+          return { ok: true, restoredAt: new Date().toISOString() };
+        },
+      },
+      { method: 'GET', path: '/api/settings', handler: () => ({ ...S.settings }) },
+      {
+        method: 'PUT', path: '/api/settings', handler: async (body) => {
+          if (body.theme !== undefined) S.settings.theme = body.theme;
+          if (body.language !== undefined) S.settings.language = body.language;
+          this._save();
+          return { ok: true, settings: { ...S.settings } };
+        },
+      },
+    ];
+  }
+
+  /* ------------------------------------------------------------ job simulation */
+  _jobSnapshot() {
+    const j = this.state.tftJob;
+    if (!j) return { running: false, phase: 'done', sent: 0, total: 0, pct: 0, error: null };
+    return {
+      running: j.running, phase: j.phase, sent: j.sent, total: j.total,
+      pct: j.total ? Math.round((j.sent / j.total) * 100) : 0, error: j.error || null,
+      mode: j.meta?.mode, fps: j.meta?.fps,
+    };
+  }
+
+  _startJob(job, phase, total, meta) {
+    this._stopJob(false);
+    const j = { running: true, phase, sent: 0, total, meta, error: null, timer: null };
+    this.state.tftJob = j;
+    this._emit('job', { job, state: 'running' });
+    const step = Math.max(24, Math.round(600 / Math.max(1, Math.min(total, 40))));
+    j.timer = setInterval(() => {
+      if (!j.running) return;
+      j.sent = Math.min(total, j.sent + Math.max(1, Math.round(total / 45)));
+      const pct = Math.round((j.sent / total) * 100);
+      this._emit('progress', { job, phase: 'upload', sent: j.sent, total, pct });
+      if (j.sent >= total) {
+        j.running = false;
+        j.phase = 'done';
+        clearInterval(j.timer);
+        this._emit('progress', { job, phase: 'upload', sent: total, total, pct: 100 });
+        this._emit('job', { job, state: 'done', error: null });
+        this._emit('toast', { level: 'success', message: meta?.default ? '官方默认动画已恢复（mock）' : `已上传 ${total} 帧到屏幕（mock）` });
+      }
+    }, step);
+    this.timers.add(j.timer);
+  }
+
+  _stopJob(cancelled = false) {
+    const j = this.state.tftJob;
+    if (!j) return;
+    if (j.timer) clearInterval(j.timer);
+    j.running = false;
+    if (cancelled) {
+      j.phase = 'error';
+      j.error = 'cancelled';
+      this._emit('job', { job: 'tft', state: 'error', error: 'cancelled' });
+    }
+  }
+
+  /* ------------------------------------------------------------ music simulation */
+  _startMusic(body) {
+    const m = this.state.music;
+    m.running = true;
+    m.deviceId = body.deviceId || 'default';
+    m.sensitivity = Number(body.sensitivity) || 1.0;
+    m.style = body.style === 'pulse' ? 'pulse' : 'spectrum';
+    m.fps = Number(body.fps) || 20;
+    m.phase = 0;
+    m.levels = new Array(32).fill(0);
+    const target = new Array(32).fill(0);
+    m.timer = setInterval(() => {
+      m.phase += 0.22;
+      let sum = 0;
+      for (let i = 0; i < 32; i++) {
+        let t = 0;
+        if (m.style === 'spectrum') {
+          t = (Math.sin(m.phase * (0.6 + i * 0.045) + i * 0.55) * 0.5 + 0.5) *
+              (0.55 + 0.45 * Math.sin(m.phase * 0.8 + i * 0.18)) * (1.05 - i / 40);
+        } else {
+          t = (Math.sin(m.phase * 1.3 + i * 0.32) * 0.5 + 0.5) * (0.9 - i / 42);
+        }
+        t = Math.max(0, Math.min(1, t * (0.65 + m.sensitivity * 0.45)));
+        target[i] = t;
+        m.levels[i] += (target[i] - m.levels[i]) * 0.55;
+        sum += m.levels[i];
+      }
+      m.level = Math.round((sum / 32) * 1000) / 1000;
+      this._emit('music_level', { level: m.level, bands: m.levels.map((v) => Math.round(v * 1000) / 1000) });
+    }, Math.round(1000 / m.fps));
+    this.timers.add(m.timer);
+  }
+
+  _stopMusic() {
+    const m = this.state.music;
+    if (m.timer) clearInterval(m.timer);
+    m.timer = null;
+    m.running = false;
+    m.level = 0;
+    m.levels = new Array(32).fill(0);
+  }
+
+  /* ------------------------------------------------------------ reset / cleanup */
+  _gameModeRaw(fields) {
+    const raw = new Array(56).fill(0);
+    raw[0] = 0x01;
+    raw[1] = fields.sleepTime ?? 0;
+    raw[2] = fields.displayTime ?? 0;
+    raw[3] = fields.debounceTime ?? 0;
+    raw[4] = 0xe8;
+    raw[5] = 0x03;
+    raw[6] = fields.gameMode ?? 0;
+    raw[7] = fields.tftDisplayTime ?? 0;
+    for (let i = 8; i < 56; i++) raw[i] = 0xff;
+    return raw;
+  }
+
+  _resetState() {
+    this.state.lighting = { ...DEFAULT_LIGHTING };
+    this.state.custom = { colors: defaultCustomColors() };
+    this.state.keymap = { normal: { ...DEFAULT_KEYMAP.normal }, fn: { ...DEFAULT_KEYMAP.fn } };
+    this.state.macros = defaultMacros();
+    this.state.sleepTime = 10;
+    this._save();
+    this._emit('status', this.status());
+    this._emit('toast', { level: 'success', message: '设备已恢复出厂设置（mock）' });
+  }
+
+  dispose() {
+    for (const t of this.timers) clearInterval(t);
+    this.timers.clear();
+    if (this.state.music.timer) clearInterval(this.state.music.timer);
+    if (this.state.tftJob?.timer) clearInterval(this.state.tftJob.timer);
+  }
+}

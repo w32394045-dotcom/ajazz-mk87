@@ -23,3 +23,8 @@ docs/_test_audio.wav
 # Local device dumps (regenerated per machine)
 docs/device_dump.json
 docs/restore_state.json
+
+# driver
+driver/.venv/
+driver/**/__pycache__/
+

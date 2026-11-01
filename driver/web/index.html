@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="color-scheme" content="light dark">
+  <title>MK87 Studio — 键盘配置工具</title>
+  <link rel="stylesheet" href="css/app.css">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%236366f1'/%3E%3Cg fill='%23fff'%3E%3Crect x='6' y='9' width='5' height='5' rx='1'/%3E%3Crect x='13' y='9' width='5' height='5' rx='1'/%3E%3Crect x='20' y='9' width='6' height='5' rx='1'/%3E%3Crect x='6' y='16' width='6' height='5' rx='1'/%3E%3Crect x='14' y='16' width='12' height='5' rx='1'/%3E%3C/g%3E%3C/svg%3E">
+  <script>
+    /* 首屏前先定主题，避免闪白/闪黑 */
+    (function () {
+      try {
+        var saved = localStorage.getItem('mk87.theme');       // light | dark | auto
+        var dark = saved === 'dark' || ((!saved || saved === 'auto') &&
+          window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches);
+        document.documentElement.dataset.theme = dark ? 'dark' : 'light';
+      } catch (e) { /* ignore */ }
+    })();
+  </script>
+</head>
+<body>
+  <div class="app" id="app">
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="brand-mark" id="brand-mark" aria-hidden="true"></div>
+        <div class="brand-text">
+          <div class="brand-name">MK87 Studio</div>
+          <div class="brand-sub">Keyboard Console</div>
+        </div>
+      </div>
+      <nav class="nav" id="nav" aria-label="主导航"></nav>
+      <div class="sidebar-foot">
+        <div class="device-mini" id="device-mini">
+          <span class="dot"></span>
+          <div style="min-width:0">
+            <div class="name" id="mini-name">正在检测设备</div>
+            <div class="meta" id="mini-meta">—</div>
+          </div>
+        </div>
+        <div class="hint" id="mini-hint">离线可用 · 本地 Web UI</div>
+      </div>
+    </aside>
+
+    <div class="main">
+      <header class="topbar">
+        <div class="page-head">
+          <h1 id="page-title">灯光效果</h1>
+          <p id="page-sub">19 种预设灯效与实时预览</p>
+        </div>
+        <div class="topbar-actions">
+          <div class="status-group" id="status-group"></div>
+          <div class="theme-toggle" id="theme-toggle" role="group" aria-label="主题切换"></div>
+        </div>
+      </header>
+      <div id="banners"></div>
+      <main class="content" id="page-root" tabindex="-1">
+        <div class="empty" id="boot-screen">
+          <div class="brand-mark" style="width:46px;height:46px;border-radius:14px" id="boot-mark"></div>
+          <div style="font-size:13px;font-weight:600;color:var(--text)">正在启动 MK87 Studio…</div>
+          <div class="tiny">检测设备 / 载入前端模块</div>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <div class="toast-root" id="toast-root" aria-live="polite"></div>
+  <div id="dialog-root"></div>
+
+  <noscript>
+    <div style="position:fixed;inset:0;display:grid;place-items:center;background:#0f131b;color:#e8eef9;z-index:999;font-family:system-ui;padding:24px;text-align:center">
+      MK87 Studio 需要启用 JavaScript 才能运行（这是本地离线 Web UI，不依赖外网）。
+    </div>
+  </noscript>
+
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>
