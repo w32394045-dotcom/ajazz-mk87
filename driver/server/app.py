@@ -601,9 +601,14 @@ def api_music_devices():
 def api_music_start(payload: dict = Body(default={})):
     dev = _dev()
     manager.music.device = dev
+    mode = payload.get("mode")
+    if mode is None and "style" in payload:
+        # 旧前端兼容：style 字符串 → 官方模式
+        mode = None
     return manager.music.start(
         device_id=payload.get("deviceId"),
-        style=payload.get("style", "spectrum"),
+        mode=int(mode) if mode is not None else None,
+        style=payload.get("style"),
         sensitivity=float(payload.get("sensitivity", 1.0)),
         fps=int(payload.get("fps", 20)),
     )

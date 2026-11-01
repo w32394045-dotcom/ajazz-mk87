@@ -16,6 +16,7 @@ import io
 import json
 import math
 import os
+import sys
 import time
 from typing import Callable, List, Optional, Tuple
 
@@ -171,41 +172,142 @@ def build_animation_blob(delays: List[int], rgb565_data: bytes) -> bytes:
     return bytes(mv) + bytes(rgb565_data)
 
 
+def _tft_channel(device):
+    """TFT 读写通道：Windows 用原生 WriteFile + overlapped ReadFile（hidapi 对 4105B 报文
+    写失败，且逐包 ACK 必须同步读掉，否则固件会丢弃后续包）；其它平台用 hidapi。
+
+    返回带 write(bytes)->int / read_normalized(timeout)->bytes|None / drain() / close() 的对象。
+    """
+    iface = device.tft_protocol.iface
+    if sys.platform == "win32":
+        from .winhid import NativeHidChannel
+
+        return NativeHidChannel(
+            iface.info.path,
+            read_len=iface.info.read_max_len,
+            write_len=iface.info.out_report_len,
+        )
+    return _HidapiChannel(iface)
+
+
+class _HidapiChannel:
+    """非 Windows 回退通道（Linux hidraw / macOS hidapi）。"""
+
+    def __init__(self, iface) -> None:
+        self.iface = iface
+
+    def write(self, data: bytes) -> int:
+        return self.iface.write_report(data)
+
+    def read_normalized(self, timeout: float = 0.6):
+        return self.iface.read_normalized(timeout)
+
+    def drain(self, duration: float = 0.02) -> None:
+        self.iface.drain(duration)
+
+    def close(self) -> None:
+        pass
+
+
+#: 真机 ACK（phase2_tft 实测）：0x4D（壁纸）/0x50（动画）上传的逐包回包都是
+#: SET_LED_USER_ANIMATION(0x41)；这里把命令字本身也一并接受，兼容不同固件。
+_ACK_ANIM = (const.CMD["SET_LED_USER_ANIMATION"], const.CMD["SET_TFT_USER_ANIMATION"])
+_ACK_MATERIAL = (const.CMD["SET_LED_USER_ANIMATION"], const.CMD["SET_TFT_MATERIAL"])
+
+
 def _upload(device, cmd: int, data: bytes, header_tail: bytes,
             progress: Optional[ProgressFn] = None,
             cancel_check: Optional[Callable[[], bool]] = None,
-            sleep_between: float = 0.001) -> dict:
+            first_timeout: float = 2.0, ack_timeout: float = 0.6,
+            retries: int = 3) -> dict:
+    """逐包写 + 逐包等 ACK（真机流程，见 probe/phase2_tft.py 与 docs/tft-page.md）。
+
+    官方实现每包都等响应（首包 2s、其余 600ms，失败重发 3 次），本函数照此实现：
+    没有 ACK 的包会被重发，仍失败则报错，绝不"写成功但屏幕没变化"。
+    """
     _check_tft(device)
     iface = device.tft_protocol.iface
     body = iface.info.payload_len
     chunk = body - 8
     total = max(1, (len(data) + chunk - 1) // chunk)
     t0 = time.time()
-    for k in range(total):
-        if cancel_check and cancel_check():
-            raise MK87Error("上传已取消")
-        part = data[k * chunk:(k + 1) * chunk]
-        hdr = bytes([
-            0xAA, cmd & 0xFF,
-            k & 0xFF, (k >> 8) & 0xFF,
-            total & 0xFF, (total >> 8) & 0xFF,
-            header_tail[0], header_tail[1],
-        ])
-        pkt = bytearray([0]) + bytearray(body)
-        pkt[1:9] = hdr
-        pkt[9:9 + len(part)] = part
-        iface.write_report(bytes(pkt))
-        if progress:
-            progress(int((k + 1) * 100 / total), k + 1, total)
-        if sleep_between:
-            time.sleep(sleep_between)
+    channel = _tft_channel(device)
+    raw_cmd = const.CMD["SET_TFT_MATERIAL"] if cmd == const.CMD["SET_TFT_MATERIAL"] else const.CMD["SET_TFT_USER_ANIMATION"]
+    ack_cmds = _ACK_MATERIAL if cmd == const.CMD["SET_TFT_MATERIAL"] else _ACK_ANIM
+    acks = 0
+    retried = 0
+    unacked = 0
+    ack_times: List[float] = []
+    try:
+        try:
+            channel.drain(0.05)  # 清掉上一次上传残留的回包
+        except Exception:
+            pass
+        for k in range(total):
+            if cancel_check and cancel_check():
+                raise MK87Error("上传已取消")
+            part = data[k * chunk:(k + 1) * chunk]
+            hdr = bytes([
+                0xAA, raw_cmd & 0xFF,
+                k & 0xFF, (k >> 8) & 0xFF,
+                total & 0xFF, (total >> 8) & 0xFF,
+                header_tail[0], header_tail[1],
+            ])
+            pkt = bytearray([0]) + bytearray(body)
+            pkt[1:9] = hdr
+            pkt[9:9 + len(part)] = part
+            pkt = bytes(pkt)
+            timeout = first_timeout if k == 0 else ack_timeout
+            got = False
+            for attempt in range(retries + 1):
+                tw = time.time()
+                n = channel.write(pkt)
+                if n != len(pkt):
+                    raise MK87Error(
+                        f"TFT 写入不完整：第 {k + 1}/{total} 包写入 {n}/{len(pkt)} 字节"
+                    )
+                # 等 ACK 从写入完成开始计时（USB 满帧写入本身约 65ms）
+                deadline = time.time() + timeout
+                while time.time() < deadline:
+                    r = channel.read_normalized(timeout=max(0.005, deadline - time.time()))
+                    if r is None:
+                        break
+                    if len(r) >= 2 and r[0] == 0x55 and r[1] in ack_cmds:
+                        got = True
+                        break
+                if got:
+                    ack_times.append(round((time.time() - tw) * 1000, 1))
+                    acks += 1
+                    break
+                retried += 1
+            if not got:
+                # 真机实测：ACK 偶发丢失（phase2_tft 里 48 包里丢了 3 个）但上传依然成功，
+                # 固件按 seq 幂等处理重发，因此单包丢 ACK 不能直接判失败；连续大量丢才报错。
+                unacked += 1
+            if progress:
+                progress(int((k + 1) * 100 / total), k + 1, total)
+    finally:
+        try:
+            channel.close()
+        except Exception:
+            pass
     dt = time.time() - t0
+    if total and unacked / total > 0.25:
+        raise MK87Error(
+            f"TFT 链路异常：{unacked}/{total} 包没有 ACK（超过 25%=链路已断/接收端卡死）；"
+            "请拔插 USB 线复位屏幕后重试"
+        )
     return {
         "ok": True,
         "packets": total,
         "bytes": len(data),
         "seconds": round(dt, 2),
         "kbps": round(len(data) / dt / 1024, 1) if dt > 0 else None,
+        "acks": acks,
+        "unacked": unacked,
+        "retries": retried,
+        "ackAvgMs": round(sum(ack_times) / len(ack_times), 1) if ack_times else None,
+        "ackMaxMs": round(max(ack_times), 1) if ack_times else None,
     }
 
 
@@ -564,7 +666,7 @@ def convert_animation(
 
     # 补 1 帧：协议延时表 t[n]=0 是终止符，会顶掉最后一帧的延时槽，
     # 因此复制末帧占位，让真正最后一帧的时长也能写进表里（上限内才补）。
-    pads = 1 if (pad_last and len(frames565) >= 1 and len(frames565) < int(max_frames)) else 0
+    pads = 1 if (pad_last and 2 <= len(frames565) < int(max_frames)) else 0
     if pads:
         frames565 = frames565 + [frames565[-1]]
         # 占位帧不占实际时长（它的延时槽就是终止符），只在上传数据里占一帧
@@ -643,7 +745,7 @@ def convert_and_upload(
         dither=dither,
         dedupe=dedupe,
         temporal=temporal,
-        pad_last=True,
+        pad_last=False,  # 官方/探针都不补帧：t[n]=0 终止符就是表尾（docs/phase2_tft.json anim 实测）
         resample=resample,
         trim_start_frame=trim_start_frame,
         trim_end_frame=trim_end_frame,

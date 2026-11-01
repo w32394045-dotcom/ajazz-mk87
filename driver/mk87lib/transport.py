@@ -169,9 +169,15 @@ class HidInterface:
         if len(report) < want:
             report = bytes(report) + b"\x00" * (want - len(report))
         try:
-            return int(self._dev.write(list(report)))
+            n = int(self._dev.write(list(report)))
         except Exception as exc:
             raise DeviceDisconnected(f"HID 写入失败: {exc}") from exc
+        if n < 0:
+            # hidapi 用 -1 表示写失败（大报文 TFT 通道常见）。不能静默当成功！
+            raise DeviceDisconnected(
+                f"HID 写入失败（hidapi 返回 -1，长度 {len(report)}）: usagePage=0x{self.info.usage_page:04X}"
+            )
+        return n
 
     def read_report(self, timeout: float = 0.1) -> Optional[bytes]:
         """读取一个 input report（可能含 report ID）。超时返回 None。"""

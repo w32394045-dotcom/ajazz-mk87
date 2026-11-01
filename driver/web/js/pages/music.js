@@ -33,11 +33,10 @@ export default {
 
     let supported = ctx.status?.caps ? ctx.status.caps.music !== false : true;
     let musicStatus = { running: false, fps: 20, level: 0, device: null };
-    let statusStyles = null;
-    let statusStyle = null;
+    let statusModes = null;
     let devices = [];
     let selectedDevice = null;
-    let style = 'spectrum';
+    let mode = 13;
     let fps = 20;
     let levels = new Array(BAND_COUNT).fill(0);
     let targetLevels = new Array(BAND_COUNT).fill(0);
@@ -58,9 +57,9 @@ export default {
         running = !!st.running;
         if (st.deviceId) selectedDevice = st.deviceId;
         else if (st.device) selectedDevice = st.device;
-        if (Array.isArray(st.styles) && st.styles.length) {
-          statusStyles = st.styles;
-          statusStyle = st.style || st.styles[0];
+        if (Array.isArray(st.modes) && st.modes.length) {
+          statusModes = st.modes;
+          mode = Number(st.mode || st.modes[0].mode || 13);
         }
         if (st.supported === false) supported = false;
       }
@@ -91,13 +90,20 @@ export default {
       min: 10, max: 100, step: 5, value: 50,
       format: (v) => `${(v / 50).toFixed(2)}×`,
     });
-    const STYLE_LABELS = { spectrum: '频谱', rainbow: '彩虹', pulse: '脉冲', ripple: '涟漪', firefly: '萤火' };
-    const styleOptions = (statusStyles || ['spectrum', 'pulse']).map((v) => ({ value: v, label: STYLE_LABELS[v] || v }));
-    if (statusStyle) style = statusStyle;
+    /* 模式：官方渲染器（13 律动节拍 / 14 光尘螺旋 / 17 萤火轨迹 / 4 曲率频谱） */
+    const LANG_EN = (document.documentElement.lang || 'zh').toLowerCase().startsWith('en');
+    const DEFAULT_MODES = [
+      { mode: 13, name: '律动节拍', nameEn: 'Dance to the Beat' },
+      { mode: 14, name: '光尘螺旋', nameEn: 'Dust Glow Spiral' },
+      { mode: 17, name: '萤火轨迹', nameEn: 'Firefly Trail' },
+      { mode: 4, name: '曲率频谱', nameEn: 'Curvature Frequency Steps' },
+    ];
+    const modeLabel = (m) => (LANG_EN ? (m.nameEn || m.name) : (m.name || m.nameEn));
+    const modeOptions = (statusModes || DEFAULT_MODES).map((m) => ({ value: Number(m.mode), label: modeLabel(m) }));
     const styleSeg = createSegmented({
-      options: styleOptions,
-      value: style,
-      onChange: (v) => { style = v; },
+      options: modeOptions,
+      value: mode,
+      onChange: (v) => { mode = Number(v); },
     });
     const fpsSeg = createSegmented({
       options: [{ value: 15, label: '15' }, { value: 20, label: '20' }, { value: 30, label: '30' }],
@@ -212,9 +218,9 @@ export default {
       if (!supported) { ctx.toastError('音乐律动仅支持 USB 有线连接'); return; }
       startBtn.disabled = true;
       try {
-        await api.post('/api/music/start', { deviceId: selectedDevice, sensitivity: sensSlider.value / 50, style, fps });
+        await api.post('/api/music/start', { deviceId: selectedDevice, sensitivity: sensSlider.value / 50, mode, fps });
         setRunning(true);
-        ctx.toastSuccess('已开始音乐律动（逐键帧流 20fps，仅 USB）');
+        ctx.toastSuccess('已开始音乐律动（官方渲染器 · 逐键帧流 20fps，仅 USB）');
       } catch (e) {
         ctx.toastError(`启动失败：${e.message || e}`);
         startBtn.disabled = false;
@@ -241,7 +247,7 @@ export default {
       ),
       h('div', { class: 'card-body' },
         h('div', { class: 'grid grid-2', style: { marginBottom: '14px' } },
-          h('div', { class: 'field' }, h('div', { class: 'field-label' }, '风格'), styleSeg.el),
+          h('div', { class: 'field' }, h('div', { class: 'field-label' }, '模式'), styleSeg.el),
           h('div', { class: 'field' }, h('div', { class: 'field-label' }, '帧率（fps）'), h('div', { class: 'row' }, fpsSeg.el, h('span', { class: 'tiny muted' }, '实测 20fps 稳定'))),
         ),
         sensSlider.el,

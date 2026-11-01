@@ -231,6 +231,28 @@ class DeviceManager:
     def start(self) -> None:
         self._monitor_thread = threading.Thread(target=self._monitor, name="mk87-monitor", daemon=True)
         self._monitor_thread.start()
+        self._music_level_thread = threading.Thread(
+            target=self._music_level_loop, name="mk87-music-level", daemon=True
+        )
+        self._music_level_thread.start()
+
+    def _music_level_loop(self) -> None:
+        """音乐律动运行时，以 10fps 推送电平/32 段频谱给前端可视化。"""
+        while not self._stop.is_set():
+            try:
+                if self.music.running:
+                    self.emit({
+                        "type": "music_level",
+                        "data": {
+                            "level": round(float(self.music.level), 3),
+                            "bands": [round(float(b), 3) for b in self.music.levels32],
+                        },
+                    })
+                    time.sleep(0.1)
+                    continue
+            except Exception:  # noqa: BLE001
+                pass
+            time.sleep(0.25)
 
     def stop(self) -> None:
         self._stop.set()

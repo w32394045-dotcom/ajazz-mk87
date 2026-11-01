@@ -13,6 +13,7 @@ from __future__ import annotations
 import json
 import math
 import os
+import sys
 import threading
 import time
 from typing import Callable, Dict, List, Optional, Tuple
@@ -209,8 +210,13 @@ def build_frame_packets(payload: bytes, body_len: int, frame_index: int = 0) -> 
 
 
 def send_frame(device, payload: bytes, frame_index: int = 0,
-               wait_ack: bool = True, timeout: float = 0.04) -> int:
-    """发送一帧逐键颜色；返回成功 ACK 的包数。不持锁太久（每包写后立即读）。"""
+               wait_ack: bool = True, timeout: float = 0.04, drain: int = 0) -> int:
+    """发送一帧逐键颜色；返回成功 ACK 的包数。
+
+    wait_ack=True：逐包等 ACK（会受 USB 轮询间隔限制，实测约 9ms/包 → 上限 ~14fps）；
+    wait_ack=False：连续写 7 包（约 8ms/帧），帧末最多读 drain 个回包防止输入队列堆积，
+                  音乐律动 20fps 走这条路径（真机实测 20fps、回读一致率 96.6%）。
+    """
     iface = device.protocol.iface
     body = iface.info.payload_len
     packets = build_frame_packets(payload, body, frame_index)
@@ -227,6 +233,10 @@ def send_frame(device, payload: bytes, frame_index: int = 0,
                     break
                 if len(r) >= 2 and r[0] == 0x55:
                     acks += 1
+                    break
+        if not wait_ack and drain:
+            for _ in range(int(drain)):
+                if iface.read_normalized(timeout=0.001) is None:
                     break
     return acks
 
@@ -253,6 +263,79 @@ def restore_effect(device, snapshot: bytes) -> None:
             device.request(const.CMD["SET_LED_EFFECT"], bytes(snapshot), content_size=16, timeout=0.8)
         except Exception:
             pass
+
+
+class FrameSender:
+    """音乐帧流专用发送器：Windows 原生 WriteFile/overlapped ReadFile，20fps 逐包 ACK。
+
+    背景（真机实测）：hidapi 在协议接口上逐包写+读 ACK 只能到 ~10fps（读超时要走
+    CancelIoEx，单次 50~400ms）；而探针用的 Win32 原生句柄在同一设备上可以稳定
+    逐包 ACK、20fps（docs/phase5_music.json 120 帧/6.0s）。因此这里 Windows 走原生通道。
+    """
+
+    def __init__(self, device):
+        self.device = device
+        iface = device.protocol.iface
+        self.body = iface.info.payload_len
+        if sys.platform == "win32":
+            from .winhid import NativeHidChannel
+
+            self._ch = NativeHidChannel(
+                iface.info.path,
+                read_len=iface.info.read_max_len,
+                write_len=iface.info.out_report_len,
+            )
+        else:
+            self._ch = _HidapiFrameChannel(iface)
+        self.frames = 0
+        self.acks = 0
+
+    def send(self, payload: bytes, frame_index: int = 0,
+             wait_ack: bool = True, ack_timeout: float = 0.006) -> int:
+        acks = 0
+        for pkt in build_frame_packets(payload, self.body, frame_index):
+            self._ch.write(pkt)
+            if not wait_ack:
+                continue
+            deadline = time.time() + ack_timeout
+            while time.time() < deadline:
+                r = self._ch.read_normalized(timeout=max(0.001, deadline - time.time()))
+                if r is None:
+                    break
+                if len(r) >= 2 and r[0] == 0x55:
+                    acks += 1
+                    break
+        self.frames += 1
+        self.acks += acks
+        return acks
+
+    def drain(self, duration: float = 0.02) -> None:
+        self._ch.drain(duration)
+
+    def close(self) -> None:
+        try:
+            self._ch.close()
+        except Exception:
+            pass
+
+
+class _HidapiFrameChannel:
+    """非 Windows 回退：hidapi 接口（Linux hidraw 无 CancelIoEx 延迟问题）。"""
+
+    def __init__(self, iface) -> None:
+        self.iface = iface
+
+    def write(self, data: bytes) -> int:
+        return self.iface.write_report(data)
+
+    def read_normalized(self, timeout: float = 0.1):
+        return self.iface.read_normalized(timeout)
+
+    def drain(self, duration: float = 0.02) -> None:
+        self.iface.drain(duration)
+
+    def close(self) -> None:
+        pass
 
 
 class FrameStreamer:

@@ -36,3 +36,13 @@ driver/dist-packages/
 driver/dist-installer/
 driver/web/_ui_*.png
 
+
+# 调试/一次性测试脚本（不入库）
+driver/_t_*.py
+driver/_t_*.txt
+driver/_t_*.log
+driver/_t_*.out.txt
+driver/_t_*.err.txt
+_t_*.py
+_t_*.txt
+_native_speed*.txt
