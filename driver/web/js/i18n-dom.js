@@ -6,6 +6,19 @@
 import { EN_TEXT, EN_PATTERNS } from './i18n-en-dom.js';
 
 const CJK = /[\u4e00-\u9fff\u3000-\u303f\uff00-\uffef]/;
+const CJK_IDEO = /[\u4e00-\u9fff]/;
+/* 全角标点 → 半角（用于中英混排字符串，如 "Device：AJAZZ（USB）"） */
+const PUNCT_MAP = [
+  [/：/g, ': '], [/（/g, ' ('],
+  [/）/g, ')'], [/、/g, ', '], [/，/g, ', '], [/。/g, '. '],
+  [/；/g, '; '], [/！/g, '!'], [/？/g, '?'], [/「/g, '"'], [/」/g, '"'],
+  [/『/g, '"'], [/』/g, '"'], [/～/g, '~'], [/　/g, ' '],
+];
+function cleanPunctuation(str) {
+  let out = str;
+  for (const [re, rep] of PUNCT_MAP) out = out.replace(re, rep);
+  return out.replace(/ \)/g, ')').replace(/\( /g, ' (').replace(/ {2,}/g, ' ').trim();
+}
 const ATTRS = ['placeholder', 'title', 'aria-label'];
 const SKIP_TAGS = new Set(['SCRIPT', 'STYLE', 'TEXTAREA', 'CODE', 'PRE']);
 
@@ -31,6 +44,10 @@ export function translateText(text) {
   for (const [re, rep] of EN_PATTERNS) {
     if (re.test(core)) return preserveWhitespace(text, core.replace(re, rep));
   }
+  if (!CJK_IDEO.test(core)) {
+    const cleaned = cleanPunctuation(core);
+    if (cleaned !== core) return preserveWhitespace(text, cleaned);
+  }
   return null;
 }
 
@@ -41,6 +58,10 @@ function translateAttributeValue(value) {
   if (out !== undefined) return value.replace(core, out);
   for (const [re, rep] of EN_PATTERNS) {
     if (re.test(core)) return value.replace(core, core.replace(re, rep));
+  }
+  if (!CJK_IDEO.test(core)) {
+    const cleaned = cleanPunctuation(core);
+    if (cleaned !== core) return value.replace(core, cleaned);
   }
   return null;
 }

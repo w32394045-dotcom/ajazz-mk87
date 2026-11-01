@@ -97,6 +97,7 @@ driver/web/
 - 持久化：设备状态（灯效/键位/宏/逐键灯/无线/设置）写入 `localStorage["mk87.mock.state"]`，
   刷新不丢；设置页可「重置演示数据」。
 - 演示控制：设置页可模拟断连/重连、切换 USB ↔ 2.4G（相关页面的能力位/提示会联动）。
+- 调试参数（仅 mock）：`?shell=1` 模拟原生外壳（设置页显示「退出 MK87 Studio」按钮，`POST /api/quit` 返回 `{ok:true}`）；`?conflict=1` 模拟结构化冲突横幅（验证 `conflictItems` 的中/英渲染）。
 
 mock 的返回形状与真实后端对齐（`/api/keymap` 数组、`actions` 用 `value`、`lighting.rgb`、
 `gameMode` 扁平字段、`wireless.sleepOptions`、秒级通知时间戳等）；页面里的归一化逻辑也兼容

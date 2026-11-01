@@ -187,7 +187,6 @@ export default {
         autostartBadge.classList.add('ok');
       } else {
         autostartBadge.textContent = '已关闭';
-        autostartBadge.classList.add('');
       }
       autostartDetail.innerHTML = '';
       if (st.supported && (st.command || st.location)) {

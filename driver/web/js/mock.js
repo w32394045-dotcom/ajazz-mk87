@@ -84,6 +84,9 @@ export class MockServer {
   constructor(emit) {
     this.emitEvent = emit;        // (type, data) => void
     this.timers = new Set();
+    const debugParams = new URLSearchParams(location.search);
+    this.simulateShell = debugParams.get('shell') === '1';
+    this.simulateConflict = debugParams.get('conflict') === '1';
     this._tick = 0;
     this._i = 0;
 
@@ -187,8 +190,10 @@ export class MockServer {
     return {
       connected: s.connected,
       mock: true,
-      shell: false,
-      conflictItems: [],
+      shell: !!this.simulateShell,
+      conflictItems: this.simulateConflict
+        ? [{ code: 'usb_resource_conflict', zh: '模拟冲突：2.4G 接收器与键盘 USB 同插可能触发 Windows USB 资源不足（0xC000009A），请只保留一种连接。', en: 'Simulated conflict: plugging the 2.4G receiver and keyboard USB together may trigger a Windows USB resource shortage (0xC000009A) — keep only one connection.' }]
+        : [],
       transport: s.connected ? s.transport : 'none',
       device: {
         vid: s.info.vid, pid: s.info.pid,
@@ -720,7 +725,8 @@ export class MockServer {
       },
       {
         method: 'POST', path: '/api/quit', handler: async () => {
-          await this._later(120);
+          await this._later(160);
+          if (this.simulateShell) return { ok: true };
           return { ok: false, message: '浏览器模式（mock）没有可退出的原生程序，请直接关闭服务进程' };
         },
       },
