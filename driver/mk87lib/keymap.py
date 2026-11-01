@@ -150,7 +150,8 @@ def decode_entry(buf4) -> dict:
         return {"type": "default", "name": "默认", "display": "默认", **out}
     if pt == PAGE["MOUSE"]:
         name = _name_of_mouse(p1 or 1, p2)
-        return {"type": "mouse", "param1": p1 or 1, "value": p2, "name": name, "display": name, **out}
+        return {"type": "mouse", "param1": p1 or 1, "value": p2, "button": p2,
+                "name": name, "display": name, **out}
     if pt == PAGE["KEYBOARD"]:
         name = _name_of_keyboard(p1, p2)
         return {"type": "keyboard", "value": p2, "param1": p1, "name": name, "display": name, **out}
@@ -161,7 +162,7 @@ def decode_entry(buf4) -> dict:
     if pt == PAGE["MACRO"]:
         return {
             "type": "macro", "slot": p1, "mask": p2, "count": p3,
-            "name": f"宏 M{p1 + 1}", "display": f"宏 M{p1 + 1}", **out,
+            "repeat": p2, "name": f"宏 M{p1 + 1}", "display": f"宏 M{p1 + 1}", **out,
         }
     if pt == PAGE["CB"]:
         mods = [x for x in (p1, p2) if x]
@@ -198,13 +199,18 @@ def encode_entry(action: Optional[dict]) -> bytes:
         return bytes([PAGE["KEYBOARD"], 0, action.get("value", 0) & 0xFF, 0])
     if t == "mouse":
         return bytes([PAGE["MOUSE"], action.get("param1", 1) & 0xFF,
-                      action.get("value", 0) & 0xFF, 0])
+                      action.get("value", action.get("button", 0)) & 0xFF, 0])
+    if t == "disabled":
+        # 官方没有独立「禁用」编码；唯一形似的是 extendChars 的 ⊠（HID 0x6F），真机未验证
+        return bytes([PAGE["KEYBOARD"], 0, 0x6F, 0])
     if t == "consumer":
         v = int(action.get("value", 0)) & 0xFFFF
         return bytes([PAGE["CONSUMER_KEY"], v & 0xFF, (v >> 8) & 0xFF, 0])
     if t == "macro":
+        mask = action.get("mask", action.get("repeat", 0))
+        count = action.get("count", 0)
         return bytes([PAGE["MACRO"], action.get("slot", 0) & 0xFF,
-                      action.get("mask", 0) & 0xFF, action.get("count", 0) & 0xFF])
+                      int(mask) & 0xFF, int(count) & 0xFF])
     if t == "combo":
         mods = list(action.get("mods") or [])
         m1 = mods[0] if len(mods) > 0 else 0

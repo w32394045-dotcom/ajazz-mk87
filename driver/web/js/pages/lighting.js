@@ -8,11 +8,17 @@ import { ColorPicker } from '../components/colorpicker.js';
 import { createSegmented, createStepper, badge, sectionTitle } from '../components/widgets.js';
 
 const DIRS = [
-  { value: 0, label: '左' },
-  { value: 1, label: '右' },
+  { value: 0, label: '右' },
+  { value: 1, label: '左' },
   { value: 2, label: '上' },
   { value: 3, label: '下' },
 ];
+
+/* 官方面板只有两个方向按钮：directionPosition==='top' → 上/下，否则 左/右（spec-lighting.md §7.1） */
+function dirOptionsFor(mode) {
+  if (mode && mode.directionPosition === 'top') return [{ value: 2, label: '上' }, { value: 3, label: '下' }];
+  return [{ value: 1, label: '左' }, { value: 0, label: '右' }];
+}
 
 const KEYS = KEY_LAYOUT.rows.flat().map((k) => ({
   slot: k.slot,
@@ -78,7 +84,11 @@ export default {
     let customColors = {};
     try {
       const resp = await api.get('/api/lighting');
-      if (resp) lighting = { ...lighting, ...resp, color: { ...lighting.color, ...(resp.color || {}) } };
+      if (resp) {
+        const rgb = Array.isArray(resp.rgb) ? resp.rgb : null;
+        const color = resp.color || (rgb ? { r: rgb[0], g: rgb[1], b: rgb[2] } : null);
+        lighting = { ...lighting, ...resp, color: { ...lighting.color, ...(color || {}) } };
+      }
     } catch (e) { console.warn('[lighting] 读取失败', e); }
     try {
       const resp = await api.get('/api/lighting/modes');
@@ -111,7 +121,7 @@ export default {
     const keyboard = new Keyboard({ interactive: false, legends: false, mode: 'lighting' });
     const stage = h('div', { class: 'preview-stage' },
       h('div', { class: 'stage-head' },
-        h('h3', {}, t('lighting.preview')),
+        h('h3', {}, '87 键灯效预览'),
         h('div', { class: 'spacer' }),
         previewBadge,
       ),
@@ -158,7 +168,7 @@ export default {
       onChange: (v) => { state.colorMode = v; pushApply(); },
     });
     const colorModeField = h('div', { class: 'param-row' },
-      h('div', { class: 'param-head' }, h('h4', {}, '颜色模式'), h('span', { class: 'tiny muted' }, '单色 = 使用下方颜色；RGB = 固件自动配色')),
+      h('div', { class: 'param-head' }, h('h4', {}, '颜色模式'), h('span', { class: 'tiny muted' }, '单色 = 使用下方颜色；RGB = 固件自动配色（0/1 两种）')),
       colorModeSeg.el,
     );
 
@@ -178,7 +188,7 @@ export default {
       min: 2, max: 6, value: Math.max(2, state.brightness),
       onChange: (v) => { state.brightness = v; pushApply(); },
     });
-    const brightnessNote = h('div', { class: 'field-hint' }, '设备亮度 1 = 全灭（PWM 0），因此这里只开放 2–6；如需关灯请用左侧「关闭背光」。');
+    const brightnessNote = h('div', { class: 'field-hint' }, '设备亮度 1..6 为档位，1 实际全灭；因此这里只开放 2–6。要关灯请用「关闭背光」（mode=0），亮度 0 不会关灯。');
     const brightnessField = h('div', { class: 'param-row' },
       h('div', { class: 'param-head' }, h('h4', {}, t('lighting.brightness')), h('span', { class: 'tiny muted' }, '1–6')),
       h('div', { class: 'row' }, brightnessStepper.el),
@@ -194,17 +204,24 @@ export default {
       h('div', { class: 'row' }, speedStepper.el),
     );
 
-    const dirButtons = DIRS.map((d) => h('button', {
-      type: 'button', class: state.direction === d.value ? 'active' : '', title: d.label,
-      onclick: () => {
-        state.direction = d.value;
-        dirButtons.forEach((b, i) => b.classList.toggle('active', DIRS[i].value === state.direction));
-        pushApply();
-      },
-    }, d.label));
+    const dirPicker = h('div', { class: 'dir-picker' });
+    let dirButtons = [];
+    function renderDirButtons(mode) {
+      const opts = dirOptionsFor(mode);
+      dirPicker.innerHTML = '';
+      dirButtons = opts.map((d) => h('button', {
+        type: 'button', class: state.direction === d.value ? 'active' : '', title: d.label,
+        onclick: () => {
+          state.direction = d.value;
+          dirButtons.forEach((b, i) => b.classList.toggle('active', opts[i].value === state.direction));
+          pushApply();
+        },
+      }, d.label));
+      dirPicker.append(...dirButtons);
+    }
     const dirField = h('div', { class: 'param-row' },
-      h('div', { class: 'param-head' }, h('h4', {}, t('lighting.direction'))),
-      h('div', { class: 'dir-picker' }, ...dirButtons),
+      h('div', { class: 'param-head' }, h('h4', {}, t('lighting.direction')), h('span', { class: 'tiny muted' }, '仅 10/11/12/16/18 支持')),
+      dirPicker,
     );
 
     const offBtn = h('button', { class: 'btn sm', onclick: toggleOff });
@@ -328,7 +345,7 @@ export default {
       dirField.style.display = !off && mode && mode.direction ? '' : 'none';
       brightnessField.style.display = off ? 'none' : '';
       applyState.textContent = off ? '背光已关闭' : '修改后自动写入设备';
-      dirButtons.forEach((b, i) => b.classList.toggle('active', DIRS[i].value === state.direction));
+      if (!off && mode) renderDirButtons(mode);
       speedStepper.set(state.speed);
       brightnessStepper.set(Math.max(2, state.brightness));
       previewBadge.innerHTML = `<span class="pulse"></span>${off ? '背光关闭' : (mode ? mode.name : '—')} · 本地预览 20 FPS`;

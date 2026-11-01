@@ -1,0 +1,91 @@
+name: build
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  test:
+    name: offline tests (${{ matrix.os }})
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install dependencies
+        working-directory: driver
+        shell: bash
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r packaging/requirements.txt
+      - name: Run offline unit tests
+        working-directory: driver
+        shell: bash
+        run: python -m unittest discover -s tests -v
+
+  linux-packages:
+    name: linux deb + rpm
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: System dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y rpm dpkg-dev libudev-dev
+      - name: Python dependencies
+        working-directory: driver
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r packaging/requirements.txt pyinstaller
+      - name: Build .deb and .rpm
+        working-directory: driver
+        run: bash packaging/linux/make-package.sh
+      - uses: actions/upload-artifact@v4
+        with:
+          name: linux-packages
+          path: |
+            driver/dist-packages/*.deb
+            driver/dist-packages/*.rpm
+          if-no-files-found: error
+
+  windows-package:
+    name: windows portable + installer
+    needs: test
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Python dependencies
+        working-directory: driver
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r packaging/requirements.txt pyinstaller
+      - name: Build portable zip
+        working-directory: driver
+        shell: powershell
+        run: powershell -ExecutionPolicy Bypass -File packaging/windows/build-portable.ps1
+      - name: Install Inno Setup
+        run: choco install innosetup -y --no-progress
+      - name: Build installer
+        working-directory: driver
+        shell: powershell
+        run: powershell -ExecutionPolicy Bypass -File packaging/windows/build-installer.ps1
+      - uses: actions/upload-artifact@v4
+        with:
+          name: windows-package
+          path: |
+            driver/dist-packages/*.zip
+            driver/dist-installer/*.exe
+          if-no-files-found: warn

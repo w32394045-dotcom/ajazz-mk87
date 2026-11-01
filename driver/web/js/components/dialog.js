@@ -1,6 +1,6 @@
 /* dialog.js — 二次确认 / 信息对话框（Promise 风格） */
-import { icon } from './icons.js';
-import { h } from './util.js';
+import { icon } from '../icons.js';
+import { h } from '../util.js';
 
 let active = null;
 
@@ -12,8 +12,8 @@ export function openDialog({
   title,
   sub = '',
   iconName = 'info',
-  iconKind = '',          // '' | 'danger' | 'warn'
-  body = null,            // Node | string(HTML) | null
+  iconKind = '',
+  body = null,
   buttons = [{ label: '确定', value: true, kind: 'primary' }],
   wide = false,
   dismissible = true,
@@ -27,11 +27,9 @@ export function openDialog({
     else if (typeof body === 'string') bodyNode.innerHTML = body;
 
     const foot = h('div', { class: 'dialog-foot' });
-    const btnNodes = buttons.map((b) => {
+    buttons.forEach((b) => {
       const cls = ['btn', b.kind === 'primary' ? 'primary' : b.kind === 'danger' ? 'danger' : ''].filter(Boolean).join(' ');
-      const node = h('button', { class: cls, onclick: () => finish(b.value) }, b.label);
-      foot.append(node);
-      return node;
+      foot.append(h('button', { class: cls, onclick: () => finish(b.value) }, b.label));
     });
 
     const dialog = h('div', {
@@ -75,8 +73,10 @@ export function openDialog({
     }
 
     if (buttons.length === 0) {
-      const closeBtn = h('button', { class: 'btn ghost dialog-close', html: icon('x', { size: 15 }), title: '关闭', onclick: () => finish(null) });
-      dialog.querySelector('.dialog-head').append(closeBtn);
+      dialog.querySelector('.dialog-head').append(h('button', {
+        class: 'btn ghost dialog-close', html: icon('x', { size: 15 }), title: '关闭',
+        onclick: () => finish(null),
+      }));
     }
 
     backdrop.addEventListener('pointerdown', (e) => {
@@ -85,10 +85,7 @@ export function openDialog({
     document.addEventListener('keydown', onKey, true);
     rootEl.append(backdrop);
     active = backdrop;
-    requestAnimationFrame(() => {
-      const first = foot.querySelector('.btn.primary, .btn.danger, .btn');
-      first?.focus();
-    });
+    requestAnimationFrame(() => foot.querySelector('.btn')?.focus());
   });
 }
 

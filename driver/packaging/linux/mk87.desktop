@@ -1,0 +1,14 @@
+[Desktop Entry]
+Type=Application
+Name=MK87 Studio
+Name[zh_CN]=MK87 Studio 键盘配置工具
+GenericName=Keyboard Configuration
+GenericName[zh_CN]=键盘配置工具
+Comment=AJAZZ MK87 keyboard configuration tool (unofficial)
+Comment[zh_CN]=AJAZZ MK87 键盘配置工具（非官方）
+Exec=mk87
+Icon=mk87
+Terminal=true
+Categories=Utility;Settings;HardwareSettings;
+Keywords=keyboard;mk87;ajazz;rgb;macro;lighting;
+StartupNotify=false

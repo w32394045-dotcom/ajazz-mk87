@@ -109,6 +109,51 @@ def api_version():
     return {"version": VERSION, "mock": False, "platform": os.name}
 
 
+#: 由原生外壳（shell.py）注入：唤起主窗口
+activate_callback = None
+#: 由原生外壳注入：完全退出程序（托盘「退出」同一路径）
+quit_callback = None
+
+
+@app.post("/api/activate")
+def api_activate():
+    if callable(activate_callback):
+        try:
+            activate_callback()
+            return {"ok": True, "activated": True}
+        except Exception as exc:  # noqa: BLE001
+            return {"ok": False, "error": str(exc)}
+    return {"ok": False, "activated": False, "message": "无窗口外壳（浏览器模式）"}
+
+
+@app.post("/api/quit")
+def api_quit():
+    """退出程序（设置页「退出」按钮 / 托盘退出走同一路径）。"""
+    if callable(quit_callback):
+        import threading as _threading
+
+        _threading.Timer(0.3, quit_callback).start()
+        return {"ok": True, "message": "程序即将退出"}
+    return {"ok": False, "message": "浏览器模式：请直接关闭终端/服务进程"}
+
+
+@app.get("/api/autostart")
+def api_autostart_get():
+    from mk87lib import autostart
+
+    return autostart.status()
+
+
+@app.put("/api/autostart")
+def api_autostart_set(payload: dict = Body(...)):
+    from mk87lib import autostart
+
+    enabled = payload.get("enabled")
+    if enabled is None:
+        raise ValueError("缺少 enabled 字段")
+    return autostart.set_enabled(bool(enabled))
+
+
 @app.get("/api/status")
 def api_status():
     return manager.status()
@@ -216,6 +261,10 @@ def api_keymap():
         "fn": fn,
         "layout": keymap.get_layout()["layout"],
         "slotKeys": keymap.get_layout()["keyListBySlot"],
+        # 真机发现：2.4G 下 FN 层回读会返回普通层（固件行为），编辑 FN 需 USB 连接
+        "fnReliable": dev.transport == "usb",
+        "note": "2.4G 下 FN 层回读不可靠（返回普通层），编辑 FN 请使用 USB 有线连接"
+        if dev.transport != "usb" else "",
     }
 
 
@@ -244,8 +293,12 @@ def api_keymap_fn(payload: dict = Body(...)):
 def api_keymap_defaults():
     dev = _dev()
     return {
+        # MK87 的 GET_DEFAULT_KEY_MATRIX(0x1F) 真机返回全 0（无数据）；恢复默认 = 写 0
         "normal": keymap.decode_matrix(keymap.read_default_normal_matrix(dev)),
+        "normalSupported": False,
         "fn": keymap.decode_matrix(keymap.read_default_fn_matrix(dev)),
+        "fnSupported": dev.transport == "usb",
+        "note": "0x1F 默认矩阵在 MK87 上无数据；恢复默认请用 POST /api/keymap/restore（写 0）",
     }
 
 
@@ -265,14 +318,24 @@ def api_keymap_restore(payload: dict = Body(default={})):
 @app.get("/api/keymap/actions")
 def api_keymap_actions():
     cat = keymap.get_actions_catalog()
+    # MK87 的 frameVersion=0 ⇒ 只能写 FUNC(13)，官方 UI 不会展示 FUNC_V2(≥128)
+    cat["funcV2"] = []
+    cat["notes"] = {
+        "funcV2": "MK87 frameVersion=0，只能使用 FUNC(13)；FUNC_V2 不展示",
+        "disabled": "官方无独立「禁用」编码；工具按 HID 0x6F（⊠）写，真机未验证",
+        "writeZero": "写 0 = 恢复出厂默认（keyList 内 87 槽），不是禁用",
+        "fnReliable": "2.4G 下 FN 层回读返回普通层，需 USB 连接编辑 FN",
+    }
     macros = []
     try:
         dev = _dev()
         table = macro.read_directory(dev)
         macros = [{"slot": s, "offset": o} for s, o in macro.decode_directory(table).items()]
+        cat["macros"] = macros
+        cat["macroCapacity"] = max(0, dev.status.macro_space - const.MACRO_DIR_SIZE)
     except Exception:
-        pass
-    cat["macros"] = macros
+        cat["macros"] = []
+        cat["macroCapacity"] = const.MACRO_SPACE - const.MACRO_DIR_SIZE
     return cat
 
 
@@ -418,7 +481,68 @@ def api_macro_delete(slot: int):
 @app.get("/api/tft")
 def api_tft():
     dev = _dev()
-    return tft.device_tft_info(dev)
+    info = tft.device_tft_info(dev)
+    info.update({
+        "fitModes": list(tft.FIT_MODES),
+        "temporalModes": list(tft.TEMPORAL_MODES),
+        "resampleModes": list(tft.RESAMPLE_MODES),
+        "secondsPerPacket": tft.SECONDS_PER_PACKET,
+    })
+    return info
+
+
+def _tft_options(payload: dict) -> dict:
+    o = payload.get("options") or {}
+    return {
+        "frame_count": o.get("frameCount"),
+        "fps": o.get("fps"),
+        "fit": o.get("fit", "cover"),
+        "dither": bool(o.get("dither", False)),
+        "dedupe": bool(o.get("dedupe", True)),
+        "temporal": o.get("temporal", "uniform"),
+        "resample": o.get("resample", "lanczos"),
+        "trim_start_frame": o.get("trimStartFrame"),
+        "trim_end_frame": o.get("trimEndFrame"),
+    }
+
+
+def _decode_upload(payload: dict) -> bytes:
+    data = payload.get("data") or payload.get("file")
+    if not data:
+        raise ValueError("缺少文件数据（data: base64）")
+    try:
+        return base64.b64decode(data)
+    except (binascii.Error, ValueError) as exc:
+        raise ValueError(f"base64 解码失败: {exc}") from exc
+
+
+@app.post("/api/tft/convert")
+def api_tft_convert(payload: dict = Body(...)):
+    """高分辨率图片/GIF → 240×135 RGB565 预览与统计（不写设备）。"""
+    dev = _dev()
+    raw = _decode_upload(payload)
+    res = tft.convert_animation(
+        raw,
+        max_frames=dev.status.tft_max_frames or const.TFT_MAX_FRAMES,
+        byte_order=dev.status.tft_byte_order,
+        preview=True,
+        **_tft_options(payload),
+    )
+    res.pop("_frames565", None)
+    return res
+
+
+@app.post("/api/tft/upload_file")
+def api_tft_upload_file(payload: dict = Body(...)):
+    """高分辨率图片/GIF → 压缩 → 上传（异步任务，进度走 WS）。"""
+    dev = _dev()
+    raw = _decode_upload(payload)
+    opts = _tft_options(payload)
+
+    def runner(progress, cancel):
+        return tft.convert_and_upload(dev, raw, progress=progress, cancel_check=cancel, **opts)
+
+    return manager.tft_job.start(kind="file", frames=0, runner=runner)
 
 
 @app.post("/api/tft/upload")

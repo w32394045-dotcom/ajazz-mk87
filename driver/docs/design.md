@@ -137,8 +137,10 @@ driver/
 
 | 方法 | 路径 | 说明 |
 |---|---|---|
-| GET | `/api/tft` | `{width:240,height:135,maxFrames:140,pixelFormat:"rgb565"}` |
-| POST | `/api/tft/upload` | `{mode:"static"|"animation", fps:10, frames:["<base64 RGB565 64800B>"]}` 异步任务，进度走 WS；返回 `{job:"tft"}` |
+| GET | `/api/tft` | `{width:240,height:135,maxFrames:140,pixelFormat:"rgb565",fitModes,temporalModes,resampleModes,secondsPerPacket}` |
+| POST | `/api/tft/convert` | 高分辨率图片/GIF/动态 WebP/APNG → 240×135 压缩预览：`{data:"<base64 原文件>", options:{frameCount,fps,fit,dither,dedupe,temporal,resample}}` → `{frames:["data:image/png;base64,..."],framesCount,displayFrames,sourceFrames,sourceDurationMs,delaysMs,delaysCs,paddedLastFrame,clampedDelays,stats:{packets,estimatedSeconds,frameReduction,sizeRatio}}` |
+| POST | `/api/tft/upload_file` | 同上选项，直接压缩并异步上传（进度走 WS `progress`/`job`，job:"tft"） |
+| POST | `/api/tft/upload` | 前端已转好 RGB565 帧时使用：`{mode:"static"|"animation", fps:10, frames:["<base64 RGB565 64800B>"]}` 异步任务 |
 | POST | `/api/tft/default` | 恢复官方默认 135 帧动画（异步任务） |
 | GET | `/api/tft/job` | `{running,phase:"upload"|"done", sent,total,pct,error}` |
 | POST | `/api/tft/cancel` | 取消上传 |

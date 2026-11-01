@@ -1,0 +1,3 @@
+#!/bin/sh
+# MK87 Studio 启动器（安装到 /usr/bin/mk87）
+exec /opt/mk87/MK87Config "$@"

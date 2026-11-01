@@ -106,6 +106,15 @@ class MK87Device:
     # ==================================================================
     # 连接 / 断开
     # ==================================================================
+    @property
+    def transport(self) -> str:
+        """当前传输方式：usb / 2.4g / none。"""
+        return self.status.transport
+
+    @property
+    def connected(self) -> bool:
+        return bool(self.status.connected)
+
     def connect(self) -> DeviceStatus:
         """扫描并连接设备（优先 USB 有线，否则 2.4G）。"""
         self.close()
@@ -542,14 +551,18 @@ class MK87Device:
         )
 
     def get_custom_colors(self) -> Dict[int, tuple]:
-        """读自定义灯表 → {ledId: (r,g,b)}（只含有非零颜色的槽）。"""
+        """读自定义灯表 → {ledId: (r,g,b)}（只保留真正有颜色的槽）。
+
+        注意：设备读回的空槽是 ``[idx, 0, 0, 0]``（idx 被填成槽号），
+        必须按 RGB 是否为 0 过滤，否则会把 127 个空槽当成"有颜色"。
+        """
         raw = self.read_custom_led_data()
         out: Dict[int, tuple] = {}
         for i in range(min(128, len(raw) // 4)):
             led, r, g, b = raw[i * 4], raw[i * 4 + 1], raw[i * 4 + 2], raw[i * 4 + 3]
-            if led == 0 and r == 0 and g == 0 and b == 0:
+            if max(r, g, b) == 0:
                 continue
-            out[int(led)] = (int(r), int(g), int(b))
+            out[int(led) if led else i] = (int(r), int(g), int(b))
         return out
 
     def get_lights_frame(self) -> Dict[int, tuple]:

@@ -5,5 +5,9 @@ fastapi>=0.110
 uvicorn[standard]>=0.27
 numpy>=1.26
 pillow>=10.0
+pystray>=0.19
+# 原生窗口：Windows 用系统 WebView2；Linux 用 Qt 后端（自带 QtWebEngine，保证自包含）
+pywebview>=5.0 ; sys_platform == "win32"
+pywebview[qt]>=5.0 ; sys_platform == "linux"
 soundcard>=0.4.3 ; sys_platform == "win32"
 evdev>=1.6.1 ; sys_platform == "linux"

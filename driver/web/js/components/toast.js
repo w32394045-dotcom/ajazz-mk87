@@ -1,6 +1,6 @@
 /* toast.js — 右上角浮层提示 */
-import { icon } from './icons.js';
-import { h } from './util.js';
+import { icon } from '../icons.js';
+import { h } from '../util.js';
 
 let root = null;
 const ICONS = { success: 'check-circle', info: 'info', warn: 'alert-triangle', error: 'alert-circle' };

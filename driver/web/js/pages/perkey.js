@@ -7,8 +7,9 @@ import { ColorPicker } from '../components/colorpicker.js';
 import { badge } from '../components/widgets.js';
 
 const ALL_KEYS = KEY_LAYOUT.rows.flat();
-const NO_LED = new Set(KEY_LAYOUT.notes.noLed);
-const DIM_LED = new Set(KEY_LAYOUT.notes.dimLed);
+const NO_LED = new Set(KEY_LAYOUT.notes.noLed);   // 99/100/102：物理无 LED（小屏位置）
+const DIM_LED = new Set(KEY_LAYOUT.notes.dimLed); // 97/98：有 LED 通道但不在键盘图上/人眼不可见
+const PAINTABLE = ALL_KEYS.filter((k) => !NO_LED.has(k.slot)); // 84 个可点亮实体键
 
 const TOOLS = [
   { id: 'brush', icon: 'paintbrush', label: '画笔' },
@@ -40,7 +41,7 @@ export default {
 
     /* ---------------- 组件 ---------------- */
     const kb = new Keyboard({ interactive: true, legends: true, mode: 'perkey' });
-    const countBadge = badge('0 / 87', 'accent');
+    const countBadge = badge('0 / 84', 'accent');
     const dirtyBadge = badge('已同步', 'ok');
     const colorChip = h('span', { class: 'swatch-btn', style: { width: '22px', height: '22px', cursor: 'default' } });
 
@@ -90,6 +91,10 @@ export default {
     function paintSlot(slot) {
       const s = String(slot);
       const meta = ALL_KEYS.find((k) => k.slot === slot);
+      if (NO_LED.has(slot)) {
+        ctx.toast('槽位 99/100/102 是屏幕位置，没有物理 LED，不能上色（spec-lighting.md §3.4）', { timeout: 2400 });
+        return;
+      }
       if (tool === 'pick') {
         if (isOn(colors[s])) {
           current = [...colors[s]];
@@ -107,8 +112,7 @@ export default {
       } else {
         colors[s] = [...current];
       }
-      if (NO_LED.has(slot)) ctx.toast('该键位无可见 LED（小屏幕位置），写入不生效', { timeout: 1800 });
-      else if (DIM_LED.has(slot)) ctx.toast('该键位有 LED 驱动但真机上不可见（未装配）', { timeout: 1800 });
+      if (DIM_LED.has(slot)) ctx.toast('槽位 97/98 有 LED 驱动但真机上不可见（未装配），不在当前键盘图上', { timeout: 2200 });
       renderKey(slot);
       markDirty();
     }
@@ -122,19 +126,19 @@ export default {
       updateCount();
     }
     function fillAll() {
-      for (const k of ALL_KEYS) colors[String(k.slot)] = [...current];
+      for (const k of PAINTABLE) colors[String(k.slot)] = [...current];
       renderAll();
       markDirty();
-      ctx.toast('已填充 87 键', { timeout: 1400 });
+      ctx.toast('已填充 84 个可点亮按键', { timeout: 1400 });
     }
     function clearAll() {
-      for (const k of ALL_KEYS) colors[String(k.slot)] = [0, 0, 0];
+      for (const k of PAINTABLE) colors[String(k.slot)] = [0, 0, 0];
       renderAll();
       markDirty();
     }
     function updateCount() {
-      const n = ALL_KEYS.filter((k) => isOn(colors[String(k.slot)])).length;
-      countBadge.textContent = `${n} / 87`;
+      const n = PAINTABLE.filter((k) => isOn(colors[String(k.slot)])).length;
+      countBadge.textContent = `${n} / 84`;
     }
     function markDirty() {
       dirty = true;
@@ -168,21 +172,21 @@ export default {
 
     /* ---------------- 快捷预设 ---------------- */
     function presetRainbow() {
-      for (const k of ALL_KEYS) {
+      for (const k of PAINTABLE) {
         const hue = (k.x / 275) * 300 + k.row * 10;
         colors[String(k.slot)] = hslToRgb(hue);
       }
       renderAll(); markDirty(); ctx.toast('已应用彩虹渐变（未写入）');
     }
     function presetWave() {
-      for (const k of ALL_KEYS) {
+      for (const k of PAINTABLE) {
         const hue = 190 + Math.sin(k.x / 42 + k.row * 0.8) * 60;
         colors[String(k.slot)] = hslToRgb(hue - 20, 90, 54);
       }
       renderAll(); markDirty(); ctx.toast('已应用海浪预设（未写入）');
     }
     function presetOff() {
-      for (const k of ALL_KEYS) colors[String(k.slot)] = [0, 0, 0];
+      for (const k of PAINTABLE) colors[String(k.slot)] = [0, 0, 0];
       renderAll(); markDirty();
     }
 
@@ -250,7 +254,7 @@ export default {
         h('div', { class: 'mt-12', style: { padding: '10px 0 2px' } }, kb.deck),
         h('div', { class: 'kb-legend mt-12' },
           h('span', { class: 'item' }, h('span', { class: 'swatch', style: { background: 'rgb(90,160,255)' } }), '已上色按键'),
-          h('span', { class: 'item' }, h('span', { class: 'swatch no-led' }), '无可见 LED（99 / 100 / 102）'),
+          h('span', { class: 'item' }, h('span', { class: 'swatch no-led' }), '无可见 LED / 不可上色（99 / 100 / 102）'),
           h('span', { class: 'item' }, 'Fn 键 LED 为充电指示灯'),
         ),
       ),
@@ -296,10 +300,10 @@ export default {
       h('div', { class: 'card-head' }, h('div', { class: 'card-title' }, '说明')),
       h('div', { class: 'card-body' },
         h('div', { class: 'tiny muted', style: { lineHeight: '1.8' } },
-          h('p', {}, '· 设备灯表为 128 项 × [idx, R, G, B]，MK87 的 87 个物理键使用各自槽位号作为 LED id。'),
-          h('p', {}, '· 模式 20 / 21 / 128 共用同一张自定义灯表；应用后自动切到 mode 128。'),
-          h('p', {}, '· 亮度仍由「灯光效果」页的亮度参数控制。'),
-          h('p', {}, '· 槽 97 / 98 有 LED 驱动通道但真机不可见；99 / 100 / 102 无 LED。'),
+          h('p', {}, '· 设备灯表为 128 项 × [idx, R, G, B]，MK87 的 87 个物理键使用槽位号作为 LED id。'),
+          h('p', {}, '· 可点亮实体键只有 84 个：99/100/102（Print/Scroll/Pause）位置被小屏幕占据，无 LED，已置灰。'),
+          h('p', {}, '· 槽 97/98 有 LED 驱动通道但真机不可见（不在键盘图上）；Fn(85) 的 LED 是充电指示灯。'),
+          h('p', {}, '· 模式 20 / 21 / 128 共用同一张自定义灯表；应用后自动切到 mode 128。亮度仍由「灯光效果」页控制。'),
         ),
       ),
     );
@@ -307,6 +311,7 @@ export default {
     const right = h('div', { class: 'grid-stack' }, paletteCard, actionCard, presetCard, notesCard);
     root.append(h('div', { class: 'grid grid-main' }, h('div', { class: 'grid-stack' }, kbCard), right));
 
+    for (const slot of NO_LED) kb.setDisabled(slot, true);
     renderAll();
     updateHint();
     kb.refreshSize();

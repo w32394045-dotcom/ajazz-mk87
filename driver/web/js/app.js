@@ -2,9 +2,10 @@
 import { Api } from './api.js';
 import { I18n } from './i18n.js';
 import { icon, brandLogo } from './icons.js';
-import { toast, toastError, toastSuccess } from './components/toast.js';
+import { toast, toastError, toastSuccess, toastWarn, toastInfo } from './components/toast.js';
 import { confirmDialog, alertDialog, openDialog } from './components/dialog.js';
 import { store, h, clear, fmtDateTime } from './util.js';
+import { enableAutoTranslate, disableAutoTranslate } from './i18n-dom.js';
 
 /* ---------------------------------------------------------------- 页面注册表 */
 const PAGES = [
@@ -103,6 +104,7 @@ function renderThemeToggle() {
 i18n.onChange(() => {
   store.set(LANG_KEY, i18n.lang);
   document.documentElement.lang = i18n.lang === 'en' ? 'en' : 'zh-CN';
+  applyLanguageToDom();
   renderNav();
   renderThemeToggle();
   updatePageHead();
@@ -112,6 +114,12 @@ i18n.onChange(() => {
   syncServerSettings();
   renderRoute(true);
 });
+
+/** English 时对整页 DOM 应用翻译层；中文时停用（页面重挂载即恢复中文原文） */
+function applyLanguageToDom() {
+  if (i18n.lang === 'en') enableAutoTranslate(document.body);
+  else disableAutoTranslate();
+}
 
 /* ---------------------------------------------------------------- 设置同步 */
 let syncTimer = null;
@@ -196,6 +204,7 @@ async function renderRoute(force = false) {
       ? cleanup
       : (typeof pageObj.unmount === 'function' ? () => pageObj.unmount() : null);
     state.booted = true;
+    if (i18n.lang === 'en') enableAutoTranslate(document.body);
   } catch (e) {
     console.error('[page]', id, e);
     clear(container);
@@ -332,7 +341,16 @@ function renderBanners() {
     banners.append(bannerEl({ kind: 'warn', iconName: 'refresh', text: t('banner.reconnecting') }));
   }
 
-  if (st?.conflicts?.length) {
+  // 冲突提示：优先结构化 conflictItems（后端已按语言提供 zh/en），旧版回退 conflicts 字符串数组
+  const conflictItems = Array.isArray(st?.conflictItems) ? st.conflictItems : null;
+  if (conflictItems && conflictItems.length) {
+    for (const item of conflictItems) {
+      const msg = i18n.lang === 'en'
+        ? (item?.en || item?.zh || item?.code || '')
+        : (item?.zh || item?.en || item?.code || '');
+      if (msg) banners.append(bannerEl({ kind: 'warn', iconName: 'alert-triangle', text: msg }));
+    }
+  } else if (st?.conflicts?.length) {
     for (const msg of st.conflicts) {
       banners.append(bannerEl({ kind: 'warn', iconName: 'alert-triangle', text: t('banner.conflict', { msg }) }));
     }
@@ -392,6 +410,8 @@ const ctx = {
   toast,
   toastSuccess,
   toastError,
+  toastWarn,
+  toastInfo,
   openDialog,
   confirmDialog,
   alertDialog,
@@ -497,6 +517,7 @@ async function boot() {
 
   // 初始路由
   if (!location.hash) history.replaceState(null, '', `#/${routeId()}`);
+  applyLanguageToDom();
   await renderRoute(true);
   document.getElementById('boot-screen')?.remove();
 }

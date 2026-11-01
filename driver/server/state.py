@@ -264,6 +264,11 @@ class DeviceManager:
                 status = self.device.connect()
                 self._was_connected = True
                 self._last_battery = status.battery
+                # 与官方一致：每次连接自动对时一次（MK87 屏幕时间）
+                try:
+                    self.device.sync_time()
+                except Exception:
+                    pass
                 self.emit({"type": "status", "data": self.status()})
                 return True
             except Exception as exc:  # noqa: BLE001
@@ -301,22 +306,39 @@ class DeviceManager:
     def status(self) -> dict:
         st = self.device.status.to_dict()
         st["mock"] = False
+        st["shell"] = bool(getattr(self, "shell_mode", False))
         st["webVersion"] = "0.1.0"
         st["recentNotifications"] = [
             e for e in self.device.recent_events if e.get("type") == "notification"
         ][-10:]
-        st["conflicts"] = self._detect_conflicts()
+        items = self._conflict_items()
+        st["conflictItems"] = items
+        st["conflicts"] = [i["zh"] for i in items]
         st["settings"] = self.settings.get()
         return st
 
-    def _detect_conflicts(self) -> List[str]:
-        conflicts: List[str] = []
+    def _conflict_items(self) -> List[dict]:
+        """结构化冲突提示（前端按当前语言选择 zh/en 渲染）。"""
+        items: List[dict] = []
         if self.device.status.transport == "2.4g":
-            conflicts.append(
-                "当前使用 2.4G 连接。若键盘 USB 线也插着而未识别，可能是 Windows 的 USB 复合设备"
-                "资源不足（0xC000009A）—— 请拔掉 2.4G 接收器并重新插键盘 USB 线以使用 USB 模式。"
-            )
-        return conflicts
+            items.append({
+                "code": "usb_resource_conflict",
+                "zh": (
+                    "检测到设备冲突：当前使用 2.4G 连接。若键盘 USB 线也插着而未识别，"
+                    "可能是 Windows 的 USB 复合设备资源不足（0xC000009A）—— "
+                    "请拔掉 2.4G 接收器并重新插键盘 USB 线以使用 USB 模式。"
+                ),
+                "en": (
+                    "Device conflict detected: currently connected via 2.4G. If the USB cable "
+                    "is also plugged in but the keyboard is not detected, Windows may have failed "
+                    "to start the USB composite device due to insufficient resources (0xC000009A) — "
+                    "unplug the 2.4G dongle and reconnect the USB cable to use USB mode."
+                ),
+            })
+        return items
+
+    def _detect_conflicts(self) -> List[str]:
+        return [i["zh"] for i in self._conflict_items()]
 
 
 # 全局单例（app.py 使用）

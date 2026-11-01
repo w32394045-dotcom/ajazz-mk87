@@ -47,7 +47,12 @@ _TYPE_NAMES = {
 # ----------------------------------------------------------------------
 def encode_action(delay: int, usage: int, action_type: int = ACTION_TYPE_KEYBOARD,
                   press: bool = True) -> bytes:
-    flags = ((int(action_type) & 7) << 4) | (0x80 if press else 0)
+    """动作 4 字节。官方 PZ 对鼠标动作(actionType 1/2)统一写 0x90/0x10，
+    只有键盘动作(3)用 ((type&7)<<4)|(press?0x80:0) 公式（见 spec-keymap.md §6）。"""
+    if action_type in (1, 2):
+        flags = 0x90 if press else 0x10
+    else:
+        flags = ((int(action_type) & 7) << 4) | (0x80 if press else 0)
     return bytes([int(delay) & 0xFF, (int(delay) >> 8) & 0xFF,
                   int(usage) & 0xFF, flags])
 

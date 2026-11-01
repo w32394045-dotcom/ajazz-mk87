@@ -28,3 +28,11 @@ docs/restore_state.json
 driver/.venv/
 driver/**/__pycache__/
 
+
+# build artifacts
+driver/dist/
+driver/build/
+driver/dist-packages/
+driver/dist-installer/
+driver/web/_ui_*.png
+

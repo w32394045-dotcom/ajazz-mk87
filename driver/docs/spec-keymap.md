@@ -33,11 +33,12 @@
 1  MOUSE        p1: 1=鼠标键位图 3=滚轮；p2: 键位图 1左/2右/4中/8后退/16前进，滚轮 1=上/255=下；p3: 0
 2  KEYBOARD     p1: 写入恒 0（读取时是修饰位图，遗留态）；p2: HID Keyboard usage；p3: 0
 3  CONSUMER_KEY p1=value&0xFF、p2=value>>8（HID Consumer usage，16 位小端）；p3: 0
+4  SYSTEM_KEY / 5 EXTRA_FUNCTION  保留页：pX/mX 都无分支，写了会被忽略并告警（勿用）
 6  MACRO        p1=macroId(0..99)；p2=mask(0/1/2)；p3=重复次数（仅 mask=1）
 7  CB           p1=修饰键1(HID usage)；p2=修饰键2(可 0)；p3=主键(HID usage)
+8..12 DKS/MT/TGL/SOCD/RS  磁轴高级键；MK87 配置无 advancedKeysConfig，不要写（keymap.md:435-448）
 13 FUNC         p1..p3 = 24 位功能 id 的大端三字节（p1=id>>16, p2=id>>8, p3=id）
 14 END          p1/p2=两个键；15 MPT p1/p2/p3=三个键（MK87 无入口）
-8..12 DKS/MT/TGL/SOCD/RS  磁轴高级键；MK87 配置无 advancedKeysConfig，不要写（keymap.md:435-448）
 ≥128 FUNC_V2    字节0=0x80|(A>>8)&0x7F、字节1=A&0xFF、字节2=B>>8、字节3=B&0xFF（A=12位槽、B=16位槽）
 ```
 
@@ -301,7 +302,7 @@ slot row.col class            name      HID  default4  |  slot row.col class    
 ### 6.5 空间预算与校验
 | 项 | 值 | 证据 |
 |---|---|---|
-| 设备上报 | `macroSpaceSize = 3072` B；扣掉 400 B 目录 ⇒ 数据区 **2672 B**，最多 **668** 个动作（每宏另有 4 B 块头） | `protocol.md:77`、§6.1 + 算术 |
+| 设备上报 | `macroSpaceSize = 3072` B；扣掉 400 B 目录 ⇒ 数据区 **2672 B**；每动作 4 B、每个非空宏另加 4 B 块头 ⇒ 总动作数 ≤ `(2672 − 4×非空宏数)/4`（单宏时 667） | `protocol.md:77`、§6.1 + 算术 |
 | 官方 UI 预算 | `macroConfig.isGetMaxMacroSpaceSize ? 设备值 : **512**`；MK87 的 `macroConfig={"isShowFn":true}` ⇒ **UI 按 512 B 校验** | `bundle@1917360`、`TC.json → mk87KeyboardConfig.macroConfig` |
 | 官方校验式 | `macros.length*4 + Σactions*4 + reserve > macroSpaceSize` 或 `macros.length >= 100` ⇒ 报"内存不足"并拒绝；新增一对按下/抬起时 `reserve=8` | `bundle@2459278` 的 `ye()` |
 | 删除保护 | 已被某键绑定（`userKey.page==='MACRO' && value===id`）的宏**不允许删** | `bundle@2459xxx`、i18n `macro_msg_del` |

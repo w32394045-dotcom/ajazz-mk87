@@ -61,6 +61,14 @@ export class Api extends Emitter {
   }
 
   /* ------------------------------------------------------------ http */
+  /** 按接口选择超时：转换/上传/备份恢复可能很慢 */
+  _timeoutFor(path) {
+    if (/\/api\/tft\/(convert|upload_file)/.test(path)) return 180000;
+    if (/\/api\/backup\/restore/.test(path)) return 60000;
+    if (/\/api\/lighting\/frames|\/api\/device\/raw/.test(path)) return 30000;
+    return 12000;
+  }
+
   async request(method, path, body) {
     if (this.mode === 'mock') {
       if (!this.mock) await this._useMock();
@@ -71,7 +79,22 @@ export class Api extends Emitter {
       init.headers['Content-Type'] = 'application/json';
       init.body = JSON.stringify(body);
     }
-    const res = await fetch(path, init);
+    const ctrl = new AbortController();
+    const timer = setTimeout(() => ctrl.abort(), this._timeoutFor(path));
+    init.signal = ctrl.signal;
+    let res;
+    try {
+      res = await fetch(path, init);
+    } catch (e) {
+      if (e && e.name === 'AbortError') {
+        const err = new Error('请求超时（设备可能已休眠或后端忙）');
+        err.code = 'timeout';
+        throw err;
+      }
+      throw e;
+    } finally {
+      clearTimeout(timer);
+    }
     const text = await res.text();
     let data = null;
     try { data = text ? JSON.parse(text) : null; } catch { data = { raw: text }; }

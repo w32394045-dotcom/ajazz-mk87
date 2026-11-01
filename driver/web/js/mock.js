@@ -34,10 +34,12 @@ function hsl(h, s, l) {
   return rgb.map((v) => Math.round(clamp((v + m) * 255, 0, 255)));
 }
 
+const NO_LED_SLOTS = new Set(KEY_LAYOUT.notes.noLed); // 99/100/102 屏幕位置，无 LED
 function defaultCustomColors() {
   const colors = {};
   for (const row of KEY_LAYOUT.rows) {
     for (const k of row) {
+      if (NO_LED_SLOTS.has(k.slot)) continue;
       const hue = (k.x / 275) * 300 + k.row * 12;
       colors[k.slot] = hsl(hue, 88, 56);
     }
@@ -47,21 +49,17 @@ function defaultCustomColors() {
 
 function defaultMacros() {
   const slots = Array.from({ length: MACRO_SLOT_COUNT }, (_, i) => ({ slot: i, actions: [] }));
-  const mk = (usage, name) => ([
-    { delay: 10, type: 'key', press: true, usage, keyName: name },
-    { delay: 10, type: 'key', press: false, usage, keyName: name },
+  const mk = (usage) => ([
+    { delay: 10, type: 'keyboard', press: true, usage },
+    { delay: 10, type: 'keyboard', press: false, usage },
   ]);
-  slots[0].actions = [
-    ...mk(4, 'A'), ...mk(5, 'B'), ...mk(6, 'C'), ...mk(40, 'Enter'),
-  ];
+  slots[0].actions = [...mk(4), ...mk(5), ...mk(6), ...mk(40)];
   slots[1].actions = [
-    { delay: 0, type: 'key', press: true, usage: 224, keyName: 'LCtrl' },
-    ...mk(6, 'C'),
-    { delay: 0, type: 'key', press: false, usage: 224, keyName: 'LCtrl' },
+    { delay: 0, type: 'keyboard', press: true, usage: 224 },
+    ...mk(6),
+    { delay: 0, type: 'keyboard', press: false, usage: 224 },
   ];
-  slots[2].actions = [
-    ...mk(29, 'Z'),
-  ];
+  slots[2].actions = [...mk(29)];
   return slots;
 }
 
@@ -103,6 +101,7 @@ export class MockServer {
       macros: saved.macros || defaultMacros(),
       sleepTime: saved.sleepTime !== undefined ? saved.sleepTime : 10,
       settings: { ...DEFAULT_SETTINGS, ...(saved.settings || {}) },
+      autostart: saved.autostart === undefined ? false : !!saved.autostart,
       notifications: [
         { kind: 'wake', ts: Date.now() - 1000 * 60 * 37 },
         { kind: 'connect', ts: Date.now() - 1000 * 60 * 52 },
@@ -153,6 +152,7 @@ export class MockServer {
       sleepTime: s.sleepTime,
       settings: s.settings,
       conflicts: s.conflicts,
+      autostart: s.autostart,
     });
   }
 
@@ -187,6 +187,8 @@ export class MockServer {
     return {
       connected: s.connected,
       mock: true,
+      shell: false,
+      conflictItems: [],
       transport: s.connected ? s.transport : 'none',
       device: {
         vid: s.info.vid, pid: s.info.pid,
@@ -357,13 +359,8 @@ export class MockServer {
           const entry = { ts: Date.now(), sent: data, received: recv };
           S.rawLog.unshift(entry);
           if (S.rawLog.length > 50) S.rawLog.pop();
-          return {
-            ok: true,
-            sent: data,
-            received: recv,
-            hex: recv.map((b) => b.toString(16).toUpperCase().padStart(2, '0')).join(' '),
-            echo: data.every((v, i) => recv[i] === v) || true,
-          };
+          const hex = recv.map((b) => b.toString(16).toUpperCase().padStart(2, '0')).join(' ');
+          return { cmd, response: hex, length: recv.length };
         },
       },
 
@@ -381,7 +378,7 @@ export class MockServer {
           },
         }),
       },
-      { method: 'GET', path: '/api/keymap', handler: () => ({ normal: S.keymap.normal, fn: S.keymap.fn }) },
+      { method: 'GET', path: '/api/keymap', handler: () => ({ normal: S.keymap.normal, fn: S.keymap.fn, fnReliable: true }) },
       {
         method: 'PUT', path: '/api/keymap/normal', handler: async (body) => {
           const slots = body.slots || {};
@@ -420,9 +417,9 @@ export class MockServer {
           consumer: ACTIONS.consumer,
           mouse: ACTIONS.mouse,
           func: ACTIONS.func,
-          macros: S.macros.filter((x) => x.actions.length).map((x) => ({
-            slot: x.slot, name: `宏 ${x.slot}`, actions: x.actions.length, bytes: macroBytes(x.actions),
-          })),
+          macros: S.macros.filter((x) => x.actions.length).map((x) => ({ slot: x.slot, offset: 400 + macroBytes(x.actions) })),
+          macroCapacity: MACRO_CAPACITY,
+          notes: ['MK87 frameVersion=0：只用 FUNC(13)，不展示 FUNC_V2', '禁用键 = 02 00 6F 00（真机未验证）'],
           pageTypes: ACTIONS.pageTypes,
         }),
       },
@@ -522,8 +519,27 @@ export class MockServer {
       {
         method: 'GET', path: '/api/tft', handler: () => ({
           width: TFT_W, height: TFT_H, maxFrames: TFT_MAX_FRAMES,
-          pixelFormat: 'rgb565', byteOrder: 'little', frameBytes: TFT_FRAME_BYTES,
+          pixelFormat: 'rgb565', byteOrder: 0, frameBytes: TFT_FRAME_BYTES,
+          fitModes: ['cover', 'contain', 'stretch'],
+          temporalModes: ['uniform', 'adaptive'],
+          resampleModes: ['lanczos', 'bicubic', 'bilinear', 'area'],
+          secondsPerPacket: 0.146,
+          supported: true,
         }),
+      },
+      {
+        method: 'POST', path: '/api/tft/convert', handler: async (body) => {
+          await this._later(120);
+          return this._convertTft(body);
+        },
+      },
+      {
+        method: 'POST', path: '/api/tft/upload_file', handler: async (body) => {
+          await this._later(120);
+          const result = await this._convertTft(body);
+          this._startJob('tft', 'upload', result.stats.packets, { mode: 'file', fps: Number(body?.options?.fps) || 10, frames: result.framesCount });
+          return { job: 'tft', frames: result.framesCount, packets: result.stats.packets, stats: result.stats };
+        },
       },
       {
         method: 'POST', path: '/api/tft/upload', handler: async (body) => {
@@ -531,7 +547,6 @@ export class MockServer {
           const mode = body.mode === 'animation' ? 'animation' : 'static';
           if (!frames.length) throw MockServer.fail('frames 不能为空', 'bad_request');
           if (frames.length > TFT_MAX_FRAMES) throw MockServer.fail(`最多 ${TFT_MAX_FRAMES} 帧`, 'frame_limit');
-          if (mode === 'animation' && frames.length < 2) throw MockServer.fail('动画至少需要 2 帧', 'bad_request');
           for (const f of frames.slice(0, 3)) {
             if (typeof f !== 'string' || f.length < 100) throw MockServer.fail('帧数据不是合法 base64', 'bad_frame');
           }
@@ -675,6 +690,40 @@ export class MockServer {
           return { ok: true, restoredAt: new Date().toISOString() };
         },
       },
+      {
+        method: 'GET', path: '/api/autostart', handler: async () => {
+          await this._later(120);
+          return {
+            supported: true,
+            enabled: !!S.autostart,
+            command: 'C:\\Program Files\\MK87 Studio\\MK87Studio.exe --autostart',
+            location: 'HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Run\\MK87Studio',
+            platform: 'windows',
+            shell: false,
+          };
+        },
+      },
+      {
+        method: 'PUT', path: '/api/autostart', handler: async (body) => {
+          await this._later(200);
+          S.autostart = !!body.enabled;
+          this._save();
+          return {
+            supported: true,
+            enabled: !!S.autostart,
+            command: 'C:\\Program Files\\MK87 Studio\\MK87Studio.exe --autostart',
+            location: 'HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Run\\MK87Studio',
+            platform: 'windows',
+            shell: false,
+          };
+        },
+      },
+      {
+        method: 'POST', path: '/api/quit', handler: async () => {
+          await this._later(120);
+          return { ok: false, message: '浏览器模式（mock）没有可退出的原生程序，请直接关闭服务进程' };
+        },
+      },
       { method: 'GET', path: '/api/settings', handler: () => ({ ...S.settings }) },
       {
         method: 'PUT', path: '/api/settings', handler: async (body) => {
@@ -685,6 +734,146 @@ export class MockServer {
         },
       },
     ];
+  }
+
+  /* ------------------------------------------------------------ TFT convert（模拟后端压缩管线） */
+  static _sniffImageType(bytes) {
+    if (bytes.length > 8 && bytes[0] === 0x89 && bytes[1] === 0x50) return 'image/png';
+    if (bytes.length > 3 && bytes[0] === 0xff && bytes[1] === 0xd8) return 'image/jpeg';
+    if (bytes.length > 6 && bytes[0] === 0x47 && bytes[1] === 0x49) return 'image/gif';
+    if (bytes.length > 12 && bytes[0] === 0x52 && bytes[1] === 0x49 && bytes[8] === 0x57) return 'image/webp';
+    return 'image/png';
+  }
+
+  async _decodeSourceFrames(base64, filename) {
+    const bin = atob(base64);
+    const bytes = new Uint8Array(bin.length);
+    for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+    const type = MockServer._sniffImageType(bytes);
+    const isLikelyAnim = /gif|webp|apng/i.test(type + (filename || ''));
+    let sourceFrames = 1;
+    let provider = null;
+    if (typeof ImageDecoder === 'function' && isLikelyAnim) {
+      try {
+        const decoder = new ImageDecoder({ data: bytes.buffer, type });
+        await decoder.completed;
+        const track = decoder.tracks.selectedTrack;
+        sourceFrames = track?.frameCount || 1;
+        provider = async (index) => {
+          const { image } = await decoder.decode({ frameIndex: Math.min(index, sourceFrames - 1) });
+          return image;
+        };
+      } catch (e) {
+        console.warn('[mock] ImageDecoder 失败，按静态图处理', e);
+        provider = null;
+      }
+    }
+    if (!provider) {
+      const bitmap = await createImageBitmap(new Blob([bytes], { type }));
+      const canvas = document.createElement('canvas');
+      canvas.width = bitmap.width;
+      canvas.height = bitmap.height;
+      canvas.getContext('2d').drawImage(bitmap, 0, 0);
+      bitmap.close?.();
+      provider = async () => canvas;
+      sourceFrames = 1;
+    }
+    return { provider, sourceFrames };
+  }
+
+  _drawFit(ctx, src, sw, sh, fit) {
+    ctx.fillStyle = '#000';
+    ctx.fillRect(0, 0, TFT_W, TFT_H);
+    let dw;
+    let dh;
+    if (fit === 'stretch') {
+      dw = TFT_W; dh = TFT_H;
+    } else {
+      const scale = fit === 'cover' ? Math.max(TFT_W / sw, TFT_H / sh) : Math.min(TFT_W / sw, TFT_H / sh);
+      dw = sw * scale; dh = sh * scale;
+    }
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = 'high';
+    ctx.drawImage(src, (TFT_W - dw) / 2, (TFT_H - dh) / 2, dw, dh);
+  }
+
+  async _convertTft(body) {
+    const { data, filename, options = {} } = body || {};
+    if (!data) throw MockServer.fail('data 不能为空', 'bad_request');
+    const { provider, sourceFrames: rawSourceFrames } = await this._decodeSourceFrames(data, filename);
+    const fps = Math.min(60, Math.max(0.5, Number(options.fps) || 10));
+    /* 源帧区间裁剪（1 起始，含首尾；非法区间返回 400） */
+    let trimStart = Number(options.trimStartFrame) || 1;
+    let trimEnd = Number(options.trimEndFrame) || rawSourceFrames;
+    if (trimStart < 1 || trimEnd < trimStart || trimEnd > rawSourceFrames) {
+      throw MockServer.fail(`帧区间非法：${trimStart}..${trimEnd}（源共 ${rawSourceFrames} 帧）`, 'bad_trim');
+    }
+    trimStart = Math.round(trimStart);
+    trimEnd = Math.round(trimEnd);
+    const trimmedFrames = trimEnd - trimStart + 1;
+    let requested = Number(options.frameCount) || 0;
+    if (!requested) requested = trimmedFrames;
+    const warnings = [];
+    if (requested > TFT_MAX_FRAMES) {
+      warnings.push(`目标帧数 ${requested} 超过设备上限 ${TFT_MAX_FRAMES}，已按 ${TFT_MAX_FRAMES} 帧压缩`);
+    }
+    const maxOut = Math.max(1, Math.min(TFT_MAX_FRAMES, Math.round(requested)));
+    const indices = [];
+    for (let i = 0; i < maxOut; i++) {
+      const rel = maxOut === 1 ? 0 : Math.round((i * (trimmedFrames - 1)) / (maxOut - 1));
+      indices.push(trimStart - 1 + rel);
+    }
+    const dedupe = options.dedupe !== false;
+    const unique = [];
+    for (const idx of indices) {
+      if (dedupe && unique.length && unique[unique.length - 1] === idx) continue;
+      unique.push(idx);
+    }
+    const outFrames = [];
+    const canvas = document.createElement('canvas');
+    canvas.width = TFT_W;
+    canvas.height = TFT_H;
+    const ctx = canvas.getContext('2d');
+    for (const idx of unique) {
+      const image = await provider(idx);
+      this._drawFit(ctx, image, image.displayWidth || image.width, image.displayHeight || image.height, options.fit || 'contain');
+      image.close?.();
+      outFrames.push(canvas.toDataURL('image/png'));
+    }
+    const framesCount = outFrames.length;
+    const delaysMs = new Array(framesCount).fill(Math.round(1000 / fps));
+    const packets = Math.ceil((256 + framesCount * TFT_FRAME_BYTES) / 4096);
+    const outputBytes = framesCount * TFT_FRAME_BYTES;
+    const sourceBytes = Math.ceil((data.length * 3) / 4);
+    return {
+      frames: outFrames,
+      framesCount,
+      displayFrames: framesCount,
+      sourceFrames: rawSourceFrames,
+      rawSourceFrames,
+      requestedFrames: requested,
+      sourceDurationMs: rawSourceFrames * 100,
+      trim: { startFrame: trimStart, endFrame: trimEnd, frames: trimmedFrames, trimmed: trimmedFrames !== rawSourceFrames },
+      warnings,
+      delaysMs,
+      delaysCs: delaysMs.map((ms) => Math.round(ms / 10)),
+      paddedLastFrame: true,
+      clampedDelays: [],
+      fit: options.fit || 'contain',
+      temporal: options.temporal || 'uniform',
+      dither: !!options.dither,
+      dedupe,
+      stats: {
+        sourceBytes,
+        outputBytes,
+        packets,
+        estimatedSeconds: Math.round(packets * 146) / 1000,
+        frameReduction: trimmedFrames ? Math.max(0, 1 - framesCount / trimmedFrames) : 0,
+        sizeRatio: sourceBytes ? outputBytes / sourceBytes : 0,
+      },
+      mode: options.dither ? 'dither' : 'plain',
+      resample: options.resample || 'lanczos',
+    };
   }
 
   /* ------------------------------------------------------------ job simulation */

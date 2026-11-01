@@ -70,6 +70,12 @@ export function fmtDateTime(ts) {
   const d = new Date(ts);
   return `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())} ${pad2(d.getHours())}:${pad2(d.getMinutes())}:${pad2(d.getSeconds())}`;
 }
+/** 后端通知时间戳有秒（float）和毫秒两种，统一成毫秒 */
+export function toMs(ts) {
+  const n = Number(ts);
+  if (!isFinite(n) || n <= 0) return Date.now();
+  return n < 1e12 ? Math.round(n * 1000) : Math.round(n);
+}
 export function timeAgo(ts) {
   const s = Math.max(0, Math.round((Date.now() - ts) / 1000));
   if (s < 5) return '刚刚';

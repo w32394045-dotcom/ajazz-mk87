@@ -1,11 +1,278 @@
-// AUTO-GENERATED from docs/keymap-tables.json / docs/fn-layer-decode.json
-// 动作目录（改键动作选择器用）。请勿手改：重新生成见 driver/web/README.md。
+// AUTO-GENERATED from docs/keymap-tables.json / docs/fn-layer-decode.json / driver/docs/spec-keymap.md
+// 动作目录（改键动作选择器）。请勿手改；重新生成方式见 driver/web/README.md。
+// keyboard = basicChars(50) + extendChars(57) = 107 条官方可指派 HID 键（MK87 frameVersion=0，不展示 FUNC_V2）
+
 export const ACTIONS = {
   keyboard: [
  {
   "type": "key",
+  "usage": 4,
+  "name": "A"
+ },
+ {
+  "type": "key",
+  "usage": 5,
+  "name": "B"
+ },
+ {
+  "type": "key",
+  "usage": 6,
+  "name": "C"
+ },
+ {
+  "type": "key",
+  "usage": 7,
+  "name": "D"
+ },
+ {
+  "type": "key",
+  "usage": 8,
+  "name": "E"
+ },
+ {
+  "type": "key",
+  "usage": 9,
+  "name": "F"
+ },
+ {
+  "type": "key",
+  "usage": 10,
+  "name": "G"
+ },
+ {
+  "type": "key",
+  "usage": 11,
+  "name": "H"
+ },
+ {
+  "type": "key",
+  "usage": 12,
+  "name": "I"
+ },
+ {
+  "type": "key",
+  "usage": 13,
+  "name": "J"
+ },
+ {
+  "type": "key",
+  "usage": 14,
+  "name": "K"
+ },
+ {
+  "type": "key",
+  "usage": 15,
+  "name": "L"
+ },
+ {
+  "type": "key",
+  "usage": 16,
+  "name": "M"
+ },
+ {
+  "type": "key",
+  "usage": 17,
+  "name": "N"
+ },
+ {
+  "type": "key",
+  "usage": 18,
+  "name": "O"
+ },
+ {
+  "type": "key",
+  "usage": 19,
+  "name": "P"
+ },
+ {
+  "type": "key",
+  "usage": 20,
+  "name": "Q"
+ },
+ {
+  "type": "key",
+  "usage": 21,
+  "name": "R"
+ },
+ {
+  "type": "key",
+  "usage": 22,
+  "name": "S"
+ },
+ {
+  "type": "key",
+  "usage": 23,
+  "name": "T"
+ },
+ {
+  "type": "key",
+  "usage": 24,
+  "name": "U"
+ },
+ {
+  "type": "key",
+  "usage": 25,
+  "name": "V"
+ },
+ {
+  "type": "key",
+  "usage": 26,
+  "name": "W"
+ },
+ {
+  "type": "key",
+  "usage": 27,
+  "name": "X"
+ },
+ {
+  "type": "key",
+  "usage": 28,
+  "name": "Y"
+ },
+ {
+  "type": "key",
+  "usage": 29,
+  "name": "Z"
+ },
+ {
+  "type": "key",
+  "usage": 30,
+  "name": "1 !"
+ },
+ {
+  "type": "key",
+  "usage": 31,
+  "name": "2 @"
+ },
+ {
+  "type": "key",
+  "usage": 32,
+  "name": "3 #"
+ },
+ {
+  "type": "key",
+  "usage": 33,
+  "name": "4 $"
+ },
+ {
+  "type": "key",
+  "usage": 34,
+  "name": "5 %"
+ },
+ {
+  "type": "key",
+  "usage": 35,
+  "name": "6 ^"
+ },
+ {
+  "type": "key",
+  "usage": 36,
+  "name": "7 &"
+ },
+ {
+  "type": "key",
+  "usage": 37,
+  "name": "8 *"
+ },
+ {
+  "type": "key",
+  "usage": 38,
+  "name": "9 ("
+ },
+ {
+  "type": "key",
+  "usage": 39,
+  "name": "0 )"
+ },
+ {
+  "type": "key",
+  "usage": 40,
+  "name": "Enter"
+ },
+ {
+  "type": "key",
   "usage": 41,
   "name": "Esc"
+ },
+ {
+  "type": "key",
+  "usage": 42,
+  "name": "Backspace"
+ },
+ {
+  "type": "key",
+  "usage": 43,
+  "name": "Tab"
+ },
+ {
+  "type": "key",
+  "usage": 44,
+  "name": "Space Bar"
+ },
+ {
+  "type": "key",
+  "usage": 45,
+  "name": "ˉ -"
+ },
+ {
+  "type": "key",
+  "usage": 46,
+  "name": "= +"
+ },
+ {
+  "type": "key",
+  "usage": 47,
+  "name": "[ {"
+ },
+ {
+  "type": "key",
+  "usage": 48,
+  "name": "] }"
+ },
+ {
+  "type": "key",
+  "usage": 49,
+  "name": "\\ |"
+ },
+ {
+  "type": "key",
+  "usage": 50,
+  "name": "\\"
+ },
+ {
+  "type": "key",
+  "usage": 51,
+  "name": "; :"
+ },
+ {
+  "type": "key",
+  "usage": 52,
+  "name": "' \""
+ },
+ {
+  "type": "key",
+  "usage": 53,
+  "name": "` ~"
+ },
+ {
+  "type": "key",
+  "usage": 54,
+  "name": ",<"
+ },
+ {
+  "type": "key",
+  "usage": 55,
+  "name": ".>"
+ },
+ {
+  "type": "key",
+  "usage": 56,
+  "name": "/?"
+ },
+ {
+  "type": "key",
+  "usage": 57,
+  "name": "Caps"
  },
  {
   "type": "key",
@@ -84,76 +351,6 @@ export const ACTIONS = {
  },
  {
   "type": "key",
-  "usage": 53,
-  "name": "` ~"
- },
- {
-  "type": "key",
-  "usage": 30,
-  "name": "1 !"
- },
- {
-  "type": "key",
-  "usage": 31,
-  "name": "2 @"
- },
- {
-  "type": "key",
-  "usage": 32,
-  "name": "3 #"
- },
- {
-  "type": "key",
-  "usage": 33,
-  "name": "4 $"
- },
- {
-  "type": "key",
-  "usage": 34,
-  "name": "5 %"
- },
- {
-  "type": "key",
-  "usage": 35,
-  "name": "6 ^"
- },
- {
-  "type": "key",
-  "usage": 36,
-  "name": "7 &"
- },
- {
-  "type": "key",
-  "usage": 37,
-  "name": "8 *"
- },
- {
-  "type": "key",
-  "usage": 38,
-  "name": "9 ("
- },
- {
-  "type": "key",
-  "usage": 39,
-  "name": "0 )"
- },
- {
-  "type": "key",
-  "usage": 45,
-  "name": "ˉ -"
- },
- {
-  "type": "key",
-  "usage": 46,
-  "name": "= +"
- },
- {
-  "type": "key",
-  "usage": 42,
-  "name": "Backspace"
- },
- {
-  "type": "key",
   "usage": 73,
   "name": "Ins"
  },
@@ -166,76 +363,6 @@ export const ACTIONS = {
   "type": "key",
   "usage": 75,
   "name": "PgUp"
- },
- {
-  "type": "key",
-  "usage": 43,
-  "name": "Tab"
- },
- {
-  "type": "key",
-  "usage": 20,
-  "name": "Q"
- },
- {
-  "type": "key",
-  "usage": 26,
-  "name": "W"
- },
- {
-  "type": "key",
-  "usage": 8,
-  "name": "E"
- },
- {
-  "type": "key",
-  "usage": 21,
-  "name": "R"
- },
- {
-  "type": "key",
-  "usage": 23,
-  "name": "T"
- },
- {
-  "type": "key",
-  "usage": 28,
-  "name": "Y"
- },
- {
-  "type": "key",
-  "usage": 24,
-  "name": "U"
- },
- {
-  "type": "key",
-  "usage": 12,
-  "name": "I"
- },
- {
-  "type": "key",
-  "usage": 18,
-  "name": "O"
- },
- {
-  "type": "key",
-  "usage": 19,
-  "name": "P"
- },
- {
-  "type": "key",
-  "usage": 47,
-  "name": "[ {"
- },
- {
-  "type": "key",
-  "usage": 48,
-  "name": "] }"
- },
- {
-  "type": "key",
-  "usage": 49,
-  "name": "\\ |"
  },
  {
   "type": "key",
@@ -254,173 +381,8 @@ export const ACTIONS = {
  },
  {
   "type": "key",
-  "usage": 57,
-  "name": "Caps"
- },
- {
-  "type": "key",
-  "usage": 4,
-  "name": "A"
- },
- {
-  "type": "key",
-  "usage": 22,
-  "name": "S"
- },
- {
-  "type": "key",
-  "usage": 7,
-  "name": "D"
- },
- {
-  "type": "key",
-  "usage": 9,
-  "name": "F"
- },
- {
-  "type": "key",
-  "usage": 10,
-  "name": "G"
- },
- {
-  "type": "key",
-  "usage": 11,
-  "name": "H"
- },
- {
-  "type": "key",
-  "usage": 13,
-  "name": "J"
- },
- {
-  "type": "key",
-  "usage": 14,
-  "name": "K"
- },
- {
-  "type": "key",
-  "usage": 15,
-  "name": "L"
- },
- {
-  "type": "key",
-  "usage": 51,
-  "name": "; :"
- },
- {
-  "type": "key",
-  "usage": 52,
-  "name": "' \""
- },
- {
-  "type": "key",
-  "usage": 40,
-  "name": "Enter"
- },
- {
-  "type": "key",
-  "usage": 225,
-  "name": "L-Shift"
- },
- {
-  "type": "key",
-  "usage": 29,
-  "name": "Z"
- },
- {
-  "type": "key",
-  "usage": 27,
-  "name": "X"
- },
- {
-  "type": "key",
-  "usage": 6,
-  "name": "C"
- },
- {
-  "type": "key",
-  "usage": 25,
-  "name": "V"
- },
- {
-  "type": "key",
-  "usage": 5,
-  "name": "B"
- },
- {
-  "type": "key",
-  "usage": 17,
-  "name": "N"
- },
- {
-  "type": "key",
-  "usage": 16,
-  "name": "M"
- },
- {
-  "type": "key",
-  "usage": 54,
-  "name": ",<"
- },
- {
-  "type": "key",
-  "usage": 55,
-  "name": ".>"
- },
- {
-  "type": "key",
-  "usage": 56,
-  "name": "/?"
- },
- {
-  "type": "key",
-  "usage": 229,
-  "name": "R-Shift"
- },
- {
-  "type": "key",
-  "usage": 82,
-  "name": "↑"
- },
- {
-  "type": "key",
-  "usage": 224,
-  "name": "L-Ctrl"
- },
- {
-  "type": "key",
-  "usage": 227,
-  "name": "L-Win"
- },
- {
-  "type": "key",
-  "usage": 226,
-  "name": "L-Alt"
- },
- {
-  "type": "key",
-  "usage": 44,
-  "name": "Space Bar"
- },
- {
-  "type": "key",
-  "usage": 230,
-  "name": "R-Alt"
- },
- {
-  "type": "key",
-  "usage": 175,
-  "name": "Fn"
- },
- {
-  "type": "key",
-  "usage": 101,
-  "name": "Super"
- },
- {
-  "type": "key",
-  "usage": 228,
-  "name": "R-Ctrl"
+  "usage": 79,
+  "name": "→"
  },
  {
   "type": "key",
@@ -434,13 +396,8 @@ export const ACTIONS = {
  },
  {
   "type": "key",
-  "usage": 79,
-  "name": "→"
- },
- {
-  "type": "key",
-  "usage": 50,
-  "name": "\\"
+  "usage": 82,
+  "name": "↑"
  },
  {
   "type": "key",
@@ -534,188 +491,207 @@ export const ACTIONS = {
  },
  {
   "type": "key",
+  "usage": 101,
+  "name": "Super"
+ },
+ {
+  "type": "key",
   "usage": 111,
   "name": "⊠"
  },
  {
   "type": "key",
-  "usage": 133,
-  "name": "K107"
+  "usage": 175,
+  "name": "Fn"
  },
  {
   "type": "key",
-  "usage": 135,
-  "name": "K56"
+  "usage": 224,
+  "name": "L-Ctrl"
  },
  {
   "type": "key",
-  "usage": 136,
-  "name": "K133"
+  "usage": 225,
+  "name": "L-Shift"
  },
  {
   "type": "key",
-  "usage": 137,
-  "name": "K14"
+  "usage": 226,
+  "name": "L-Alt"
  },
  {
   "type": "key",
-  "usage": 138,
-  "name": "K132"
+  "usage": 227,
+  "name": "L-Win"
  },
  {
   "type": "key",
-  "usage": 139,
-  "name": "K131"
+  "usage": 228,
+  "name": "R-Ctrl"
  },
  {
   "type": "key",
-  "usage": 144,
-  "name": "K151"
+  "usage": 229,
+  "name": "R-Shift"
  },
  {
   "type": "key",
-  "usage": 145,
-  "name": "K150"
- },
- {
-  "type": "key",
-  "usage": 231,
-  "name": "WIN_R"
- },
- {
-  "type": "key",
-  "usage": 402,
-  "name": "CALCU"
+  "usage": 230,
+  "name": "R-Alt"
  }
 ],
   consumer: [
  {
   "type": "consumer",
   "usage": 404,
-  "name": "我的电脑"
+  "name": "我的电脑",
+  "text": "medium_text1"
  },
  {
   "type": "consumer",
   "usage": 402,
-  "name": "计算器"
+  "name": "计算器",
+  "text": "medium_text2"
  },
  {
   "type": "consumer",
   "usage": 394,
-  "name": "邮箱"
+  "name": "邮箱",
+  "text": "medium_text3"
  },
  {
   "type": "consumer",
   "usage": 387,
-  "name": "多媒体"
+  "name": "多媒体",
+  "text": "medium_text4"
  },
  {
   "type": "consumer",
   "usage": 205,
-  "name": "播放/暂停"
+  "name": "播放/暂停",
+  "text": "medium_text5"
  },
  {
   "type": "consumer",
   "usage": 183,
-  "name": "播放停止"
+  "name": "播放停止",
+  "text": "medium_text6"
  },
  {
   "type": "consumer",
   "usage": 182,
-  "name": "上一首"
+  "name": "上一首",
+  "text": "medium_text7"
  },
  {
   "type": "consumer",
   "usage": 181,
-  "name": "下一首"
+  "name": "下一首",
+  "text": "medium_text8"
  },
  {
   "type": "consumer",
   "usage": 233,
-  "name": "音量 +"
+  "name": "音量 +",
+  "text": "medium_text9"
  },
  {
   "type": "consumer",
   "usage": 234,
-  "name": "音量 -"
+  "name": "音量 -",
+  "text": "medium_text10"
  },
  {
   "type": "consumer",
   "usage": 226,
-  "name": "静音"
+  "name": "静音",
+  "text": "medium_text11"
  },
  {
   "type": "consumer",
   "usage": 547,
-  "name": "主页"
+  "name": "主页",
+  "text": "medium_text12"
  },
  {
   "type": "consumer",
   "usage": 551,
-  "name": "刷新"
+  "name": "刷新",
+  "text": "medium_text13"
  },
  {
   "type": "consumer",
   "usage": 549,
-  "name": "前进"
+  "name": "前进",
+  "text": "medium_text14"
  },
  {
   "type": "consumer",
   "usage": 548,
-  "name": "后退"
+  "name": "后退",
+  "text": "medium_text15"
  },
  {
   "type": "consumer",
   "usage": 554,
-  "name": "收藏"
+  "name": "收藏",
+  "text": "medium_text16"
  },
  {
   "type": "consumer",
   "usage": 545,
-  "name": "搜索"
+  "name": "搜索",
+  "text": "medium_text17"
  }
 ],
   mouse: [
  {
   "type": "mouse",
-  "button": 1,
   "param1": 1,
+  "button": 1,
+  "value": 1,
   "name": "鼠标左键"
  },
  {
   "type": "mouse",
-  "button": 4,
   "param1": 1,
+  "button": 4,
+  "value": 4,
   "name": "鼠标中键"
  },
  {
   "type": "mouse",
-  "button": 2,
   "param1": 1,
+  "button": 2,
+  "value": 2,
   "name": "鼠标右键"
  },
  {
   "type": "mouse",
-  "button": 1,
   "param1": 3,
+  "button": 1,
+  "value": 1,
   "name": "鼠标向上滚动"
  },
  {
   "type": "mouse",
-  "button": 255,
   "param1": 3,
+  "button": 255,
+  "value": 255,
   "name": "鼠标向下滚动"
  },
  {
   "type": "mouse",
-  "button": 16,
   "param1": 1,
+  "button": 16,
+  "value": 16,
   "name": "鼠标前进键"
  },
  {
   "type": "mouse",
-  "button": 8,
   "param1": 1,
+  "button": 8,
+  "value": 8,
   "name": "鼠标后退键"
  }
 ],
@@ -2473,6 +2449,148 @@ export const ACTIONS = {
   "text": "fun_text245"
  }
 ],
+  fn: [
+ {
+  "type": "fn",
+  "id": 46,
+  "name": "旋钮模式切换"
+ },
+ {
+  "type": "fn",
+  "id": 99,
+  "name": "自定义灯光录制"
+ },
+ {
+  "type": "fn",
+  "id": 71,
+  "name": "自定义灯光1"
+ },
+ {
+  "type": "fn",
+  "id": 72,
+  "name": "自定义灯光2"
+ },
+ {
+  "type": "fn",
+  "id": 98,
+  "name": "自定义灯光3"
+ },
+ {
+  "type": "fn",
+  "id": 16,
+  "name": "灯光速度-"
+ },
+ {
+  "type": "fn",
+  "id": 15,
+  "name": "灯光速度+"
+ },
+ {
+  "type": "fn",
+  "id": 2,
+  "name": "蓝牙通道1"
+ },
+ {
+  "type": "fn",
+  "id": 3,
+  "name": "蓝牙通道2"
+ },
+ {
+  "type": "fn",
+  "id": 4,
+  "name": "蓝牙通道3"
+ },
+ {
+  "type": "fn",
+  "id": 5,
+  "name": "无线回连"
+ },
+ {
+  "type": "fn",
+  "id": 24,
+  "name": "侧灯颜色切换"
+ },
+ {
+  "type": "fn",
+  "id": 11,
+  "name": "灯光效果切换"
+ },
+ {
+  "type": "fn",
+  "id": 84,
+  "name": "显示屏语言切换为汉语"
+ },
+ {
+  "type": "fn",
+  "id": 85,
+  "name": "显示屏语言切换为英语"
+ },
+ {
+  "type": "fn",
+  "id": 23,
+  "name": "侧灯效果切换"
+ },
+ {
+  "type": "fn",
+  "id": 22,
+  "name": "锁定Win"
+ },
+ {
+  "type": "fn",
+  "id": 1,
+  "name": "恢复出厂设置"
+ },
+ {
+  "type": "fn",
+  "id": 78,
+  "name": "切换灯效方向"
+ },
+ {
+  "type": "fn",
+  "id": 14,
+  "name": "灯光亮度-"
+ },
+ {
+  "type": "fn",
+  "id": 13,
+  "name": "灯光亮度+"
+ },
+ {
+  "type": "fn",
+  "id": 12,
+  "name": "灯光颜色切换"
+ },
+ {
+  "type": "fn",
+  "id": 7,
+  "name": "查询电量"
+ },
+ {
+  "type": "fn",
+  "id": 39,
+  "name": "关闭屏幕"
+ },
+ {
+  "type": "fn",
+  "id": 63,
+  "name": "GIF模式"
+ },
+ {
+  "type": "fn",
+  "id": 89,
+  "name": "LOGO LED ON/OFF"
+ },
+ {
+  "type": "fn",
+  "id": 138,
+  "name": "开启屏幕下方按键灯"
+ },
+ {
+  "type": "fn",
+  "id": 17,
+  "name": "关闭灯光"
+ }
+],
   pageTypes: [
  {
   "pageType": 0,
@@ -2557,13 +2675,16 @@ export const ACTIONS = {
 ],
 };
 
-// 键码 -> 名字（用于回显/编码预览）
-export const HID_NAMES = {"4": "A", "5": "B", "6": "C", "7": "D", "8": "E", "9": "F", "10": "G", "11": "H", "12": "I", "13": "J", "14": "K", "15": "L", "16": "M", "17": "N", "18": "O", "19": "P", "20": "Q", "21": "R", "22": "S", "23": "T", "24": "U", "25": "V", "26": "W", "27": "X", "28": "Y", "29": "Z", "30": "1 !", "31": "2 @", "32": "3 #", "33": "4 $", "34": "5 %", "35": "6 ^", "36": "7 &", "37": "8 *", "38": "9 (", "39": "0 )", "40": "Enter", "41": "Esc", "42": "Backspace", "43": "Tab", "44": "Space Bar", "45": "ˉ -", "46": "= +", "47": "[ {", "48": "] }", "49": "\\ |", "50": "\\", "51": "; :", "52": "' \"", "53": "` ~", "54": ",<", "55": ".>", "56": "/?", "57": "Caps", "58": "F1", "59": "F2", "60": "F3", "61": "F4", "62": "F5", "63": "F6", "64": "F7", "65": "F8", "66": "F9", "67": "F10", "68": "F11", "69": "F12", "70": "Print", "71": "Scroll", "72": "Pause", "73": "Ins", "74": "Home", "75": "PgUp", "76": "Del", "77": "End", "78": "PgDn", "79": "→", "80": "←", "81": "↓", "82": "↑", "83": "Num Lock", "84": "Num /", "85": "Num *", "86": "Num -", "87": "Num +", "88": "Num Enter", "89": "Num 1", "90": "Num 2", "91": "Num 3", "92": "Num 4", "93": "Num 5", "94": "Num 6", "95": "Num 7", "96": "Num 8", "97": "Num 9", "98": "Num 0", "99": "Num .", "100": "\\", "101": "Super", "111": "⊠", "133": "K107", "135": "K56", "136": "K133", "137": "K14", "138": "K132", "139": "K131", "144": "K151", "145": "K150", "175": "Fn", "224": "L-Ctrl", "225": "L-Shift", "226": "L-Alt", "227": "L-Win", "228": "R-Ctrl", "229": "R-Shift", "230": "R-Alt", "231": "WIN_R", "402": "CALCU"};
+// MK87 官方「功能」页可见的 28 个 FUNC id（= 默认 FN 层用到的动作，spec-keymap.md §4.2）
+export const MK87_FN_IDS = [46, 99, 71, 72, 98, 16, 15, 2, 3, 4, 5, 24, 11, 84, 85, 23, 22, 1, 78, 14, 13, 12, 7, 39, 63, 89, 138, 17];
+
+// 键码 -> 名字（回显 / 4 字节编码预览）
+export const HID_NAMES = {"4": "A", "5": "B", "6": "C", "7": "D", "8": "E", "9": "F", "10": "G", "11": "H", "12": "I", "13": "J", "14": "K", "15": "L", "16": "M", "17": "N", "18": "O", "19": "P", "20": "Q", "21": "R", "22": "S", "23": "T", "24": "U", "25": "V", "26": "W", "27": "X", "28": "Y", "29": "Z", "30": "1 !", "31": "2 @", "32": "3 #", "33": "4 $", "34": "5 %", "35": "6 ^", "36": "7 &", "37": "8 *", "38": "9 (", "39": "0 )", "40": "Enter", "41": "Esc", "42": "Backspace", "43": "Tab", "44": "Space Bar", "45": "ˉ -", "46": "= +", "47": "[ {", "48": "] }", "49": "\\ |", "50": "\\", "51": "; :", "52": "' \"", "53": "` ~", "54": ",<", "55": ".>", "56": "/?", "57": "Caps", "58": "F1", "59": "F2", "60": "F3", "61": "F4", "62": "F5", "63": "F6", "64": "F7", "65": "F8", "66": "F9", "67": "F10", "68": "F11", "69": "F12", "70": "Print", "71": "Scroll", "72": "Pause", "73": "Ins", "74": "Home", "75": "PgUp", "76": "Del", "77": "End", "78": "PgDn", "79": "→", "80": "←", "81": "↓", "82": "↑", "83": "Num Lock", "84": "Num /", "85": "Num *", "86": "Num -", "87": "Num +", "88": "Num Enter", "89": "Num 1", "90": "Num 2", "91": "Num 3", "92": "Num 4", "93": "Num 5", "94": "Num 6", "95": "Num 7", "96": "Num 8", "97": "Num 9", "98": "Num 0", "99": "Num .", "100": "\\", "101": "Super", "111": "⊠", "175": "Fn", "224": "L-Ctrl", "225": "L-Shift", "226": "L-Alt", "227": "L-Win", "228": "R-Ctrl", "229": "R-Shift", "230": "R-Alt"};
 export const CONSUMER_NAMES = {"181": "下一首", "182": "上一首", "183": "播放停止", "205": "播放/暂停", "226": "静音", "233": "音量 +", "234": "音量 -", "387": "多媒体", "394": "邮箱", "402": "计算器", "404": "我的电脑", "545": "搜索", "547": "主页", "548": "后退", "549": "前进", "551": "刷新", "554": "收藏"};
 export const FUNC_NAMES = {"1": "恢复出厂设置", "2": "蓝牙通道1", "3": "蓝牙通道2", "4": "蓝牙通道3", "5": "无线回连", "6": "F区转换", "7": "查询电量", "8": "WIN", "9": "MAC", "10": "ANDROID", "11": "灯光效果切换", "12": "灯光颜色切换", "13": "灯光亮度+", "14": "灯光亮度-", "15": "灯光速度+", "16": "灯光速度-", "17": "关闭灯光", "18": "ALT + TAB", "19": "WIN + E", "20": "WIN + TAB", "21": "WIN + H", "22": "锁定Win", "23": "侧灯效果切换", "24": "侧灯颜色切换", "25": "侧灯亮度调节", "26": "侧灯速度调节", "27": "正面灯条效果切换", "28": "正面灯条速度调节", "29": "正面灯条颜色切换", "30": "Ctrl + UP", "31": "USB模式", "32": "灯效方向", "33": "ALT + ESC", "34": "SHIFT + GAT", "35": "屏幕左切", "36": "屏幕右切", "37": "屏幕确认", "38": "测试灯光", "39": "关闭屏幕", "40": "点阵屏灯效切换", "41": "点阵屏亮度+", "42": "点阵屏亮度-", "43": "点阵屏速度-", "44": "点阵屏速度+", "45": "单键全键无线唤醒开关", "46": "旋钮模式切换", "47": "WIN + X", "48": "CTRL_CAP调换", "49": "屏蔽/打开驱动设置", "50": "CTRL+下", "51": "灯光效果正向切换", "52": "灯光效果反向切换", "53": "WIN + D", "54": "拾音灯颜色切换", "55": "拾音灯模式切换", "56": "拾音灯开关", "57": "Home", "58": "IOS", "59": "点阵屏测试模式", "60": "点阵屏测试颜色", "61": "正面灯条亮度切换", "62": "点阵屏开关", "63": "GIF模式", "64": "正面灯条速度+", "65": "正面灯条速度-", "66": "正面灯条亮度+", "67": "正面灯条亮度-", "68": "屏蔽/开启按键宏", "69": "蓝牙通道4", "70": "蓝牙通道5", "71": "自定义灯光1", "72": "自定义灯光2", "73": "开启/关闭极致省电", "74": "侧灯色块颜色", "75": "打开驱动", "76": "RT精度切换", "77": "灯效上下灯位开关", "78": "切换灯效方向", "79": "方向键转换", "80": "背光亮度循环切换", "81": "背光速度循环切换", "82": "切换USB模式", "83": "关闭侧灯", "84": "显示屏语言切换为汉语", "85": "显示屏语言切换为英语", "86": "CTRL + SPACEBAR", "87": "侧灯RT深度灯效", "88": "WIN + SPACEBAR", "89": "LOGO LED ON/OFF", "90": "切换点阵屏颜色", "91": "灯条叠加模式", "92": "ALT + SPACEBAR", "93": "一键白光", "94": "截屏WIN+SHF+S", "95": "开启/关闭APM计数", "96": "开启/关闭极致省电", "97": "一键进入动图", "98": "自定义灯光3", "99": "自定义灯光录制", "100": "LOGO灯切换", "101": "8K数据测试", "102": "SOCD功能开关", "103": "灯光效果复位", "104": "主灯效/侧灯效亮度加", "105": "主灯效/侧灯效亮度减", "106": "主灯效/侧灯效速度加", "107": "主灯效/侧灯效速度减", "108": "频点测试", "109": "WIN->MAC来回切换", "110": "侧灯亮度+", "111": "侧灯亮度-", "112": "HOME->END", "113": "进入测试模式", "114": "ALT_转换", "115": "ENT_方向转换", "116": "WASD切换为方向键", "117": "DELETE->HOME", "118": "END->INSERT", "119": "PAGEUP->PRINT", "120": "PAGEDOWN->PAUSE", "121": "游戏模式切换", "122": "灯箱亮度+", "123": "灯箱亮度-", "124": "灯箱速度+", "125": "灯箱速度-", "126": "LOGO灯效果切换", "127": "灯箱扩散模式颜色切换", "128": "灯箱效果切换", "129": "灯箱颜色切换", "130": "拾音灯亮度加", "131": "拾音灯亮度减", "132": "拾音灯底色切换", "133": "拾音灯方向切换", "134": "WIN+。", "135": "CTRL+WIN+SPACEBAR", "136": "WIN+SHIFT+3", "137": "WIN+SHIFT+4", "138": "开启屏幕下方按键灯", "139": "红灯常亮", "140": "绿灯常亮", "141": "蓝灯常亮", "142": "自定义灯光4", "143": "自定义灯光5", "144": "锁全键", "145": "WIN+I", "146": "WIN+L", "147": "侧灯速度+", "148": "侧灯速度-", "149": "侧灯方向调节", "150": "切换回报率", "151": "PAGEUP->INSERT", "152": "PAGEDOWN->END", "153": "手动进校准", "154": "12/24时间切换", "155": "自定义灯效切换", "156": "windows / MAC 系统切换", "157": "pageup、pagedown锁", "158": "CMD锁", "159": "切换蜂鸣器模式", "160": "开/关拾音灯", "161": "显示屏切换主页", "162": "氛围灯效亮度调节", "163": "氛围灯效速度调节", "164": "氛围灯效颜色切换", "165": "氛围灯效切换", "166": "灯光颜色正向切换", "167": "灯光颜色反向切换", "168": "旋钮下的LED开关", "169": "有线模式切换", "170": "切换指示灯模式", "171": "切换数字键区和Fn键区", "172": "GAT", "173": "编码器灯光", "174": "8K回报率测试", "175": "屏幕下方灯", "176": "侧灯开关", "177": "SHIFT_S问号", "178": "AI音量加", "179": "AI音量减", "180": "AI屏幕亮度加", "181": "AI屏幕亮度减", "182": "恢复出厂设置（FN+R_ALT+ESC）", "183": "DKS开关", "184": "呼出SIRI", "185": "LOGO灯开关", "186": "爱心灯光模式", "187": "6键/全键无冲", "188": "LOGO灯颜色切换", "189": "切换爱心模式下的灯光灯效", "190": "切换到计算器模式", "191": "打开/关闭灯箱", "192": "显示屏切换用户动画", "193": "灯效方向左", "194": "灯效方向右", "195": "切换成APP键", "196": "灯光效果切换1", "197": "灯光效果切换2", "198": "灯光效果切换3", "199": "灯光效果切换4", "200": "profile1切换", "201": "profile2切换", "202": "profile3切换", "203": "profile4切换", "204": "打字显示", "205": "退出测试模式", "206": "LEFTALT+LEFTGUI+Q", "207": "LOGO灯亮度切换", "208": "LOGO灯速度切换", "209": "自定义宏1", "210": "CTRL+SHIFT+O", "211": "一键进驱动", "212": "打开自定义宏录制", "213": "关闭自定义宏录制", "214": "打开官网", "215": "切换爱心灯效的颜色", "216": "CTRL+DOWN", "217": "1~+转换为F1~F12", "218": "Y~CMA转换为PRINT~PAGEDOWN", "219": "?、R_ALT、APP、R_CTRL切换为方向键", "220": "灯光速度调节", "221": "偏频测试模式", "222": "FN+HOME", "223": "USB灯效果切换", "224": "USB灯速度切换", "225": "USB灯亮度切换", "226": "USB灯颜色切换", "227": "切换按键延时", "228": "点阵屏字符模式", "229": "打开触摸模式", "230": "满电检测", "231": "充电指示灯开关", "232": "切换最大亮度", "233": "CTRL+P", "234": "CTRL+C", "235": "CTRL+V", "236": "CTRL+S", "237": "切换RT配置1", "238": "切换RT配置2", "239": "切换RT配置3", "240": "切换RT配置4", "241": "上下灯位切换", "242": "win+M", "243": "F1~F12模式切换", "244": "SHIFT+DOT", "245": "SHIFT+CMA", "246": "推杆_音量", "247": "推杆_背光亮度", "248": "推杆_屏幕亮度", "249": "动态灯效开关", "250": "上灯箱开启关闭", "251": "左右侧灯切换", "252": "左右侧灯开启关闭", "253": "关闭所有灯光", "254": "切换自定义灯光", "255": "6键无冲", "256": "全键无冲", "257": "正面上灯条灯效切换", "258": "正面上灯条亮度切换", "259": "正面下灯条灯效切换", "260": "正面下灯条亮度切换", "261": "切换土耳其语", "262": "切换日语", "263": "侧灯亮度加", "264": "侧灯亮度减", "265": "CTRL+X", "266": "WIN+C", "267": "WIN+V", "268": "点阵屏图案模式切换", "269": "任务管理器", "270": "Scroll锁定", "271": "屏幕主页模式", "272": "WIN+S", "273": "锁定F1-F12与组合键切换", "274": "LOGO灯亮度加", "275": "LOGO灯亮度减", "276": "有线/无线模式切换", "277": "Numlock指示灯开关", "278": "触摸条调节屏幕亮度模式", "279": "触摸条调节音量模式", "280": "触摸条调节背光亮度模式", "281": "触摸条调节背光速度模式", "282": "进出按键低延时模式", "283": "进入低功耗模式", "284": "屏幕动图轮询切换", "285": "切换休眠时间", "286": "多窗口切换", "287": "一键进配对", "288": "点阵屏灯效反向切换", "289": "语言模式切换", "290": "切换上一个灯效", "291": "显示当前通道", "292": "复位灯效"};
-export const MOUSE_NAMES = {"1_1": "鼠标左键", "1_2": "鼠标右键", "1_4": "鼠标中键", "1_8": "鼠标后退键", "1_16": "鼠标前进键", "3_1": "鼠标向上滚动", "3_255": "鼠标向下滚动"};
+export const MOUSE_NAMES = {"1_1": "鼠标左键", "1_16": "鼠标前进键", "1_2": "鼠标右键", "1_4": "鼠标中键", "1_8": "鼠标后退键", "3_1": "鼠标向上滚动", "3_255": "鼠标向下滚动"};
 
-// 出厂默认键位（从真机 dump 解码：普通层 112 个非零槽，FN 层 26 条）
+// 出厂默认键位（真机 dump 解码：主层 112 个非零槽，FN 层 112 个非零槽，其中 28 个 FUNC 动作）
 export const DEFAULT_KEYMAP = { normal: {
  "0": {
   "type": "key",
@@ -3073,7 +3194,7 @@ export const DEFAULT_KEYMAP = { normal: {
  "101": {
   "type": "key",
   "usage": 231,
-  "name": "WIN_R"
+  "name": "HID 0xE7"
  },
  "102": {
   "type": "key",
@@ -3634,7 +3755,7 @@ export const DEFAULT_KEYMAP = { normal: {
  "101": {
   "type": "key",
   "usage": 231,
-  "name": "WIN_R"
+  "name": "HID 0xE7"
  },
  "102": {
   "type": "key",

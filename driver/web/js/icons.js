@@ -36,6 +36,7 @@ const P = {
   image: '<rect x="3" y="4.4" width="18" height="15.2" rx="2.2"/><circle cx="8.6" cy="9.6" r="1.8"/><path d="m3.6 17.4 5-5 4.2 4.2 2.8-2.8 5.2 5.2"/>',
   play: '<path d="M7.6 4.6 19 12 7.6 19.4V4.6Z" fill="currentColor" stroke-linejoin="round"/>',
   stop: '<rect x="6" y="6" width="12" height="12" rx="2" fill="currentColor" stroke="none"/>',
+  pause: '<rect x="6.5" y="5" width="4" height="14" rx="1.2" fill="currentColor" stroke="none"/><rect x="13.5" y="5" width="4" height="14" rx="1.2" fill="currentColor" stroke="none"/>',
   'check': '<path d="m4.8 12.6 4.6 4.6L19.4 7"/>',
   'check-circle': '<circle cx="12" cy="12" r="9"/><path d="m8.2 12.2 2.6 2.6 5-5.4"/>',
   'alert-triangle': '<path d="M12 3.6 21 19.4H3L12 3.6Z"/><path d="M12 9.6v4.2M12 16.6h.01"/>',

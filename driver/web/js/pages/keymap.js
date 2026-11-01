@@ -1,6 +1,6 @@
 /* pages/keymap.js — 改键：主层 / FN 层，87 键点选 + 动作选择器 + 4 字节编码预览 */
 import { KEY_LAYOUT } from '../data/keyboard.js';
-import { ACTIONS, DEFAULT_KEYMAP, HID_NAMES } from '../data/actions.js';
+import { ACTIONS, DEFAULT_KEYMAP, HID_NAMES, MK87_FN_IDS } from '../data/actions.js';
 import { icon } from '../icons.js';
 import { h, clamp, hex2, MODIFIERS } from '../util.js';
 import { Keyboard } from '../components/keyboard.js';
@@ -38,14 +38,15 @@ export function encodeAction(action) {
       return [7, mods[0] ?? 0, mods[1] ?? 0, main & 0xff];
     }
     case 'macro': {
-      const repeat = Number(action.repeat) || 0;
-      return [6, Number(action.slot) & 0xff, repeat, repeat === 1 ? clamp(Number(action.count) || 1, 1, 255) : 0];
+      const mask = Number(action.mask ?? action.repeat) || 0;
+      return [6, Number(action.slot) & 0xff, mask, mask === 1 ? clamp(Number(action.count) || 1, 1, 255) : 0];
     }
     case 'fn': {
       const id = Number(action.id) || 0;
       return [13, (id >> 16) & 0xff, (id >> 8) & 0xff, id & 0xff];
     }
-    case 'disabled': return [2, 0, 0, 0]; // KEYBOARD + usage 0 = 不发送按键
+    // spec-keymap.md §1.3：官方动作表里唯一形似「无」的条目 extendChars ⊠ = HID 0x6F
+    case 'disabled': return [2, 0, 0, 0x6f];
     case 'default': return [0, 0, 0, 0];
     case 'raw': return action.bytes || [0, 0, 0, 0];
     default: return [0, 0, 0, 0];
@@ -60,8 +61,8 @@ function actionLabel(action) {
     case 'mouse': return action.name || '鼠标';
     case 'combo': return (action.keys || []).map((u) => HID_NAMES[String(u)] || `0x${hex2(u)}`).join(' + ') || '组合键';
     case 'macro': {
-      const rep = Number(action.repeat) || 0;
-      const suffix = rep === 1 ? ` ×${action.count || 1}` : rep === 2 ? ' 再按结束' : '';
+      const mask = Number(action.mask ?? action.repeat) || 0;
+      const suffix = mask === 1 ? ` ×${action.count || 1}` : mask === 2 ? ' 再按结束' : '';
       return `宏 ${action.slot}${suffix}`;
     }
     case 'fn': return action.name || `功能 ${action.id}`;
@@ -80,6 +81,98 @@ function actionIconName(action) {
 function isSameAction(a, b) {
   if (!a || !b || a.type !== b.type) return false;
   return encodeAction(a).join(',') === encodeAction(b).join(',');
+}
+
+/** 后端 → 前端内部模型。
+    兼容两种形状：
+    - mock 内部：{type:'key'|'consumer'|'fn'|'macro'|'combo'|'mouse', usage|id|slot, mask, count}
+    - 真实后端：{type:'keyboard'|'consumer'|'func'|'macro'|'combo'|'mouse', value, param1..3, name/display, slot} */
+export function normalizeWireAction(a) {
+  if (!a || typeof a !== 'object') return a;
+  switch (a.type) {
+    case 'keyboard':
+      return { type: 'key', usage: Number(a.usage ?? a.value ?? a.keyCode ?? 0), name: a.display || a.name || a.keyName, legacyParam1: Number(a.param1) || 0 };
+    case 'key':
+      return { ...a, usage: Number(a.usage ?? a.value ?? 0), name: a.display || a.name };
+    case 'consumer':
+      return { ...a, usage: Number(a.usage ?? a.value ?? 0), name: a.name || a.display };
+    case 'func':
+      return { type: 'fn', id: Number(a.id ?? a.value ?? 0), name: a.name || a.display };
+    case 'fn':
+      return { ...a, id: Number(a.id ?? a.value ?? 0) };
+    case 'macro': {
+      const mask = Number(a.mask ?? a.param2 ?? a.repeat ?? 0);
+      const count = Number(a.count ?? a.param3 ?? a.maskParam ?? 0);
+      return { type: 'macro', slot: Number(a.slot ?? a.value ?? a.param1 ?? 0), mask, count, name: a.name };
+    }
+    case 'combo': {
+      const keys = Array.isArray(a.keys) ? a.keys : [a.param1, a.param2, a.param3].filter((x) => x);
+      return { type: 'combo', keys };
+    }
+    case 'mouse':
+      return { type: 'mouse', button: Number(a.button ?? a.value ?? 0), param1: Number(a.param1) || 1, name: a.name };
+    case 'default':
+      return { type: 'default' };
+    case 'disabled':
+      return { type: 'disabled' };
+    default:
+      return a;
+  }
+}
+
+/** 键位表：兼容 {slot:action} 对象 与 后端 [{slot,...}] 数组（只保留非默认项） */
+function actionListToMap(raw) {
+  if (!raw) return {};
+  const out = {};
+  if (Array.isArray(raw)) {
+    for (const entry of raw) {
+      if (!entry || typeof entry !== 'object') continue;
+      const slot = Number(entry.slot ?? entry.value);
+      if (!Number.isFinite(slot)) continue;
+      const act = normalizeWireAction(entry);
+      if (!act || act.type === 'default') continue;
+      out[String(slot)] = act;
+    }
+    return out;
+  }
+  for (const [slot, entry] of Object.entries(raw)) {
+    const act = normalizeWireAction(entry);
+    if (!act || act.type === 'default') continue;
+    out[String(slot)] = act;
+  }
+  return out;
+}
+
+/** 动作目录归一化：后端 keyboard/consumer 用 value 而不是 usage；func 用 value 而不是 id */
+function normalizeCatalog(resp) {
+  const arr = (x) => (Array.isArray(x) ? x : []);
+  return {
+    keyboard: arr(resp.keyboard).map((it) => ({ type: 'key', usage: Number(it.usage ?? it.value ?? 0), name: it.name, text: it.text })),
+    consumer: arr(resp.consumer).map((it) => ({ type: 'consumer', usage: Number(it.usage ?? it.value ?? 0), name: it.name })),
+    mouse: arr(resp.mouse).map((it) => ({ type: 'mouse', button: Number(it.button ?? it.value ?? 0), param1: Number(it.param1) || 1, name: it.name })),
+    func: arr(resp.func).map((it) => ({ type: 'fn', id: Number(it.id ?? it.value ?? 0), name: it.name, text: it.text })),
+    macros: arr(resp.macros),
+    macroCapacity: Number(resp.macroCapacity) || 2672,
+    notes: resp.notes || null,
+    pageTypes: resp.pageTypes || ACTIONS.pageTypes,
+  };
+}
+
+/** 前端内部模型 → 后端 wire 字段（spec-keymap.md §1 / design.md §4.6） */
+export function toWireAction(a) {
+  if (!a || typeof a !== 'object') return a;
+  if (a.type === 'macro') {
+    const mask = Number(a.mask ?? a.repeat ?? 0);
+    return { type: 'macro', slot: Number(a.slot), mask, count: mask === 1 ? clamp(Number(a.count) || 1, 1, 255) : 0, name: a.name };
+  }
+  if (a.type === 'mouse') {
+    return { type: 'mouse', param1: Number(a.param1) || 1, value: Number(a.button ?? a.value ?? 0), name: a.name };
+  }
+  if (a.type === 'key') return { type: 'key', usage: Number(a.usage), name: a.name };
+  if (a.type === 'consumer') return { type: 'consumer', usage: Number(a.usage), name: a.name };
+  if (a.type === 'combo') return { type: 'combo', keys: a.keys };
+  if (a.type === 'fn') return { type: 'fn', id: Number(a.id), name: a.name };
+  return a;
 }
 
 export default {
@@ -103,17 +196,22 @@ export default {
       pending: { normal: {}, fn: {} },
       selected: null,
       tab: 'keyboard',
-      macroRepeat: 0,
+      macroMask: 0,
       macroCount: 1,
       comboMods: [],
       comboKey: null,
+      fnReliable: true,
+      macrosDetail: [],
     };
 
     try {
       const resp = await api.get('/api/keymap');
       if (resp) {
-        state.maps.normal = { ...(resp.normal || {}) };
-        state.maps.fn = { ...(resp.fn || {}) };
+        state.maps.normal = actionListToMap(resp.normal);
+        state.maps.fn = actionListToMap(resp.fn);
+        // 2.4G 下固件对 GET_FN_KEY 返回主层 → 后端 fnReliable=false
+        state.fnReliable = resp.fnReliable !== false && ctx.status?.transport !== '2.4g';
+        state.apiNote = resp.note;
       }
     } catch (e) {
       console.warn('[keymap] 读取键位失败，使用内置默认', e);
@@ -121,15 +219,24 @@ export default {
       state.maps.fn = { ...DEFAULT_KEYMAP.fn };
     }
     try {
+      const resp = await api.get('/api/macros');
+      state.macrosDetail = (resp?.slots || [])
+        .map((x) => ({ slot: Number(x.slot), name: x.name, actions: x.actions || [] }))
+        .filter((x) => x.actions.length);
+    } catch (e) { /* 宏列表失败不影响改键 */ }
+    try {
       const resp = await api.get('/api/keymap/actions');
       if (resp) {
+        const cat = normalizeCatalog(resp);
         actionsCatalog = {
-          keyboard: resp.keyboard?.length ? resp.keyboard : ACTIONS.keyboard,
-          consumer: resp.consumer?.length ? resp.consumer : ACTIONS.consumer,
-          mouse: resp.mouse?.length ? resp.mouse : ACTIONS.mouse,
-          func: resp.func?.length ? resp.func : ACTIONS.func,
-          macros: resp.macros || [],
-          pageTypes: resp.pageTypes || ACTIONS.pageTypes,
+          keyboard: cat.keyboard.length ? cat.keyboard : ACTIONS.keyboard,
+          consumer: cat.consumer.length ? cat.consumer : ACTIONS.consumer,
+          mouse: cat.mouse.length ? cat.mouse : ACTIONS.mouse,
+          func: cat.func.length ? cat.func : ACTIONS.func,
+          macros: cat.macros,
+          macroCapacity: cat.macroCapacity,
+          notes: cat.notes,
+          pageTypes: cat.pageTypes,
         };
       }
     } catch (e) { /* 使用内置目录 */ }
@@ -140,8 +247,30 @@ export default {
     const layerSeg = createSegmented({
       options: [{ value: 'normal', label: t('keymap.layer.normal') }, { value: 'fn', label: 'FN 层' }],
       value: state.layer,
-      onChange: (v) => { state.layer = v; renderKeyboard(); renderCurrentKeyCard(); buildPicker(); },
+      onChange: (v) => {
+        state.layer = v;
+        if (v === 'fn' && !state.fnReliable) {
+          ctx.toast('2.4G 下 FN 层回读返回的是主层数据（固件行为），已切换为只读；编辑 FN 请用 USB 连接', { type: 'warn', timeout: 6500 });
+        }
+        updateFnWarning();
+        renderKeyboard();
+        if (v === 'fn' && !state.fnReliable) { kb.clearSelected(); state.selected = null; }
+        renderCurrentKeyCard();
+        buildPicker();
+      },
     });
+
+    const fnWarning = h('div', { class: 'banner danger', style: { display: 'none', margin: '0 0 12px' } },
+      h('div', { class: 'banner-icon', html: icon('alert-triangle', { size: 17 }) }),
+      h('div', { style: { minWidth: 0 } },
+        h('strong', {}, 'FN 层在当前连接下不可靠'),
+        h('div', { class: 'tiny', style: { marginTop: '2px' } },
+          '2.4G 无线连接时，固件对 GET_FN_KEY 返回的是主层键位（已知固件行为），为避免写坏 FN 层，本页在 2.4G 下只读。请改用 USB 有线连接编辑 FN 层。'),
+      ),
+    );
+    function updateFnWarning() {
+      fnWarning.style.display = state.layer === 'fn' && !state.fnReliable ? '' : 'none';
+    }
 
     const restoreBtn = h('button', {
       class: 'btn sm', title: '写 0 恢复出厂默认',
@@ -168,6 +297,7 @@ export default {
           h('div', { class: 'row' }, layerSeg.el, pendingBadge),
           h('div', { class: 'row' }, restoreBtn, applyBtn),
         ),
+        fnWarning,
         kb.deck,
         h('div', { class: 'kb-legend mt-12' },
           h('span', { class: 'item' }, badge('已改', 'accent'), '当前有非默认动作'),
@@ -198,16 +328,20 @@ export default {
 
     function renderKeyboard() {
       // 清角标
+      const fnLocked = state.layer === 'fn' && !state.fnReliable;
+      kb.opts.interactive = !fnLocked;
+      kb.deck.classList.toggle('interactive', !fnLocked);
       for (const k of ALL_KEYS) {
         kb.setBadge(k.slot, '');
-        const off = state.layer === 'fn' && FN_DISABLED_SLOTS.has(k.slot);
-        kb.setDisabled(k.slot, off);
-        if (off) continue;
-        const act = effectiveAction(state.layer, k.slot);
-        if (!act) {
-          if (state.layer === 'fn') kb.setBadge(k.slot, '未设', { kind: 'badge' });
+        const officialLock = state.layer === 'fn' && FN_DISABLED_SLOTS.has(k.slot);
+        kb.setDisabled(k.slot, fnLocked || officialLock);
+        if (fnLocked) {
+          kb.setBadge(k.slot, '只读', { kind: 'badge' });
           continue;
         }
+        if (officialLock) continue;
+        const act = effectiveAction(state.layer, k.slot);
+        if (!act) continue;
         if (act.type === 'default') { kb.setBadge(k.slot, '默认'); continue; }
         if (act.type === 'key' && act.usage === keyDefaultUsage(k.slot)) continue; // 与默认一致不显示
         kb.setBadge(k.slot, actionLabel(act));
@@ -231,6 +365,10 @@ export default {
     kb.opts.onKeyClick = (slot) => selectSlot(slot);
 
     function selectSlot(slot) {
+      if (state.layer === 'fn' && !state.fnReliable) {
+        ctx.toast('2.4G 下 FN 层只读：请用 USB 连接后再编辑', { type: 'warn' });
+        return;
+      }
       if (state.layer === 'fn' && FN_DISABLED_SLOTS.has(slot)) {
         ctx.toast('官方 FN 层不允许修改 F1–F12（fnDisabledKeyIds）', { type: 'warn' });
         return;
@@ -302,7 +440,8 @@ export default {
       applyBtn.disabled = true;
       try {
         for (const [layer, slots] of layers) {
-          await api.put(`/api/keymap/${layer}`, { slots });
+          const wireSlots = Object.fromEntries(Object.entries(slots).map(([k, v]) => [k, toWireAction(v)]));
+          await api.put(`/api/keymap/${layer}`, { slots: wireSlots });
           Object.assign(state.maps[layer], slots);
           state.pending[layer] = {};
         }
@@ -417,50 +556,61 @@ export default {
     function buildFuncGrid(currentAction) {
       const search = h('input', { class: 'input sm', placeholder: '搜索功能动作（292 条固件功能）…' });
       const list = h('div', { class: 'action-list', style: { maxHeight: '300px' } });
+      const official = actionsCatalog.func.filter((it) => MK87_FN_IDS.includes(Number(it.id)));
+      const mkItem = (it) => {
+        const active = isSameAction(currentAction, { type: 'fn', id: it.id, name: it.name });
+        return h('button', {
+          type: 'button', class: `action-item${active ? ' active' : ''}`, title: `${it.name} · FUNC id ${it.id}`,
+          onclick: () => setKeyAction(state.selected, { type: 'fn', id: it.id, name: it.name }),
+        },
+          h('span', { class: 'ai-name' }, it.name),
+          h('span', { class: 'ai-sub' }, `#${it.id}`),
+        );
+      };
       const render = (kw = '') => {
         list.innerHTML = '';
         const k = kw.trim().toLowerCase();
-        const filtered = actionsCatalog.func.filter((it) => !k || String(it.name).toLowerCase().includes(k) || String(it.id).includes(k));
+        if (!k) {
+          list.append(h('div', { class: 'tiny muted', style: { gridColumn: '1 / -1', padding: '2px 4px 4px' } }, `MK87 官方「功能」页内置 ${official.length} 项（默认 FN 层动作）`));
+          official.forEach((it) => list.append(mkItem(it)));
+          list.append(h('div', { class: 'tiny muted', style: { gridColumn: '1 / -1', padding: '8px 4px 4px' } }, '其他固件 FUNC 功能（共 ' + actionsCatalog.func.length + ' 条，真机行为未逐一验证）'));
+          return;
+        }
+        const filtered = actionsCatalog.func.filter((it) => String(it.name).toLowerCase().includes(k) || String(it.id).includes(k));
         if (!filtered.length) {
           list.append(h('div', { class: 'empty', style: { gridColumn: '1 / -1' } }, '没有匹配的功能动作'));
           return;
         }
-        for (const it of filtered.slice(0, 120)) {
-          const active = isSameAction(currentAction, { type: 'fn', id: it.id, name: it.name });
-          list.append(h('button', {
-            type: 'button', class: `action-item${active ? ' active' : ''}`, title: `${it.name} · id ${it.id}`,
-            onclick: () => setKeyAction(state.selected, { type: 'fn', id: it.id, name: it.name }),
-          },
-            h('span', { class: 'ai-name' }, it.name),
-            h('span', { class: 'ai-sub' }, `#${it.id}`),
-          ));
-        }
-        if (filtered.length > 120) list.append(h('div', { class: 'tiny muted', style: { gridColumn: '1 / -1', padding: '8px' } }, `仅显示前 120 条，输入关键词继续筛选（共 ${filtered.length} 条）`));
+        filtered.slice(0, 140).forEach((it) => list.append(mkItem(it)));
+        if (filtered.length > 140) list.append(h('div', { class: 'tiny muted', style: { gridColumn: '1 / -1', padding: '8px' } }, `仅显示前 140 条，继续输入关键词筛选（共 ${filtered.length} 条）`));
       };
       search.addEventListener('input', () => render(search.value));
       tabContent.append(h('div', { class: 'stack' },
         h('div', { class: 'search-box' }, h('div', { html: icon('search', { size: 15 }) }), search),
-        h('div', { class: 'tiny muted' }, 'FUNC 页（24 位固件功能 id）。FN 层改键默认就是这一类动作。'),
+        h('div', { class: 'tiny muted' }, 'FUNC(13) 页 · 24 位固件功能 id；MK87 frameVersion=0，不使用 FUNC_V2。'),
         list,
       ));
       render('');
     }
 
     function buildMacroPicker(currentAction) {
-      const macros = actionsCatalog.macros || [];
+      // /api/keymap/actions 的宏只有 {slot,offset}，动作数/详情走 /api/macros
+      const detailBySlot = new Map(state.macrosDetail.map((m) => [Number(m.slot), m]));
+      const macros = (state.macrosDetail.length ? state.macrosDetail : (actionsCatalog.macros || []))
+        .map((m) => ({ slot: Number(m.slot), name: m.name || `宏 ${Number(m.slot) + 1}`, actions: (detailBySlot.get(Number(m.slot))?.actions || m.actions || []).length, bytes: (detailBySlot.get(Number(m.slot))?.actions || m.actions || []).length * 4 + 4 }));
       if (!macros.length) {
         tabContent.append(h('div', { class: 'empty' }, h('div', { html: icon('macro', { size: 26 }) }), h('div', {}, '还没有已使用的宏槽位'), h('div', { class: 'tiny' }, '先到「宏 / 快捷指令」页创建并保存宏')));
         return;
       }
       const repeatSeg = createSegmented({
         options: [{ value: 0, label: '常规' }, { value: 1, label: '重复 N 次' }, { value: 2, label: '再按结束' }],
-        value: state.macroRepeat, small: true,
-        onChange: (v) => { state.macroRepeat = v; countWrap.style.display = v === 1 ? '' : 'none'; },
+        value: state.macroMask, small: true,
+        onChange: (v) => { state.macroMask = v; countWrap.style.display = v === 1 ? '' : 'none'; },
       });
       const countInput = h('input', { class: 'input sm', type: 'number', min: '1', max: '255', value: String(state.macroCount), style: { width: '80px' } });
       countInput.addEventListener('input', () => { state.macroCount = clamp(parseInt(countInput.value, 10) || 1, 1, 255); });
-      const countWrap = h('div', { class: 'row', style: { display: state.macroRepeat === 1 ? '' : 'none' } },
-        h('span', { class: 'tiny muted' }, '重复次数 param3'), countInput);
+      const countWrap = h('div', { class: 'row', style: { display: state.macroMask === 1 ? '' : 'none' } },
+        h('span', { class: 'tiny muted' }, '重复次数（param3）'), countInput);
 
       const list = h('div', { class: 'action-list' });
       for (const m of macros) {
@@ -468,8 +618,8 @@ export default {
         list.append(h('button', {
           type: 'button', class: `action-item${active ? ' active' : ''}`,
           onclick: () => setKeyAction(state.selected, {
-            type: 'macro', slot: Number(m.slot), repeat: state.macroRepeat,
-            count: state.macroRepeat === 1 ? state.macroCount : 0,
+            type: 'macro', slot: Number(m.slot), mask: state.macroMask,
+            count: state.macroMask === 1 ? state.macroCount : 0,
             name: m.name || `宏 ${m.slot}`,
           }),
         },
@@ -478,7 +628,7 @@ export default {
         ));
       }
       tabContent.append(h('div', { class: 'stack' },
-        h('div', { class: 'field' }, h('div', { class: 'field-label' }, '重复方式（param2）'), repeatSeg.el),
+        h('div', { class: 'field' }, h('div', { class: 'field-label' }, '触发方式（param2 / mask）'), repeatSeg.el),
         countWrap,
         h('div', { class: 'tiny muted' }, '官方编码：06 macroId param2 param3，param2=0 常规 / 1 重复 N 次 / 2 再按结束；param3 仅 param2=1 时有效。'),
         list,
@@ -532,7 +682,7 @@ export default {
     function buildSpecialPicker(currentAction) {
       const items = [
         { label: '使用出厂默认', desc: '写入 0x00000000，恢复该键出厂行为', action: { type: 'default' }, icon: 'undo' },
-        { label: '禁用此键', desc: '写入 KEYBOARD usage 0，按键不再发送任何键值', action: { type: 'disabled' }, icon: 'shield' },
+        { label: '禁用此键', desc: '绑定官方 ⊠（HID 0x6F → 02 00 6F 00）；设备是否真屏蔽按键尚未真机验证', action: { type: 'disabled' }, icon: 'shield' },
       ];
       for (const it of items) {
         const active = isSameAction(currentAction, it.action);
@@ -550,6 +700,7 @@ export default {
     }
 
     /* ---------------- 初始化 ---------------- */
+    updateFnWarning();
     renderKeyboard();
     renderCurrentKeyCard();
     buildPicker();
