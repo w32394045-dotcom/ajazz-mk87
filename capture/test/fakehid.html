@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>fakehid —— WebHID 钩子本地验证页</title>
+<style>
+  body { font-family: "Segoe UI", "Microsoft YaHei", sans-serif; margin: 24px; background:#0f1115; color:#d7dae0; }
+  h1 { font-size: 20px; margin: 0 0 4px; }
+  .sub { color:#8b93a1; font-size: 13px; margin-bottom: 18px; }
+  #status { font-size: 16px; font-weight: 700; padding: 10px 14px; border-radius: 8px; display:inline-block; margin-bottom: 16px;}
+  .pass { background:#12391f; color:#7ee2a8; border:1px solid #2a6b40; }
+  .fail { background:#3a1414; color:#ff9b9b; border:1px solid #7a2a2a; }
+  .wait { background:#1c2333; color:#9fb4d8; border:1px solid #2f3d5c; }
+  table { border-collapse: collapse; font-size: 13px; margin-bottom: 16px; }
+  td, th { border: 1px solid #2a2f3a; padding: 5px 10px; text-align: left; vertical-align: top; }
+  th { background:#1a1e26; color:#aab3c0; font-weight:600; }
+  code { font-family: Consolas, monospace; color:#c9d6ff; }
+  .ok { color:#7ee2a8; } .no { color:#ff9b9b; }
+  pre { background:#161a22; border:1px solid #262c38; padding:12px; border-radius:6px; overflow:auto; font-size:12px; }
+</style>
+</head>
+<body>
+<h1>fakehid —— WebHID 钩子本地验证页</h1>
+<div class="sub">
+  本页在页面脚本里伪造 <code>navigator.hid</code>，不依赖真实键盘。<br>
+  用来验证：钩子确实注入、包装确实生效、记录确实落盘。
+</div>
+<div id="status" class="wait">等待钩子与伪造设备初始化…</div>
+<div id="tableWrap"></div>
+<pre id="dump">（尚未运行）</pre>
+
+<script>
+/* =========================================================================
+ * fakehid.html —— 纯前端伪造 WebHID
+ * -------------------------------------------------------------------------
+ * ★ 关键设计：本页用 Object.defineProperty 覆盖 navigator.hid，并且故意
+ *   **不**把伪造的 HIDDevice 类挂到 window 上（保持 class 的顶层词法绑定），
+ *   这样 hook.js 无法补 HIDDevice.prototype，只能走「实例级包装」这条更难的路。
+ *   如果实例级包装是对的，那么真实 Chrome 里原型级 + 实例级双重保障更没问题。
+ *
+ * ★ 产品名故意写成 "KEYBOARD AJAZZ KEYBOARD"（Linux hidraw 的味道），
+ *   验证 hook.js 的 (a) 设备名适配是否生效 —— 页面里应当只看到 "AJAZZ KEYBOARD"。
+ * ========================================================================= */
+
+(function () {
+  'use strict';
+
+  var VID = 0x0C45;          // 3141  Sonix / AJAZZ
+  var PID = 0x8047;          // 32839
+  var RAW_NAME = 'KEYBOARD AJAZZ KEYBOARD';   // 故意带上前缀
+  var EXPECT_NAME = 'AJAZZ KEYBOARD';         // 期望页面看到的名字
+
+  var results = [];
+  function record(name, ok, detail) {
+    results.push({ name: name, ok: !!ok, detail: detail === undefined ? null : detail });
+    console.log('[TEST] ' + (ok ? 'PASS' : 'FAIL') + ' - ' + name +
+                (detail !== undefined && detail !== null ? ' :: ' + detail : ''));
+  }
+
+  /** 把页面传进来的 TypedArray / ArrayBuffer / 数组统一转成普通数组 */
+  function toBytes(d) {
+    if (d == null) return [];
+    if (ArrayBuffer.isView(d)) return Array.from(new Uint8Array(d.buffer, d.byteOffset, d.byteLength));
+    if (d instanceof ArrayBuffer) return Array.from(new Uint8Array(d));
+    return Array.from(d);
+  }
+
+  /* ---------------- 伪造 HID 集合信息（模仿真实结构的子集） ---------------- */
+  function makeCollections() {
+    return [
+      { usagePage: 0xFF67, usage: 0x0001, type: 'application',
+        children: [ { usagePage: 0xFF67, usage: 0x0001, type: 'output' } ] },
+      { usagePage: 0x0001, usage: 0x0006, type: 'application',
+        children: [ { usagePage: 0x0001, usage: 0x0006, type: 'input' } ] }
+    ];
+  }
+
+  /* ---------------- 伪造 HIDDevice ---------------- */
+  class HIDDevice extends EventTarget {
+    constructor() {
+      super();
+      this._opened = false;
+      this.sentReports = [];        // 记录页面发出去的报告，供断言使用
+      this.sentFeatureReports = [];
+      this.receivedFeature = [];
+      this.openCalls = 0;
+      this.closeCalls = 0;
+    }
+    get vendorId() { return VID; }
+    get productId() { return PID; }
+    // ★ 故意带 "KEYBOARD " 前缀；getter 可被 hook 重定义（class getter 默认 configurable）
+    get productName() { return RAW_NAME; }
+    get serialNumber() { return null; }
+    get opened() { return this._opened; }
+    get collections() { return makeCollections(); }
+    get inputReports() { return [ { reportId: 0x01, items: [] } ]; }
+    get outputReports() { return [ { reportId: 0x00, items: [] } ]; }
+    get featureReports() { return [ { reportId: 0x05, items: [] } ]; }
+
+    async open() {
+      this.openCalls++;
+      await new Promise(function (r) { setTimeout(r, 30); });   // 模拟真实异步
+      this._opened = true;
+    }
+    async close() {
+      this.closeCalls++;
+      await new Promise(function (r) { setTimeout(r, 10); });
+      this._opened = false;
+    }
+    async forget() { this._opened = false; }
+
+    async sendReport(reportId, data) {
+      if (!this._opened) throw new DOMException('设备未打开', 'InvalidStateError');
+      this.sentReports.push({ reportId: reportId, bytes: toBytes(data) });
+      await new Promise(function (r) { setTimeout(r, 5); });
+      return undefined;
+    }
+
+    async sendFeatureReport(reportId, data) {
+      if (!this._opened) throw new DOMException('设备未打开', 'InvalidStateError');
+      this.sentFeatureReports.push({ reportId: reportId, bytes: toBytes(data) });
+      await new Promise(function (r) { setTimeout(r, 5); });
+      return undefined;
+    }
+
+    async receiveFeatureReport(reportId) {
+      if (!this._opened) throw new DOMException('设备未打开', 'InvalidStateError');
+      await new Promise(function (r) { setTimeout(r, 8); });
+      // 模拟读回：0x55 0x05 0x04 0xDE 0xAD 0xBE 0xEF
+      var buf = new Uint8Array([0x55, reportId, 0x04, 0xde, 0xad, 0xbe, 0xef]);
+      return new DataView(buf.buffer);
+    }
+
+    /** 由本页主动触发一次 inputreport（真实环境是键盘/驱动发上来的） */
+    emitInputReport(reportId, bytes) {
+      var buf = new Uint8Array(bytes);
+      var ev;
+      try {
+        ev = new Event('inputreport');
+      } catch (e) {
+        ev = document.createEvent('Event');
+        ev.initEvent('inputreport', false, false);
+      }
+      // 真实事件是 HIDInputReportEvent，无法构造，这里补上必要字段
+      Object.defineProperty(ev, 'reportId', { value: reportId, configurable: true });
+      Object.defineProperty(ev, 'data', { value: new DataView(buf.buffer), configurable: true });
+      this.dispatchEvent(ev);
+    }
+  }
+
+  /* ---------------- 伪造 navigator.hid ---------------- */
+  var fakeDevice = new HIDDevice();
+  var fakeHid = new EventTarget();
+
+  fakeHid.getDevices = async function getDevices() {
+    await new Promise(function (r) { setTimeout(r, 10); });
+    return [fakeDevice];
+  };
+  fakeHid.requestDevice = async function requestDevice(options) {
+    console.log('[fakehid] requestDevice 被调用，filters =', JSON.stringify(options && options.filters));
+    await new Promise(function (r) { setTimeout(r, 10); });
+    return [fakeDevice];
+  };
+
+  // ★ 关键：用 defineProperty 覆盖（真 Chrome 里 navigator.hid 是原型 getter，
+  //   只有 defineProperty 才能盖掉）。hook.js 会在这里把值包好。
+  Object.defineProperty(navigator, 'hid', {
+    value: fakeHid,
+    configurable: true,
+    enumerable: true,
+    writable: false,
+  });
+
+  window.__FAKE_DEVICE = fakeDevice;
+  window.__FAKE_HID = fakeHid;
+
+  /* ---------------- 渲染 ---------------- */
+  function render() {
+    var okAll = results.length > 0 && results.every(function (r) { return r.ok; });
+    var el = document.getElementById('status');
+    el.className = okAll ? 'pass' : 'fail';
+    el.textContent = (okAll ? '✔ ALL PASS' : '✘ FAIL') + '  (' +
+      results.filter(function (r) { return r.ok; }).length + '/' + results.length + ')';
+    document.title = 'fakehid ' + (okAll ? 'PASS' : 'FAIL');
+
+    var html = '<table><tr><th>断言</th><th>结果</th><th>细节</th></tr>';
+    results.forEach(function (r) {
+      html += '<tr><td>' + r.name + '</td><td class="' + (r.ok ? 'ok' : 'no') + '">' +
+        (r.ok ? 'PASS' : 'FAIL') + '</td><td><code>' +
+        String(r.detail === null ? '' : r.detail).replace(/</g, '&lt;') + '</code></td></tr>';
+    });
+    html += '</table>';
+    document.getElementById('tableWrap').innerHTML = html;
+
+    document.getElementById('dump').textContent = JSON.stringify({
+      pageAssertions: results,
+      sentReports: fakeDevice.sentReports,
+      sentFeatureReports: fakeDevice.sentFeatureReports,
+      hookState: (typeof window.__ajazzState === 'function') ? window.__ajazzState() : null
+    }, null, 2);
+
+    window.__TEST_RESULT = {
+      ok: okAll,
+      pass: results.filter(function (r) { return r.ok; }).length,
+      total: results.length,
+      assertions: results,
+      hookState: (typeof window.__ajazzState === 'function') ? window.__ajazzState() : null,
+      finishedAt: Date.now()
+    };
+  }
+
+  /* ---------------- 主流程 ---------------- */
+  async function run() {
+    var hid = navigator.hid;
+    var dev = fakeDevice;
+
+    /* 断言 1：navigator.hid 存在 */
+    record('navigator.hid 存在', !!hid, hid ? 'yes' : 'no');
+
+    /* 断言 2：getDevices 已被包装（不是 "[native code]"） */
+    var gdSrc = hid && hid.getDevices ? Function.prototype.toString.call(hid.getDevices) : '';
+    record('navigator.hid.getDevices 不是原生实现（已被 hook 包装）',
+      !!gdSrc && gdSrc.indexOf('native code') === -1,
+      gdSrc ? gdSrc.replace(/\s+/g, ' ').slice(0, 90) + '…' : '(缺失)');
+    record('navigator.hid.getDevices 带 __ajazz_hook__ 标记',
+      gdSrc.indexOf('__ajazz_hook__') !== -1);
+
+    /* 断言 3：requestDevice 已被包装 */
+    var rdSrc = hid && hid.requestDevice ? Function.prototype.toString.call(hid.requestDevice) : '';
+    record('navigator.hid.requestDevice 不是原生实现（已被 hook 包装）',
+      !!rdSrc && rdSrc.indexOf('native code') === -1,
+      rdSrc ? rdSrc.replace(/\s+/g, ' ').slice(0, 90) + '…' : '(缺失)');
+    record('navigator.hid.requestDevice 带 __ajazz_hook__ 标记',
+      rdSrc.indexOf('__ajazz_hook__') !== -1);
+
+    /* 断言 4：钩子安装标记 */
+    record('window.__ajazzHookInstalled === true', window.__ajazzHookInstalled === true);
+
+    /* 断言 5：window.__ajazzFlush 由 CDP binding 注入 */
+    record('window.__ajazzFlush 是函数（CDP binding 已注入）',
+      typeof window.__ajazzFlush === 'function',
+      typeof window.__ajazzFlush);
+
+    /* ---------------- 触发 1：getDevices（页面加载后自动调用） ----------------
+     * ★ 顺序很重要：设备由 getDevices 返回时 hook 才会给「设备实例」打补丁，
+     *   所以下面那些针对 device 的断言必须放在 getDevices 之后 —— 真实网页里
+     *   也是同样的时序（页面拿到设备时它已经是包装过的）。 */
+    var list = await hid.getDevices();
+    record('getDevices 返回 1 个设备', list.length === 1,
+      'VID=0x' + dev.vendorId.toString(16) + ' PID=0x' + dev.productId.toString(16) +
+      ' collections[0].usagePage=0x' + dev.collections[0].usagePage.toString(16));
+
+    /* 断言 6：device 方法也被包装（用 hook 写入的标记判断，比"非 native code"更严格） */
+    var sendSrc = Function.prototype.toString.call(dev.sendReport);
+    record('HIDDevice.sendReport 已被 hook 包装（带 __ajazz_hook__ 标记）',
+      sendSrc.indexOf('__ajazz_hook__') !== -1, sendSrc.replace(/\s+/g, ' ').slice(0, 80) + '…');
+    record('HIDDevice.sendFeatureReport 已被 hook 包装',
+      Function.prototype.toString.call(dev.sendFeatureReport).indexOf('__ajazz_hook__') !== -1);
+    record('HIDDevice.receiveFeatureReport 已被 hook 包装',
+      Function.prototype.toString.call(dev.receiveFeatureReport).indexOf('__ajazz_hook__') !== -1);
+    record('HIDDevice.open 已被 hook 包装',
+      Function.prototype.toString.call(dev.open).indexOf('__ajazz_hook__') !== -1);
+
+    /* 断言 7：设备名前缀被剥掉 */
+    record('productName 的 "KEYBOARD " 前缀已被剥离',
+      dev.productName === EXPECT_NAME,
+      'raw=' + RAW_NAME + ' / seen=' + dev.productName);
+
+    /* 断言 8：hook 自报补丁数量 */
+    var st = (typeof window.__ajazzState === 'function') ? window.__ajazzState() : null;
+    record('hook 自报 devicesPatched >= 1', !!st && st.devicesPatched >= 1,
+      st ? JSON.stringify(st) : '(无 __ajazzState)');
+
+    /* 触发 2：requestDevice（带 filters，验证 filters 也被记录） */
+    var picked = await hid.requestDevice({ filters: [{ vendorId: VID, productId: PID, usagePage: 0xFF67 }] });
+    record('requestDevice 返回 1 个设备', picked.length === 1);
+
+    /* 触发 3：open */
+    await dev.open();
+    record('open() 后 opened === true', dev.opened === true);
+
+    /* 触发 4：sendReport（输出报文） */
+    var outPayload = new Uint8Array([0x55, 0x10, 0x00, 0x01, 0xa0, 0x0b, 0x00, 0x00]);
+    await dev.sendReport(0x00, outPayload);
+    record('sendReport 报文到达设备', dev.sentReports.length === 1 &&
+      dev.sentReports[0].bytes.join(',') === Array.from(outPayload).join(','),
+      dev.sentReports[0] ? dev.sentReports[0].bytes.join(' ') : '(无)');
+
+    /* 触发 5：sendFeatureReport */
+    var featPayload = new Uint8Array([0x55, 0x80, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06]);
+    await dev.sendFeatureReport(0x05, featPayload);
+    record('sendFeatureReport 报文到达设备', dev.sentFeatureReports.length === 1,
+      dev.sentFeatureReports[0] ? dev.sentFeatureReports[0].bytes.join(' ') : '(无)');
+
+    /* 触发 6：receiveFeatureReport（输入特性报文） */
+    var view = await dev.receiveFeatureReport(0x05);
+    var back = Array.from(new Uint8Array(view.buffer, view.byteOffset, view.byteLength));
+    record('receiveFeatureReport 返回 7 字节', back.length === 7, back.join(' '));
+
+    /* 触发 7：inputreport 事件（键盘回报） */
+    dev.emitInputReport(0x01, [0x55, 0x01, 0x04, 0xca, 0xfe, 0xba, 0xbe]);
+    await new Promise(function (r) { setTimeout(r, 40); });
+    record('inputreport 事件已派发（hook 应记录一条 dir=in）', true, 'reportId=0x01');
+
+    /* 触发 8：connect / disconnect 事件 */
+    try {
+      var cev = new Event('connect');
+      Object.defineProperty(cev, 'device', { value: dev, configurable: true });
+      hid.dispatchEvent(cev);
+      await new Promise(function (r) { setTimeout(r, 20); });
+      record('connect 事件已派发（hook 应记录一条 dir=event）', true);
+
+      var dev0 = new Event('disconnect');
+      Object.defineProperty(dev0, 'device', { value: dev, configurable: true });
+      hid.dispatchEvent(dev0);
+      await new Promise(function (r) { setTimeout(r, 20); });
+      record('disconnect 事件已派发', true);
+    } catch (e) {
+      record('connect/disconnect 事件派发', false, String(e));
+    }
+
+    /* 触发 9：close */
+    await dev.close();
+    record('close() 后 opened === false', dev.opened === false);
+
+    render();
+    // 再刷新一次，确保 JSONL 里能拿到最终状态（hook 每 200ms 会重试积压队列）
+    setTimeout(render, 400);
+  }
+
+  run().catch(function (err) {
+    record('主流程执行', false, String(err && err.stack ? err.stack : err));
+    render();
+  });
+})();
+</script>
+</body>
+</html>

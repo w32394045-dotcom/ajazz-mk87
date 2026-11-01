@@ -1,0 +1,2 @@
+# token====166 hits=1 uniq=1
+@1920798	===166&&r[1]===255&&r[2]===1&&n&&typeof n==`function`)try{n(

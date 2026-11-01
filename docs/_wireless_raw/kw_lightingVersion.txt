@@ -1,0 +1,4 @@
+# token=lightingVersion hits=3 uniq=3
+@1917787	lightingVersion:i[31],firmwareStatus:i[32],maxProfile:i[33],tftColorByteOrder:i[35]};return t&&(BX=d
+@1932617	lightingVersion;if(t.connectType===`USB`){let t=a-8,s=Math.ceil(r.length/t);for(let a=0;a<s;a++){let
+@2441519	lightingVersion===1){let n=m.value.flatMap(e=>e.map(e=>e.value)),r=await o(`getAllLightsRGB24G64Byte

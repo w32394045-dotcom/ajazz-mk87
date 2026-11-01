@@ -1,0 +1,52 @@
+{
+  "ts": "2026-11-01 07:33:10",
+  "duration": 35.0,
+  "n_events": 5,
+  "events": [
+    {
+      "device": "\\\\?\\HID#VID_0C45&PID_8047&MI_00#8&3b47c812&0&0000#{884b96c3-56ef-11d1-bc8c-00a0c91405dd}",
+      "type": "keyboard",
+      "vkey": 66,
+      "make": 48,
+      "flags": 1,
+      "msg": 257,
+      "extra": 0
+    },
+    {
+      "device": "\\\\?\\HID#VID_0C45&PID_8047&MI_00#8&3b47c812&0&0000#{884b96c3-56ef-11d1-bc8c-00a0c91405dd}",
+      "type": "keyboard",
+      "vkey": 49,
+      "make": 2,
+      "flags": 0,
+      "msg": 256,
+      "extra": 0
+    },
+    {
+      "device": "\\\\?\\HID#VID_0C45&PID_8047&MI_00#8&3b47c812&0&0000#{884b96c3-56ef-11d1-bc8c-00a0c91405dd}",
+      "type": "keyboard",
+      "vkey": 49,
+      "make": 2,
+      "flags": 1,
+      "msg": 257,
+      "extra": 0
+    },
+    {
+      "device": "\\\\?\\HID#VID_0C45&PID_8047&MI_00#8&3b47c812&0&0000#{884b96c3-56ef-11d1-bc8c-00a0c91405dd}",
+      "type": "keyboard",
+      "vkey": 13,
+      "make": 28,
+      "flags": 0,
+      "msg": 256,
+      "extra": 0
+    },
+    {
+      "device": "\\\\?\\HID#VID_0C45&PID_8047&MI_00#8&3b47c812&0&0000#{884b96c3-56ef-11d1-bc8c-00a0c91405dd}",
+      "type": "keyboard",
+      "vkey": 13,
+      "make": 28,
+      "flags": 1,
+      "msg": 257,
+      "extra": 0
+    }
+  ]
+}

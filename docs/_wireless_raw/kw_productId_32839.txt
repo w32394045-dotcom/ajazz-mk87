@@ -1,0 +1,3 @@
+# token=productId:32839 hits=2 uniq=2
+@1194734	productId:32839,supplierName:`
+@1814547	productId:32839,suppliers:[`on

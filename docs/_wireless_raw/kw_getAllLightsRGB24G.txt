@@ -1,0 +1,5 @@
+# token=getAllLightsRGB24G hits=4 uniq=4
+@1913014	getAllLightsRGB24G:()=>OZ,getAllLightsRGB24G64Byte:()=>kZ,getCustomLEDData:()=>yZ,getDefaultFnKeyMatrix:()=>pZ,getDevice
+@1913040	getAllLightsRGB24G64Byte:()=>kZ,getCustomLEDData:()=>yZ,getDefaultFnKeyMatrix:()=>pZ,getDeviceInfo:()=>GX,getDeviceSn:()
+@2441595	getAllLightsRGB24G64Byte`,void 0,n,e.signal);r&&r.allLightsRgb&&Array.isArray(r.allLightsRgb)&&(t=r.allLightsRgb,s.value
+@2441832	getAllLightsRGB24G`,void 0,n,e.signal);if(r&&r.allLightsRgb&&Array.isArray(r.allLightsRgb)){let e=0,n=r.allLightsRgb;m.v

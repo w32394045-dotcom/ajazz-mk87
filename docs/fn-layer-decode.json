@@ -1,0 +1,1010 @@
+[
+  {
+    "slot": 0,
+    "key": "Esc",
+    "main": "02 00 29 00",
+    "main_desc": "按键 usage 0x29",
+    "fn": "02 00 29 00",
+    "fn_desc": "按键 usage 0x29",
+    "func_id": null
+  },
+  {
+    "slot": 1,
+    "key": "F1",
+    "main": "02 00 3a 00",
+    "main_desc": "按键 usage 0x3A",
+    "fn": "02 00 3a 00",
+    "fn_desc": "按键 usage 0x3A",
+    "func_id": null
+  },
+  {
+    "slot": 2,
+    "key": "F2",
+    "main": "02 00 3b 00",
+    "main_desc": "按键 usage 0x3B",
+    "fn": "02 00 3b 00",
+    "fn_desc": "按键 usage 0x3B",
+    "func_id": null
+  },
+  {
+    "slot": 3,
+    "key": "F3",
+    "main": "02 00 3c 00",
+    "main_desc": "按键 usage 0x3C",
+    "fn": "02 00 3c 00",
+    "fn_desc": "按键 usage 0x3C",
+    "func_id": null
+  },
+  {
+    "slot": 4,
+    "key": "F4",
+    "main": "02 00 3d 00",
+    "main_desc": "按键 usage 0x3D",
+    "fn": "02 00 3d 00",
+    "fn_desc": "按键 usage 0x3D",
+    "func_id": null
+  },
+  {
+    "slot": 5,
+    "key": "F5",
+    "main": "02 00 3e 00",
+    "main_desc": "按键 usage 0x3E",
+    "fn": "02 00 3e 00",
+    "fn_desc": "按键 usage 0x3E",
+    "func_id": null
+  },
+  {
+    "slot": 6,
+    "key": "F6",
+    "main": "02 00 3f 00",
+    "main_desc": "按键 usage 0x3F",
+    "fn": "02 00 3f 00",
+    "fn_desc": "按键 usage 0x3F",
+    "func_id": null
+  },
+  {
+    "slot": 7,
+    "key": "F7",
+    "main": "02 00 40 00",
+    "main_desc": "按键 usage 0x40",
+    "fn": "02 00 40 00",
+    "fn_desc": "按键 usage 0x40",
+    "func_id": null
+  },
+  {
+    "slot": 8,
+    "key": "F8",
+    "main": "02 00 41 00",
+    "main_desc": "按键 usage 0x41",
+    "fn": "02 00 41 00",
+    "fn_desc": "按键 usage 0x41",
+    "func_id": null
+  },
+  {
+    "slot": 9,
+    "key": "F9",
+    "main": "02 00 42 00",
+    "main_desc": "按键 usage 0x42",
+    "fn": "02 00 42 00",
+    "fn_desc": "按键 usage 0x42",
+    "func_id": null
+  },
+  {
+    "slot": 10,
+    "key": "F10",
+    "main": "02 00 43 00",
+    "main_desc": "按键 usage 0x43",
+    "fn": "02 00 43 00",
+    "fn_desc": "按键 usage 0x43",
+    "func_id": null
+  },
+  {
+    "slot": 11,
+    "key": "F11",
+    "main": "02 00 44 00",
+    "main_desc": "按键 usage 0x44",
+    "fn": "02 00 44 00",
+    "fn_desc": "按键 usage 0x44",
+    "func_id": null
+  },
+  {
+    "slot": 12,
+    "key": "F12",
+    "main": "02 00 45 00",
+    "main_desc": "按键 usage 0x45",
+    "fn": "02 00 45 00",
+    "fn_desc": "按键 usage 0x45",
+    "func_id": null
+  },
+  {
+    "slot": 13,
+    "key": "(未知)",
+    "main": "03 e9 00 00",
+    "main_desc": "多媒体 0xE900",
+    "fn": "03 e9 00 00",
+    "fn_desc": "pageType=3 p1=E9 p2=00 p3=00",
+    "func_id": null
+  },
+  {
+    "slot": 14,
+    "key": "(未知)",
+    "main": "03 ea 00 00",
+    "main_desc": "多媒体 0xEA00",
+    "fn": "03 ea 00 00",
+    "fn_desc": "pageType=3 p1=EA p2=00 p3=00",
+    "func_id": null
+  },
+  {
+    "slot": 15,
+    "key": "(未知)",
+    "main": "02 00 98 00",
+    "main_desc": "按键 usage 0x98",
+    "fn": "0d 00 00 2e",
+    "fn_desc": "FUNC 46 = 旋钮模式切换",
+    "func_id": 46
+  },
+  {
+    "slot": 16,
+    "key": "` ~",
+    "main": "02 00 35 00",
+    "main_desc": "按键 usage 0x35",
+    "fn": "0d 00 00 63",
+    "fn_desc": "FUNC 99 = 自定义灯光录制",
+    "func_id": 99
+  },
+  {
+    "slot": 17,
+    "key": "1 !",
+    "main": "02 00 1e 00",
+    "main_desc": "按键 usage 0x1E",
+    "fn": "0d 00 00 47",
+    "fn_desc": "FUNC 71 = 自定义灯光1",
+    "func_id": 71
+  },
+  {
+    "slot": 18,
+    "key": "2 @",
+    "main": "02 00 1f 00",
+    "main_desc": "按键 usage 0x1F",
+    "fn": "0d 00 00 48",
+    "fn_desc": "FUNC 72 = 自定义灯光2",
+    "func_id": 72
+  },
+  {
+    "slot": 19,
+    "key": "3 #",
+    "main": "02 00 20 00",
+    "main_desc": "按键 usage 0x20",
+    "fn": "0d 00 00 62",
+    "fn_desc": "FUNC 98 = 自定义灯光3",
+    "func_id": 98
+  },
+  {
+    "slot": 20,
+    "key": "4 $",
+    "main": "02 00 21 00",
+    "main_desc": "按键 usage 0x21",
+    "fn": "02 00 21 00",
+    "fn_desc": "按键 usage 0x21",
+    "func_id": null
+  },
+  {
+    "slot": 21,
+    "key": "5 %",
+    "main": "02 00 22 00",
+    "main_desc": "按键 usage 0x22",
+    "fn": "02 00 22 00",
+    "fn_desc": "按键 usage 0x22",
+    "func_id": null
+  },
+  {
+    "slot": 22,
+    "key": "6 ^",
+    "main": "02 00 23 00",
+    "main_desc": "按键 usage 0x23",
+    "fn": "02 00 23 00",
+    "fn_desc": "按键 usage 0x23",
+    "func_id": null
+  },
+  {
+    "slot": 23,
+    "key": "7 &",
+    "main": "02 00 24 00",
+    "main_desc": "按键 usage 0x24",
+    "fn": "02 00 24 00",
+    "fn_desc": "按键 usage 0x24",
+    "func_id": null
+  },
+  {
+    "slot": 24,
+    "key": "8 *",
+    "main": "02 00 25 00",
+    "main_desc": "按键 usage 0x25",
+    "fn": "02 00 25 00",
+    "fn_desc": "按键 usage 0x25",
+    "func_id": null
+  },
+  {
+    "slot": 25,
+    "key": "9 (",
+    "main": "02 00 26 00",
+    "main_desc": "按键 usage 0x26",
+    "fn": "02 00 26 00",
+    "fn_desc": "按键 usage 0x26",
+    "func_id": null
+  },
+  {
+    "slot": 26,
+    "key": "0 )",
+    "main": "02 00 27 00",
+    "main_desc": "按键 usage 0x27",
+    "fn": "02 00 27 00",
+    "fn_desc": "按键 usage 0x27",
+    "func_id": null
+  },
+  {
+    "slot": 27,
+    "key": "ˉ -",
+    "main": "02 00 2d 00",
+    "main_desc": "按键 usage 0x2D",
+    "fn": "0d 00 00 10",
+    "fn_desc": "FUNC 16 = 灯光速度-",
+    "func_id": 16
+  },
+  {
+    "slot": 28,
+    "key": "= +",
+    "main": "02 00 2e 00",
+    "main_desc": "按键 usage 0x2E",
+    "fn": "0d 00 00 0f",
+    "fn_desc": "FUNC 15 = 灯光速度+",
+    "func_id": 15
+  },
+  {
+    "slot": 29,
+    "key": "(未知)",
+    "main": "02 00 53 00",
+    "main_desc": "按键 usage 0x53",
+    "fn": "02 00 53 00",
+    "fn_desc": "按键 usage 0x53",
+    "func_id": null
+  },
+  {
+    "slot": 30,
+    "key": "(未知)",
+    "main": "02 00 54 00",
+    "main_desc": "按键 usage 0x54",
+    "fn": "02 00 54 00",
+    "fn_desc": "按键 usage 0x54",
+    "func_id": null
+  },
+  {
+    "slot": 31,
+    "key": "(未知)",
+    "main": "02 00 55 00",
+    "main_desc": "按键 usage 0x55",
+    "fn": "02 00 55 00",
+    "fn_desc": "按键 usage 0x55",
+    "func_id": null
+  },
+  {
+    "slot": 32,
+    "key": "Tab",
+    "main": "02 00 2b 00",
+    "main_desc": "按键 usage 0x2B",
+    "fn": "02 00 2b 00",
+    "fn_desc": "按键 usage 0x2B",
+    "func_id": null
+  },
+  {
+    "slot": 33,
+    "key": "Q",
+    "main": "02 00 14 00",
+    "main_desc": "按键 usage 0x14",
+    "fn": "0d 00 00 02",
+    "fn_desc": "FUNC 2 = 蓝牙通道1",
+    "func_id": 2
+  },
+  {
+    "slot": 34,
+    "key": "W",
+    "main": "02 00 1a 00",
+    "main_desc": "按键 usage 0x1A",
+    "fn": "0d 00 00 03",
+    "fn_desc": "FUNC 3 = 蓝牙通道2",
+    "func_id": 3
+  },
+  {
+    "slot": 35,
+    "key": "E",
+    "main": "02 00 08 00",
+    "main_desc": "按键 usage 0x08",
+    "fn": "0d 00 00 04",
+    "fn_desc": "FUNC 4 = 蓝牙通道3",
+    "func_id": 4
+  },
+  {
+    "slot": 36,
+    "key": "R",
+    "main": "02 00 15 00",
+    "main_desc": "按键 usage 0x15",
+    "fn": "0d 00 00 05",
+    "fn_desc": "FUNC 5 = 无线回连",
+    "func_id": 5
+  },
+  {
+    "slot": 37,
+    "key": "T",
+    "main": "02 00 17 00",
+    "main_desc": "按键 usage 0x17",
+    "fn": "02 00 17 00",
+    "fn_desc": "按键 usage 0x17",
+    "func_id": null
+  },
+  {
+    "slot": 38,
+    "key": "Y",
+    "main": "02 00 1c 00",
+    "main_desc": "按键 usage 0x1C",
+    "fn": "02 00 1c 00",
+    "fn_desc": "按键 usage 0x1C",
+    "func_id": null
+  },
+  {
+    "slot": 39,
+    "key": "U",
+    "main": "02 00 18 00",
+    "main_desc": "按键 usage 0x18",
+    "fn": "02 00 18 00",
+    "fn_desc": "按键 usage 0x18",
+    "func_id": null
+  },
+  {
+    "slot": 40,
+    "key": "I",
+    "main": "02 00 0c 00",
+    "main_desc": "按键 usage 0x0C",
+    "fn": "02 00 0c 00",
+    "fn_desc": "按键 usage 0x0C",
+    "func_id": null
+  },
+  {
+    "slot": 41,
+    "key": "O",
+    "main": "02 00 12 00",
+    "main_desc": "按键 usage 0x12",
+    "fn": "02 00 12 00",
+    "fn_desc": "按键 usage 0x12",
+    "func_id": null
+  },
+  {
+    "slot": 42,
+    "key": "P",
+    "main": "02 00 13 00",
+    "main_desc": "按键 usage 0x13",
+    "fn": "02 00 13 00",
+    "fn_desc": "按键 usage 0x13",
+    "func_id": null
+  },
+  {
+    "slot": 43,
+    "key": "[ {",
+    "main": "02 00 2f 00",
+    "main_desc": "按键 usage 0x2F",
+    "fn": "02 00 2f 00",
+    "fn_desc": "按键 usage 0x2F",
+    "func_id": null
+  },
+  {
+    "slot": 44,
+    "key": "] }",
+    "main": "02 00 30 00",
+    "main_desc": "按键 usage 0x30",
+    "fn": "02 00 30 00",
+    "fn_desc": "按键 usage 0x30",
+    "func_id": null
+  },
+  {
+    "slot": 45,
+    "key": "(未知)",
+    "main": "02 00 5f 00",
+    "main_desc": "按键 usage 0x5F",
+    "fn": "02 00 5f 00",
+    "fn_desc": "按键 usage 0x5F",
+    "func_id": null
+  },
+  {
+    "slot": 46,
+    "key": "(未知)",
+    "main": "02 00 60 00",
+    "main_desc": "按键 usage 0x60",
+    "fn": "02 00 60 00",
+    "fn_desc": "按键 usage 0x60",
+    "func_id": null
+  },
+  {
+    "slot": 47,
+    "key": "(未知)",
+    "main": "02 00 61 00",
+    "main_desc": "按键 usage 0x61",
+    "fn": "02 00 61 00",
+    "fn_desc": "按键 usage 0x61",
+    "func_id": null
+  },
+  {
+    "slot": 48,
+    "key": "Caps",
+    "main": "02 00 39 00",
+    "main_desc": "按键 usage 0x39",
+    "fn": "02 00 39 00",
+    "fn_desc": "按键 usage 0x39",
+    "func_id": null
+  },
+  {
+    "slot": 49,
+    "key": "A",
+    "main": "02 00 04 00",
+    "main_desc": "按键 usage 0x04",
+    "fn": "02 00 04 00",
+    "fn_desc": "按键 usage 0x04",
+    "func_id": null
+  },
+  {
+    "slot": 50,
+    "key": "S",
+    "main": "02 00 16 00",
+    "main_desc": "按键 usage 0x16",
+    "fn": "02 00 16 00",
+    "fn_desc": "按键 usage 0x16",
+    "func_id": null
+  },
+  {
+    "slot": 51,
+    "key": "D",
+    "main": "02 00 07 00",
+    "main_desc": "按键 usage 0x07",
+    "fn": "02 00 07 00",
+    "fn_desc": "按键 usage 0x07",
+    "func_id": null
+  },
+  {
+    "slot": 52,
+    "key": "F",
+    "main": "02 00 09 00",
+    "main_desc": "按键 usage 0x09",
+    "fn": "02 00 09 00",
+    "fn_desc": "按键 usage 0x09",
+    "func_id": null
+  },
+  {
+    "slot": 53,
+    "key": "G",
+    "main": "02 00 0a 00",
+    "main_desc": "按键 usage 0x0A",
+    "fn": "02 00 0a 00",
+    "fn_desc": "按键 usage 0x0A",
+    "func_id": null
+  },
+  {
+    "slot": 54,
+    "key": "H",
+    "main": "02 00 0b 00",
+    "main_desc": "按键 usage 0x0B",
+    "fn": "02 00 0b 00",
+    "fn_desc": "按键 usage 0x0B",
+    "func_id": null
+  },
+  {
+    "slot": 55,
+    "key": "J",
+    "main": "02 00 0d 00",
+    "main_desc": "按键 usage 0x0D",
+    "fn": "02 00 0d 00",
+    "fn_desc": "按键 usage 0x0D",
+    "func_id": null
+  },
+  {
+    "slot": 56,
+    "key": "K",
+    "main": "02 00 0e 00",
+    "main_desc": "按键 usage 0x0E",
+    "fn": "02 00 0e 00",
+    "fn_desc": "按键 usage 0x0E",
+    "func_id": null
+  },
+  {
+    "slot": 57,
+    "key": "L",
+    "main": "02 00 0f 00",
+    "main_desc": "按键 usage 0x0F",
+    "fn": "02 00 0f 00",
+    "fn_desc": "按键 usage 0x0F",
+    "func_id": null
+  },
+  {
+    "slot": 58,
+    "key": "; :",
+    "main": "02 00 33 00",
+    "main_desc": "按键 usage 0x33",
+    "fn": "02 00 33 00",
+    "fn_desc": "按键 usage 0x33",
+    "func_id": null
+  },
+  {
+    "slot": 59,
+    "key": "' \"",
+    "main": "02 00 34 00",
+    "main_desc": "按键 usage 0x34",
+    "fn": "0d 00 00 18",
+    "fn_desc": "FUNC 24 = 侧灯颜色切换",
+    "func_id": 24
+  },
+  {
+    "slot": 60,
+    "key": "\\\\ | ",
+    "main": "02 00 31 00",
+    "main_desc": "按键 usage 0x31",
+    "fn": "0d 00 00 0b",
+    "fn_desc": "FUNC 11 = 灯光效果切换",
+    "func_id": 11
+  },
+  {
+    "slot": 61,
+    "key": "(未知)",
+    "main": "02 00 5c 00",
+    "main_desc": "按键 usage 0x5C",
+    "fn": "02 00 5c 00",
+    "fn_desc": "按键 usage 0x5C",
+    "func_id": null
+  },
+  {
+    "slot": 62,
+    "key": "(未知)",
+    "main": "02 00 5d 00",
+    "main_desc": "按键 usage 0x5D",
+    "fn": "02 00 5d 00",
+    "fn_desc": "按键 usage 0x5D",
+    "func_id": null
+  },
+  {
+    "slot": 63,
+    "key": "(未知)",
+    "main": "02 00 5e 00",
+    "main_desc": "按键 usage 0x5E",
+    "fn": "02 00 5e 00",
+    "fn_desc": "按键 usage 0x5E",
+    "func_id": null
+  },
+  {
+    "slot": 64,
+    "key": "L-Shift",
+    "main": "02 00 e1 00",
+    "main_desc": "按键 usage 0xE1",
+    "fn": "02 00 e1 00",
+    "fn_desc": "按键 usage 0xE1",
+    "func_id": null
+  },
+  {
+    "slot": 65,
+    "key": "Z",
+    "main": "02 00 1d 00",
+    "main_desc": "按键 usage 0x1D",
+    "fn": "02 00 1d 00",
+    "fn_desc": "按键 usage 0x1D",
+    "func_id": null
+  },
+  {
+    "slot": 66,
+    "key": "X",
+    "main": "02 00 1b 00",
+    "main_desc": "按键 usage 0x1B",
+    "fn": "0d 00 00 11",
+    "fn_desc": "FUNC 17 = 关闭灯光",
+    "func_id": 17
+  },
+  {
+    "slot": 67,
+    "key": "C",
+    "main": "02 00 06 00",
+    "main_desc": "按键 usage 0x06",
+    "fn": "0d 00 00 54",
+    "fn_desc": "FUNC 84 = 显示屏语言切换为汉语",
+    "func_id": 84
+  },
+  {
+    "slot": 68,
+    "key": "V",
+    "main": "02 00 19 00",
+    "main_desc": "按键 usage 0x19",
+    "fn": "0d 00 00 55",
+    "fn_desc": "FUNC 85 = 显示屏语言切换为英语",
+    "func_id": 85
+  },
+  {
+    "slot": 69,
+    "key": "B",
+    "main": "02 00 05 00",
+    "main_desc": "按键 usage 0x05",
+    "fn": "02 00 05 00",
+    "fn_desc": "按键 usage 0x05",
+    "func_id": null
+  },
+  {
+    "slot": 70,
+    "key": "N",
+    "main": "02 00 11 00",
+    "main_desc": "按键 usage 0x11",
+    "fn": "02 00 11 00",
+    "fn_desc": "按键 usage 0x11",
+    "func_id": null
+  },
+  {
+    "slot": 71,
+    "key": "M",
+    "main": "02 00 10 00",
+    "main_desc": "按键 usage 0x10",
+    "fn": "02 00 10 00",
+    "fn_desc": "按键 usage 0x10",
+    "func_id": null
+  },
+  {
+    "slot": 72,
+    "key": ", <",
+    "main": "02 00 36 00",
+    "main_desc": "按键 usage 0x36",
+    "fn": "02 00 36 00",
+    "fn_desc": "按键 usage 0x36",
+    "func_id": null
+  },
+  {
+    "slot": 73,
+    "key": ". >",
+    "main": "02 00 37 00",
+    "main_desc": "按键 usage 0x37",
+    "fn": "02 00 37 00",
+    "fn_desc": "按键 usage 0x37",
+    "func_id": null
+  },
+  {
+    "slot": 74,
+    "key": "/ ?",
+    "main": "02 00 38 00",
+    "main_desc": "按键 usage 0x38",
+    "fn": "02 00 38 00",
+    "fn_desc": "按键 usage 0x38",
+    "func_id": null
+  },
+  {
+    "slot": 75,
+    "key": "R-Shift",
+    "main": "02 00 e5 00",
+    "main_desc": "按键 usage 0xE5",
+    "fn": "02 00 e5 00",
+    "fn_desc": "按键 usage 0xE5",
+    "func_id": null
+  },
+  {
+    "slot": 76,
+    "key": "Enter",
+    "main": "02 00 28 00",
+    "main_desc": "按键 usage 0x28",
+    "fn": "0d 00 00 17",
+    "fn_desc": "FUNC 23 = 侧灯效果切换",
+    "func_id": 23
+  },
+  {
+    "slot": 77,
+    "key": "(未知)",
+    "main": "02 00 59 00",
+    "main_desc": "按键 usage 0x59",
+    "fn": "02 00 59 00",
+    "fn_desc": "按键 usage 0x59",
+    "func_id": null
+  },
+  {
+    "slot": 78,
+    "key": "(未知)",
+    "main": "02 00 5a 00",
+    "main_desc": "按键 usage 0x5A",
+    "fn": "02 00 5a 00",
+    "fn_desc": "按键 usage 0x5A",
+    "func_id": null
+  },
+  {
+    "slot": 79,
+    "key": "(未知)",
+    "main": "02 00 5b 00",
+    "main_desc": "按键 usage 0x5B",
+    "fn": "02 00 5b 00",
+    "fn_desc": "按键 usage 0x5B",
+    "func_id": null
+  },
+  {
+    "slot": 80,
+    "key": "L-Ctrl",
+    "main": "02 00 e0 00",
+    "main_desc": "按键 usage 0xE0",
+    "fn": "02 00 e0 00",
+    "fn_desc": "按键 usage 0xE0",
+    "func_id": null
+  },
+  {
+    "slot": 81,
+    "key": "L-Win",
+    "main": "02 00 e3 00",
+    "main_desc": "按键 usage 0xE3",
+    "fn": "0d 00 00 16",
+    "fn_desc": "FUNC 22 = 锁定Win",
+    "func_id": 22
+  },
+  {
+    "slot": 82,
+    "key": "L-Alt",
+    "main": "02 00 e2 00",
+    "main_desc": "按键 usage 0xE2",
+    "fn": "02 00 e2 00",
+    "fn_desc": "按键 usage 0xE2",
+    "func_id": null
+  },
+  {
+    "slot": 83,
+    "key": "Spacebar",
+    "main": "02 00 2c 00",
+    "main_desc": "按键 usage 0x2C",
+    "fn": "0d 00 00 01",
+    "fn_desc": "FUNC 1 = 恢复出厂设置",
+    "func_id": 1
+  },
+  {
+    "slot": 84,
+    "key": "R-Alt",
+    "main": "02 00 e6 00",
+    "main_desc": "按键 usage 0xE6",
+    "fn": "02 00 e6 00",
+    "fn_desc": "按键 usage 0xE6",
+    "func_id": null
+  },
+  {
+    "slot": 85,
+    "key": "Fn",
+    "main": "02 00 af 00",
+    "main_desc": "按键 usage 0xAF",
+    "fn": "02 00 af 00",
+    "fn_desc": "按键 usage 0xAF",
+    "func_id": null
+  },
+  {
+    "slot": 86,
+    "key": "Super",
+    "main": "02 00 65 00",
+    "main_desc": "按键 usage 0x65",
+    "fn": "02 00 65 00",
+    "fn_desc": "按键 usage 0x65",
+    "func_id": null
+  },
+  {
+    "slot": 87,
+    "key": "R-Ctrl",
+    "main": "02 00 e4 00",
+    "main_desc": "按键 usage 0xE4",
+    "fn": "02 00 e4 00",
+    "fn_desc": "按键 usage 0xE4",
+    "func_id": null
+  },
+  {
+    "slot": 88,
+    "key": "←",
+    "main": "02 00 50 00",
+    "main_desc": "按键 usage 0x50",
+    "fn": "0d 00 00 4e",
+    "fn_desc": "FUNC 78 = 切换灯效方向",
+    "func_id": 78
+  },
+  {
+    "slot": 89,
+    "key": "↓",
+    "main": "02 00 51 00",
+    "main_desc": "按键 usage 0x51",
+    "fn": "0d 00 00 0e",
+    "fn_desc": "FUNC 14 = 灯光亮度-",
+    "func_id": 14
+  },
+  {
+    "slot": 90,
+    "key": "↑",
+    "main": "02 00 52 00",
+    "main_desc": "按键 usage 0x52",
+    "fn": "0d 00 00 0d",
+    "fn_desc": "FUNC 13 = 灯光亮度+",
+    "func_id": 13
+  },
+  {
+    "slot": 91,
+    "key": "→",
+    "main": "02 00 4f 00",
+    "main_desc": "按键 usage 0x4F",
+    "fn": "0d 00 00 0c",
+    "fn_desc": "FUNC 12 = 灯光颜色切换",
+    "func_id": 12
+  },
+  {
+    "slot": 92,
+    "key": "Back",
+    "main": "02 00 2a 00",
+    "main_desc": "按键 usage 0x2A",
+    "fn": "0d 00 00 07",
+    "fn_desc": "FUNC 7 = 查询电量",
+    "func_id": 7
+  },
+  {
+    "slot": 93,
+    "key": "(未知)",
+    "main": "02 00 62 00",
+    "main_desc": "按键 usage 0x62",
+    "fn": "02 00 62 00",
+    "fn_desc": "按键 usage 0x62",
+    "func_id": null
+  },
+  {
+    "slot": 94,
+    "key": "(未知)",
+    "main": "02 00 63 00",
+    "main_desc": "按键 usage 0x63",
+    "fn": "02 00 63 00",
+    "fn_desc": "按键 usage 0x63",
+    "func_id": null
+  },
+  {
+    "slot": 95,
+    "key": "(未知)",
+    "main": "02 00 58 00",
+    "main_desc": "按键 usage 0x58",
+    "fn": "02 00 58 00",
+    "fn_desc": "按键 usage 0x58",
+    "func_id": null
+  },
+  {
+    "slot": 96,
+    "key": "(未知)",
+    "main": "02 00 7d 00",
+    "main_desc": "按键 usage 0x7D",
+    "fn": "02 00 7d 00",
+    "fn_desc": "按键 usage 0x7D",
+    "func_id": null
+  },
+  {
+    "slot": 97,
+    "key": "(未知)",
+    "main": "02 00 32 00",
+    "main_desc": "按键 usage 0x32",
+    "fn": "02 00 32 00",
+    "fn_desc": "按键 usage 0x32",
+    "func_id": null
+  },
+  {
+    "slot": 98,
+    "key": "(未知)",
+    "main": "02 00 64 00",
+    "main_desc": "按键 usage 0x64",
+    "fn": "02 00 64 00",
+    "fn_desc": "按键 usage 0x64",
+    "func_id": null
+  },
+  {
+    "slot": 99,
+    "key": "Print",
+    "main": "02 00 46 00",
+    "main_desc": "按键 usage 0x46",
+    "fn": "02 00 46 00",
+    "fn_desc": "按键 usage 0x46",
+    "func_id": null
+  },
+  {
+    "slot": 100,
+    "key": "Scroll",
+    "main": "02 00 47 00",
+    "main_desc": "按键 usage 0x47",
+    "fn": "02 00 47 00",
+    "fn_desc": "按键 usage 0x47",
+    "func_id": null
+  },
+  {
+    "slot": 101,
+    "key": "(未知)",
+    "main": "02 00 e7 00",
+    "main_desc": "按键 usage 0xE7",
+    "fn": "02 00 e7 00",
+    "fn_desc": "按键 usage 0xE7",
+    "func_id": null
+  },
+  {
+    "slot": 102,
+    "key": "Pause",
+    "main": "02 00 48 00",
+    "main_desc": "按键 usage 0x48",
+    "fn": "02 00 48 00",
+    "fn_desc": "按键 usage 0x48",
+    "func_id": null
+  },
+  {
+    "slot": 103,
+    "key": "Insert",
+    "main": "02 00 49 00",
+    "main_desc": "按键 usage 0x49",
+    "fn": "0d 00 00 27",
+    "fn_desc": "FUNC 39 = 关闭屏幕",
+    "func_id": 39
+  },
+  {
+    "slot": 104,
+    "key": "Home",
+    "main": "02 00 4a 00",
+    "main_desc": "按键 usage 0x4A",
+    "fn": "0d 00 00 3f",
+    "fn_desc": "FUNC 63 = GIF模式",
+    "func_id": 63
+  },
+  {
+    "slot": 105,
+    "key": "PgUp",
+    "main": "02 00 4b 00",
+    "main_desc": "按键 usage 0x4B",
+    "fn": "02 00 4b 00",
+    "fn_desc": "按键 usage 0x4B",
+    "func_id": null
+  },
+  {
+    "slot": 106,
+    "key": "Del",
+    "main": "02 00 4c 00",
+    "main_desc": "按键 usage 0x4C",
+    "fn": "0d 00 00 59",
+    "fn_desc": "FUNC 89 = LOGO LED ON/OFF",
+    "func_id": 89
+  },
+  {
+    "slot": 107,
+    "key": "End",
+    "main": "02 00 4d 00",
+    "main_desc": "按键 usage 0x4D",
+    "fn": "0d 00 00 8a",
+    "fn_desc": "FUNC 138 = 开启屏幕下方按键灯",
+    "func_id": 138
+  },
+  {
+    "slot": 108,
+    "key": "PgDn",
+    "main": "02 00 4e 00",
+    "main_desc": "按键 usage 0x4E",
+    "fn": "02 00 4e 00",
+    "fn_desc": "按键 usage 0x4E",
+    "func_id": null
+  },
+  {
+    "slot": 109,
+    "key": "(未知)",
+    "main": "02 00 56 00",
+    "main_desc": "按键 usage 0x56",
+    "fn": "02 00 56 00",
+    "fn_desc": "按键 usage 0x56",
+    "func_id": null
+  },
+  {
+    "slot": 110,
+    "key": "(未知)",
+    "main": "02 00 57 00",
+    "main_desc": "按键 usage 0x57",
+    "fn": "02 00 57 00",
+    "fn_desc": "按键 usage 0x57",
+    "func_id": null
+  },
+  {
+    "slot": 111,
+    "key": "(未知)",
+    "main": "02 00 7d 00",
+    "main_desc": "按键 usage 0x7D",
+    "fn": "02 00 7d 00",
+    "fn_desc": "按键 usage 0x7D",
+    "func_id": null
+  }
+]

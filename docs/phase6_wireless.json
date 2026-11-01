@@ -1,0 +1,17 @@
+{
+  "ts": "2026-11-01 07:45:33",
+  "action": "frames",
+  "iface_kind": "2.4G(0xFF60)",
+  "protocol_iface": {
+    "usagePage": "0xFF60",
+    "out_len": 33,
+    "in_len": 33
+  },
+  "frames": {
+    "variant": "B",
+    "stream_bytes": 174,
+    "packets": 7,
+    "n_red_after": 1,
+    "pkt0": "00 AA 35 00 00 F8 00 F8 00 F8 00 F8 00 F8 00 F8"
+  }
+}

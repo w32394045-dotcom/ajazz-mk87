@@ -1,0 +1,278 @@
+﻿{
+    "time":  "2026-11-01T08:39:42",
+    "actions":  [
+                    {
+                        "t":  "08:39:43.311",
+                        "name":  "before",
+                        "data":  {
+                                     "id":  "HID\\VID_0C45\u0026PID_FEFE\u0026MI_02\u0026COL01\\8\u0026195F4F95\u00260\u00260000",
+                                     "status":  "OK"
+                                 }
+                    },
+                    {
+                        "t":  "08:39:43.314",
+                        "name":  "before",
+                        "data":  {
+                                     "id":  "HID\\VID_0C45\u0026PID_FEFE\u0026MI_02\u0026COL02\\8\u0026195F4F95\u00260\u00260001",
+                                     "status":  "OK"
+                                 }
+                    },
+                    {
+                        "t":  "08:39:43.315",
+                        "name":  "before",
+                        "data":  {
+                                     "id":  "USB\\VID_0C45\u0026PID_FEFE\u0026MI_04\\7\u0026883A9E9\u00260\u00260004",
+                                     "status":  "Error"
+                                 }
+                    },
+                    {
+                        "t":  "08:39:43.315",
+                        "name":  "before",
+                        "data":  {
+                                     "id":  "USB\\VID_0C45\u0026PID_FEFE\u0026MI_03\\7\u0026883A9E9\u00260\u00260003",
+                                     "status":  "OK"
+                                 }
+                    },
+                    {
+                        "t":  "08:39:43.315",
+                        "name":  "before",
+                        "data":  {
+                                     "id":  "HID\\VID_0C45\u0026PID_FEFE\u0026MI_02\u0026COL03\\8\u0026195F4F95\u00260\u00260002",
+                                     "status":  "OK"
+                                 }
+                    },
+                    {
+                        "t":  "08:39:43.316",
+                        "name":  "before",
+                        "data":  {
+                                     "id":  "USB\\VID_0C45\u0026PID_FEFE\u0026MI_02\\7\u0026883A9E9\u00260\u00260002",
+                                     "status":  "OK"
+                                 }
+                    },
+                    {
+                        "t":  "08:39:43.316",
+                        "name":  "before",
+                        "data":  {
+                                     "id":  "USB\\VID_0C45\u0026PID_FEFE\u0026MI_01\\7\u0026883A9E9\u00260\u00260001",
+                                     "status":  "Error"
+                                 }
+                    },
+                    {
+                        "t":  "08:39:43.316",
+                        "name":  "before",
+                        "data":  {
+                                     "id":  "USB\\VID_0C45\u0026PID_FEFE\u0026MI_00\\7\u0026883A9E9\u00260\u00260000",
+                                     "status":  "OK"
+                                 }
+                    },
+                    {
+                        "t":  "08:39:43.317",
+                        "name":  "before",
+                        "data":  {
+                                     "id":  "USB\\VID_0C45\u0026PID_FEFE\\6\u002654CA98\u00260\u00262",
+                                     "status":  "OK"
+                                 }
+                    },
+                    {
+                        "t":  "08:39:43.317",
+                        "name":  "before",
+                        "data":  {
+                                     "id":  "HID\\VID_0C45\u0026PID_FEFE\u0026MI_02\u0026COL04\\8\u0026195F4F95\u00260\u00260003",
+                                     "status":  "OK"
+                                 }
+                    },
+                    {
+                        "t":  "08:39:43.317",
+                        "name":  "before",
+                        "data":  {
+                                     "id":  "USB\\VID_0C45\u0026PID_8047\\6\u002654CA98\u00260\u00261",
+                                     "status":  "Error"
+                                 }
+                    },
+                    {
+                        "t":  "08:39:43.318",
+                        "name":  "before",
+                        "data":  {
+                                     "id":  "HID\\VID_0C45\u0026PID_FEFE\u0026MI_00\\8\u0026424BE0A\u00260\u00260000",
+                                     "status":  "OK"
+                                 }
+                    },
+                    {
+                        "t":  "08:39:43.318",
+                        "name":  "before",
+                        "data":  {
+                                     "id":  "HID\\VID_0C45\u0026PID_FEFE\u0026MI_03\\8\u002662F3357\u00260\u00260000",
+                                     "status":  "OK"
+                                 }
+                    },
+                    {
+                        "t":  "08:39:43.318",
+                        "name":  "before",
+                        "data":  {
+                                     "id":  "HID\\VID_0C45\u0026PID_FEFE\u0026MI_02\u0026COL05\\8\u0026195F4F95\u00260\u00260004",
+                                     "status":  "OK"
+                                 }
+                    },
+                    {
+                        "t":  "08:39:43.913",
+                        "name":  "enable-ok",
+                        "data":  "USB\\VID_0C45\u0026PID_FEFE\u0026MI_04\\7\u0026883A9E9\u00260\u00260004"
+                    },
+                    {
+                        "t":  "08:39:45.012",
+                        "name":  "enable-ok",
+                        "data":  "USB\\VID_0C45\u0026PID_FEFE\u0026MI_01\\7\u0026883A9E9\u00260\u00260001"
+                    },
+                    {
+                        "t":  "08:39:46.135",
+                        "name":  "composite-disable-skip",
+                        "data":  {
+                                     "id":  "USB\\VID_0C45\u0026PID_FEFE\\6\u002654CA98\u00260\u00262",
+                                     "err":  "不支持 "
+                                 }
+                    },
+                    {
+                        "t":  "08:39:47.157",
+                        "name":  "composite-enable-ok",
+                        "data":  "USB\\VID_0C45\u0026PID_FEFE\\6\u002654CA98\u00260\u00262"
+                    },
+                    {
+                        "t":  "08:39:48.824",
+                        "name":  "composite-disable-ok",
+                        "data":  "USB\\VID_0C45\u0026PID_8047\\6\u002654CA98\u00260\u00261"
+                    },
+                    {
+                        "t":  "08:39:50.297",
+                        "name":  "composite-enable-ok",
+                        "data":  "USB\\VID_0C45\u0026PID_8047\\6\u002654CA98\u00260\u00261"
+                    },
+                    {
+                        "t":  "08:39:53.011",
+                        "name":  "after",
+                        "data":  {
+                                     "id":  "HID\\VID_0C45\u0026PID_FEFE\u0026MI_02\u0026COL01\\8\u0026195F4F95\u00260\u00260000",
+                                     "status":  "OK"
+                                 }
+                    },
+                    {
+                        "t":  "08:39:53.012",
+                        "name":  "after",
+                        "data":  {
+                                     "id":  "HID\\VID_0C45\u0026PID_FEFE\u0026MI_04\\8\u0026D00E8E7\u00260\u00260000",
+                                     "status":  "OK"
+                                 }
+                    },
+                    {
+                        "t":  "08:39:53.012",
+                        "name":  "after",
+                        "data":  {
+                                     "id":  "HID\\VID_0C45\u0026PID_FEFE\u0026MI_02\u0026COL02\\8\u0026195F4F95\u00260\u00260001",
+                                     "status":  "OK"
+                                 }
+                    },
+                    {
+                        "t":  "08:39:53.012",
+                        "name":  "after",
+                        "data":  {
+                                     "id":  "HID\\VID_0C45\u0026PID_FEFE\u0026MI_01\\8\u00262C8F6BD3\u00260\u00260000",
+                                     "status":  "OK"
+                                 }
+                    },
+                    {
+                        "t":  "08:39:53.013",
+                        "name":  "after",
+                        "data":  {
+                                     "id":  "USB\\VID_0C45\u0026PID_FEFE\u0026MI_04\\7\u0026883A9E9\u00260\u00260004",
+                                     "status":  "OK"
+                                 }
+                    },
+                    {
+                        "t":  "08:39:53.013",
+                        "name":  "after",
+                        "data":  {
+                                     "id":  "USB\\VID_0C45\u0026PID_FEFE\u0026MI_03\\7\u0026883A9E9\u00260\u00260003",
+                                     "status":  "OK"
+                                 }
+                    },
+                    {
+                        "t":  "08:39:53.013",
+                        "name":  "after",
+                        "data":  {
+                                     "id":  "HID\\VID_0C45\u0026PID_FEFE\u0026MI_02\u0026COL03\\8\u0026195F4F95\u00260\u00260002",
+                                     "status":  "OK"
+                                 }
+                    },
+                    {
+                        "t":  "08:39:53.014",
+                        "name":  "after",
+                        "data":  {
+                                     "id":  "USB\\VID_0C45\u0026PID_FEFE\u0026MI_02\\7\u0026883A9E9\u00260\u00260002",
+                                     "status":  "OK"
+                                 }
+                    },
+                    {
+                        "t":  "08:39:53.014",
+                        "name":  "after",
+                        "data":  {
+                                     "id":  "USB\\VID_0C45\u0026PID_FEFE\u0026MI_01\\7\u0026883A9E9\u00260\u00260001",
+                                     "status":  "OK"
+                                 }
+                    },
+                    {
+                        "t":  "08:39:53.015",
+                        "name":  "after",
+                        "data":  {
+                                     "id":  "USB\\VID_0C45\u0026PID_FEFE\u0026MI_00\\7\u0026883A9E9\u00260\u00260000",
+                                     "status":  "OK"
+                                 }
+                    },
+                    {
+                        "t":  "08:39:53.015",
+                        "name":  "after",
+                        "data":  {
+                                     "id":  "USB\\VID_0C45\u0026PID_FEFE\\6\u002654CA98\u00260\u00262",
+                                     "status":  "OK"
+                                 }
+                    },
+                    {
+                        "t":  "08:39:53.015",
+                        "name":  "after",
+                        "data":  {
+                                     "id":  "HID\\VID_0C45\u0026PID_FEFE\u0026MI_02\u0026COL04\\8\u0026195F4F95\u00260\u00260003",
+                                     "status":  "OK"
+                                 }
+                    },
+                    {
+                        "t":  "08:39:53.016",
+                        "name":  "after",
+                        "data":  {
+                                     "id":  "USB\\VID_0C45\u0026PID_8047\\6\u002654CA98\u00260\u00261",
+                                     "status":  "Error"
+                                 }
+                    },
+                    {
+                        "t":  "08:39:53.016",
+                        "name":  "after",
+                        "data":  {
+                                     "id":  "HID\\VID_0C45\u0026PID_FEFE\u0026MI_00\\8\u0026424BE0A\u00260\u00260000",
+                                     "status":  "OK"
+                                 }
+                    },
+                    {
+                        "t":  "08:39:53.016",
+                        "name":  "after",
+                        "data":  {
+                                     "id":  "HID\\VID_0C45\u0026PID_FEFE\u0026MI_03\\8\u002662F3357\u00260\u00260000",
+                                     "status":  "OK"
+                                 }
+                    },
+                    {
+                        "t":  "08:39:53.017",
+                        "name":  "after",
+                        "data":  {
+                                     "id":  "HID\\VID_0C45\u0026PID_FEFE\u0026MI_02\u0026COL05\\8\u0026195F4F95\u00260\u00260004",
+                                     "status":  "OK"
+                                 }
+                    }
+                ]
+}

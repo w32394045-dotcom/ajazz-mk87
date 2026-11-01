@@ -1,0 +1,8 @@
+# token=isShowGifEffect hits=9 uniq=7
+@1141242	isShowGifEffect:!0,gifEffectIds:[`heart_97`],isEnableLightSync:!0},musicConfig:{version:2,maxColOffset:0,keyOffset:[{name:`F1`,value:1,offsetX:1},{name:`Z`,value:65,offsetX:1},{name:`Num 1`,value:77,o
+@1428275	isShowGifEffect:!1,gifEffectIds:[],isEnableLightSync:!0},musicConfig:{version:2,maxColOffset:0,keyOffset:[{name:`F1`,value:1,offsetX:1},{name:`Z`,value:65,offsetX:1},{name:`↑`,value:90,offsetX:1},{nam
+@2007524	isShowGifEffect:!0,gifEffectIds:[`heart_108`],isEnableLightSync:!0},musicConfig:{version:2,maxColOffset:0,keyOffset:[{name:`Shift`,value:64,offsetX:1},{name:`R-Shift`,value:75,offsetX:1},{name:`Spaceb
+@2439981	isShowGifEffect&&e.push({name:`gif`,label:$(`gif_text2`)}),u.value&&e.push({name:`aiLighting`,label:$(`ai-lighting`)}),e}),p=R(`color`),{keyList:m,lightingList:h,ledEffect:g,customLedData:_,CUSTOM_LIG
+@2440455	isShowGifEffect&&p.value===`gif`&&w.value),D=R([]),O=R(!1),k=R(!1),ee=R(!1),A=R(!1),te=K(()=>s.value.lightBoxData||null),j=K(()=>s.value.sideLightData||null),M=K(()=>{let e=P.value.length?P.value:m.va
+@2445453	isShowGifEffect?Me(`gif`):ue(),oe()&&se(),N=cQ.on(e=>{e.type===`start`?(ne.value=!0,Ee(),ce()):e.type===`finish`&&(ne.value=!1,e.success&&(I(),oe()&&se()))})}),Ki(()=>{ce(),Le(),N&&=(N(),null)}),{isWi
+@2455174	isShowGifEffect?(H(),ls(re,{key:4,name:`gif`,tab:e.$t(`gif_text2`)},{default:B(()=>[G(_7,{"keyboard-config":z(n),"device-info":z(i).deviceInfo,"led-effect":z(a),onUpdateKeyList:z(g)},null,8,[`keyboard

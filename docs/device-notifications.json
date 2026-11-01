@@ -1,0 +1,255 @@
+{
+  "meta": {
+    "subject": "AJAZZ MK87 (VID 0x0C45 / PID 0x8047) 网页驱动：设备通知 / 主动上报帧语义表",
+    "bundle": "C:/Users/ptfm/Documents/ajazz-re/assets/layout-classic-CMxiG14P.js",
+    "bundle_size_bytes": 3335710,
+    "side_chunks": ["assets/keyTest-wnjgu2NS.js"],
+    "method": "纯静态 bundle 逆向（不接触 HID 设备）；偏移 = 上面 bundle 文件的字符偏移，可用 scripts/ctx.js slice <file> <off-200> <off+400> 复核",
+    "companion_files": {
+      "decoder": "scripts/keyevent_ref.js",
+      "report": "docs/key-events.md",
+      "protocol_frames": "docs/protocol.md §2",
+      "tft_info_push": "docs/tft-page.md §3"
+    },
+    "confidence_legend": {
+      "verified-bundle": "bundle 内逐字节可复核（字面量 + 分支）",
+      "verified-device": "真机实测（见 docs/deepdive-mk87.md / protocol.md）",
+      "inferred": "由代码结构推断，未真机验证"
+    }
+  },
+
+  "frame_formats": {
+    "host_to_device": {
+      "dir": "host→device",
+      "header": ["0xAA", "cmd", "len/剩余长度", "addrLo", "addrHi", "[arg0]", "[last]", "[arg2]"],
+      "data_offset": 8,
+      "payload_per_packet": "reportCount - 8；MK87 主协议接口 reportCount=64 → 56 字节/包（真机 SET_KEY 512B 分 10 包，与 56 吻合）",
+      "encoder": "PX() @1911457；见 docs/infra.js",
+      "evidence": "PX() @1911457 / NX() @1910023"
+    },
+    "device_to_host_response": {
+      "dir": "device→host（对请求的应答）",
+      "header": ["0x55", "cmd", "lenOrType", "addrLo", "addrHi", "hdr5", "last", "hdr7"],
+      "data_offset": 8,
+      "matcher": "IX() @1911917：FX() 解析后按 cmd 匹配，可选 addr；超时 500ms、重发 3 次",
+      "evidence": "FX() @1911775"
+    },
+    "device_to_host_push": {
+      "dir": "device→host（主动上报）",
+      "layout": ["0x55", "cmd", "p0(type)", "p1", "p2", "..."],
+      "note": "**扁平结构，没有 8 字节大包头**。所有 push 监听器都直接比较 bytes[2]（= type/键号），并把 bytes[3..] 当 payload。",
+      "evidence": "XZ @1949962 / XX @1919506 / ZX @1919911 / QX @1920304 / JX @1919110 均读 i[2..] 而非 slice(8)"
+    },
+    "device_to_host_push_exception": {
+      "layout": ["0xA6", "0xFF", "0x01"],
+      "note": "2.4G 唤醒帧不是 0x55 开头，是唯一一个非 0x55 的上报帧",
+      "evidence": "$X @1920705：r[0]===166 && r[1]===255 && r[2]===1"
+    }
+  },
+
+  "push_frames": [
+    {
+      "cmd": 250,
+      "cmd_hex": "0xFA",
+      "name": "GET_DEVICE_NOTIFY",
+      "listener": {
+        "fn": "startDeviceStateListener",
+        "local": "XZ",
+        "offset": 1949962,
+        "match_expr": "i.length>=4 && i[0]===0x55 && i[1]===0xFA && i[2]===type",
+        "callback_arg": "整帧 Uint8Array（含 0x55），所以 payload 第一个字节 = 帧[3]",
+        "returns": "{success:true, removeListener()}"
+      },
+      "types": [
+        {
+          "type": 6,
+          "name": "tft-screen-state",
+          "semantics": "TFT 屏幕是否停在「系统信息页」",
+          "payload_layout": [
+            { "frame_offset": 3, "payload_offset": 0, "field": "systemInfoPage", "values": { "0": "离开系统信息页（停止推送）", "1": "进入系统信息页（开始推送）" } },
+            { "frame_offset": 4, "payload_offset": 1, "field": "reserved", "note": "bundle 未读取" }
+          ],
+          "host_action": {
+            "on_1": "startGetTftInfo() → 立即推一次 + 每 8000ms 调 setTftScreenInfo(0x34) 推 CPU/GPU/温度/天气/湿度",
+            "on_0": "stopGetTftInfo() → 停掉 8s 轮询并复位天气缓存标志"
+          },
+          "host_payload_ref": "SET_TEMPORARY_COMMAND_DATA(0x34) 24 字节：[6]=0x5A，[12]=CPU占用，[13]=CPU温度，[14]=GPU占用，[15]=GPU温度，[16]=当前气温，[17]=最高，[18]=最低，[19]=天气码，[20]=湿度（YZ @1948903）",
+          "caller": {
+            "offset": 1838541,
+            "code": "let n=await c(`startDeviceStateListener`,e,6,e=>{let n=e[3]===1;n!==t&&(t=n,n?u():d())})",
+            "note": "唯一调用点，type 硬编码 6；u=startGetTftInfo, d=stopGetTftInfo（RY() @1803404）"
+          },
+          "gating": [
+            "OS=Windows（VV() 判 userAgent；starts the 8s poller only on Windows）",
+            "机型配置 tftConfig.isShowTftInfo===true —— 4 处调用点全部包这个条件（@1835029/@1835427/@1840019/@1841818）",
+            "MK87 的 tftConfig = {name:'AK980_PRO', localforageKey:'w240h135', width:240, height:135} → **没有 isShowTftInfo**，网页端永远不会注册这个监听"
+          ],
+          "mk87": "网页端不监听；设备是否仍会发该帧未验证（真机测试建议：注册 inputreport 监听 + 在屏幕上切到系统信息页）",
+          "confidence": "verified-bundle（语义 inferred：1=可推送）"
+        }
+      ],
+      "other_types": {
+        "known_in_bundle": [6],
+        "note": "startDeviceStateListener 是通用 API（type 由调用方传入并在 i[2]===n 处比较），但整个 bundle 只有 type=6 一个调用点；其它 type 无字面量、无调用者。"
+      }
+    },
+    {
+      "cmd": 252,
+      "cmd_hex": "0xFC",
+      "name": "GET_24G_DISCONNECT_NOTIFY",
+      "listener": [
+        { "type": 4, "fn": "start24GDisconnectListener", "local": "XX", "offset": 1919506, "match_expr": "r.length>=3 && r[0]===0x55 && r[1]===0xFC && r[2]===4" },
+        { "type": 5, "fn": "startResetListener", "local": "ZX", "offset": 1919911, "match_expr": "r.length>=3 && r[0]===0x55 && r[1]===0xFC && r[2]===5" },
+        { "type": 6, "fn": "start24GSleepListener", "local": "QX", "offset": 1920304, "match_expr": "r.length>=3 && r[0]===0x55 && r[1]===0xFC && r[2]===6" }
+      ],
+      "types": [
+        {
+          "type": 4,
+          "name": "24g-disconnect",
+          "semantics": "2.4G 链路断开",
+          "host_action": "store 回调 j() @1837352：isDisconnected=true、移除 0xFA/0xFC 监听、当前设备 isConnected=false、清 historyConnect、1.5s 后 location.replace('/') + $message.error('断开连接了！！！')",
+          "gating": "仅 keyboardConfig.connectType==='2.4G' 时注册（store F() 里 `d&&r.value?.keyboardConfig?.connectType==='2.4G'&&(await te(...))`）",
+          "confidence": "verified-bundle"
+        },
+        {
+          "type": 5,
+          "name": "device-reset",
+          "semantics": "设备被重置（掉电/复位/切换模式）",
+          "host_action": "store 回调 M() @1837647：若 routesName 含 performance 先清 magneticAxisRTConfig，然后 location.reload()",
+          "gating": "**所有设备都会注册**（连接成功后无条件 await M(currentDeviceId)）",
+          "confidence": "verified-bundle"
+        },
+        {
+          "type": 6,
+          "name": "24g-sleep",
+          "semantics": "2.4G 设备进入休眠",
+          "host_action": "console.log('休眠了') + is24GSleeping=true → App 根组件渲染**全屏遮罩**：`fixed inset-0 z-9999 flex-center auto-bg-600:80` + i18n `sleeping-tips`（中文「设备已进入休眠，请按任意按键唤醒」）",
+          "ui_evidence": "assets/main-_p8CH46K.js @1238：`k=s(()=>O.is24GSleeping)`；模板 `m(k)?(h('div',E,[e('div',D,a(m(p)('sleeping-tips')))]))`；文案在 assets/i18n/zh.js `\"sleeping-tips\"`",
+          "gating": "仅 connectType==='2.4G'",
+          "confidence": "verified-bundle"
+        }
+      ],
+      "other_types": { "known_in_bundle": [4, 5, 6], "note": "bundle 内只有这三个字面比较，其它 type 被忽略" }
+    },
+    {
+      "cmd": 166,
+      "cmd_hex": "0xA6",
+      "name": "WAKE_24G（非 0x55 帧）",
+      "listener": {
+        "fn": "start24GWakeListener",
+        "local": "$X",
+        "offset": 1920705,
+        "match_expr": "r.length>=3 && r[0]===166(0xA6) && r[1]===255(0xFF) && r[2]===1",
+        "note": "这是唯一一条不以 0x55 开头的上报帧；用 0xA6 0xFF 0x01 表示唤醒"
+      },
+      "host_action": "console.log('唤醒了') + is24GSleeping=false",
+      "gating": "仅 connectType==='2.4G'",
+      "confidence": "verified-bundle"
+    },
+    {
+      "cmd": 251,
+      "cmd_hex": "0xFB",
+      "name": "GET_MAGNETIC_AXIS_CALIBRATION_DATA",
+      "listener": {
+        "fn": "JX (parser) + YX (wrapper)",
+        "local": "JX / YX",
+        "offset": 1919110,
+        "match_expr": "e.length>=13 && e[0]===0x55 && e[1]===0xFB",
+        "field_map_source": "return{keyValue:e[2],calibrationStatus:e[3],maxValue:e[4]|e[5]<<8,minValue:(e[6]|e[7]<<8)&32767,currentValue:e[8]|e[9]<<8,keyStroke:e[10]|e[11]<<8,maxStroke:e[12]|e[13]<<8}"
+      },
+      "payload_layout": [
+        { "frame_offset": 2, "field": "keyValue", "type": "u8", "desc": "磁轴键位号（= 键表 slot 下标，非位图）" },
+        { "frame_offset": 3, "field": "calibrationStatus", "type": "u8", "desc": "校准/触发状态（2 = 已到顶，官方 UI 用它标绿）" },
+        { "frame_offset": 4, "field": "maxValue", "type": "u16le", "desc": "该键 ADC 满量程" },
+        { "frame_offset": 6, "field": "minValue", "type": "u16le & 0x7FFF", "desc": "ADC 零点（最高位被官方清掉）" },
+        { "frame_offset": 8, "field": "currentValue", "type": "u16le", "desc": "当前 ADC 值" },
+        { "frame_offset": 10, "field": "keyStroke", "type": "u16le", "desc": "当前行程计数（mm = /100，rtPrecision=2 时 /1000）" },
+        { "frame_offset": 12, "field": "maxStroke", "type": "u16le", "desc": "最大行程计数（同样是 /100 → mm）" }
+      ],
+      "frame_length": 14,
+      "enabled_by": {
+        "calibration_v0": "SET_CALIBRATION_ON(100) → 帧 AA 64 00 00 00 ...，等 ACK 55 64 ...（1000ms），然后挂 0xFB 监听",
+        "simulation_test": "SET_SIMULATION_TEST_ON(102) → 帧 AA 66 00 00 00 ...，等 ACK 55 66 ...，然后挂 0xFB 监听",
+        "stop": "SET_CALIBRATION_OFF(101) / SET_SIMULATION_TEST_OFF(103)",
+        "v2_alternative": "frameVersion===1 的机型改用 SET_CALIBRATION_ON_V2(105) + 轮询 GET_MAGNETIC_AXIS_STATUS(104)（每包 7 键、8 字节/键、addrStart=blockIndex*(reportCount-8)），不再依赖 0xFB"
+      },
+      "consumers": [
+        { "offset": 2488437, "page": "performance（磁轴 RT/校准页，frameVersion!==1）", "use": "startCalibration(dev, cb) 回调里看 calibrationStatus===1 → 该键标绿（0xFB 推送路径）" },
+        { "offset": 2487512, "page": "performance（frameVersion===1）", "use": "startCalibrationV2 + 轮询 getMagneticAxisStatus(0x68)，不再依赖 0xFB" },
+        { "offset": 2490310, "page": "performance", "use": "handleChangeTestTrip → startSimulationTest(dev, cb) 把 keyStroke/maxStroke 画成实时行程" }
+      ],
+      "mk87": "MK87 无磁轴（axisInfo=0, rtPrecision=0, 配置无 performanceConfig、routesName 不含 performance）→ 该帧不会出现；真机未验证 SET_CALIBRATION_ON 是否回数据",
+      "confidence": "verified-bundle（字段语义 inferred）"
+    }
+  ],
+
+  "request_response_acks": {
+    "note": "这些是对请求的回显/应答，由 IX 按 cmd 匹配，不算主动上报；列出以便区分。",
+    "default_rule": "NX() 默认 responseCmd === cmd（即设备回同一 cmd 的帧）",
+    "confirmed_by_bundle": [
+      { "request_cmd": 80, "request_name": "SET_TFT_USER_ANIMATION", "response_cmd": 65, "response_name": "SET_LED_USER_ANIMATION", "evidence": "@1946838 responseCmd:HX.SET_LED_USER_ANIMATION" },
+      { "request_cmd": 66, "request_name": "SET_LED_DATA", "response_cmd": 65, "response_name": "SET_LED_USER_ANIMATION", "evidence": "@1944546（isLedSync 分支）" }
+    ],
+    "confirmed_by_device": [
+      { "request_cmd": 34, "request_name": "SET_KEY", "response_cmd": 34, "response_lenByte": 56, "note": "每包回显 56 字节，addr=块偏移", "evidence": "docs/deepdive-mk87.md §2（真机）" },
+      { "request_cmd": 35, "request_name": "SET_LED_EFFECT", "response_cmd": 35, "response_lenByte": 16, "evidence": "docs/deepdive-mk87.md §2（真机）" },
+      { "request_cmd": 52, "request_name": "SET_TEMPORARY_COMMAND_DATA", "response_cmd": 52, "response_lenByte": 24, "evidence": "docs/deepdive-mk87.md §2（真机）" },
+      { "request_cmd": 77, "request_name": "SET_TFT_MATERIAL", "response_cmd": 77, "evidence": "docs/deepdive-mk87.md §8（真机收到过）" },
+      { "request_cmd": 81, "request_name": "SET_TFT_BUILT_IN_INDEX", "response_cmd": 81, "evidence": "docs/deepdive-mk87.md §8" }
+    ]
+  },
+
+  "unused_or_dead": [
+    {
+      "cmd": 96,
+      "cmd_hex": "0x60",
+      "name": "GET_MAGNETIC_AXIS_KEY_STATUS",
+      "status": "dead-in-bundle",
+      "evidence": "整份 bundle 只有 1 处拼写（枚举定义 @1915487）；协议模块导出表里没有对应函数；也没有 `getMagneticAxisKeyStatus` 字符串调用",
+      "meaning": "【推断】厂商预留的「磁轴按键状态位图」命令；网页端从未实现/从未发送，因此格式无法从 bundle 静态还原",
+      "relevance": "若自研驱动想走厂商通道拿按键位图，这是唯一可疑的命令，但必须真机试探"
+    },
+    {
+      "cmd": 18,
+      "cmd_hex": "0x12",
+      "name": "GET_KEY",
+      "status": "used-for-keymap-only",
+      "evidence": "3 处调用：uZ @1923796（整表 512 字节）、dZ @1924465（单槽 4 字节，自定义头 AA 12 04 addrLo addrHi）",
+      "meaning": "读的是按键映射（pageType/param1..3），不是按下状态；没有任何定时器/轮询在调它"
+    },
+    {
+      "cmd": 104,
+      "cmd_hex": "0x68",
+      "name": "GET_MAGNETIC_AXIS_STATUS",
+      "status": "used-for-calibration-polling-only",
+      "evidence": "iZ @1922166（contentSize = 键数*8，每 8 字节 [keyValue,0..] 请求）；调用点只有 performance 页 frameVersion===1 的校准循环 @2487832",
+      "meaning": "轮询式读磁轴模拟量，不是按键事件流；MK87 不走这条分支"
+    }
+  ],
+
+  "ui_reactions": [
+    { "trigger": "0xFC/type=4", "ui": "顶部全局消息 '断开连接了！！！'（i18n link_state）+ 1.5s 后跳回首页", "evidence": "store j() / zh.json link_state" },
+    { "trigger": "0xFC/type=5", "ui": "整页 reload（无提示）", "evidence": "store M() location.reload()" },
+    { "trigger": "0xFC/type=6", "ui": "**全屏休眠遮罩**：`设备已进入休眠，请按任意按键唤醒`（App 根组件按 is24GSleeping 渲染，z-9999 覆盖整个界面）", "evidence": "main-_p8CH46K.js @1238 + i18n sleeping-tips" },
+    { "trigger": "0xA6 0xFF 0x01", "ui": "清 is24GSleeping → 休眠遮罩消失", "evidence": "store ne()" },
+    { "trigger": "0xFA/type=6 data[3]=1", "ui": "无 UI，但开始 8s 一次的 TFT 系统信息推送（CPU/GPU/温度/天气）", "evidence": "store P() + RY()" },
+    { "trigger": "0xFA/type=6 data[3]=0", "ui": "无 UI，停止推送", "evidence": "同上" },
+    { "trigger": "0xFB", "ui": "performance 页校准/行程测试的实时数值与颜色", "evidence": "@2487512 / @2490310" }
+  ],
+
+  "mk87_summary": {
+    "connect_type_of_tested_unit": "未记录（USB 直连时 connectType 为空 → 0xFC/4、0xFC/6、0xA6 三个 2.4G 监听不注册）",
+    "registered_listeners_on_mk87": ["0xFC/type=5（重置，无条件）"],
+    "not_registered": ["0xFA/type=6（缺 tftConfig.isShowTftInfo）", "0xFC/4 与 0xFC/6 与 0xA6（非 2.4G）", "0xFB（无磁轴 / 不进 performance 页）"],
+    "idle_observation": "真机空闲 5 秒 0 条主动上报（docs/deepdive-mk87.md §3）",
+    "key_events_over_vendor_protocol": "不存在"
+  },
+
+  "open_questions": [
+    "0xFA 的其它 type 语义（bundle 只有 type=6 一个调用点，无法还原其它 type）",
+    "0xFA type=6 在 MK87 上是否真的会发（网页端不监听；需要真机挂监听 + 屏幕切页验证）",
+    "0x60 GET_MAGNETIC_AXIS_KEY_STATUS 的请求/响应格式（bundle 未实现，只能真机试探）",
+    "SET_CALIBRATION_ON(0x64) 在 MK87 上是否只回 ACK 而无 0xFB 数据流",
+    "0xA6 0xFF 0x01 是 dongle 还是键盘发的（bundle 未区分；USB 直连时是否也会发未知）"
+  ]
+}

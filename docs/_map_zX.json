@@ -1,0 +1,274 @@
+[
+  {
+    "name": "CMD",
+    "local": "HX"
+  },
+  {
+    "name": "FACTORY_RESET_TYPE",
+    "local": "UX"
+  },
+  {
+    "name": "clearCalibration",
+    "local": "cZ"
+  },
+  {
+    "name": "clearLedData",
+    "local": "VZ"
+  },
+  {
+    "name": "deviceInit",
+    "local": "WX"
+  },
+  {
+    "name": "enterDeviceBoot",
+    "local": "$Z"
+  },
+  {
+    "name": "factoryReset",
+    "local": "sZ"
+  },
+  {
+    "name": "getAllLightsRGB",
+    "local": "DZ"
+  },
+  {
+    "name": "getAllLightsRGB24G",
+    "local": "OZ"
+  },
+  {
+    "name": "getAllLightsRGB24G64Byte",
+    "local": "kZ"
+  },
+  {
+    "name": "getCustomLEDData",
+    "local": "yZ"
+  },
+  {
+    "name": "getDefaultFnKeyMatrix",
+    "local": "pZ"
+  },
+  {
+    "name": "getDeviceInfo",
+    "local": "GX"
+  },
+  {
+    "name": "getDeviceSn",
+    "local": "nQ"
+  },
+  {
+    "name": "getDeviceSystemInfo",
+    "local": "ZZ"
+  },
+  {
+    "name": "getDotMatrixMode",
+    "local": "AZ"
+  },
+  {
+    "name": "getFnKeyData",
+    "local": "mZ"
+  },
+  {
+    "name": "getFnSingleKeyData",
+    "local": "hZ"
+  },
+  {
+    "name": "getGameMode",
+    "local": "KX"
+  },
+  {
+    "name": "getKeyData",
+    "local": "uZ"
+  },
+  {
+    "name": "getLEDEffect",
+    "local": "_Z"
+  },
+  {
+    "name": "getLightBox",
+    "local": "xZ"
+  },
+  {
+    "name": "getMacroData",
+    "local": "NZ"
+  },
+  {
+    "name": "getMagneticAxisDKSData",
+    "local": "zZ"
+  },
+  {
+    "name": "getMagneticAxisRT",
+    "local": "FZ"
+  },
+  {
+    "name": "getMagneticAxisStatus",
+    "local": "iZ"
+  },
+  {
+    "name": "getSideLight",
+    "local": "CZ"
+  },
+  {
+    "name": "getSingleKeyData",
+    "local": "dZ"
+  },
+  {
+    "name": "getTriggerConfig",
+    "local": "LZ"
+  },
+  {
+    "name": "resetAll",
+    "local": "lZ"
+  },
+  {
+    "name": "sendFirmwareInfo",
+    "local": "tQ"
+  },
+  {
+    "name": "setCustomLEDData",
+    "local": "bZ"
+  },
+  {
+    "name": "setDotMatrixMode",
+    "local": "jZ"
+  },
+  {
+    "name": "setFnKeyData",
+    "local": "gZ"
+  },
+  {
+    "name": "setGameMode",
+    "local": "qX"
+  },
+  {
+    "name": "setGifLighting",
+    "local": "MZ"
+  },
+  {
+    "name": "setKeyData",
+    "local": "fZ"
+  },
+  {
+    "name": "setLEDEffect",
+    "local": "vZ"
+  },
+  {
+    "name": "setLedDateTime",
+    "local": "WZ"
+  },
+  {
+    "name": "setLedSyncAnimation",
+    "local": "HZ"
+  },
+  {
+    "name": "setLedUserAnimation",
+    "local": "UZ"
+  },
+  {
+    "name": "setLightBox",
+    "local": "SZ"
+  },
+  {
+    "name": "setMacroData",
+    "local": "PZ"
+  },
+  {
+    "name": "setMagneticAxisDKSData",
+    "local": "BZ"
+  },
+  {
+    "name": "setMagneticAxisRT",
+    "local": "IZ"
+  },
+  {
+    "name": "setMusicData",
+    "local": "TZ"
+  },
+  {
+    "name": "setMusicDataV1",
+    "local": "EZ"
+  },
+  {
+    "name": "setProfile",
+    "local": "iQ"
+  },
+  {
+    "name": "setSideLight",
+    "local": "wZ"
+  },
+  {
+    "name": "setTftBuiltInIndex",
+    "local": "qZ"
+  },
+  {
+    "name": "setTftDateTime",
+    "local": "JZ"
+  },
+  {
+    "name": "setTftMaterial",
+    "local": "KZ"
+  },
+  {
+    "name": "setTftScreenInfo",
+    "local": "YZ"
+  },
+  {
+    "name": "setTftUserAnimation",
+    "local": "GZ"
+  },
+  {
+    "name": "setTriggerConfig",
+    "local": "RZ"
+  },
+  {
+    "name": "start24GDisconnectListener",
+    "local": "XX"
+  },
+  {
+    "name": "start24GSleepListener",
+    "local": "QX"
+  },
+  {
+    "name": "start24GWakeListener",
+    "local": "$X"
+  },
+  {
+    "name": "startCalibration",
+    "local": "eZ"
+  },
+  {
+    "name": "startCalibrationV2",
+    "local": "nZ"
+  },
+  {
+    "name": "startDeviceStateListener",
+    "local": "XZ"
+  },
+  {
+    "name": "startResetListener",
+    "local": "ZX"
+  },
+  {
+    "name": "startSimulationTest",
+    "local": "aZ"
+  },
+  {
+    "name": "stopCalibration",
+    "local": "tZ"
+  },
+  {
+    "name": "stopCalibrationV2",
+    "local": "rZ"
+  },
+  {
+    "name": "stopSimulationTest",
+    "local": "oZ"
+  },
+  {
+    "name": "switchAppPartition",
+    "local": "rQ"
+  },
+  {
+    "name": "verifyFirmwareInfo",
+    "local": "QZ"
+  }
+]

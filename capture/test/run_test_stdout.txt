@@ -1,0 +1,61 @@
+
+══════════════════════════════════════════════════════════════
+  AJAZZ WebHID 抓包工具  (CDP 注入 · 零依赖)
+══════════════════════════════════════════════════════════════
+  Chrome : C:\Program Files\Google\Chrome Beta\Application\chrome.exe
+  Profile: C:\Users\ptfm\AppData\Local\Temp\ajazz-cdp-profile-16352-mvwx7e0h  (临时，退出时清理)
+  调试端口: 9411
+  日志    : C:\Users\ptfm\Documents\ajazz-re\capture\test\ajazz_test_log.jsonl
+  目标页  : file:///C:/Users/ptfm/Documents/ajazz-re/capture/test/fakehid.html
+──────────────────────────────────────────────────────────────
+[*] 等待 Chrome 远程调试端口就绪...
+[+] 已连接调试端口，浏览器: Chrome/158.0.8127.2
+[+] 使用 target: D81C3E7BF387D5D713862BF1CD770484  about:blank
+[+] 钩子已注入（31744 字节，主世界，document-start）
+[*] 导航到 file:///C:/Users/ptfm/Documents/ajazz-re/capture/test/fakehid.html ...
+[+] 页面钩子自检: webhid=true secure=true href=file:///C:/Users/ptfm/Documents/ajazz-re/capture/test/fakehid.html
+  0002 hid/call         getDevices            
+[+] 页面已加载完成
+  0003 hid/ok           getDevices            
+  0004 hid/call         requestDevice         
+  0005 hid/call         getDevices            
+  0006 hid/ok           requestDevice         
+  0007 open/call        open                   [0x0c45:0x8047]
+  0008 hid/ok           getDevices            
+──────────────────────────────────────────────────────────────
+[自检] navigator.hid = 存在
+[自检] isSecureContext = true
+[自检] 用户激活状态 = {"isActive":true,"hasBeenActive":true}
+[自检] 钩子已安装 = true  hid.getDevices 已包装 = true  requestDevice 已包装 = true
+[自检] 钩子状态 = {"version":"1.0.0","seq":4,"hidWrapped":true,"devicesPatched":1,"pending":0,"errors":[]}
+[自检] 已授权设备 1 个：
+        VID=0x0c45 PID=0x8047 usagePage=0xff67 "AJAZZ KEYBOARD" opened=false
+[*] 等待 3500ms 后执行 --eval ...
+  0009 open/ok          open                   [0x0c45:0x8047]
+  0010 out/call         sendReport             [0x0c45:0x8047] id=0x00 len=8  55 10 00 01 a0 0b 00 00
+  0011 out-feature/call sendFeatureReport      [0x0c45:0x8047] id=0x05 len=8  55 80 01 02 03 04 05 06
+  0012 in-feature/call  receiveFeatureReport   [0x0c45:0x8047] id=0x05
+  0013 in-feature/ok    receiveFeatureReport   [0x0c45:0x8047] id=0x05 len=7  55 05 04 de ad be ef
+  0014 in/call          inputreport            [0x0c45:0x8047] id=0x01 len=7  55 01 04 ca fe ba be
+  0015 event/call       connect                [0x0c45:0x8047]
+  0016 event/call       disconnect             [0x0c45:0x8047]
+  0017 close/call       close                  [0x0c45:0x8047]
+  0018 close/ok         close                  [0x0c45:0x8047]
+──────────────────────────────────────────────────────────────
+[--eval] 结果:
+{"ok":true,"pass":23,"total":23,"assertions":[{"name":"navigator.hid 存在","ok":true,"detail":"yes"},{"name":"navigator.hid.getDevices 不是原生实现（已被 hook 包装）","ok":true,"detail":"function () { /*__ajazz_hook__*/ // 标记：页面/测试脚本可用它判断「已被包装」 var self = this; var args = argu…"},{"name":"navigator.hid.getDevices 带 __ajazz_hook__ 标记","ok":true,"detail":null},{"name":"navigator.hid.requestDevice 不是原生实现（已被 hook 包装）","ok":true,"detail":"function () { /*__ajazz_hook__*/ // 标记：页面/测试脚本可用它判断「已被包装」 var self = this; var args = argu…"},{"name":"navigator.hid.requestDevice 带 __ajazz_hook__ 标记","ok":true,"detail":null},{"name":"window.__ajazzHookInstalled === true","ok":true,"detail":null},{"name":"window.__ajazzFlush 是函数（CDP binding 已注入）","ok":true,"detail":"function"},{"name":"getDevices 返回 1 个设备","ok":true,"detail":"VID=0xc45 PID=0x8047 collections[0].usagePage=0xff67"},{"name":"HIDDevice.sendReport 已被 hook 包装（带 __ajazz_hook__ 标记）","ok":true,"detail":"function () { /*__ajazz_hook__*/ // 标记：页面/测试脚本可用它判断「已被包装」 var self = this; var a…"},{"name":"HIDDevice.sendFeatureReport 已被 hook 包装","ok":true,"detail":null},{"name":"HIDDevice.receiveFeatureReport 已被 hook 包装","ok":true,"detail":null},{"name":"HIDDevice.open 已被 hook 包装","ok":true,"detail":null},{"name":"productName 的 \"KEYBOARD \" 前缀已被剥离","ok":true,"detail":"raw=KEYBOARD AJAZZ KEYBOARD / seen=AJAZZ KEYBOARD"},{"name":"hook 自报 devicesPatched >= 1","ok":true,"detail":"{\"version\":\"1.0.0\",\"seq\":3,\"hidWrapped\":true,\"devicesPatched\":1,\"pending\":0,\"errors\":[]}"},{"name":"requestDevice 返回 1 个设备","ok":true,"detail":null},{"name":"open() 后 opened === true","ok":true,"detail":null},{"name":"sendReport 报文到达设备","ok":true,"detail":"85 16 0 1 160 11 0 0"},{"name":"sendFeatureReport 报文到达设备","ok":true,"detail":"85 128 1 2 3 4 5 6"},{"name":"receiveFeatureReport 返回 7 字节","ok":true,"detail":"85 5 4 222 173 190 239"},{"name":"inputreport 事件已派发（hook 应记录一条 dir=in）","ok":true,"detail":"reportId=0x01"},{"name":"connect 事件已派发（hook 应记录一条 dir=event）","ok":true,"detail":null},{"name":"disconnect 事件已派发","ok":true,"detail":null},{"name":"close() 后 opened === false","ok":true,"detail":null}],"hookState":{"version":"1.0.0","seq":18,"hidWrapped":true,"devicesPatched":1,"pending":0,"errors":[]},"finishedAt":1793482553972}
+══════════════════════════════════════════════════════════════
+  浏览器已打开：file:///C:/Users/ptfm/Documents/ajazz-re/capture/test/fakehid.html
+
+  ▶ 请在网页上点击「连接设备」按钮，然后在弹出的原生窗口里
+    选中 AJAZZ 键盘（VID 0x0C45 / PID 0x8047，"AJAZZ KEYBOARD"）并点「连接」。
+  ▶ 之后页面里的每一次 USB 交互都会被自动记录。
+
+  日志文件：C:\Users\ptfm\Documents\ajazz-re\capture\test\ajazz_test_log.jsonl
+  按 Ctrl+C 退出（会自动关闭这个 Chrome 实例）。
+══════════════════════════════════════════════════════════════
+[*] 14 秒后自动退出（--auto-exit）
+
+[*] 正在退出（--auto-exit 到期）...
+[*] 已关闭 Chrome（pid=3000，signal=SIGTERM）
+[*] 已退出，日志：C:\Users\ptfm\Documents\ajazz-re\capture\test\ajazz_test_log.jsonl

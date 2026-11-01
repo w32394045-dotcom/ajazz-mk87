@@ -1,0 +1,2 @@
+# token=getHardwareMaxProfile:()=> hits=1 uniq=1
+@1983297	getHardwareMaxProfile:()=>xQ,g

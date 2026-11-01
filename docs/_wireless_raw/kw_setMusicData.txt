@@ -1,0 +1,6 @@
+# token=setMusicData hits=5 uniq=5
+@1913867	setMusicData:()=>TZ,setMusicDataV1:()=>EZ,setProfile:()=>iQ,setSideLight:()=>wZ,setTftBuiltInIndex:(
+@1913887	setMusicDataV1:()=>EZ,setProfile:()=>iQ,setSideLight:()=>wZ,setTftBuiltInIndex:()=>qZ,setTftDateTime
+@2320441	setMusicData`,void 0,s,c)}catch(e){console.error(`发送音乐律动数据失败`,e)}finally{if(D.value=!1,O.value){let 
+@2414442	setMusicData`,void 0,o,0)}catch{}finally{if(i=!1,a){let e=a;a=null,c(e)}}}function l(){if(e.enabled&
+@2433533	setMusicData`,void 0,a,o)}catch{}finally{if(i=!1,a){let e=a;a=null,c(e)}}}function l(){if(!dn(e.enab

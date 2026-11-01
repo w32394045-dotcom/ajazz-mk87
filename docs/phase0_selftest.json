@@ -1,0 +1,109 @@
+{
+  "ts": "2026-11-01 06:43:13",
+  "no_write": false,
+  "checks": [
+    {
+      "name": "SET_GAME_MODE 回写",
+      "cmd": "0x21",
+      "payload_len": 56,
+      "cmd_name": "SET_GAME_MODE",
+      "roundtrip_ms": 5.1,
+      "resp_packets": 1,
+      "resp0_hex": "55 21 38 00 00 00 01 00 00 00 00 05 02 00 00 00",
+      "readback_ms": 3.9,
+      "match": true
+    },
+    {
+      "name": "SET_LED_EFFECT 回写",
+      "cmd": "0x23",
+      "payload_len": 16,
+      "cmd_name": "SET_LED_EFFECT",
+      "roundtrip_ms": 9.2,
+      "resp_packets": 1,
+      "resp0_hex": "55 23 10 00 00 00 01 00 0B FF FF FF FF 00 00 00",
+      "readback_ms": 2.7,
+      "match": true
+    },
+    {
+      "name": "SET_KEY 512B 回写",
+      "cmd": "0x22",
+      "payload_len": 512,
+      "cmd_name": "SET_KEY",
+      "roundtrip_ms": 29.4,
+      "resp_packets": 10,
+      "resp0_hex": "55 22 38 00 00 00 00 00 02 00 29 00 02 00 3A 00",
+      "readback_ms": 28.9,
+      "match": true
+    },
+    {
+      "name": "SET_FN_KEY 512B 回写",
+      "cmd": "0x26",
+      "payload_len": 512,
+      "cmd_name": "SET_FN_KEY",
+      "roundtrip_ms": 32.3,
+      "resp_packets": 10,
+      "resp0_hex": "55 26 38 00 00 00 00 00 02 00 29 00 02 00 3A 00",
+      "readback_ms": 26.0,
+      "match": true
+    },
+    {
+      "name": "SET_CUSTOM_LED_DATA 回写",
+      "cmd": "0x24",
+      "payload_len": 512,
+      "cmd_name": "SET_CUSTOM_LED_DATA",
+      "roundtrip_ms": 33.3,
+      "resp_packets": 10,
+      "resp0_hex": "55 24 38 00 00 00 00 00 00 00 00 00 01 00 00 00",
+      "readback_ms": 23.9,
+      "match": true
+    },
+    {
+      "name": "GET_KEY 512B 读取耗时",
+      "read_ms": 31.5,
+      "match": true
+    },
+    {
+      "name": "GET_LED_EFFECT 16B 读取耗时",
+      "read_ms": 1.7,
+      "match": true
+    },
+    {
+      "name": "GET_ALL_LIGHTS_RGB 512B 读取耗时",
+      "read_ms": 29.0,
+      "match": true
+    }
+  ],
+  "device": {
+    "romSize": 64,
+    "macroSpaceSize": 3072,
+    "vid": 3141,
+    "pid": 32839,
+    "version": 1.19,
+    "sensor": 65535,
+    "manufacturer": 1,
+    "product": 18,
+    "workMode": 0,
+    "batteryLevel": 63,
+    "chargeStatus": 1,
+    "currentProfile": 0,
+    "axisInfo": 0,
+    "tftMaxFrames": 140,
+    "gifMaxFrames": 0,
+    "ledMaxFrames": 0,
+    "tftDirection": 0,
+    "rtPrecision": 0,
+    "frameVersion": 0,
+    "lightingVersion": 0,
+    "firmwareStatus": 0,
+    "maxProfile": 0,
+    "tftColorByteOrder": 0
+  },
+  "baseline": {
+    "game_mode": "00 00 00 05 02 00 00 00 FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF",
+    "led_effect": "0B FF FF FF FF 00 00 00 01 06 03 00 00 00 AA 55",
+    "key_matrix_sha": "a069f6da75ccbab560c06ff32fc9eed55753485357c038761e01c1b6c00720de",
+    "fn_matrix_sha": "b7787409871d9261499583c8679d1bdf23422ae066e84a32864474412ef39bb8",
+    "custom_led_sha": "e63226a810039f0be13d1c27c2b0c8b296813f95d36feb0563c38a303ab1dfbd"
+  },
+  "all_pass": true
+}

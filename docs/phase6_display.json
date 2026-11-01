@@ -1,0 +1,27 @@
+{
+  "steps": [
+    {
+      "t": 0,
+      "what": "static red",
+      "red": 85
+    },
+    {
+      "t": 3.5,
+      "what": "custom green",
+      "n_green": 85
+    },
+    {
+      "t": 7.0,
+      "what": "0x35 frames"
+    },
+    {
+      "t": 9.5,
+      "what": "0x3C frames"
+    },
+    {
+      "t": 12.0,
+      "what": "0x32 frames"
+    }
+  ],
+  "restored": true
+}

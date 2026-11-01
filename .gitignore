@@ -1,0 +1,25 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+.pytest_cache/
+.ruff_cache/
+
+# Node
+node_modules/
+package-lock.json
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Generated / regenerable artifacts
+docs/_test_audio.wav
+*.log
+
+# Local device dumps (regenerated per machine)
+docs/device_dump.json
+docs/restore_state.json

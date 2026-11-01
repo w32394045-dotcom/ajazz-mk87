@@ -1,0 +1,4 @@
+# token=initProtocol hits=3 uniq=3
+@1868235	initProtocol:f,setProtocolDataFromDeviceInit:d}},nX=t({allKeyChars:()=>rX,basicChars:()=>iX,extendChars:()=>aX,funcChars
+@1987103	initProtocol:a}=tX();return await a(void 0,{ledEffect:i.ledEffect,customLedData:i.customLedData,macroDataList:i.macroDat
+@2018166	initProtocol:s}=tX();await s(`default`,{}),e.push({name:t.routesName[0]||`customKeys`})},T=async()=>{if(!n.isSupported)r

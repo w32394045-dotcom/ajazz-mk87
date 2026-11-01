@@ -1,0 +1,386 @@
+[
+  {
+    "raw": "1452:591:2.4G Dongle",
+    "vendorId": 1452,
+    "productId": 591,
+    "productName": "2.4G Dongle"
+  },
+  {
+    "raw": "1452:592:2.4G Dongle",
+    "vendorId": 1452,
+    "productId": 592,
+    "productName": "2.4G Dongle"
+  },
+  {
+    "raw": "1452:591:2.4G Wireless Receiver",
+    "vendorId": 1452,
+    "productId": 591,
+    "productName": "2.4G Wireless Receiver"
+  },
+  {
+    "raw": "3141:65278:2.4G Dongle",
+    "vendorId": 3141,
+    "productId": 65278,
+    "productName": "2.4G Dongle"
+  },
+  {
+    "raw": "3141:65276:HS USB Dongle",
+    "vendorId": 3141,
+    "productId": 65276,
+    "productName": "HS USB Dongle"
+  },
+  {
+    "raw": "3141:65278:2.4G Wireless Receiver",
+    "vendorId": 3141,
+    "productId": 65278,
+    "productName": "2.4G Wireless Receiver"
+  },
+  {
+    "raw": "3141:65274:2.4G Wireless Receiver",
+    "vendorId": 3141,
+    "productId": 65274,
+    "productName": "2.4G Wireless Receiver"
+  },
+  {
+    "raw": "3141:65273:HS USB Dongle",
+    "vendorId": 3141,
+    "productId": 65273,
+    "productName": "HS USB Dongle"
+  },
+  {
+    "raw": "3141:65276:2.4G Wireless Receiver",
+    "vendorId": 3141,
+    "productId": 65276,
+    "productName": "2.4G Wireless Receiver"
+  },
+  {
+    "raw": "3141:65273:BOOM68Ultra-2.4G",
+    "vendorId": 3141,
+    "productId": 65273,
+    "productName": "BOOM68Ultra-2.4G"
+  },
+  {
+    "raw": "3141:65278:VOICSKY KB",
+    "vendorId": 3141,
+    "productId": 65278,
+    "productName": "VOICSKY KB"
+  },
+  {
+    "raw": "3141:65276:AULA F108ProV2 Dongle",
+    "vendorId": 3141,
+    "productId": 65276,
+    "productName": "AULA F108ProV2 Dongle"
+  },
+  {
+    "raw": "3141:65274:2.4G Dongle",
+    "vendorId": 3141,
+    "productId": 65274,
+    "productName": "2.4G Dongle"
+  },
+  {
+    "raw": "3141:65273:2.4G Dongle",
+    "vendorId": 3141,
+    "productId": 65273,
+    "productName": "2.4G Dongle"
+  },
+  {
+    "raw": "3141:65276:2.4G Dongle",
+    "vendorId": 3141,
+    "productId": 65276,
+    "productName": "2.4G Dongle"
+  },
+  {
+    "raw": "3141:65276:2.4Ghz KB Dongle",
+    "vendorId": 3141,
+    "productId": 65276,
+    "productName": "2.4Ghz KB Dongle"
+  },
+  {
+    "raw": "3141:65276:AEMEATH 2.4G",
+    "vendorId": 3141,
+    "productId": 65276,
+    "productName": "AEMEATH 2.4G"
+  },
+  {
+    "raw": "3141:65278:Womier L98 2.4G",
+    "vendorId": 3141,
+    "productId": 65278,
+    "productName": "Womier L98 2.4G"
+  },
+  {
+    "raw": "3141:65278:Fantech Atom HE68 PRO",
+    "vendorId": 3141,
+    "productId": 65278,
+    "productName": "Fantech Atom HE68 PRO"
+  },
+  {
+    "raw": "3141:65278:8K Wireless Receiver",
+    "vendorId": 3141,
+    "productId": 65278,
+    "productName": "8K Wireless Receiver"
+  },
+  {
+    "raw": "3141:65276:8K Wireless Receiver",
+    "vendorId": 3141,
+    "productId": 65276,
+    "productName": "8K Wireless Receiver"
+  },
+  {
+    "raw": "3141:65273:8K Wireless Receiver",
+    "vendorId": 3141,
+    "productId": 65273,
+    "productName": "8K Wireless Receiver"
+  },
+  {
+    "raw": "3141:65278:AULA NOVA98 Dongle",
+    "vendorId": 3141,
+    "productId": 65278,
+    "productName": "AULA NOVA98 Dongle"
+  },
+  {
+    "raw": "3141:65276:AULA NOVA98 Dongle",
+    "vendorId": 3141,
+    "productId": 65276,
+    "productName": "AULA NOVA98 Dongle"
+  },
+  {
+    "raw": "3141:65273:AULA NOVA98 Dongle",
+    "vendorId": 3141,
+    "productId": 65273,
+    "productName": "AULA NOVA98 Dongle"
+  },
+  {
+    "raw": "3141:65278:BOOM68Pro-2.4G",
+    "vendorId": 3141,
+    "productId": 65278,
+    "productName": "BOOM68Pro-2.4G"
+  },
+  {
+    "raw": "3141:65273:2.4G Wireless Receiver",
+    "vendorId": 3141,
+    "productId": 65273,
+    "productName": "2.4G Wireless Receiver"
+  },
+  {
+    "raw": "3141:65276:BOOM68Ultra-2.4G",
+    "vendorId": 3141,
+    "productId": 65276,
+    "productName": "BOOM68Ultra-2.4G"
+  },
+  {
+    "raw": "3141:65276:AULA NOVA87 Dongle",
+    "vendorId": 3141,
+    "productId": 65276,
+    "productName": "AULA NOVA87 Dongle"
+  },
+  {
+    "raw": "3141:65278:AULA NOVA87 Dongle",
+    "vendorId": 3141,
+    "productId": 65278,
+    "productName": "AULA NOVA87 Dongle"
+  },
+  {
+    "raw": "3141:65274:AULA NOVA87 Dongle",
+    "vendorId": 3141,
+    "productId": 65274,
+    "productName": "AULA NOVA87 Dongle"
+  },
+  {
+    "raw": "3141:65273:AULA NOVA87 Dongle",
+    "vendorId": 3141,
+    "productId": 65273,
+    "productName": "AULA NOVA87 Dongle"
+  },
+  {
+    "raw": "3141:65273:X87Pro",
+    "vendorId": 3141,
+    "productId": 65273,
+    "productName": "X87Pro"
+  },
+  {
+    "raw": "3141:65278:AULA F87 HS 2.4G",
+    "vendorId": 3141,
+    "productId": 65278,
+    "productName": "AULA F87 HS 2.4G"
+  },
+  {
+    "raw": "3141:65274:AULA F87 HS 2.4G",
+    "vendorId": 3141,
+    "productId": 65274,
+    "productName": "AULA F87 HS 2.4G"
+  },
+  {
+    "raw": "3141:65273:AULA F87 HS 2.4G",
+    "vendorId": 3141,
+    "productId": 65273,
+    "productName": "AULA F87 HS 2.4G"
+  },
+  {
+    "raw": "3141:65276:AULA F87 HS 2.4G",
+    "vendorId": 3141,
+    "productId": 65276,
+    "productName": "AULA F87 HS 2.4G"
+  },
+  {
+    "raw": "3141:65274:QSENN 2.4G",
+    "vendorId": 3141,
+    "productId": 65274,
+    "productName": "QSENN 2.4G"
+  },
+  {
+    "raw": "3141:65273:QSENN 2.4G",
+    "vendorId": 3141,
+    "productId": 65273,
+    "productName": "QSENN 2.4G"
+  },
+  {
+    "raw": "3141:65276:QSENN 2.4G",
+    "vendorId": 3141,
+    "productId": 65276,
+    "productName": "QSENN 2.4G"
+  },
+  {
+    "raw": "3141:65278:QSENN 2.4G",
+    "vendorId": 3141,
+    "productId": 65278,
+    "productName": "QSENN 2.4G"
+  },
+  {
+    "raw": "3141:65278:ABKO 2.4G",
+    "vendorId": 3141,
+    "productId": 65278,
+    "productName": "ABKO 2.4G"
+  },
+  {
+    "raw": "3141:65274:ABKO 2.4G",
+    "vendorId": 3141,
+    "productId": 65274,
+    "productName": "ABKO 2.4G"
+  },
+  {
+    "raw": "3141:65273:ABKO 2.4G",
+    "vendorId": 3141,
+    "productId": 65273,
+    "productName": "ABKO 2.4G"
+  },
+  {
+    "raw": "3141:65276:ABKO 2.4G",
+    "vendorId": 3141,
+    "productId": 65276,
+    "productName": "ABKO 2.4G"
+  },
+  {
+    "raw": "3141:65278:ABKO A108K 2.4G",
+    "vendorId": 3141,
+    "productId": 65278,
+    "productName": "ABKO A108K 2.4G"
+  },
+  {
+    "raw": "3141:65274:ABKO A108K 2.4G",
+    "vendorId": 3141,
+    "productId": 65274,
+    "productName": "ABKO A108K 2.4G"
+  },
+  {
+    "raw": "3141:65273:ABKO A108K 2.4G",
+    "vendorId": 3141,
+    "productId": 65273,
+    "productName": "ABKO A108K 2.4G"
+  },
+  {
+    "raw": "3141:65276:ABKO A108K 2.4G",
+    "vendorId": 3141,
+    "productId": 65276,
+    "productName": "ABKO A108K 2.4G"
+  },
+  {
+    "raw": "3141:36880:2.4G 8K Dongle",
+    "vendorId": 3141,
+    "productId": 36880,
+    "productName": "2.4G 8K Dongle"
+  },
+  {
+    "raw": "3141:59392:2.4G 8K Dongle",
+    "vendorId": 3141,
+    "productId": 59392,
+    "productName": "2.4G 8K Dongle"
+  },
+  {
+    "raw": "3141:65274:2.4G Wireless Keyboard",
+    "vendorId": 3141,
+    "productId": 65274,
+    "productName": "2.4G Wireless Keyboard"
+  },
+  {
+    "raw": "3141:65273:2.4G Wireless Keyboard",
+    "vendorId": 3141,
+    "productId": 65273,
+    "productName": "2.4G Wireless Keyboard"
+  },
+  {
+    "raw": "3141:65278:2.4G Wireless Keyboard",
+    "vendorId": 3141,
+    "productId": 65278,
+    "productName": "2.4G Wireless Keyboard"
+  },
+  {
+    "raw": "3141:65276:2.4G Wireless Keyboard",
+    "vendorId": 3141,
+    "productId": 65276,
+    "productName": "2.4G Wireless Keyboard"
+  },
+  {
+    "raw": "1452:592:2.4G Wireless Receiver",
+    "vendorId": 1452,
+    "productId": 592,
+    "productName": "2.4G Wireless Receiver"
+  },
+  {
+    "raw": "3141:65274:Langtu T87-2.4G",
+    "vendorId": 3141,
+    "productId": 65274,
+    "productName": "Langtu T87-2.4G"
+  },
+  {
+    "raw": "3141:65273:Wireless 2.4G Keyboard",
+    "vendorId": 3141,
+    "productId": 65273,
+    "productName": "Wireless 2.4G Keyboard"
+  },
+  {
+    "raw": "3141:65274:Wireless 2.4G Keyboard",
+    "vendorId": 3141,
+    "productId": 65274,
+    "productName": "Wireless 2.4G Keyboard"
+  },
+  {
+    "raw": "3141:65273:X75GC",
+    "vendorId": 3141,
+    "productId": 65273,
+    "productName": "X75GC"
+  },
+  {
+    "raw": "3141:65274:QSENN2.4",
+    "vendorId": 3141,
+    "productId": 65274,
+    "productName": "QSENN2.4"
+  },
+  {
+    "raw": "3141:65273:QSENN2.4",
+    "vendorId": 3141,
+    "productId": 65273,
+    "productName": "QSENN2.4"
+  },
+  {
+    "raw": "3141:65276:QSENN2.4",
+    "vendorId": 3141,
+    "productId": 65276,
+    "productName": "QSENN2.4"
+  },
+  {
+    "raw": "3141:65278:QSENN2.4",
+    "vendorId": 3141,
+    "productId": 65278,
+    "productName": "QSENN2.4"
+  }
+]

@@ -1,0 +1,454 @@
+{
+  "meta": {
+    "title": "AJAZZ MK87 音乐律动 / 实时逐键灯效 常量表",
+    "writtenBy": "Lead",
+    "sources": {
+      "bundle": "assets/layout-classic-CMxiG14P.js",
+      "offsets": {
+        "audioAnalyzer": "~2315600 (K7/Nse/q7/J7/Pse)",
+        "musicLoop": "~2320000 (Y7: pe/he/me, 50ms)",
+        "modeList": "~2299000 (MUSIC_MODES)",
+        "bgModes": "~2334000 (_e/ve/xe/ye/be)",
+        "renderers": "~2322000-2342000 (Fe/Se/Ce/Ee/De/je/Oe/Ae/Ne/Pe/L)",
+        "protocol_setMusicData": "docs/protocol_commands.js 第862行 (TZ)"
+      },
+      "deviceVerified": "MK87 (0C45:8047) musicConfig.version=1，maxColOffset=0，keyOffset=F1+1,Z+1,↑+2,Space+3,R-Alt+3"
+    }
+  },
+  "timing": {
+    "tickIntervalMs": 50,
+    "fps": 20,
+    "silenceCounterTicks": 5,
+    "hueStepPerTick": 10,
+    "aiLightingSyncIntervalMs": 50
+  },
+  "audioAnalyzer": {
+    "api": "WebAudio AnalyserNode from getDisplayMedia({audio:true}) system/tab audio",
+    "fftSize": 2048,
+    "smoothingTimeConstant": 0.75,
+    "totalAmplitude": {
+      "source": "getFloatTimeDomainData",
+      "mix": {
+        "peak": 0.6,
+        "rms": 0.4
+      },
+      "normalizer": {
+        "attack": 0.3,
+        "decay": 0.008,
+        "floor": 0.01,
+        "gate": 5,
+        "max": 1000
+      }
+    },
+    "threeBand": {
+      "source": "getByteFrequencyData",
+      "bands": {
+        "low": [
+          20,
+          250
+        ],
+        "mid": [
+          250,
+          4000
+        ],
+        "high": [
+          4000,
+          20000
+        ]
+      },
+      "rmsOfSquaredNormalizedBins": true,
+      "normalizerPerBand": {
+        "attack": 0.3,
+        "decay": 0.008,
+        "floor": 0.01,
+        "gate": 5,
+        "max": 1000
+      }
+    },
+    "hzPerBinFormula": "sampleRate / fftSize"
+  },
+  "musicModes": [
+    {
+      "value": 13,
+      "i18n": "music_mode_text3",
+      "renderer": "Se",
+      "visual": "中心同心环扩散(默认)",
+      "label": {
+        "zh": "随曲起舞",
+        "en": "Dance to the Beat"
+      }
+    },
+    {
+      "value": 22,
+      "i18n": "music_mode_text20",
+      "renderer": "L",
+      "visual": "内置坐标图案",
+      "label": {
+        "zh": "双心共舞",
+        "en": "Dual Heart Dance"
+      }
+    },
+    {
+      "value": 14,
+      "i18n": "music_mode_text12",
+      "renderer": "Ce",
+      "visual": "中心4色射线旋转",
+      "label": {
+        "zh": "尘埃光漩",
+        "en": "Dust Glow Spiral"
+      }
+    },
+    {
+      "value": 15,
+      "i18n": "music_mode_text13",
+      "renderer": "Ee",
+      "visual": "三塔/火山",
+      "label": {
+        "zh": "蛰伏火山",
+        "en": "Dormant Volcano"
+      }
+    },
+    {
+      "value": 16,
+      "i18n": "music_mode_text14",
+      "renderer": "De",
+      "visual": "脉冲粒子横条",
+      "label": {
+        "zh": "光矢穿心",
+        "en": "Light Arrow Piercing"
+      }
+    },
+    {
+      "value": 18,
+      "i18n": "music_mode_text16",
+      "renderer": "Oe",
+      "visual": "边框环绕+对角光带",
+      "label": {
+        "zh": "光茧共振",
+        "en": "Light Cocoon Resonance"
+      }
+    },
+    {
+      "value": 19,
+      "i18n": "music_mode_text17",
+      "renderer": "Ae",
+      "visual": "左右闪电触须",
+      "label": {
+        "zh": "音叉振空",
+        "en": "Tuning Fork Vibration"
+      }
+    },
+    {
+      "value": 17,
+      "i18n": "music_mode_text15",
+      "renderer": "je",
+      "visual": "中心行正弦波",
+      "label": {
+        "zh": "萤火轨迹",
+        "en": "Firefly Trail"
+      }
+    },
+    {
+      "value": 20,
+      "i18n": "music_mode_text18",
+      "renderer": "Ne",
+      "visual": "右侧向内波形",
+      "label": {
+        "zh": "曲率遗轨",
+        "en": "Curvature Legacy Track"
+      }
+    },
+    {
+      "value": 21,
+      "i18n": "music_mode_text19",
+      "renderer": "Pe",
+      "visual": "矩阵雨柱",
+      "label": {
+        "zh": "行波律动",
+        "en": "Row Wave Rhythm"
+      }
+    },
+    {
+      "value": 4,
+      "i18n": "music_mode_text4",
+      "renderer": "Fe",
+      "visual": "背景+包络柱状",
+      "label": {
+        "zh": "曲率频阶",
+        "en": "Curvature Frequency Steps"
+      }
+    },
+    {
+      "value": 100,
+      "i18n": "music_mode_text21",
+      "renderer": "plugin",
+      "visual": "Music.exe 计算",
+      "label": {
+        "zh": "屏光联动",
+        "en": "Screen light linkage"
+      }
+    }
+  ],
+  "backgroundModes": [
+    {
+      "value": 0,
+      "i18n": "music_bg_text1",
+      "effect": "无背景",
+      "label": {
+        "zh": "无",
+        "en": "None"
+      }
+    },
+    {
+      "value": 1,
+      "i18n": "music_bg_text8",
+      "effect": "3色横向分段(绿/黄/红)",
+      "label": {
+        "zh": "绿色/黄色/红色",
+        "en": "Green/Yellow/Red"
+      }
+    },
+    {
+      "value": 2,
+      "i18n": "music_bg_text9",
+      "effect": "6色横向分段(品红/蓝/青/绿/黄/红)",
+      "label": {
+        "zh": "彩虹色",
+        "en": "Rainbow"
+      }
+    },
+    {
+      "value": 4,
+      "i18n": "music_bg_text10",
+      "effect": "中心径向色相渐变",
+      "label": {
+        "zh": "色谱",
+        "en": "Color Spectrum"
+      }
+    },
+    {
+      "value": 5,
+      "i18n": "music_bg_text11",
+      "effect": "纯色旋转色相",
+      "label": {
+        "zh": "频谱循环",
+        "en": "Spectrum Loop"
+      }
+    },
+    {
+      "value": 6,
+      "i18n": "music_bg_text2",
+      "effect": "白",
+      "label": {
+        "zh": "白色",
+        "en": "White"
+      }
+    },
+    {
+      "value": 7,
+      "i18n": "music_bg_text3",
+      "effect": "红",
+      "label": {
+        "zh": "红色",
+        "en": "Red"
+      }
+    },
+    {
+      "value": 8,
+      "i18n": "music_bg_text4",
+      "effect": "橙",
+      "label": {
+        "zh": "橙色",
+        "en": "Orange"
+      }
+    },
+    {
+      "value": 9,
+      "i18n": "music_bg_text5",
+      "effect": "黄",
+      "label": {
+        "zh": "黄色",
+        "en": "Yellow"
+      }
+    },
+    {
+      "value": 10,
+      "i18n": "music_bg_text6",
+      "effect": "蓝",
+      "label": {
+        "zh": "蓝色",
+        "en": "Blue"
+      }
+    },
+    {
+      "value": 11,
+      "i18n": "music_bg_text7",
+      "effect": "绿",
+      "label": {
+        "zh": "绿色",
+        "en": "Green"
+      }
+    }
+  ],
+  "uiParams": {
+    "amplitude": {
+      "min": 1,
+      "max": 100,
+      "default": 50
+    },
+    "backmode": {
+      "type": "enum",
+      "values": "backgroundModes"
+    },
+    "backmodebrightness": {
+      "min": 10,
+      "max": 100,
+      "default": 100
+    },
+    "testModeAmplitude": {
+      "range": "0..1000",
+      "note": "官方测试模式直接给振幅，不开音频"
+    }
+  },
+  "protocol": {
+    "usb": {
+      "cmd": 50,
+      "cmdHex": "0x32",
+      "name": "GET_LED_DATA(枚举名) / 实为逐键实时帧",
+      "reportPayloadBytes": 64,
+      "dataPerPacket": 56,
+      "keyBytes": 4,
+      "payloadLayout": "[keyValue, r, g, b] × 可见键",
+      "packetHeader": {
+        "0": "0xAA",
+        "1": "0x32",
+        "2": "本包数据字节数(56; 末包 12)",
+        "3-4": "数据起始偏移 addr LE (0,56,112,...)",
+        "5": "i (setMusicData 第二参数; MK87=0)",
+        "6": "last 标志 (1=最后一包)",
+        "7": "0",
+        "8": "+ 本包数据"
+      },
+      "mk87Frame": {
+        "keys": 87,
+        "payloadBytes": 348,
+        "packets": 7
+      },
+      "ack": {
+        "cmd": 50,
+        "timeoutMs": {
+          "frameVersion1": 2000,
+          "default": 50
+        },
+        "retries": 3
+      },
+      "rate": {
+        "fps": 20,
+        "packetsPerSecond": 140,
+        "approxBytesPerSecond": 9100
+      }
+    },
+    "wireless24G": {
+      "condition": "connectType==='2.4G' && reportCount===64 && lightingVersion===1",
+      "cmd": 60,
+      "cmdHex": "0x3C",
+      "payload": "RGB565 流 (2B/像素, 无键号)",
+      "dataPerPacket": 56,
+      "timeoutMs": 10,
+      "maxRetries": 0
+    },
+    "generic": {
+      "cmd": 53,
+      "cmdHex": "0x35",
+      "payload": "RGB565 流",
+      "customHeader": "AA 35 seq i",
+      "dataPerPacket": 60,
+      "timeoutMs": 10,
+      "maxRetries": 0
+    },
+    "webhidNote": "WebHID sendReport(0, data64) 的 data 不含 report ID 字节；原生 HID 写入时缓冲区首字节为 report ID=0，随后接上面的 64 字节报文。"
+  },
+  "layout": {
+    "rows": 6,
+    "keys": 87,
+    "P": 17,
+    "gridWidth": 18,
+    "centerRow": 2,
+    "centerCol": 8,
+    "keyOffset": [
+      {
+        "name": "F1",
+        "value": 1,
+        "offsetX": 1
+      },
+      {
+        "name": "Z",
+        "value": 65,
+        "offsetX": 1
+      },
+      {
+        "name": "↑",
+        "value": 90,
+        "offsetX": 2
+      },
+      {
+        "name": "Spacebar",
+        "value": 83,
+        "offsetX": 3
+      },
+      {
+        "name": "R-Alt",
+        "value": 84,
+        "offsetX": 3
+      }
+    ],
+    "note": "col = 行内下标 + 该行累计 offsetX；MK87 无 ringKeyPositions/volcanoKeyPositions，官方渲染器 13/15 自动走兜底布局"
+  },
+  "pluginContract": {
+    "base": "http://127.0.0.1:9191",
+    "timeoutMs": 500,
+    "endpoints": {
+      "audioAmplitude": {
+        "path": "/api/audio/amplitude",
+        "response": "{amplitude:number 0..1000}"
+      },
+      "musicEffectColors": {
+        "path": "/api/keyboard/musiceffect/",
+        "response": "{keys:[{keyIndex,keyCode,row,col,color:'#rrggbb'}]}"
+      },
+      "musicEffectStart": {
+        "path": "/api/keyboard/musiceffect?param=<mode>&100&<backmode>&100&<flag>"
+      },
+      "musicEffectClose": {
+        "path": "/api/keyboard/musiceffect/close/"
+      },
+      "keyboardLayout": {
+        "path": "/api/keyboard/layout/base64?data=<base64(json)>",
+        "json": "{name,vendorId,productId,deviceMode,layouts:{rows,cols,keys}}"
+      },
+      "hardwareInfo": {
+        "path": "/api/hardware/info",
+        "response": "{cpuUsage,cpuTemp,gpuUsage,gpuTemp}"
+      }
+    }
+  },
+  "openQuestions": [
+    "激活条件：是否只需持续发送 cmd 0x32 帧（假设 H1），还是需要先 SET_LED_EFFECT 切到某个模式（H2）",
+    "停止发送后键盘是否自动回落到原灯效（H3）",
+    "设备是否对每包 cmd 0x32 回 ACK（影响 20fps 是否跟得上）",
+    "渲染器 15/16/18/19/20/21/22 的逐行实现已倒出（docs/_music_b2.js），尚未移植进 music_ref.js",
+    "musicDiy / AI 灯效（MK87 配置未开）的 shapes 渲染细节未展开"
+  ],
+  "resolvedSemantics": {
+    "tftDisplayTime": {
+      "0": "24 Hour",
+      "1": "12 Hour",
+      "note": "官方 i18n time_1/time_2；不是显示开关"
+    },
+    "macroMask": {
+      "0": "Routine(单次)",
+      "2": "Press the key again to end(再按一次结束)",
+      "1": "Repeat Playback(重复 param3 次)"
+    }
+  }
+}

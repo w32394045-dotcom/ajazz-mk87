@@ -1,0 +1,710 @@
+[
+  {
+    "path": "ajazz",
+    "file": "3141-10025-AJAZZ KEYBOARD",
+    "local": "AH",
+    "at": 1824882
+  },
+  {
+    "path": "ajazz",
+    "file": "3141-32774-AK870MC",
+    "local": "MH",
+    "at": 1824944
+  },
+  {
+    "path": "ajazz",
+    "file": "3141-32774-Gaming Keyboard",
+    "local": "PH",
+    "at": 1824999
+  },
+  {
+    "path": "ajazz",
+    "file": "3141-32774-USB Keyboard",
+    "local": "IH",
+    "at": 1825062
+  },
+  {
+    "path": "ajazz",
+    "file": "3141-32777-AJAZZ KEYBOARD",
+    "local": "RH",
+    "at": 1825122
+  },
+  {
+    "path": "ajazz",
+    "file": "3141-32777-AK820",
+    "local": "BH",
+    "at": 1825184
+  },
+  {
+    "path": "ajazz",
+    "file": "3141-32777-AK980 PRO",
+    "local": "HH",
+    "at": 1825237
+  },
+  {
+    "path": "ajazz",
+    "file": "3141-32778-820PRO",
+    "local": "WH",
+    "at": 1825294
+  },
+  {
+    "path": "ajazz",
+    "file": "3141-32778-AK820",
+    "local": "KH",
+    "at": 1825348
+  },
+  {
+    "path": "ajazz",
+    "file": "3141-32780-AJAZZ KEYBOARD",
+    "local": "JH",
+    "at": 1825401
+  },
+  {
+    "path": "ajazz",
+    "file": "3141-32781-AJAZZ SK98",
+    "local": "XH",
+    "at": 1825463
+  },
+  {
+    "path": "ajazz",
+    "file": "3141-32783-AJAZZ SK98",
+    "local": "QH",
+    "at": 1825521
+  },
+  {
+    "path": "ajazz",
+    "file": "3141-32790-AJAZZ KEYBOARD",
+    "local": "eU",
+    "at": 1825579
+  },
+  {
+    "path": "ajazz",
+    "file": "3141-32793-AJAZZ KEYBOARD",
+    "local": "nU",
+    "at": 1825641
+  },
+  {
+    "path": "ajazz",
+    "file": "3141-32799-AJAZZ Keyboard",
+    "local": "iU",
+    "at": 1825703
+  },
+  {
+    "path": "ajazz",
+    "file": "3141-32809-AK980 PRO",
+    "local": "oU",
+    "at": 1825765
+  },
+  {
+    "path": "ajazz",
+    "file": "3141-32819-AK820MAX",
+    "local": "cU",
+    "at": 1825822
+  },
+  {
+    "path": "ajazz",
+    "file": "3141-32825-AK980 PRO",
+    "local": "uU",
+    "at": 1825878
+  },
+  {
+    "path": "ajazz",
+    "file": "3141-32835-AK980 MAX",
+    "local": "fU",
+    "at": 1825935
+  },
+  {
+    "path": "ajazz",
+    "file": "3141-32836-AJAZZ AK029",
+    "local": "mU",
+    "at": 1825992
+  },
+  {
+    "path": "ajazz",
+    "file": "3141-32836-AK820MAX",
+    "local": "gU",
+    "at": 1826051
+  },
+  {
+    "path": "ajazz",
+    "file": "3141-32836-QS87",
+    "local": "vU",
+    "at": 1826107
+  },
+  {
+    "path": "ajazz",
+    "file": "3141-32837-AJAZZ AK029",
+    "local": "bU",
+    "at": 1826159
+  },
+  {
+    "path": "ajazz",
+    "file": "3141-32838-AJAZZ AK029",
+    "local": "SU",
+    "at": 1826218
+  },
+  {
+    "path": "ajazz",
+    "file": "3141-32839-AJAZZ KEYBOARD",
+    "local": "wU",
+    "at": 1826277
+  },
+  {
+    "path": "ajazz",
+    "file": "3141-32841-820PRO",
+    "local": "EU",
+    "at": 1826339
+  },
+  {
+    "path": "ajazz",
+    "file": "3141-32848-AK980 MAX",
+    "local": "OU",
+    "at": 1826393
+  },
+  {
+    "path": "ajazz",
+    "file": "3141-32849-AK980 MAX",
+    "local": "AU",
+    "at": 1826450
+  },
+  {
+    "path": "ajazz",
+    "file": "3141-32850-AK980 MAX",
+    "local": "MU",
+    "at": 1826507
+  },
+  {
+    "path": "ajazz",
+    "file": "3141-32851-AK980 MAX",
+    "local": "PU",
+    "at": 1826564
+  },
+  {
+    "path": "ajazz",
+    "file": "3141-32852-AK980 MAX",
+    "local": "IU",
+    "at": 1826621
+  },
+  {
+    "path": "ajazz",
+    "file": "3141-32880-AK820MAX",
+    "local": "RU",
+    "at": 1826678
+  },
+  {
+    "path": "ajazz",
+    "file": "3141-32921-AJAZZ KEYBOARD",
+    "local": "BU",
+    "at": 1826734
+  },
+  {
+    "path": "ajazz",
+    "file": "3141-32921-AK820",
+    "local": "HU",
+    "at": 1826796
+  },
+  {
+    "path": "ajazz",
+    "file": "3141-32923-AK820MAX",
+    "local": "WU",
+    "at": 1826849
+  },
+  {
+    "path": "ajazz",
+    "file": "3141-32928-AK820MAX",
+    "local": "KU",
+    "at": 1826905
+  },
+  {
+    "path": "ajazz",
+    "file": "3141-32944-AJAZZ Keyboard",
+    "local": "JU",
+    "at": 1826961
+  },
+  {
+    "path": "ajazz",
+    "file": "3141-32944-AK820MAX",
+    "local": "XU",
+    "at": 1827023
+  },
+  {
+    "path": "ajazz",
+    "file": "3141-32945-AJAZZ KEYBOARD",
+    "local": "QU",
+    "at": 1827079
+  },
+  {
+    "path": "ajazz",
+    "file": "3141-32945-AK820MAX",
+    "local": "eW",
+    "at": 1827141
+  },
+  {
+    "path": "ajazz",
+    "file": "3141-32946-AJAZZ AK680 MAX",
+    "local": "nW",
+    "at": 1827197
+  },
+  {
+    "path": "ajazz",
+    "file": "3141-32948-AJAZZ AK680 MAX",
+    "local": "iW",
+    "at": 1827260
+  },
+  {
+    "path": "ajazz",
+    "file": "3141-32951-AJAZZ ALUX75 PRO",
+    "local": "oW",
+    "at": 1827323
+  },
+  {
+    "path": "ajazz",
+    "file": "3141-32951-Gaming Keyboard",
+    "local": "cW",
+    "at": 1827387
+  },
+  {
+    "path": "ajazz",
+    "file": "3141-32953-AK820 MAX Lightles",
+    "local": "uW",
+    "at": 1827450
+  },
+  {
+    "path": "ajazz",
+    "file": "3141-32956-AJAZZ AK680 V2",
+    "local": "fW",
+    "at": 1827516
+  },
+  {
+    "path": "ajazz",
+    "file": "3141-32961-AJAZZ AK680 V2",
+    "local": "mW",
+    "at": 1827578
+  },
+  {
+    "path": "ajazz",
+    "file": "3141-32961-AJAZZ KEYBOARD",
+    "local": "gW",
+    "at": 1827640
+  },
+  {
+    "path": "ajazz",
+    "file": "3141-32962-AJAZZ AK680 V2",
+    "local": "vW",
+    "at": 1827702
+  },
+  {
+    "path": "ajazz",
+    "file": "3141-32981-AJAZZ AK039",
+    "local": "bW",
+    "at": 1827764
+  },
+  {
+    "path": "ajazz",
+    "file": "3141-32982-AJAZZ AK039",
+    "local": "SW",
+    "at": 1827823
+  },
+  {
+    "path": "ajazz",
+    "file": "3141-32983-AJAZZ KEYBOARD",
+    "local": "wW",
+    "at": 1827882
+  },
+  {
+    "path": "ajazz",
+    "file": "3141-33015-AJAZZ Keyboard",
+    "local": "EW",
+    "at": 1827944
+  },
+  {
+    "path": "ajazz",
+    "file": "3141-33037-Gaming Keyboard",
+    "local": "OW",
+    "at": 1828006
+  },
+  {
+    "path": "ajazz",
+    "file": "3141-34817-AJAZZ KEYBOARD",
+    "local": "AW",
+    "at": 1828069
+  },
+  {
+    "path": "ajazz",
+    "file": "3141-34818-AJAZZ AK980 V2 PRO",
+    "local": "MW",
+    "at": 1828131
+  },
+  {
+    "path": "ajazz",
+    "file": "3141-34818-AJAZZ KEYBOARD",
+    "local": "PW",
+    "at": 1828197
+  },
+  {
+    "path": "ajazz",
+    "file": "3141-34818-AK980 PRO",
+    "local": "IW",
+    "at": 1828259
+  },
+  {
+    "path": "ajazz",
+    "file": "3141-34818-CSOL Keyboard",
+    "local": "RW",
+    "at": 1828316
+  },
+  {
+    "path": "ajazz",
+    "file": "3141-34818-MJ84+",
+    "local": "BW",
+    "at": 1828377
+  },
+  {
+    "path": "ajazz",
+    "file": "3141-34818-gW997mgkb",
+    "local": "HW",
+    "at": 1828430
+  },
+  {
+    "path": "ajazz",
+    "file": "3141-34819-AJAZZ AK980 V2 PRO",
+    "local": "WW",
+    "at": 1828487
+  },
+  {
+    "path": "ajazz",
+    "file": "3141-34819-AJAZZ KEYBOARD",
+    "local": "KW",
+    "at": 1828553
+  },
+  {
+    "path": "ajazz",
+    "file": "3141-34820-AJAZZ KEYBOARD",
+    "local": "JW",
+    "at": 1828615
+  },
+  {
+    "path": "ajazz",
+    "file": "3141-34820-gW997mgkb",
+    "local": "XW",
+    "at": 1828677
+  },
+  {
+    "path": "ajazz",
+    "file": "3141-34829-AJAZZ KEYBOARD",
+    "local": "QW",
+    "at": 1828734
+  },
+  {
+    "path": "ajazz",
+    "file": "3141-34829-AK820",
+    "local": "eG",
+    "at": 1828796
+  },
+  {
+    "path": "ajazz",
+    "file": "3141-34830-AK820",
+    "local": "nG",
+    "at": 1828849
+  },
+  {
+    "path": "ajazz",
+    "file": "3141-34831-AK820",
+    "local": "iG",
+    "at": 1828902
+  },
+  {
+    "path": "ajazz",
+    "file": "3141-34832-AK820",
+    "local": "oG",
+    "at": 1828955
+  },
+  {
+    "path": "ajazz",
+    "file": "3141-34833-AK820",
+    "local": "cG",
+    "at": 1829008
+  },
+  {
+    "path": "ajazz",
+    "file": "3141-34834-AK820",
+    "local": "uG",
+    "at": 1829061
+  },
+  {
+    "path": "ajazz",
+    "file": "3141-65273-HS USB Dongle-1-103",
+    "local": "fG",
+    "at": 1829114
+  },
+  {
+    "path": "ajazz",
+    "file": "3141-65273-HS USB Dongle-1-109",
+    "local": "mG",
+    "at": 1829181
+  },
+  {
+    "path": "ajazz",
+    "file": "3141-65274-2.4G Dongle-1-100",
+    "local": "gG",
+    "at": 1829248
+  },
+  {
+    "path": "ajazz",
+    "file": "3141-65274-2.4G Dongle-1-101",
+    "local": "vG",
+    "at": 1829313
+  },
+  {
+    "path": "ajazz",
+    "file": "3141-65274-2.4G Dongle-1-102",
+    "local": "bG",
+    "at": 1829378
+  },
+  {
+    "path": "ajazz",
+    "file": "3141-65274-2.4G Dongle-1-104",
+    "local": "SG",
+    "at": 1829443
+  },
+  {
+    "path": "ajazz",
+    "file": "3141-65274-2.4G Dongle-1-106",
+    "local": "wG",
+    "at": 1829508
+  },
+  {
+    "path": "ajazz",
+    "file": "3141-65274-2.4G Dongle-1-24",
+    "local": "EG",
+    "at": 1829573
+  },
+  {
+    "path": "ajazz",
+    "file": "3141-65274-2.4G Dongle-1-29",
+    "local": "OG",
+    "at": 1829637
+  },
+  {
+    "path": "ajazz",
+    "file": "3141-65274-2.4G Dongle-1-49",
+    "local": "AG",
+    "at": 1829701
+  },
+  {
+    "path": "ajazz",
+    "file": "3141-65274-2.4G Dongle-1-66",
+    "local": "MG",
+    "at": 1829765
+  },
+  {
+    "path": "ajazz",
+    "file": "3141-65274-2.4G Dongle-1-70",
+    "local": "PG",
+    "at": 1829829
+  },
+  {
+    "path": "ajazz",
+    "file": "3141-65274-2.4G Dongle-1-72",
+    "local": "IG",
+    "at": 1829893
+  },
+  {
+    "path": "ajazz",
+    "file": "3141-65274-2.4G Dongle-1-84",
+    "local": "RG",
+    "at": 1829957
+  },
+  {
+    "path": "ajazz",
+    "file": "3141-65274-2.4G Dongle-1-85",
+    "local": "BG",
+    "at": 1830021
+  },
+  {
+    "path": "ajazz",
+    "file": "3141-65274-2.4G Dongle-1-91",
+    "local": "HG",
+    "at": 1830085
+  },
+  {
+    "path": "ajazz",
+    "file": "3141-65274-2.4G Dongle-1-98",
+    "local": "WG",
+    "at": 1830149
+  },
+  {
+    "path": "ajazz",
+    "file": "3141-65274-2.4G Dongle-1-99",
+    "local": "KG",
+    "at": 1830213
+  },
+  {
+    "path": "ajazz",
+    "file": "3141-65276-2.4G Dongle-1-12",
+    "local": "JG",
+    "at": 1830277
+  },
+  {
+    "path": "ajazz",
+    "file": "3141-65276-AJAZZ AK820MAX",
+    "local": "XG",
+    "at": 1830341
+  },
+  {
+    "path": "ajazz",
+    "file": "3141-65276-HS USB Dongle-1-12",
+    "local": "QG",
+    "at": 1830403
+  },
+  {
+    "path": "ajazz",
+    "file": "3141-65276-HS USB Dongle-1-14",
+    "local": "eK",
+    "at": 1830469
+  },
+  {
+    "path": "ajazz",
+    "file": "3141-65276-HS USB Dongle-1-21",
+    "local": "nK",
+    "at": 1830535
+  },
+  {
+    "path": "ajazz",
+    "file": "3141-65276-HS USB Dongle-1-32",
+    "local": "iK",
+    "at": 1830601
+  },
+  {
+    "path": "ajazz",
+    "file": "3141-65276-HS USB Dongle-1-41",
+    "local": "oK",
+    "at": 1830667
+  },
+  {
+    "path": "ajazz",
+    "file": "3141-65276-HS USB Dongle-1-48",
+    "local": "cK",
+    "at": 1830733
+  },
+  {
+    "path": "ajazz",
+    "file": "3141-65277-AJAZZ AK820MAX",
+    "local": "uK",
+    "at": 1830799
+  },
+  {
+    "path": "ajazz",
+    "file": "3141-65278-2.4G Dongle-1-1",
+    "local": "fK",
+    "at": 1830861
+  },
+  {
+    "path": "ajazz",
+    "file": "3141-65278-2.4G Dongle-1-17",
+    "local": "mK",
+    "at": 1830924
+  },
+  {
+    "path": "ajazz",
+    "file": "3141-65278-2.4G Dongle-1-18",
+    "local": "gK",
+    "at": 1830988
+  },
+  {
+    "path": "ajazz",
+    "file": "3141-65278-2.4G Dongle-1-2",
+    "local": "vK",
+    "at": 1831052
+  },
+  {
+    "path": "ajazz",
+    "file": "3141-65278-2.4G Dongle-1-22",
+    "local": "bK",
+    "at": 1831115
+  },
+  {
+    "path": "ajazz",
+    "file": "3141-65278-2.4G Dongle-1-33",
+    "local": "SK",
+    "at": 1831179
+  },
+  {
+    "path": "ajazz",
+    "file": "3141-65278-2.4G Dongle-1-35",
+    "local": "wK",
+    "at": 1831243
+  },
+  {
+    "path": "ajazz",
+    "file": "3141-65278-2.4G Dongle-1-42",
+    "local": "EK",
+    "at": 1831307
+  },
+  {
+    "path": "ajazz",
+    "file": "3141-65278-2.4G Dongle-1-44",
+    "local": "OK",
+    "at": 1831371
+  },
+  {
+    "path": "ajazz",
+    "file": "3141-65278-2.4G Dongle-1-5",
+    "local": "AK",
+    "at": 1831435
+  },
+  {
+    "path": "ajazz",
+    "file": "3141-65278-2.4G Dongle-1-50",
+    "local": "MK",
+    "at": 1831498
+  },
+  {
+    "path": "ajazz",
+    "file": "3141-65278-2.4G Dongle-1-51",
+    "local": "PK",
+    "at": 1831562
+  },
+  {
+    "path": "ajazz",
+    "file": "3141-65278-2.4G Dongle-1-55",
+    "local": "IK",
+    "at": 1831626
+  },
+  {
+    "path": "ajazz",
+    "file": "3141-65278-2.4G Dongle-1-56",
+    "local": "RK",
+    "at": 1831690
+  },
+  {
+    "path": "ajazz",
+    "file": "3141-65278-2.4G Dongle-1-60",
+    "local": "BK",
+    "at": 1831754
+  },
+  {
+    "path": "ajazz",
+    "file": "3141-65278-2.4G Dongle-1-62",
+    "local": "HK",
+    "at": 1831818
+  },
+  {
+    "path": "ajazz",
+    "file": "3141-65278-2.4G Dongle-1-64",
+    "local": "WK",
+    "at": 1831882
+  },
+  {
+    "path": "ajazz",
+    "file": "3141-65278-AJAZZ AK820MAX",
+    "local": "KK",
+    "at": 1831946
+  },
+  {
+    "path": "ajazz",
+    "file": "3141-65278-AJAZZ AK980 PRO 2.4G",
+    "local": "JK",
+    "at": 1832008
+  }
+]

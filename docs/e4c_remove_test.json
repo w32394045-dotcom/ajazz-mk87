@@ -1,0 +1,295 @@
+﻿{
+    "start":  "2026-11-01T08:42:31",
+    "mode":  "remove-dongle",
+    "steps":  [
+                  {
+                      "t":  "08:42:32.698",
+                      "name":  "snapshot:initial",
+                      "data":  [
+                                   {
+                                       "id":  "HID\\VID_0C45\u0026PID_FEFE\u0026MI_02\u0026COL01\\8\u0026195F4F95\u00260\u00260000",
+                                       "status":  "OK",
+                                       "problem":  "CM_PROB_NONE"
+                                   },
+                                   {
+                                       "id":  "HID\\VID_0C45\u0026PID_FEFE\u0026MI_04\\8\u0026D00E8E7\u00260\u00260000",
+                                       "status":  "OK",
+                                       "problem":  "CM_PROB_NONE"
+                                   },
+                                   {
+                                       "id":  "HID\\VID_0C45\u0026PID_FEFE\u0026MI_02\u0026COL02\\8\u0026195F4F95\u00260\u00260001",
+                                       "status":  "OK",
+                                       "problem":  "CM_PROB_NONE"
+                                   },
+                                   {
+                                       "id":  "HID\\VID_0C45\u0026PID_FEFE\u0026MI_01\\8\u00262C8F6BD3\u00260\u00260000",
+                                       "status":  "OK",
+                                       "problem":  "CM_PROB_NONE"
+                                   },
+                                   {
+                                       "id":  "USB\\VID_0C45\u0026PID_FEFE\u0026MI_04\\7\u0026883A9E9\u00260\u00260004",
+                                       "status":  "OK",
+                                       "problem":  "CM_PROB_NONE"
+                                   },
+                                   {
+                                       "id":  "USB\\VID_0C45\u0026PID_FEFE\u0026MI_03\\7\u0026883A9E9\u00260\u00260003",
+                                       "status":  "OK",
+                                       "problem":  "CM_PROB_NONE"
+                                   },
+                                   {
+                                       "id":  "HID\\VID_0C45\u0026PID_FEFE\u0026MI_02\u0026COL03\\8\u0026195F4F95\u00260\u00260002",
+                                       "status":  "OK",
+                                       "problem":  "CM_PROB_NONE"
+                                   },
+                                   {
+                                       "id":  "USB\\VID_0C45\u0026PID_FEFE\u0026MI_02\\7\u0026883A9E9\u00260\u00260002",
+                                       "status":  "OK",
+                                       "problem":  "CM_PROB_NONE"
+                                   },
+                                   {
+                                       "id":  "USB\\VID_0C45\u0026PID_FEFE\u0026MI_01\\7\u0026883A9E9\u00260\u00260001",
+                                       "status":  "OK",
+                                       "problem":  "CM_PROB_NONE"
+                                   },
+                                   {
+                                       "id":  "USB\\VID_0C45\u0026PID_FEFE\u0026MI_00\\7\u0026883A9E9\u00260\u00260000",
+                                       "status":  "OK",
+                                       "problem":  "CM_PROB_NONE"
+                                   },
+                                   {
+                                       "id":  "USB\\VID_0C45\u0026PID_FEFE\\6\u002654CA98\u00260\u00262",
+                                       "status":  "OK",
+                                       "problem":  "CM_PROB_NONE"
+                                   },
+                                   {
+                                       "id":  "HID\\VID_0C45\u0026PID_FEFE\u0026MI_02\u0026COL04\\8\u0026195F4F95\u00260\u00260003",
+                                       "status":  "OK",
+                                       "problem":  "CM_PROB_NONE"
+                                   },
+                                   {
+                                       "id":  "USB\\VID_0C45\u0026PID_8047\\6\u002654CA98\u00260\u00261",
+                                       "status":  "Error",
+                                       "problem":  "CM_PROB_FAILED_START"
+                                   },
+                                   {
+                                       "id":  "HID\\VID_0C45\u0026PID_FEFE\u0026MI_00\\8\u0026424BE0A\u00260\u00260000",
+                                       "status":  "OK",
+                                       "problem":  "CM_PROB_NONE"
+                                   },
+                                   {
+                                       "id":  "HID\\VID_0C45\u0026PID_FEFE\u0026MI_03\\8\u002662F3357\u00260\u00260000",
+                                       "status":  "OK",
+                                       "problem":  "CM_PROB_NONE"
+                                   },
+                                   {
+                                       "id":  "HID\\VID_0C45\u0026PID_FEFE\u0026MI_02\u0026COL05\\8\u0026195F4F95\u00260\u00260004",
+                                       "status":  "OK",
+                                       "problem":  "CM_PROB_NONE"
+                                   }
+                               ]
+                  },
+                  {
+                      "t":  "08:42:33.844",
+                      "name":  "plan",
+                      "data":  {
+                                   "target":  "USB\\VID_0C45\u0026PID_8047\\6\u002654CA98\u00260\u00261",
+                                   "other":  "USB\\VID_0C45\u0026PID_FEFE\\6\u002654CA98\u00260\u00262"
+                               }
+                  },
+                  {
+                      "t":  "08:42:33.941",
+                      "name":  "instance-not-found",
+                      "data":  "USB\\VID_0C45\u0026PID_FEFE\\6\u002654CA98\u00260\u00262"
+                  },
+                  {
+                      "t":  "08:42:35.478",
+                      "name":  "snapshot:after-remove",
+                      "data":  [
+                                   {
+                                       "id":  "HID\\VID_0C45\u0026PID_FEFE\u0026MI_02\u0026COL01\\8\u0026195F4F95\u00260\u00260000",
+                                       "status":  "OK",
+                                       "problem":  "CM_PROB_NONE"
+                                   },
+                                   {
+                                       "id":  "HID\\VID_0C45\u0026PID_FEFE\u0026MI_04\\8\u0026D00E8E7\u00260\u00260000",
+                                       "status":  "OK",
+                                       "problem":  "CM_PROB_NONE"
+                                   },
+                                   {
+                                       "id":  "HID\\VID_0C45\u0026PID_FEFE\u0026MI_02\u0026COL02\\8\u0026195F4F95\u00260\u00260001",
+                                       "status":  "OK",
+                                       "problem":  "CM_PROB_NONE"
+                                   },
+                                   {
+                                       "id":  "HID\\VID_0C45\u0026PID_FEFE\u0026MI_01\\8\u00262C8F6BD3\u00260\u00260000",
+                                       "status":  "OK",
+                                       "problem":  "CM_PROB_NONE"
+                                   },
+                                   {
+                                       "id":  "USB\\VID_0C45\u0026PID_FEFE\u0026MI_04\\7\u0026883A9E9\u00260\u00260004",
+                                       "status":  "OK",
+                                       "problem":  "CM_PROB_NONE"
+                                   },
+                                   {
+                                       "id":  "USB\\VID_0C45\u0026PID_FEFE\u0026MI_03\\7\u0026883A9E9\u00260\u00260003",
+                                       "status":  "OK",
+                                       "problem":  "CM_PROB_NONE"
+                                   },
+                                   {
+                                       "id":  "HID\\VID_0C45\u0026PID_FEFE\u0026MI_02\u0026COL03\\8\u0026195F4F95\u00260\u00260002",
+                                       "status":  "OK",
+                                       "problem":  "CM_PROB_NONE"
+                                   },
+                                   {
+                                       "id":  "USB\\VID_0C45\u0026PID_FEFE\u0026MI_02\\7\u0026883A9E9\u00260\u00260002",
+                                       "status":  "OK",
+                                       "problem":  "CM_PROB_NONE"
+                                   },
+                                   {
+                                       "id":  "USB\\VID_0C45\u0026PID_FEFE\u0026MI_01\\7\u0026883A9E9\u00260\u00260001",
+                                       "status":  "OK",
+                                       "problem":  "CM_PROB_NONE"
+                                   },
+                                   {
+                                       "id":  "USB\\VID_0C45\u0026PID_FEFE\u0026MI_00\\7\u0026883A9E9\u00260\u00260000",
+                                       "status":  "OK",
+                                       "problem":  "CM_PROB_NONE"
+                                   },
+                                   {
+                                       "id":  "USB\\VID_0C45\u0026PID_FEFE\\6\u002654CA98\u00260\u00262",
+                                       "status":  "OK",
+                                       "problem":  "CM_PROB_NONE"
+                                   },
+                                   {
+                                       "id":  "HID\\VID_0C45\u0026PID_FEFE\u0026MI_02\u0026COL04\\8\u0026195F4F95\u00260\u00260003",
+                                       "status":  "OK",
+                                       "problem":  "CM_PROB_NONE"
+                                   },
+                                   {
+                                       "id":  "USB\\VID_0C45\u0026PID_8047\\6\u002654CA98\u00260\u00261",
+                                       "status":  "Error",
+                                       "problem":  "CM_PROB_FAILED_START"
+                                   },
+                                   {
+                                       "id":  "HID\\VID_0C45\u0026PID_FEFE\u0026MI_00\\8\u0026424BE0A\u00260\u00260000",
+                                       "status":  "OK",
+                                       "problem":  "CM_PROB_NONE"
+                                   },
+                                   {
+                                       "id":  "HID\\VID_0C45\u0026PID_FEFE\u0026MI_03\\8\u002662F3357\u00260\u00260000",
+                                       "status":  "OK",
+                                       "problem":  "CM_PROB_NONE"
+                                   },
+                                   {
+                                       "id":  "HID\\VID_0C45\u0026PID_FEFE\u0026MI_02\u0026COL05\\8\u0026195F4F95\u00260\u00260004",
+                                       "status":  "OK",
+                                       "problem":  "CM_PROB_NONE"
+                                   }
+                               ]
+                  },
+                  {
+                      "t":  "08:42:39.221",
+                      "name":  "reenum-parent",
+                      "data":  {
+                                   "parent":  2540,
+                                   "result":  0,
+                                   "id":  "USB\\VID_0C45\u0026PID_8047\\6\u002654CA98\u00260\u00261"
+                               }
+                  },
+                  {
+                      "t":  "08:42:41.846",
+                      "name":  "snapshot:after-target-retry",
+                      "data":  [
+                                   {
+                                       "id":  "HID\\VID_0C45\u0026PID_FEFE\u0026MI_02\u0026COL01\\8\u0026195F4F95\u00260\u00260000",
+                                       "status":  "OK",
+                                       "problem":  "CM_PROB_NONE"
+                                   },
+                                   {
+                                       "id":  "HID\\VID_0C45\u0026PID_FEFE\u0026MI_04\\8\u0026D00E8E7\u00260\u00260000",
+                                       "status":  "OK",
+                                       "problem":  "CM_PROB_NONE"
+                                   },
+                                   {
+                                       "id":  "HID\\VID_0C45\u0026PID_FEFE\u0026MI_02\u0026COL02\\8\u0026195F4F95\u00260\u00260001",
+                                       "status":  "OK",
+                                       "problem":  "CM_PROB_NONE"
+                                   },
+                                   {
+                                       "id":  "HID\\VID_0C45\u0026PID_FEFE\u0026MI_01\\8\u00262C8F6BD3\u00260\u00260000",
+                                       "status":  "OK",
+                                       "problem":  "CM_PROB_NONE"
+                                   },
+                                   {
+                                       "id":  "USB\\VID_0C45\u0026PID_FEFE\u0026MI_04\\7\u0026883A9E9\u00260\u00260004",
+                                       "status":  "OK",
+                                       "problem":  "CM_PROB_NONE"
+                                   },
+                                   {
+                                       "id":  "USB\\VID_0C45\u0026PID_FEFE\u0026MI_03\\7\u0026883A9E9\u00260\u00260003",
+                                       "status":  "OK",
+                                       "problem":  "CM_PROB_NONE"
+                                   },
+                                   {
+                                       "id":  "HID\\VID_0C45\u0026PID_FEFE\u0026MI_02\u0026COL03\\8\u0026195F4F95\u00260\u00260002",
+                                       "status":  "OK",
+                                       "problem":  "CM_PROB_NONE"
+                                   },
+                                   {
+                                       "id":  "USB\\VID_0C45\u0026PID_FEFE\u0026MI_02\\7\u0026883A9E9\u00260\u00260002",
+                                       "status":  "OK",
+                                       "problem":  "CM_PROB_NONE"
+                                   },
+                                   {
+                                       "id":  "USB\\VID_0C45\u0026PID_FEFE\u0026MI_01\\7\u0026883A9E9\u00260\u00260001",
+                                       "status":  "OK",
+                                       "problem":  "CM_PROB_NONE"
+                                   },
+                                   {
+                                       "id":  "USB\\VID_0C45\u0026PID_FEFE\u0026MI_00\\7\u0026883A9E9\u00260\u00260000",
+                                       "status":  "OK",
+                                       "problem":  "CM_PROB_NONE"
+                                   },
+                                   {
+                                       "id":  "USB\\VID_0C45\u0026PID_FEFE\\6\u002654CA98\u00260\u00262",
+                                       "status":  "OK",
+                                       "problem":  "CM_PROB_NONE"
+                                   },
+                                   {
+                                       "id":  "HID\\VID_0C45\u0026PID_FEFE\u0026MI_02\u0026COL04\\8\u0026195F4F95\u00260\u00260003",
+                                       "status":  "OK",
+                                       "problem":  "CM_PROB_NONE"
+                                   },
+                                   {
+                                       "id":  "USB\\VID_0C45\u0026PID_8047\\6\u002654CA98\u00260\u00261",
+                                       "status":  "Error",
+                                       "problem":  "CM_PROB_FAILED_START"
+                                   },
+                                   {
+                                       "id":  "HID\\VID_0C45\u0026PID_FEFE\u0026MI_00\\8\u0026424BE0A\u00260\u00260000",
+                                       "status":  "OK",
+                                       "problem":  "CM_PROB_NONE"
+                                   },
+                                   {
+                                       "id":  "HID\\VID_0C45\u0026PID_FEFE\u0026MI_03\\8\u002662F3357\u00260\u00260000",
+                                       "status":  "OK",
+                                       "problem":  "CM_PROB_NONE"
+                                   },
+                                   {
+                                       "id":  "HID\\VID_0C45\u0026PID_FEFE\u0026MI_02\u0026COL05\\8\u0026195F4F95\u00260\u00260004",
+                                       "status":  "OK",
+                                       "problem":  "CM_PROB_NONE"
+                                   }
+                               ]
+                  },
+                  {
+                      "t":  "08:42:42.959",
+                      "name":  "result",
+                      "data":  {
+                                   "targetStatus":  "Error",
+                                   "ok":  false,
+                                   "miChildren":  14
+                               }
+                  }
+              ]
+}

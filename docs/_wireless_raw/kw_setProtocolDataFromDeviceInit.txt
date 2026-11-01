@@ -1,0 +1,5 @@
+# token=setProtocolDataFromDeviceInit hits=4 uniq=4
+@1841468	setProtocolDataFromDeviceInit:r}=t();await r(e);let{syncHardwareProfiles:i,updateCurrentProfile:a}=a
+@1868250	setProtocolDataFromDeviceInit:d}},nX=t({allKeyChars:()=>rX,basicChars:()=>iX,extendChars:()=>aX,func
+@1987983	setProtocolDataFromDeviceInit:i}=tX();return await i(r),await SQ(e)}catch(e){return console.error(`切
+@2018882	setProtocolDataFromDeviceInit:f}=tX();if(await f(c),await SQ(t),D(o?.keyboardConfig,d),d){let e=awai

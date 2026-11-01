@@ -1,0 +1,3500 @@
+{
+  "meta": {
+    "title": "FUNC / FUNC_V2 动作 id ↔ 官方 i18n 文案",
+    "source": [
+      "assets/layout-classic-CMxiG14P.js（sX=funcChars @1884055, lX=funcV2Chars @1900260, oX=specialChars @1882523）",
+      "assets/i18n/zh.js + en.js（官方语言包 chunk）",
+      "docs/fn-layer-decode.json（MK87 真机 FN 层）"
+    ],
+    "generator": "scripts/build_func_i18n.js",
+    "generatedAt": "2026-10-31T22:19:26.881Z",
+    "counts": {
+      "func": 292,
+      "funcV2": 62,
+      "usedOnMk87": 28,
+      "i18nKeysReferenced": 316,
+      "i18nMissingKeys": 1,
+      "i18nUnreferenced": 0
+    }
+  },
+  "FUNC": {
+    "1": {
+      "value": 1,
+      "page": "FUNC",
+      "name": "恢复出厂设置",
+      "i18nKey": "fun_text1",
+      "zh": "恢复出厂设置",
+      "en": "Restore Factory Settings",
+      "keyType": null
+    },
+    "2": {
+      "value": 2,
+      "page": "FUNC",
+      "name": "蓝牙通道1",
+      "i18nKey": "fun_text2",
+      "zh": "蓝牙通道1",
+      "en": "Bluetooth Channel 1",
+      "keyType": null
+    },
+    "3": {
+      "value": 3,
+      "page": "FUNC",
+      "name": "蓝牙通道2",
+      "i18nKey": "fun_text3",
+      "zh": "蓝牙通道2",
+      "en": "Bluetooth Channel 2",
+      "keyType": null
+    },
+    "4": {
+      "value": 4,
+      "page": "FUNC",
+      "name": "蓝牙通道3",
+      "i18nKey": "fun_text4",
+      "zh": "蓝牙通道3",
+      "en": "Bluetooth Channel 3",
+      "keyType": null
+    },
+    "5": {
+      "value": 5,
+      "page": "FUNC",
+      "name": "无线回连",
+      "i18nKey": "fun_text5",
+      "zh": "无线回连",
+      "en": "Wireless Reconnect",
+      "keyType": null
+    },
+    "6": {
+      "value": 6,
+      "page": "FUNC",
+      "name": "F区转换",
+      "i18nKey": "fun_text6",
+      "zh": "F区转换",
+      "en": "F-Key Switch",
+      "keyType": null
+    },
+    "7": {
+      "value": 7,
+      "page": "FUNC",
+      "name": "查询电量",
+      "i18nKey": "fun_text7",
+      "zh": "查询电量",
+      "en": "Check Battery",
+      "keyType": null
+    },
+    "8": {
+      "value": 8,
+      "page": "FUNC",
+      "name": "WIN",
+      "i18nKey": null,
+      "zh": null,
+      "en": null,
+      "keyType": null
+    },
+    "9": {
+      "value": 9,
+      "page": "FUNC",
+      "name": "MAC",
+      "i18nKey": null,
+      "zh": null,
+      "en": null,
+      "keyType": null
+    },
+    "10": {
+      "value": 10,
+      "page": "FUNC",
+      "name": "ANDROID",
+      "i18nKey": null,
+      "zh": null,
+      "en": null,
+      "keyType": null
+    },
+    "11": {
+      "value": 11,
+      "page": "FUNC",
+      "name": "灯光效果切换",
+      "i18nKey": "fun_text8",
+      "zh": "灯光效果切换",
+      "en": "Light Effect Switch",
+      "keyType": null
+    },
+    "12": {
+      "value": 12,
+      "page": "FUNC",
+      "name": "灯光颜色切换",
+      "i18nKey": "fun_text9",
+      "zh": "灯光颜色切换",
+      "en": "Light Color Switch",
+      "keyType": null
+    },
+    "13": {
+      "value": 13,
+      "page": "FUNC",
+      "name": "灯光亮度+",
+      "i18nKey": "fun_text10",
+      "zh": "灯光亮度+",
+      "en": "Increase Light Brightness",
+      "keyType": null
+    },
+    "14": {
+      "value": 14,
+      "page": "FUNC",
+      "name": "灯光亮度-",
+      "i18nKey": "fun_text11",
+      "zh": "灯光亮度-",
+      "en": "Decrease Light Brightness",
+      "keyType": null
+    },
+    "15": {
+      "value": 15,
+      "page": "FUNC",
+      "name": "灯光速度+",
+      "i18nKey": "fun_text12",
+      "zh": "灯光速度+",
+      "en": "Increase Light Speed",
+      "keyType": null
+    },
+    "16": {
+      "value": 16,
+      "page": "FUNC",
+      "name": "灯光速度-",
+      "i18nKey": "fun_text13",
+      "zh": "灯光速度-",
+      "en": "Decrease Light Speed",
+      "keyType": null
+    },
+    "17": {
+      "value": 17,
+      "page": "FUNC",
+      "name": "关闭灯光",
+      "i18nKey": "fun_text14",
+      "zh": "关闭灯光",
+      "en": "Turn Off Lights",
+      "keyType": null
+    },
+    "18": {
+      "value": 18,
+      "page": "FUNC",
+      "name": "ALT + TAB",
+      "i18nKey": null,
+      "zh": null,
+      "en": null,
+      "keyType": null
+    },
+    "19": {
+      "value": 19,
+      "page": "FUNC",
+      "name": "WIN + E",
+      "i18nKey": null,
+      "zh": null,
+      "en": null,
+      "keyType": null
+    },
+    "20": {
+      "value": 20,
+      "page": "FUNC",
+      "name": "WIN + TAB",
+      "i18nKey": null,
+      "zh": null,
+      "en": null,
+      "keyType": null
+    },
+    "21": {
+      "value": 21,
+      "page": "FUNC",
+      "name": "WIN + H",
+      "i18nKey": null,
+      "zh": null,
+      "en": null,
+      "keyType": null
+    },
+    "22": {
+      "value": 22,
+      "page": "FUNC",
+      "name": "锁定Win",
+      "i18nKey": "fun_text15",
+      "zh": "锁定Win",
+      "en": "Lock Win",
+      "keyType": null
+    },
+    "23": {
+      "value": 23,
+      "page": "FUNC",
+      "name": "侧灯效果切换",
+      "i18nKey": "fun_text16",
+      "zh": "侧灯效果切换",
+      "en": "Side Light Effect Switch",
+      "keyType": null
+    },
+    "24": {
+      "value": 24,
+      "page": "FUNC",
+      "name": "侧灯颜色切换",
+      "i18nKey": "fun_text17",
+      "zh": "侧灯颜色切换",
+      "en": "Side Light Color Switch",
+      "keyType": null
+    },
+    "25": {
+      "value": 25,
+      "page": "FUNC",
+      "name": "侧灯亮度调节",
+      "i18nKey": "fun_text18",
+      "zh": "侧灯亮度调节",
+      "en": "Side Light Brightness Adjustment",
+      "keyType": null
+    },
+    "26": {
+      "value": 26,
+      "page": "FUNC",
+      "name": "侧灯速度调节",
+      "i18nKey": "fun_text19",
+      "zh": "侧灯速度调节",
+      "en": "Side Light Speed Adjustment",
+      "keyType": null
+    },
+    "27": {
+      "value": 27,
+      "page": "FUNC",
+      "name": "正面灯条效果切换",
+      "i18nKey": "fun_text20",
+      "zh": "正面灯条效果切换",
+      "en": "Front Light Strip Effect Switch",
+      "keyType": null
+    },
+    "28": {
+      "value": 28,
+      "page": "FUNC",
+      "name": "正面灯条速度调节",
+      "i18nKey": "fun_text21",
+      "zh": "正面灯条速度调节",
+      "en": "Front Light Strip Speed Adjustment",
+      "keyType": null
+    },
+    "29": {
+      "value": 29,
+      "page": "FUNC",
+      "name": "正面灯条颜色切换",
+      "i18nKey": "fun_text22",
+      "zh": "正面灯条颜色切换",
+      "en": "Front Light Strip Color Switch",
+      "keyType": null
+    },
+    "30": {
+      "value": 30,
+      "page": "FUNC",
+      "name": "Ctrl + UP",
+      "i18nKey": null,
+      "zh": null,
+      "en": null,
+      "keyType": null
+    },
+    "31": {
+      "value": 31,
+      "page": "FUNC",
+      "name": "USB模式",
+      "i18nKey": "fun_text23",
+      "zh": "USB模式",
+      "en": "USB Mode",
+      "keyType": null
+    },
+    "32": {
+      "value": 32,
+      "page": "FUNC",
+      "name": "灯效方向",
+      "i18nKey": "fun_text24",
+      "zh": "灯效方向",
+      "en": "Lighting Direction",
+      "keyType": null
+    },
+    "33": {
+      "value": 33,
+      "page": "FUNC",
+      "name": "ALT + ESC",
+      "i18nKey": null,
+      "zh": null,
+      "en": null,
+      "keyType": null
+    },
+    "34": {
+      "value": 34,
+      "page": "FUNC",
+      "name": "SHIFT + GAT",
+      "i18nKey": null,
+      "zh": null,
+      "en": null,
+      "keyType": null
+    },
+    "35": {
+      "value": 35,
+      "page": "FUNC",
+      "name": "屏幕左切",
+      "i18nKey": "fun_text25",
+      "zh": "屏幕左切",
+      "en": "Screen Left Swipe",
+      "keyType": null
+    },
+    "36": {
+      "value": 36,
+      "page": "FUNC",
+      "name": "屏幕右切",
+      "i18nKey": "fun_text26",
+      "zh": "屏幕右切",
+      "en": "Screen Right Swipe",
+      "keyType": null
+    },
+    "37": {
+      "value": 37,
+      "page": "FUNC",
+      "name": "屏幕确认",
+      "i18nKey": "fun_text27",
+      "zh": "屏幕确认",
+      "en": "Screen Confirm",
+      "keyType": null
+    },
+    "38": {
+      "value": 38,
+      "page": "FUNC",
+      "name": "测试灯光",
+      "i18nKey": "fun_text28",
+      "zh": "测试灯光",
+      "en": "Test Lighting",
+      "keyType": null
+    },
+    "39": {
+      "value": 39,
+      "page": "FUNC",
+      "name": "关闭屏幕",
+      "i18nKey": "fun_text29",
+      "zh": "关闭屏幕",
+      "en": "Turn Off Screen",
+      "keyType": null
+    },
+    "40": {
+      "value": 40,
+      "page": "FUNC",
+      "name": "点阵屏灯效切换",
+      "i18nKey": "fun_text30",
+      "zh": "点阵屏灯效切换",
+      "en": "Matrix Light Effect Switch",
+      "keyType": null
+    },
+    "41": {
+      "value": 41,
+      "page": "FUNC",
+      "name": "点阵屏亮度+",
+      "i18nKey": "fun_text31",
+      "zh": "点阵屏亮度+",
+      "en": "Matrix Brightness +",
+      "keyType": null
+    },
+    "42": {
+      "value": 42,
+      "page": "FUNC",
+      "name": "点阵屏亮度-",
+      "i18nKey": "fun_text32",
+      "zh": "点阵屏亮度-",
+      "en": "Matrix Brightness -",
+      "keyType": null
+    },
+    "43": {
+      "value": 43,
+      "page": "FUNC",
+      "name": "点阵屏速度-",
+      "i18nKey": "fun_text33",
+      "zh": "点阵屏速度-",
+      "en": "Matrix Speed -",
+      "keyType": null
+    },
+    "44": {
+      "value": 44,
+      "page": "FUNC",
+      "name": "点阵屏速度+",
+      "i18nKey": "fun_text34",
+      "zh": "点阵屏速度+",
+      "en": "Matrix Speed +",
+      "keyType": null
+    },
+    "45": {
+      "value": 45,
+      "page": "FUNC",
+      "name": "单键全键无线唤醒开关",
+      "i18nKey": "fun_text35",
+      "zh": "单键全键无线唤醒开关",
+      "en": "Single Key / Full Key Wireless Wake-up Switch",
+      "keyType": null
+    },
+    "46": {
+      "value": 46,
+      "page": "FUNC",
+      "name": "旋钮模式切换",
+      "i18nKey": "fun_text36",
+      "zh": "旋钮模式切换",
+      "en": "Knob Mode Switch",
+      "keyType": null
+    },
+    "47": {
+      "value": 47,
+      "page": "FUNC",
+      "name": "WIN + X",
+      "i18nKey": null,
+      "zh": null,
+      "en": null,
+      "keyType": null
+    },
+    "48": {
+      "value": 48,
+      "page": "FUNC",
+      "name": "CTRL_CAP调换",
+      "i18nKey": "fun_text37",
+      "zh": "CTRL_CAP调换",
+      "en": "Swap CTL/CAP",
+      "keyType": null
+    },
+    "49": {
+      "value": 49,
+      "page": "FUNC",
+      "name": "屏蔽/打开驱动设置",
+      "i18nKey": "fun_text38",
+      "zh": "屏蔽/打开驱动设置",
+      "en": "Disable/Enable Driver Settings",
+      "keyType": null
+    },
+    "50": {
+      "value": 50,
+      "page": "FUNC",
+      "name": "CTRL+下",
+      "i18nKey": "fun_text39",
+      "zh": "CTRL+下",
+      "en": "CTRL+Down",
+      "keyType": null
+    },
+    "51": {
+      "value": 51,
+      "page": "FUNC",
+      "name": "灯光效果正向切换",
+      "i18nKey": "fun_text40",
+      "zh": "灯光效果正向切换",
+      "en": "Lighting Effect Forward Switch",
+      "keyType": null
+    },
+    "52": {
+      "value": 52,
+      "page": "FUNC",
+      "name": "灯光效果反向切换",
+      "i18nKey": "fun_text41",
+      "zh": "灯光效果反向切换",
+      "en": "Lighting Effect Reverse Switch",
+      "keyType": null
+    },
+    "53": {
+      "value": 53,
+      "page": "FUNC",
+      "name": "WIN + D",
+      "i18nKey": null,
+      "zh": null,
+      "en": null,
+      "keyType": null
+    },
+    "54": {
+      "value": 54,
+      "page": "FUNC",
+      "name": "拾音灯颜色切换",
+      "i18nKey": "fun_text42",
+      "zh": "拾音灯颜色切换",
+      "en": "Audio Reactive Light Color Switch",
+      "keyType": null
+    },
+    "55": {
+      "value": 55,
+      "page": "FUNC",
+      "name": "拾音灯模式切换",
+      "i18nKey": "fun_text43",
+      "zh": "拾音灯模式切换",
+      "en": "Audio Reactive Light Mode Switch",
+      "keyType": null
+    },
+    "56": {
+      "value": 56,
+      "page": "FUNC",
+      "name": "拾音灯开关",
+      "i18nKey": "fun_text44",
+      "zh": "拾音灯开关",
+      "en": "Audio Reactive Light Toggle",
+      "keyType": null
+    },
+    "57": {
+      "value": 57,
+      "page": "FUNC",
+      "name": "Home",
+      "i18nKey": null,
+      "zh": null,
+      "en": null,
+      "keyType": null
+    },
+    "58": {
+      "value": 58,
+      "page": "FUNC",
+      "name": "IOS",
+      "i18nKey": null,
+      "zh": null,
+      "en": null,
+      "keyType": null
+    },
+    "59": {
+      "value": 59,
+      "page": "FUNC",
+      "name": "点阵屏测试模式",
+      "i18nKey": "fun_text45",
+      "zh": "点阵屏测试模式",
+      "en": "Matrix Screen Test Mode",
+      "keyType": null
+    },
+    "60": {
+      "value": 60,
+      "page": "FUNC",
+      "name": "点阵屏测试颜色",
+      "i18nKey": "fun_text46",
+      "zh": "点阵屏测试颜色",
+      "en": "Matrix Screen Test Color",
+      "keyType": null
+    },
+    "61": {
+      "value": 61,
+      "page": "FUNC",
+      "name": "正面灯条亮度切换",
+      "i18nKey": "fun_text47",
+      "zh": "正面灯条亮度切换",
+      "en": "Front Light Strip Brightness Switch",
+      "keyType": null
+    },
+    "62": {
+      "value": 62,
+      "page": "FUNC",
+      "name": "点阵屏开关",
+      "i18nKey": "fun_text48",
+      "zh": "点阵屏开关",
+      "en": "Matrix Screen Toggle",
+      "keyType": null
+    },
+    "63": {
+      "value": 63,
+      "page": "FUNC",
+      "name": "GIF模式",
+      "i18nKey": "fun_text49",
+      "zh": "GIF模式",
+      "en": "GIF Mode",
+      "keyType": null
+    },
+    "64": {
+      "value": 64,
+      "page": "FUNC",
+      "name": "正面灯条速度+",
+      "i18nKey": "fun_text50",
+      "zh": "正面灯条速度+",
+      "en": "Front LED Strip Speed +",
+      "keyType": null
+    },
+    "65": {
+      "value": 65,
+      "page": "FUNC",
+      "name": "正面灯条速度-",
+      "i18nKey": "fun_text51",
+      "zh": "正面灯条速度-",
+      "en": "Front LED Strip Speed -",
+      "keyType": null
+    },
+    "66": {
+      "value": 66,
+      "page": "FUNC",
+      "name": "正面灯条亮度+",
+      "i18nKey": "fun_text52",
+      "zh": "正面灯条亮度+",
+      "en": "Front LED Strip Brightness +",
+      "keyType": null
+    },
+    "67": {
+      "value": 67,
+      "page": "FUNC",
+      "name": "正面灯条亮度-",
+      "i18nKey": "fun_text53",
+      "zh": "正面灯条亮度-",
+      "en": "Front LED Strip Brightness -",
+      "keyType": null
+    },
+    "68": {
+      "value": 68,
+      "page": "FUNC",
+      "name": "屏蔽/开启按键宏",
+      "i18nKey": "fun_text54",
+      "zh": "屏蔽/开启按键快捷指令",
+      "en": "Block/enable key shortcuts",
+      "keyType": null
+    },
+    "69": {
+      "value": 69,
+      "page": "FUNC",
+      "name": "蓝牙通道4",
+      "i18nKey": "fun_text55",
+      "zh": "蓝牙通道4",
+      "en": "Bluetooth Channel 4",
+      "keyType": null
+    },
+    "70": {
+      "value": 70,
+      "page": "FUNC",
+      "name": "蓝牙通道5",
+      "i18nKey": "fun_text56",
+      "zh": "蓝牙通道5",
+      "en": "Bluetooth Channel 5",
+      "keyType": null
+    },
+    "71": {
+      "value": 71,
+      "page": "FUNC",
+      "name": "自定义灯光1",
+      "i18nKey": "fun_text57",
+      "zh": "自定义灯光1",
+      "en": "Custom Lights 1",
+      "keyType": null
+    },
+    "72": {
+      "value": 72,
+      "page": "FUNC",
+      "name": "自定义灯光2",
+      "i18nKey": "fun_text58",
+      "zh": "自定义灯光2",
+      "en": "Custom Lights 2",
+      "keyType": null
+    },
+    "73": {
+      "value": 73,
+      "page": "FUNC",
+      "name": "开启/关闭极致省电",
+      "i18nKey": "fun_text59",
+      "zh": "开启/关闭极致省电",
+      "en": "Turn on/off ultimate power saving",
+      "keyType": null
+    },
+    "74": {
+      "value": 74,
+      "page": "FUNC",
+      "name": "侧灯色块颜色",
+      "i18nKey": "fun_text60",
+      "zh": "侧灯色块颜色",
+      "en": "Side light color block color",
+      "keyType": null
+    },
+    "75": {
+      "value": 75,
+      "page": "FUNC",
+      "name": "打开驱动",
+      "i18nKey": "fun_text61",
+      "zh": "打开驱动",
+      "en": "Turn on the driver",
+      "keyType": null
+    },
+    "76": {
+      "value": 76,
+      "page": "FUNC",
+      "name": "RT精度切换",
+      "i18nKey": "fun_text62",
+      "zh": "RT精度切换",
+      "en": "RT precision switch",
+      "keyType": null
+    },
+    "77": {
+      "value": 77,
+      "page": "FUNC",
+      "name": "灯效上下灯位开关",
+      "i18nKey": "fun_text63",
+      "zh": "灯效上下灯位开关",
+      "en": "Lamp effect upper and lower light switch",
+      "keyType": null
+    },
+    "78": {
+      "value": 78,
+      "page": "FUNC",
+      "name": "切换灯效方向",
+      "i18nKey": "fun_text64",
+      "zh": "切换灯效方向",
+      "en": "Switch the lighting effect direction",
+      "keyType": null
+    },
+    "79": {
+      "value": 79,
+      "page": "FUNC",
+      "name": "方向键转换",
+      "i18nKey": "fun_text65",
+      "zh": "方向键转换",
+      "en": "Direction key conversion",
+      "keyType": null
+    },
+    "80": {
+      "value": 80,
+      "page": "FUNC",
+      "name": "背光亮度循环切换",
+      "i18nKey": "fun_text66",
+      "zh": "背光亮度循环切换",
+      "en": "Backlight brightness cycle switching",
+      "keyType": null
+    },
+    "81": {
+      "value": 81,
+      "page": "FUNC",
+      "name": "背光速度循环切换",
+      "i18nKey": "fun_text67",
+      "zh": "背光速度循环切换",
+      "en": "Backlight speed cycle switching",
+      "keyType": null
+    },
+    "82": {
+      "value": 82,
+      "page": "FUNC",
+      "name": "切换USB模式",
+      "i18nKey": "fun_text68",
+      "zh": "切换USB模式",
+      "en": "Switch USB mode",
+      "keyType": null
+    },
+    "83": {
+      "value": 83,
+      "page": "FUNC",
+      "name": "关闭侧灯",
+      "i18nKey": "fun_text69",
+      "zh": "关闭侧灯",
+      "en": "Turn off side lights",
+      "keyType": null
+    },
+    "84": {
+      "value": 84,
+      "page": "FUNC",
+      "name": "显示屏语言切换为汉语",
+      "i18nKey": "fun_text70",
+      "zh": "显示屏语言切换为汉语",
+      "en": "Switch the display language to Chinese",
+      "keyType": null
+    },
+    "85": {
+      "value": 85,
+      "page": "FUNC",
+      "name": "显示屏语言切换为英语",
+      "i18nKey": "fun_text71",
+      "zh": "显示屏语言切换为英语",
+      "en": "Switch the display language to English",
+      "keyType": null
+    },
+    "86": {
+      "value": 86,
+      "page": "FUNC",
+      "name": "CTRL + SPACEBAR",
+      "i18nKey": null,
+      "zh": null,
+      "en": null,
+      "keyType": null
+    },
+    "87": {
+      "value": 87,
+      "page": "FUNC",
+      "name": "侧灯RT深度灯效",
+      "i18nKey": "fun_text72",
+      "zh": "侧灯RT深度灯效",
+      "en": "Side light RT deep light effect",
+      "keyType": null
+    },
+    "88": {
+      "value": 88,
+      "page": "FUNC",
+      "name": "WIN + SPACEBAR",
+      "i18nKey": null,
+      "zh": null,
+      "en": null,
+      "keyType": null
+    },
+    "89": {
+      "value": 89,
+      "page": "FUNC",
+      "name": "LOGO LED ON/OFF",
+      "i18nKey": null,
+      "zh": null,
+      "en": null,
+      "keyType": null
+    },
+    "90": {
+      "value": 90,
+      "page": "FUNC",
+      "name": "切换点阵屏颜色",
+      "i18nKey": "fun_text73",
+      "zh": "切换点阵屏颜色",
+      "en": "Switch dot matrix screen color",
+      "keyType": null
+    },
+    "91": {
+      "value": 91,
+      "page": "FUNC",
+      "name": "灯条叠加模式",
+      "i18nKey": "fun_text74",
+      "zh": "灯条叠加模式",
+      "en": "Light bar overlay mode",
+      "keyType": null
+    },
+    "92": {
+      "value": 92,
+      "page": "FUNC",
+      "name": "ALT + SPACEBAR",
+      "i18nKey": null,
+      "zh": null,
+      "en": null,
+      "keyType": null
+    },
+    "93": {
+      "value": 93,
+      "page": "FUNC",
+      "name": "一键白光",
+      "i18nKey": "fun_text75",
+      "zh": "一键白光",
+      "en": "One-click white light",
+      "keyType": null
+    },
+    "94": {
+      "value": 94,
+      "page": "FUNC",
+      "name": "截屏WIN+SHF+S",
+      "i18nKey": "fun_text76",
+      "zh": "截屏WIN+SHF+S",
+      "en": "Screenshot of WIN SHF S",
+      "keyType": null
+    },
+    "95": {
+      "value": 95,
+      "page": "FUNC",
+      "name": "开启/关闭APM计数",
+      "i18nKey": "fun_text77",
+      "zh": "开启/关闭APM计数",
+      "en": "Turn on/off APM count",
+      "keyType": null
+    },
+    "96": {
+      "value": 96,
+      "page": "FUNC",
+      "name": "开启/关闭极致省电",
+      "i18nKey": "fun_text78",
+      "zh": "开启/关闭极致省电",
+      "en": "Turn on/off ultimate power saving",
+      "keyType": null
+    },
+    "97": {
+      "value": 97,
+      "page": "FUNC",
+      "name": "一键进入动图",
+      "i18nKey": "fun_text79",
+      "zh": "一键进入动图",
+      "en": "Enter the animation with one click",
+      "keyType": null
+    },
+    "98": {
+      "value": 98,
+      "page": "FUNC",
+      "name": "自定义灯光3",
+      "i18nKey": "fun_text80",
+      "zh": "自定义灯光3",
+      "en": "Custom Lights 3",
+      "keyType": null
+    },
+    "99": {
+      "value": 99,
+      "page": "FUNC",
+      "name": "自定义灯光录制",
+      "i18nKey": "fun_text81",
+      "zh": "自定义灯光录制",
+      "en": "Custom light recording",
+      "keyType": null
+    },
+    "100": {
+      "value": 100,
+      "page": "FUNC",
+      "name": "LOGO灯切换",
+      "i18nKey": "fun_text82",
+      "zh": "LOGO灯切换",
+      "en": "LOGO light switch",
+      "keyType": null
+    },
+    "101": {
+      "value": 101,
+      "page": "FUNC",
+      "name": "8K数据测试",
+      "i18nKey": "fun_text83",
+      "zh": "8K数据测试",
+      "en": "8K data testing",
+      "keyType": null
+    },
+    "102": {
+      "value": 102,
+      "page": "FUNC",
+      "name": "SOCD功能开关",
+      "i18nKey": "fun_text84",
+      "zh": "SOCD功能开关",
+      "en": "SOCD function switch",
+      "keyType": null
+    },
+    "103": {
+      "value": 103,
+      "page": "FUNC",
+      "name": "灯光效果复位",
+      "i18nKey": "fun_text85",
+      "zh": "灯光效果复位",
+      "en": "Light effect reset",
+      "keyType": null
+    },
+    "104": {
+      "value": 104,
+      "page": "FUNC",
+      "name": "主灯效/侧灯效亮度加",
+      "i18nKey": "fun_text86",
+      "zh": "主灯效/侧灯效亮度加",
+      "en": "Main lighting effect/side lighting effect brightness plus",
+      "keyType": null
+    },
+    "105": {
+      "value": 105,
+      "page": "FUNC",
+      "name": "主灯效/侧灯效亮度减",
+      "i18nKey": "fun_text87",
+      "zh": "主灯效/侧灯效亮度减",
+      "en": "Main lighting effect/side lighting effect brightness reduction",
+      "keyType": null
+    },
+    "106": {
+      "value": 106,
+      "page": "FUNC",
+      "name": "主灯效/侧灯效速度加",
+      "i18nKey": "fun_text88",
+      "zh": "主灯效/侧灯效速度加",
+      "en": "Main lighting effect/side lighting effect speed plus",
+      "keyType": null
+    },
+    "107": {
+      "value": 107,
+      "page": "FUNC",
+      "name": "主灯效/侧灯效速度减",
+      "i18nKey": "fun_text89",
+      "zh": "主灯效/侧灯效速度减",
+      "en": "Main lighting effect/side lighting effect speed reduction",
+      "keyType": null
+    },
+    "108": {
+      "value": 108,
+      "page": "FUNC",
+      "name": "频点测试",
+      "i18nKey": "fun_text90",
+      "zh": "频点测试",
+      "en": "Frequency test",
+      "keyType": null
+    },
+    "109": {
+      "value": 109,
+      "page": "FUNC",
+      "name": "WIN->MAC来回切换",
+      "i18nKey": "fun_text91",
+      "zh": "WIN->MAC来回切换",
+      "en": "WIN->MAC switch back and forth",
+      "keyType": null
+    },
+    "110": {
+      "value": 110,
+      "page": "FUNC",
+      "name": "侧灯亮度+",
+      "i18nKey": "fun_text92",
+      "zh": "侧灯亮度+",
+      "en": "Side light brightness",
+      "keyType": null
+    },
+    "111": {
+      "value": 111,
+      "page": "FUNC",
+      "name": "侧灯亮度-",
+      "i18nKey": "fun_text93",
+      "zh": "侧灯亮度-",
+      "en": "Side light brightness-",
+      "keyType": null
+    },
+    "112": {
+      "value": 112,
+      "page": "FUNC",
+      "name": "HOME->END",
+      "i18nKey": null,
+      "zh": null,
+      "en": null,
+      "keyType": null
+    },
+    "113": {
+      "value": 113,
+      "page": "FUNC",
+      "name": "进入测试模式",
+      "i18nKey": "fun_text94",
+      "zh": "进入测试模式",
+      "en": "Enter test mode",
+      "keyType": null
+    },
+    "114": {
+      "value": 114,
+      "page": "FUNC",
+      "name": "ALT_转换",
+      "i18nKey": "fun_text95",
+      "zh": "ALT_转换",
+      "en": "ALT_Convert",
+      "keyType": null
+    },
+    "115": {
+      "value": 115,
+      "page": "FUNC",
+      "name": "ENT_方向转换",
+      "i18nKey": "fun_text96",
+      "zh": "ENT_方向转换",
+      "en": "ENT_Direction conversion",
+      "keyType": null
+    },
+    "116": {
+      "value": 116,
+      "page": "FUNC",
+      "name": "WASD切换为方向键",
+      "i18nKey": "fun_text97",
+      "zh": "WASD切换为方向键",
+      "en": "Switch to the direction keys",
+      "keyType": null
+    },
+    "117": {
+      "value": 117,
+      "page": "FUNC",
+      "name": "DELETE->HOME",
+      "i18nKey": null,
+      "zh": null,
+      "en": null,
+      "keyType": null
+    },
+    "118": {
+      "value": 118,
+      "page": "FUNC",
+      "name": "END->INSERT",
+      "i18nKey": null,
+      "zh": null,
+      "en": null,
+      "keyType": null
+    },
+    "119": {
+      "value": 119,
+      "page": "FUNC",
+      "name": "PAGEUP->PRINT",
+      "i18nKey": null,
+      "zh": null,
+      "en": null,
+      "keyType": null
+    },
+    "120": {
+      "value": 120,
+      "page": "FUNC",
+      "name": "PAGEDOWN->PAUSE",
+      "i18nKey": null,
+      "zh": null,
+      "en": null,
+      "keyType": null
+    },
+    "121": {
+      "value": 121,
+      "page": "FUNC",
+      "name": "游戏模式切换",
+      "i18nKey": "fun_text98",
+      "zh": "游戏模式切换",
+      "en": "Game mode switch",
+      "keyType": null
+    },
+    "122": {
+      "value": 122,
+      "page": "FUNC",
+      "name": "灯箱亮度+",
+      "i18nKey": "fun_text99",
+      "zh": "灯箱亮度+",
+      "en": "Light box brightness",
+      "keyType": null
+    },
+    "123": {
+      "value": 123,
+      "page": "FUNC",
+      "name": "灯箱亮度-",
+      "i18nKey": "fun_text100",
+      "zh": "灯箱亮度-",
+      "en": "Light box brightness-",
+      "keyType": null
+    },
+    "124": {
+      "value": 124,
+      "page": "FUNC",
+      "name": "灯箱速度+",
+      "i18nKey": "fun_text101",
+      "zh": "灯箱速度+",
+      "en": "Lightbox speed",
+      "keyType": null
+    },
+    "125": {
+      "value": 125,
+      "page": "FUNC",
+      "name": "灯箱速度-",
+      "i18nKey": "fun_text102",
+      "zh": "灯箱速度-",
+      "en": "Lightbox speed-",
+      "keyType": null
+    },
+    "126": {
+      "value": 126,
+      "page": "FUNC",
+      "name": "LOGO灯效果切换",
+      "i18nKey": "fun_text103",
+      "zh": "LOGO灯效果切换",
+      "en": "LOGO light effect switching",
+      "keyType": null
+    },
+    "127": {
+      "value": 127,
+      "page": "FUNC",
+      "name": "灯箱扩散模式颜色切换",
+      "i18nKey": "fun_text104",
+      "zh": "灯箱扩散模式颜色切换",
+      "en": "Lightbox diffusion mode color switching",
+      "keyType": null
+    },
+    "128": {
+      "value": 128,
+      "page": "FUNC",
+      "name": "灯箱效果切换",
+      "i18nKey": "fun_text105",
+      "zh": "灯箱效果切换",
+      "en": "Lightbox effect switching",
+      "keyType": null
+    },
+    "129": {
+      "value": 129,
+      "page": "FUNC",
+      "name": "灯箱颜色切换",
+      "i18nKey": "fun_text106",
+      "zh": "灯箱颜色切换",
+      "en": "Lightbox color switching",
+      "keyType": null
+    },
+    "130": {
+      "value": 130,
+      "page": "FUNC",
+      "name": "拾音灯亮度加",
+      "i18nKey": "fun_text107",
+      "zh": "拾音灯亮度加",
+      "en": "Increased brightness of pickup light",
+      "keyType": null
+    },
+    "131": {
+      "value": 131,
+      "page": "FUNC",
+      "name": "拾音灯亮度减",
+      "i18nKey": "fun_text108",
+      "zh": "拾音灯亮度减",
+      "en": "The brightness of the pickup light is reduced",
+      "keyType": null
+    },
+    "132": {
+      "value": 132,
+      "page": "FUNC",
+      "name": "拾音灯底色切换",
+      "i18nKey": "fun_text109",
+      "zh": "拾音灯底色切换",
+      "en": "Switching the background color of the pickup light",
+      "keyType": null
+    },
+    "133": {
+      "value": 133,
+      "page": "FUNC",
+      "name": "拾音灯方向切换",
+      "i18nKey": "fun_text110",
+      "zh": "拾音灯方向切换",
+      "en": "Pickup light direction switching",
+      "keyType": null
+    },
+    "134": {
+      "value": 134,
+      "page": "FUNC",
+      "name": "WIN+。",
+      "i18nKey": null,
+      "zh": null,
+      "en": null,
+      "keyType": null
+    },
+    "135": {
+      "value": 135,
+      "page": "FUNC",
+      "name": "CTRL+WIN+SPACEBAR",
+      "i18nKey": null,
+      "zh": null,
+      "en": null,
+      "keyType": null
+    },
+    "136": {
+      "value": 136,
+      "page": "FUNC",
+      "name": "WIN+SHIFT+3",
+      "i18nKey": null,
+      "zh": null,
+      "en": null,
+      "keyType": null
+    },
+    "137": {
+      "value": 137,
+      "page": "FUNC",
+      "name": "WIN+SHIFT+4",
+      "i18nKey": null,
+      "zh": null,
+      "en": null,
+      "keyType": null
+    },
+    "138": {
+      "value": 138,
+      "page": "FUNC",
+      "name": "开启屏幕下方按键灯",
+      "i18nKey": "fun_text111",
+      "zh": "开启屏幕下方按键灯",
+      "en": "Turn on the button light below the screen",
+      "keyType": null
+    },
+    "139": {
+      "value": 139,
+      "page": "FUNC",
+      "name": "红灯常亮",
+      "i18nKey": "fun_text112",
+      "zh": "红灯常亮",
+      "en": "Red light always on",
+      "keyType": null
+    },
+    "140": {
+      "value": 140,
+      "page": "FUNC",
+      "name": "绿灯常亮",
+      "i18nKey": "fun_text113",
+      "zh": "绿灯常亮",
+      "en": "Green light is always on",
+      "keyType": null
+    },
+    "141": {
+      "value": 141,
+      "page": "FUNC",
+      "name": "蓝灯常亮",
+      "i18nKey": "fun_text114",
+      "zh": "蓝灯常亮",
+      "en": "Blue light always on",
+      "keyType": null
+    },
+    "142": {
+      "value": 142,
+      "page": "FUNC",
+      "name": "自定义灯光4",
+      "i18nKey": "fun_text115",
+      "zh": "自定义灯光4",
+      "en": "Custom lighting 4",
+      "keyType": null
+    },
+    "143": {
+      "value": 143,
+      "page": "FUNC",
+      "name": "自定义灯光5",
+      "i18nKey": "fun_text116",
+      "zh": "自定义灯光5",
+      "en": "Custom lighting 5",
+      "keyType": null
+    },
+    "144": {
+      "value": 144,
+      "page": "FUNC",
+      "name": "锁全键",
+      "i18nKey": "fun_text117",
+      "zh": "锁全键",
+      "en": "lock full key",
+      "keyType": null
+    },
+    "145": {
+      "value": 145,
+      "page": "FUNC",
+      "name": "WIN+I",
+      "i18nKey": null,
+      "zh": null,
+      "en": null,
+      "keyType": null
+    },
+    "146": {
+      "value": 146,
+      "page": "FUNC",
+      "name": "WIN+L",
+      "i18nKey": null,
+      "zh": null,
+      "en": null,
+      "keyType": null
+    },
+    "147": {
+      "value": 147,
+      "page": "FUNC",
+      "name": "侧灯速度+",
+      "i18nKey": "fun_text118",
+      "zh": "侧灯速度+",
+      "en": "side light speed",
+      "keyType": null
+    },
+    "148": {
+      "value": 148,
+      "page": "FUNC",
+      "name": "侧灯速度-",
+      "i18nKey": "fun_text119",
+      "zh": "侧灯速度-",
+      "en": "Side light speed-",
+      "keyType": null
+    },
+    "149": {
+      "value": 149,
+      "page": "FUNC",
+      "name": "侧灯方向调节",
+      "i18nKey": "fun_text120",
+      "zh": "侧灯方向调节",
+      "en": "Side light direction adjustment",
+      "keyType": null
+    },
+    "150": {
+      "value": 150,
+      "page": "FUNC",
+      "name": "切换回报率",
+      "i18nKey": "fun_text121",
+      "zh": "切换回报率",
+      "en": "Switch rate of return",
+      "keyType": null
+    },
+    "151": {
+      "value": 151,
+      "page": "FUNC",
+      "name": "PAGEUP->INSERT",
+      "i18nKey": null,
+      "zh": null,
+      "en": null,
+      "keyType": null
+    },
+    "152": {
+      "value": 152,
+      "page": "FUNC",
+      "name": "PAGEDOWN->END",
+      "i18nKey": null,
+      "zh": null,
+      "en": null,
+      "keyType": null
+    },
+    "153": {
+      "value": 153,
+      "page": "FUNC",
+      "name": "手动进校准",
+      "i18nKey": "fun_text122",
+      "zh": "手动进校准",
+      "en": "Manual calibration",
+      "keyType": null
+    },
+    "154": {
+      "value": 154,
+      "page": "FUNC",
+      "name": "12/24时间切换",
+      "i18nKey": "fun_text123",
+      "zh": "12/24时间切换",
+      "en": "12/24 time switch",
+      "keyType": null
+    },
+    "155": {
+      "value": 155,
+      "page": "FUNC",
+      "name": "自定义灯效切换",
+      "i18nKey": "fun_text124",
+      "zh": "自定义灯效切换",
+      "en": "Custom lighting effect switching",
+      "keyType": null
+    },
+    "156": {
+      "value": 156,
+      "page": "FUNC",
+      "name": "windows / MAC 系统切换",
+      "i18nKey": "fun_text125",
+      "zh": "windows",
+      "en": "windows",
+      "keyType": null
+    },
+    "157": {
+      "value": 157,
+      "page": "FUNC",
+      "name": "pageup、pagedown锁",
+      "i18nKey": "fun_text126",
+      "zh": "pageup、pagedown锁",
+      "en": "pageup, pagedown lock",
+      "keyType": null
+    },
+    "158": {
+      "value": 158,
+      "page": "FUNC",
+      "name": "CMD锁",
+      "i18nKey": "fun_text127",
+      "zh": "CMD锁",
+      "en": "CMD lock",
+      "keyType": null
+    },
+    "159": {
+      "value": 159,
+      "page": "FUNC",
+      "name": "切换蜂鸣器模式",
+      "i18nKey": "fun_text128",
+      "zh": "切换蜂鸣器模式",
+      "en": "Switch buzzer mode",
+      "keyType": null
+    },
+    "160": {
+      "value": 160,
+      "page": "FUNC",
+      "name": "开/关拾音灯",
+      "i18nKey": "fun_text129",
+      "zh": "开/关拾音灯",
+      "en": "Turn on/off pickup light",
+      "keyType": null
+    },
+    "161": {
+      "value": 161,
+      "page": "FUNC",
+      "name": "显示屏切换主页",
+      "i18nKey": "fun_text130",
+      "zh": "显示屏切换主页",
+      "en": "Display switch homepage",
+      "keyType": null
+    },
+    "162": {
+      "value": 162,
+      "page": "FUNC",
+      "name": "氛围灯效亮度调节",
+      "i18nKey": "fun_text131",
+      "zh": "氛围灯效亮度调节",
+      "en": "Ambient lighting effect brightness adjustment",
+      "keyType": null
+    },
+    "163": {
+      "value": 163,
+      "page": "FUNC",
+      "name": "氛围灯效速度调节",
+      "i18nKey": "fun_text132",
+      "zh": "氛围灯效速度调节",
+      "en": "Ambient lighting effect speed adjustment",
+      "keyType": null
+    },
+    "164": {
+      "value": 164,
+      "page": "FUNC",
+      "name": "氛围灯效颜色切换",
+      "i18nKey": "fun_text133",
+      "zh": "氛围灯效颜色切换",
+      "en": "Ambient lighting effect color switching",
+      "keyType": null
+    },
+    "165": {
+      "value": 165,
+      "page": "FUNC",
+      "name": "氛围灯效切换",
+      "i18nKey": "fun_text134",
+      "zh": "氛围灯效切换",
+      "en": "Ambient lighting effect switching",
+      "keyType": null
+    },
+    "166": {
+      "value": 166,
+      "page": "FUNC",
+      "name": "灯光颜色正向切换",
+      "i18nKey": "fun_text135",
+      "zh": "灯光颜色正向切换",
+      "en": "Light color forward switching",
+      "keyType": null
+    },
+    "167": {
+      "value": 167,
+      "page": "FUNC",
+      "name": "灯光颜色反向切换",
+      "i18nKey": "fun_text136",
+      "zh": "灯光颜色反向切换",
+      "en": "Light color reverse switching",
+      "keyType": null
+    },
+    "168": {
+      "value": 168,
+      "page": "FUNC",
+      "name": "旋钮下的LED开关",
+      "i18nKey": "fun_text137",
+      "zh": "旋钮下的LED开关",
+      "en": "LED switch under the knob",
+      "keyType": null
+    },
+    "169": {
+      "value": 169,
+      "page": "FUNC",
+      "name": "有线模式切换",
+      "i18nKey": "fun_text138",
+      "zh": "有线模式切换",
+      "en": "Wired mode switching",
+      "keyType": null
+    },
+    "170": {
+      "value": 170,
+      "page": "FUNC",
+      "name": "切换指示灯模式",
+      "i18nKey": "fun_text139",
+      "zh": "切换指示灯模式",
+      "en": "Switch indicator light mode",
+      "keyType": null
+    },
+    "171": {
+      "value": 171,
+      "page": "FUNC",
+      "name": "切换数字键区和Fn键区",
+      "i18nKey": "fun_text140",
+      "zh": "切换数字键区和Fn键区",
+      "en": "Switch between numeric keypad and Fn keypad",
+      "keyType": null
+    },
+    "172": {
+      "value": 172,
+      "page": "FUNC",
+      "name": "GAT",
+      "i18nKey": null,
+      "zh": null,
+      "en": null,
+      "keyType": null
+    },
+    "173": {
+      "value": 173,
+      "page": "FUNC",
+      "name": "编码器灯光",
+      "i18nKey": "fun_text141",
+      "zh": "编码器灯光",
+      "en": "Encoder light",
+      "keyType": null
+    },
+    "174": {
+      "value": 174,
+      "page": "FUNC",
+      "name": "8K回报率测试",
+      "i18nKey": "fun_text142",
+      "zh": "8K回报率测试",
+      "en": "8K return rate test",
+      "keyType": null
+    },
+    "175": {
+      "value": 175,
+      "page": "FUNC",
+      "name": "屏幕下方灯",
+      "i18nKey": "fun_text143",
+      "zh": "屏幕下方灯",
+      "en": "light under screen",
+      "keyType": null
+    },
+    "176": {
+      "value": 176,
+      "page": "FUNC",
+      "name": "侧灯开关",
+      "i18nKey": "fun_text144",
+      "zh": "侧灯开关",
+      "en": "side light switch",
+      "keyType": null
+    },
+    "177": {
+      "value": 177,
+      "page": "FUNC",
+      "name": "SHIFT_S问号",
+      "i18nKey": "fun_text145",
+      "zh": "SHIFT_S问号",
+      "en": "SHIFT_Squestion mark",
+      "keyType": null
+    },
+    "178": {
+      "value": 178,
+      "page": "FUNC",
+      "name": "AI音量加",
+      "i18nKey": "fun_text146",
+      "zh": "AI音量加",
+      "en": "AI volume plus",
+      "keyType": null
+    },
+    "179": {
+      "value": 179,
+      "page": "FUNC",
+      "name": "AI音量减",
+      "i18nKey": "fun_text147",
+      "zh": "AI音量减",
+      "en": "AI volume reduction",
+      "keyType": null
+    },
+    "180": {
+      "value": 180,
+      "page": "FUNC",
+      "name": "AI屏幕亮度加",
+      "i18nKey": "fun_text148",
+      "zh": "AI屏幕亮度加",
+      "en": "AI screen brightness plus",
+      "keyType": null
+    },
+    "181": {
+      "value": 181,
+      "page": "FUNC",
+      "name": "AI屏幕亮度减",
+      "i18nKey": "fun_text149",
+      "zh": "AI屏幕亮度减",
+      "en": "AI screen brightness reduction",
+      "keyType": null
+    },
+    "182": {
+      "value": 182,
+      "page": "FUNC",
+      "name": "恢复出厂设置（FN+R_ALT+ESC）",
+      "i18nKey": "fun_text150",
+      "zh": "恢复出厂设置（FN+R_ALT+ESC）",
+      "en": "Restore factory settings (FN R_ALT ESC)",
+      "keyType": null
+    },
+    "183": {
+      "value": 183,
+      "page": "FUNC",
+      "name": "DKS开关",
+      "i18nKey": "fun_text151",
+      "zh": "DKS开关",
+      "en": "DKS switch",
+      "keyType": null
+    },
+    "184": {
+      "value": 184,
+      "page": "FUNC",
+      "name": "呼出SIRI",
+      "i18nKey": "fun_text152",
+      "zh": "呼出SIRI",
+      "en": "Outbound SIRI",
+      "keyType": null
+    },
+    "185": {
+      "value": 185,
+      "page": "FUNC",
+      "name": "LOGO灯开关",
+      "i18nKey": "fun_text153",
+      "zh": "LOGO灯开关",
+      "en": "LOGO light switch",
+      "keyType": null
+    },
+    "186": {
+      "value": 186,
+      "page": "FUNC",
+      "name": "爱心灯光模式",
+      "i18nKey": "fun_text154",
+      "zh": "爱心灯光模式",
+      "en": "Love light mode",
+      "keyType": null
+    },
+    "187": {
+      "value": 187,
+      "page": "FUNC",
+      "name": "6键/全键无冲",
+      "i18nKey": "fun_text155",
+      "zh": "6键/全键无冲",
+      "en": "6 keys/all keys without rollover",
+      "keyType": null
+    },
+    "188": {
+      "value": 188,
+      "page": "FUNC",
+      "name": "LOGO灯颜色切换",
+      "i18nKey": "fun_text156",
+      "zh": "LOGO灯颜色切换",
+      "en": "LOGO light color switching",
+      "keyType": null
+    },
+    "189": {
+      "value": 189,
+      "page": "FUNC",
+      "name": "切换爱心模式下的灯光灯效",
+      "i18nKey": "fun_text157",
+      "zh": "切换爱心模式下的灯光灯效",
+      "en": "Switch the lighting effect in love mode",
+      "keyType": null
+    },
+    "190": {
+      "value": 190,
+      "page": "FUNC",
+      "name": "切换到计算器模式",
+      "i18nKey": "fun_text158",
+      "zh": "切换到计算器模式",
+      "en": "Switch to calculator mode",
+      "keyType": null
+    },
+    "191": {
+      "value": 191,
+      "page": "FUNC",
+      "name": "打开/关闭灯箱",
+      "i18nKey": "fun_text159",
+      "zh": "打开/关闭灯箱",
+      "en": "Turn on/off lightbox",
+      "keyType": null
+    },
+    "192": {
+      "value": 192,
+      "page": "FUNC",
+      "name": "显示屏切换用户动画",
+      "i18nKey": "fun_text160",
+      "zh": "显示屏切换用户动画",
+      "en": "Display switching user animation",
+      "keyType": null
+    },
+    "193": {
+      "value": 193,
+      "page": "FUNC",
+      "name": "灯效方向左",
+      "i18nKey": "fun_text161",
+      "zh": "灯效方向左",
+      "en": "Lighting effect direction left",
+      "keyType": null
+    },
+    "194": {
+      "value": 194,
+      "page": "FUNC",
+      "name": "灯效方向右",
+      "i18nKey": "fun_text162",
+      "zh": "灯效方向右",
+      "en": "Light effect direction right",
+      "keyType": null
+    },
+    "195": {
+      "value": 195,
+      "page": "FUNC",
+      "name": "切换成APP键",
+      "i18nKey": "fun_text163",
+      "zh": "切换成APP键",
+      "en": "Switch to APP key",
+      "keyType": null
+    },
+    "196": {
+      "value": 196,
+      "page": "FUNC",
+      "name": "灯光效果切换1",
+      "i18nKey": "fun_text164",
+      "zh": "灯光效果切换1",
+      "en": "Lighting effect switch 1",
+      "keyType": null
+    },
+    "197": {
+      "value": 197,
+      "page": "FUNC",
+      "name": "灯光效果切换2",
+      "i18nKey": "fun_text165",
+      "zh": "灯光效果切换2",
+      "en": "Lighting effect switch 2",
+      "keyType": null
+    },
+    "198": {
+      "value": 198,
+      "page": "FUNC",
+      "name": "灯光效果切换3",
+      "i18nKey": "fun_text166",
+      "zh": "灯光效果切换3",
+      "en": "Lighting effect switching 3",
+      "keyType": null
+    },
+    "199": {
+      "value": 199,
+      "page": "FUNC",
+      "name": "灯光效果切换4",
+      "i18nKey": "fun_text167",
+      "zh": "灯光效果切换4",
+      "en": "Lighting effect switching 4",
+      "keyType": null
+    },
+    "200": {
+      "value": 200,
+      "page": "FUNC",
+      "name": "profile1切换",
+      "i18nKey": "fun_text168",
+      "zh": "profile1切换",
+      "en": "profile1 switch",
+      "keyType": null
+    },
+    "201": {
+      "value": 201,
+      "page": "FUNC",
+      "name": "profile2切换",
+      "i18nKey": "fun_text169",
+      "zh": "profile2切换",
+      "en": "profile2 switch",
+      "keyType": null
+    },
+    "202": {
+      "value": 202,
+      "page": "FUNC",
+      "name": "profile3切换",
+      "i18nKey": "fun_text170",
+      "zh": "profile3切换",
+      "en": "profile3 switch",
+      "keyType": null
+    },
+    "203": {
+      "value": 203,
+      "page": "FUNC",
+      "name": "profile4切换",
+      "i18nKey": "fun_text171",
+      "zh": "profile4切换",
+      "en": "profile4 switch",
+      "keyType": null
+    },
+    "204": {
+      "value": 204,
+      "page": "FUNC",
+      "name": "打字显示",
+      "i18nKey": "fun_text172",
+      "zh": "打字显示",
+      "en": "Typing display",
+      "keyType": null
+    },
+    "205": {
+      "value": 205,
+      "page": "FUNC",
+      "name": "退出测试模式",
+      "i18nKey": "fun_text173",
+      "zh": "退出测试模式",
+      "en": "Exit test mode",
+      "keyType": null
+    },
+    "206": {
+      "value": 206,
+      "page": "FUNC",
+      "name": "LEFTALT+LEFTGUI+Q",
+      "i18nKey": null,
+      "zh": null,
+      "en": null,
+      "keyType": null
+    },
+    "207": {
+      "value": 207,
+      "page": "FUNC",
+      "name": "LOGO灯亮度切换",
+      "i18nKey": "fun_text174",
+      "zh": "LOGO灯亮度切换",
+      "en": "LOGO light brightness switch",
+      "keyType": null
+    },
+    "208": {
+      "value": 208,
+      "page": "FUNC",
+      "name": "LOGO灯速度切换",
+      "i18nKey": "fun_text175",
+      "zh": "LOGO灯速度切换",
+      "en": "LOGO light speed switching",
+      "keyType": null
+    },
+    "209": {
+      "value": 209,
+      "page": "FUNC",
+      "name": "自定义宏1",
+      "i18nKey": "fun_text176",
+      "zh": "自定义快捷指令1",
+      "en": "Custom shortcut command 1",
+      "keyType": null
+    },
+    "210": {
+      "value": 210,
+      "page": "FUNC",
+      "name": "CTRL+SHIFT+O",
+      "i18nKey": null,
+      "zh": null,
+      "en": null,
+      "keyType": null
+    },
+    "211": {
+      "value": 211,
+      "page": "FUNC",
+      "name": "一键进驱动",
+      "i18nKey": "fun_text177",
+      "zh": "一键进驱动",
+      "en": "One-click driver entry",
+      "keyType": null
+    },
+    "212": {
+      "value": 212,
+      "page": "FUNC",
+      "name": "打开自定义宏录制",
+      "i18nKey": "fun_text178",
+      "zh": "打开自定义快捷指令录制",
+      "en": "Turn on custom shortcut recording",
+      "keyType": null
+    },
+    "213": {
+      "value": 213,
+      "page": "FUNC",
+      "name": "关闭自定义宏录制",
+      "i18nKey": "fun_text179",
+      "zh": "关闭自定义快捷指令录制",
+      "en": "Turn off custom shortcut recording",
+      "keyType": null
+    },
+    "214": {
+      "value": 214,
+      "page": "FUNC",
+      "name": "打开官网",
+      "i18nKey": "fun_text180",
+      "zh": "打开官网",
+      "en": "Open the official website",
+      "keyType": null
+    },
+    "215": {
+      "value": 215,
+      "page": "FUNC",
+      "name": "切换爱心灯效的颜色",
+      "i18nKey": "fun_text181",
+      "zh": "切换爱心灯效的颜色",
+      "en": "Switch the color of the love light effect",
+      "keyType": null
+    },
+    "216": {
+      "value": 216,
+      "page": "FUNC",
+      "name": "CTRL+DOWN",
+      "i18nKey": null,
+      "zh": null,
+      "en": null,
+      "keyType": null
+    },
+    "217": {
+      "value": 217,
+      "page": "FUNC",
+      "name": "1~+转换为F1~F12",
+      "i18nKey": "fun_text182",
+      "zh": "1~+转换为F1~F12",
+      "en": "1~ converted to F1~F12",
+      "keyType": null
+    },
+    "218": {
+      "value": 218,
+      "page": "FUNC",
+      "name": "Y~CMA转换为PRINT~PAGEDOWN",
+      "i18nKey": "fun_text183",
+      "zh": "Y~CMA转换为PRINT~PAGEDOWN",
+      "en": "Convert Y~CMA to PRINT~PAGEDOWN",
+      "keyType": null
+    },
+    "219": {
+      "value": 219,
+      "page": "FUNC",
+      "name": "?、R_ALT、APP、R_CTRL切换为方向键",
+      "i18nKey": "fun_text184",
+      "zh": "?、R_ALT、APP、R_CTRL切换为方向键",
+      "en": "?, R_ALT, APP, R_CTRL switch to direction keys",
+      "keyType": null
+    },
+    "220": {
+      "value": 220,
+      "page": "FUNC",
+      "name": "灯光速度调节",
+      "i18nKey": "fun_text185",
+      "zh": "灯光速度调节",
+      "en": "Light speed adjustment",
+      "keyType": null
+    },
+    "221": {
+      "value": 221,
+      "page": "FUNC",
+      "name": "偏频测试模式",
+      "i18nKey": "fun_text186",
+      "zh": "偏频测试模式",
+      "en": "Offset frequency test mode",
+      "keyType": null
+    },
+    "222": {
+      "value": 222,
+      "page": "FUNC",
+      "name": "FN+HOME",
+      "i18nKey": null,
+      "zh": null,
+      "en": null,
+      "keyType": null
+    },
+    "223": {
+      "value": 223,
+      "page": "FUNC",
+      "name": "USB灯效果切换",
+      "i18nKey": "fun_text187",
+      "zh": "USB灯效果切换",
+      "en": "USB light effect switching",
+      "keyType": null
+    },
+    "224": {
+      "value": 224,
+      "page": "FUNC",
+      "name": "USB灯速度切换",
+      "i18nKey": "fun_text188",
+      "zh": "USB灯速度切换",
+      "en": "USB light speed switching",
+      "keyType": null
+    },
+    "225": {
+      "value": 225,
+      "page": "FUNC",
+      "name": "USB灯亮度切换",
+      "i18nKey": "fun_text189",
+      "zh": "USB灯亮度切换",
+      "en": "USB light brightness switching",
+      "keyType": null
+    },
+    "226": {
+      "value": 226,
+      "page": "FUNC",
+      "name": "USB灯颜色切换",
+      "i18nKey": "fun_text190",
+      "zh": "USB灯颜色切换",
+      "en": "USB light color switching",
+      "keyType": null
+    },
+    "227": {
+      "value": 227,
+      "page": "FUNC",
+      "name": "切换按键延时",
+      "i18nKey": "fun_text191",
+      "zh": "切换按键延时",
+      "en": "Switch button delay",
+      "keyType": null
+    },
+    "228": {
+      "value": 228,
+      "page": "FUNC",
+      "name": "点阵屏字符模式",
+      "i18nKey": "fun_text192",
+      "zh": "点阵屏字符模式",
+      "en": "Dot matrix character mode",
+      "keyType": null
+    },
+    "229": {
+      "value": 229,
+      "page": "FUNC",
+      "name": "打开触摸模式",
+      "i18nKey": "fun_text193",
+      "zh": "打开触摸模式",
+      "en": "Turn on touch mode",
+      "keyType": null
+    },
+    "230": {
+      "value": 230,
+      "page": "FUNC",
+      "name": "满电检测",
+      "i18nKey": "fun_text194",
+      "zh": "满电检测",
+      "en": "Full battery detection",
+      "keyType": null
+    },
+    "231": {
+      "value": 231,
+      "page": "FUNC",
+      "name": "充电指示灯开关",
+      "i18nKey": "fun_text195",
+      "zh": "充电指示灯开关",
+      "en": "Charging indicator switch",
+      "keyType": null
+    },
+    "232": {
+      "value": 232,
+      "page": "FUNC",
+      "name": "切换最大亮度",
+      "i18nKey": "fun_text196",
+      "zh": "切换最大亮度",
+      "en": "Toggle maximum brightness",
+      "keyType": null
+    },
+    "233": {
+      "value": 233,
+      "page": "FUNC",
+      "name": "CTRL+P",
+      "i18nKey": null,
+      "zh": null,
+      "en": null,
+      "keyType": null
+    },
+    "234": {
+      "value": 234,
+      "page": "FUNC",
+      "name": "CTRL+C",
+      "i18nKey": null,
+      "zh": null,
+      "en": null,
+      "keyType": null
+    },
+    "235": {
+      "value": 235,
+      "page": "FUNC",
+      "name": "CTRL+V",
+      "i18nKey": null,
+      "zh": null,
+      "en": null,
+      "keyType": null
+    },
+    "236": {
+      "value": 236,
+      "page": "FUNC",
+      "name": "CTRL+S",
+      "i18nKey": null,
+      "zh": null,
+      "en": null,
+      "keyType": null
+    },
+    "237": {
+      "value": 237,
+      "page": "FUNC",
+      "name": "切换RT配置1",
+      "i18nKey": "fun_text197",
+      "zh": "切换RT配置1",
+      "en": "Switch RT configuration 1",
+      "keyType": null
+    },
+    "238": {
+      "value": 238,
+      "page": "FUNC",
+      "name": "切换RT配置2",
+      "i18nKey": "fun_text198",
+      "zh": "切换RT配置2",
+      "en": "Switch RT configuration 2",
+      "keyType": null
+    },
+    "239": {
+      "value": 239,
+      "page": "FUNC",
+      "name": "切换RT配置3",
+      "i18nKey": "fun_text199",
+      "zh": "切换RT配置3",
+      "en": "Switch RT configuration 3",
+      "keyType": null
+    },
+    "240": {
+      "value": 240,
+      "page": "FUNC",
+      "name": "切换RT配置4",
+      "i18nKey": "fun_text200",
+      "zh": "切换RT配置4",
+      "en": "Switch RT configuration 4",
+      "keyType": null
+    },
+    "241": {
+      "value": 241,
+      "page": "FUNC",
+      "name": "上下灯位切换",
+      "i18nKey": "fun_text201",
+      "zh": "上下灯位切换",
+      "en": "Switching up and down light positions",
+      "keyType": null
+    },
+    "242": {
+      "value": 242,
+      "page": "FUNC",
+      "name": "win+M",
+      "i18nKey": null,
+      "zh": null,
+      "en": null,
+      "keyType": null
+    },
+    "243": {
+      "value": 243,
+      "page": "FUNC",
+      "name": "F1~F12模式切换",
+      "i18nKey": "fun_text202",
+      "zh": "F1~F12模式切换",
+      "en": "F1~F12 mode switching",
+      "keyType": null
+    },
+    "244": {
+      "value": 244,
+      "page": "FUNC",
+      "name": "SHIFT+DOT",
+      "i18nKey": null,
+      "zh": null,
+      "en": null,
+      "keyType": null
+    },
+    "245": {
+      "value": 245,
+      "page": "FUNC",
+      "name": "SHIFT+CMA",
+      "i18nKey": null,
+      "zh": null,
+      "en": null,
+      "keyType": null
+    },
+    "246": {
+      "value": 246,
+      "page": "FUNC",
+      "name": "推杆_音量",
+      "i18nKey": "fun_text203",
+      "zh": "推杆_音量",
+      "en": "Fader_Volume",
+      "keyType": null
+    },
+    "247": {
+      "value": 247,
+      "page": "FUNC",
+      "name": "推杆_背光亮度",
+      "i18nKey": "fun_text204",
+      "zh": "推杆_背光亮度",
+      "en": "Push rod_backlight brightness",
+      "keyType": null
+    },
+    "248": {
+      "value": 248,
+      "page": "FUNC",
+      "name": "推杆_屏幕亮度",
+      "i18nKey": "fun_text205",
+      "zh": "推杆_屏幕亮度",
+      "en": "Fader_screen brightness",
+      "keyType": null
+    },
+    "249": {
+      "value": 249,
+      "page": "FUNC",
+      "name": "动态灯效开关",
+      "i18nKey": "fun_text206",
+      "zh": "动态灯效开关",
+      "en": "Dynamic light effect switch",
+      "keyType": null
+    },
+    "250": {
+      "value": 250,
+      "page": "FUNC",
+      "name": "上灯箱开启关闭",
+      "i18nKey": "fun_text207",
+      "zh": "上灯箱开启关闭",
+      "en": "Turn on and off the upper light box",
+      "keyType": null
+    },
+    "251": {
+      "value": 251,
+      "page": "FUNC",
+      "name": "左右侧灯切换",
+      "i18nKey": "fun_text208",
+      "zh": "左右侧灯切换",
+      "en": "Left and right side light switching",
+      "keyType": null
+    },
+    "252": {
+      "value": 252,
+      "page": "FUNC",
+      "name": "左右侧灯开启关闭",
+      "i18nKey": "fun_text209",
+      "zh": "左右侧灯开启关闭",
+      "en": "Turn on and off the left and right side lights",
+      "keyType": null
+    },
+    "253": {
+      "value": 253,
+      "page": "FUNC",
+      "name": "关闭所有灯光",
+      "i18nKey": "fun_text210",
+      "zh": "关闭所有灯光",
+      "en": "Turn off all lights",
+      "keyType": null
+    },
+    "254": {
+      "value": 254,
+      "page": "FUNC",
+      "name": "切换自定义灯光",
+      "i18nKey": "fun_text211",
+      "zh": "切换自定义灯光",
+      "en": "Switch custom lights",
+      "keyType": null
+    },
+    "255": {
+      "value": 255,
+      "page": "FUNC",
+      "name": "6键无冲",
+      "i18nKey": "fun_text212",
+      "zh": "6键无冲",
+      "en": "6 keys without rollover",
+      "keyType": null
+    },
+    "256": {
+      "value": 256,
+      "page": "FUNC",
+      "name": "全键无冲",
+      "i18nKey": "fun_text213",
+      "zh": "全键无冲",
+      "en": "No rollover for all keys",
+      "keyType": null
+    },
+    "257": {
+      "value": 257,
+      "page": "FUNC",
+      "name": "正面上灯条灯效切换",
+      "i18nKey": "fun_text214",
+      "zh": "正面上灯条灯效切换",
+      "en": "Lighting effect switching on the front light bar",
+      "keyType": null
+    },
+    "258": {
+      "value": 258,
+      "page": "FUNC",
+      "name": "正面上灯条亮度切换",
+      "i18nKey": "fun_text215",
+      "zh": "正面上灯条亮度切换",
+      "en": "Light bar brightness switch on the front",
+      "keyType": null
+    },
+    "259": {
+      "value": 259,
+      "page": "FUNC",
+      "name": "正面下灯条灯效切换",
+      "i18nKey": "fun_text216",
+      "zh": "正面下灯条灯效切换",
+      "en": "Front lower light bar light effect switching",
+      "keyType": null
+    },
+    "260": {
+      "value": 260,
+      "page": "FUNC",
+      "name": "正面下灯条亮度切换",
+      "i18nKey": "fun_text217",
+      "zh": "正面下灯条亮度切换",
+      "en": "Brightness switch of front lower light bar",
+      "keyType": null
+    },
+    "261": {
+      "value": 261,
+      "page": "FUNC",
+      "name": "切换土耳其语",
+      "i18nKey": "fun_text218",
+      "zh": "切换土耳其语",
+      "en": "Switch to Turkish",
+      "keyType": null
+    },
+    "262": {
+      "value": 262,
+      "page": "FUNC",
+      "name": "切换日语",
+      "i18nKey": "fun_text219",
+      "zh": "切换日语",
+      "en": "Switch Japanese",
+      "keyType": null
+    },
+    "263": {
+      "value": 263,
+      "page": "FUNC",
+      "name": "侧灯亮度加",
+      "i18nKey": "fun_text220",
+      "zh": "侧灯亮度加",
+      "en": "Side light brightness plus",
+      "keyType": null
+    },
+    "264": {
+      "value": 264,
+      "page": "FUNC",
+      "name": "侧灯亮度减",
+      "i18nKey": "fun_text221",
+      "zh": "侧灯亮度减",
+      "en": "Side light brightness decreases",
+      "keyType": null
+    },
+    "265": {
+      "value": 265,
+      "page": "FUNC",
+      "name": "CTRL+X",
+      "i18nKey": "fun_text222",
+      "zh": null,
+      "en": null,
+      "keyType": null
+    },
+    "266": {
+      "value": 266,
+      "page": "FUNC",
+      "name": "WIN+C",
+      "i18nKey": null,
+      "zh": null,
+      "en": null,
+      "keyType": null
+    },
+    "267": {
+      "value": 267,
+      "page": "FUNC",
+      "name": "WIN+V",
+      "i18nKey": null,
+      "zh": null,
+      "en": null,
+      "keyType": null
+    },
+    "268": {
+      "value": 268,
+      "page": "FUNC",
+      "name": "点阵屏图案模式切换",
+      "i18nKey": "fun_text223",
+      "zh": "点阵屏图案模式切换",
+      "en": "Dot matrix screen pattern mode switching",
+      "keyType": null
+    },
+    "269": {
+      "value": 269,
+      "page": "FUNC",
+      "name": "任务管理器",
+      "i18nKey": "fun_text224",
+      "zh": "任务管理器",
+      "en": "task manager",
+      "keyType": null
+    },
+    "270": {
+      "value": 270,
+      "page": "FUNC",
+      "name": "Scroll锁定",
+      "i18nKey": "fun_text225",
+      "zh": "Scroll锁定",
+      "en": "ScrollLock",
+      "keyType": null
+    },
+    "271": {
+      "value": 271,
+      "page": "FUNC",
+      "name": "屏幕主页模式",
+      "i18nKey": "fun_text226",
+      "zh": "屏幕主页模式",
+      "en": "Screen Home Mode",
+      "keyType": null
+    },
+    "272": {
+      "value": 272,
+      "page": "FUNC",
+      "name": "WIN+S",
+      "i18nKey": null,
+      "zh": null,
+      "en": null,
+      "keyType": null
+    },
+    "273": {
+      "value": 273,
+      "page": "FUNC",
+      "name": "锁定F1-F12与组合键切换",
+      "i18nKey": "fun_text227",
+      "zh": "锁定F1-F12与组合键切换",
+      "en": "Lock F1-F12 and combo key switching",
+      "keyType": null
+    },
+    "274": {
+      "value": 274,
+      "page": "FUNC",
+      "name": "LOGO灯亮度加",
+      "i18nKey": "fun_text228",
+      "zh": "LOGO灯亮度加",
+      "en": "Increase LOGO light brightness",
+      "keyType": null
+    },
+    "275": {
+      "value": 275,
+      "page": "FUNC",
+      "name": "LOGO灯亮度减",
+      "i18nKey": "fun_text229",
+      "zh": "LOGO灯亮度减",
+      "en": "Decrease LOGO light brightness",
+      "keyType": null
+    },
+    "276": {
+      "value": 276,
+      "page": "FUNC",
+      "name": "有线/无线模式切换",
+      "i18nKey": "fun_text230",
+      "zh": "有线/无线模式切换",
+      "en": "Wired/Wireless mode switch",
+      "keyType": null
+    },
+    "277": {
+      "value": 277,
+      "page": "FUNC",
+      "name": "Numlock指示灯开关",
+      "i18nKey": "fun_text231",
+      "zh": "Numlock指示灯开关",
+      "en": "NumLock indicator light switch",
+      "keyType": null
+    },
+    "278": {
+      "value": 278,
+      "page": "FUNC",
+      "name": "触摸条调节屏幕亮度模式",
+      "i18nKey": "fun_text232",
+      "zh": "触摸条调节屏幕亮度模式",
+      "en": "Touch bar screen brightness mode",
+      "keyType": null
+    },
+    "279": {
+      "value": 279,
+      "page": "FUNC",
+      "name": "触摸条调节音量模式",
+      "i18nKey": "fun_text233",
+      "zh": "触摸条调节音量模式",
+      "en": "Touch bar volume mode",
+      "keyType": null
+    },
+    "280": {
+      "value": 280,
+      "page": "FUNC",
+      "name": "触摸条调节背光亮度模式",
+      "i18nKey": "fun_text234",
+      "zh": "触摸条调节背光亮度模式",
+      "en": "Touch bar backlight brightness mode",
+      "keyType": null
+    },
+    "281": {
+      "value": 281,
+      "page": "FUNC",
+      "name": "触摸条调节背光速度模式",
+      "i18nKey": "fun_text235",
+      "zh": "触摸条调节背光速度模式",
+      "en": "Touch bar backlight speed mode",
+      "keyType": null
+    },
+    "282": {
+      "value": 282,
+      "page": "FUNC",
+      "name": "进出按键低延时模式",
+      "i18nKey": "fun_text236",
+      "zh": "进出按键低延时模式",
+      "en": "Enter/exit key low latency mode",
+      "keyType": null
+    },
+    "283": {
+      "value": 283,
+      "page": "FUNC",
+      "name": "进入低功耗模式",
+      "i18nKey": "fun_text237",
+      "zh": "进入低功耗模式",
+      "en": "Enter low power mode",
+      "keyType": null
+    },
+    "284": {
+      "value": 284,
+      "page": "FUNC",
+      "name": "屏幕动图轮询切换",
+      "i18nKey": "fun_text238",
+      "zh": "屏幕动图轮询切换",
+      "en": "Cycle screen GIF",
+      "keyType": null
+    },
+    "285": {
+      "value": 285,
+      "page": "FUNC",
+      "name": "切换休眠时间",
+      "i18nKey": "fun_text239",
+      "zh": "切换休眠时间",
+      "en": "Switch sleep time",
+      "keyType": null
+    },
+    "286": {
+      "value": 286,
+      "page": "FUNC",
+      "name": "多窗口切换",
+      "i18nKey": "medium_text18",
+      "zh": "多窗口切换",
+      "en": "Multi-window Switch",
+      "keyType": null
+    },
+    "287": {
+      "value": 287,
+      "page": "FUNC",
+      "name": "一键进配对",
+      "i18nKey": "fun_text240",
+      "zh": "一键进配对",
+      "en": "One-click pairing",
+      "keyType": null
+    },
+    "288": {
+      "value": 288,
+      "page": "FUNC",
+      "name": "点阵屏灯效反向切换",
+      "i18nKey": "fun_text241",
+      "zh": "点阵屏灯效反向切换",
+      "en": "Reverse matrix light effect switch",
+      "keyType": null
+    },
+    "289": {
+      "value": 289,
+      "page": "FUNC",
+      "name": "语言模式切换",
+      "i18nKey": "fun_text242",
+      "zh": "语言模式切换",
+      "en": "Language mode switch",
+      "keyType": null
+    },
+    "290": {
+      "value": 290,
+      "page": "FUNC",
+      "name": "切换上一个灯效",
+      "i18nKey": "fun_text243",
+      "zh": "切换上一个灯效",
+      "en": "Switch to previous light effect",
+      "keyType": null
+    },
+    "291": {
+      "value": 291,
+      "page": "FUNC",
+      "name": "显示当前通道",
+      "i18nKey": "fun_text244",
+      "zh": "显示当前通道",
+      "en": "Show current channel",
+      "keyType": null
+    },
+    "292": {
+      "value": 292,
+      "page": "FUNC",
+      "name": "复位灯效",
+      "i18nKey": "fun_text245",
+      "zh": "复位灯效",
+      "en": "Reset light effect",
+      "keyType": null
+    }
+  },
+  "FUNC_V2": {
+    "4096": {
+      "value": 4096,
+      "page": "FUNC_V2",
+      "name": "恢复出厂设置",
+      "i18nKey": "fun_text1",
+      "zh": "恢复出厂设置",
+      "en": "Restore Factory Settings",
+      "keyType": 2
+    },
+    "4097": {
+      "value": 4097,
+      "page": "FUNC_V2",
+      "name": "切换至Windows系统",
+      "i18nKey": "fun2_4097",
+      "zh": "切换至Windows系统",
+      "en": "Switch to Windows system",
+      "keyType": 2
+    },
+    "4098": {
+      "value": 4098,
+      "page": "FUNC_V2",
+      "name": "切换至MAC系统",
+      "i18nKey": "fun2_4098",
+      "zh": "切换至MAC系统",
+      "en": "Switch to MAC system",
+      "keyType": 2
+    },
+    "4099": {
+      "value": 4099,
+      "page": "FUNC_V2",
+      "name": "切换至Android系统",
+      "i18nKey": "fun2_4099",
+      "zh": "切换至Android系统",
+      "en": "Switch to Android system",
+      "keyType": 2
+    },
+    "4100": {
+      "value": 4100,
+      "page": "FUNC_V2",
+      "name": "切换IOS系统",
+      "i18nKey": "fun2_4100",
+      "zh": "切换IOS系统",
+      "en": "Switch to iOS",
+      "keyType": 2
+    },
+    "4101": {
+      "value": 4101,
+      "page": "FUNC_V2",
+      "name": "Win/MAC循环切换",
+      "i18nKey": "fun2_4101",
+      "zh": "Win/MAC循环切换",
+      "en": "Win/Mac Cycle Switching",
+      "keyType": 1
+    },
+    "4102": {
+      "value": 4102,
+      "page": "FUNC_V2",
+      "name": "WASD<->方向键",
+      "i18nKey": "fun2_4102",
+      "zh": "WASD<->方向键",
+      "en": "WASD <-> Arrow Keys",
+      "keyType": 1
+    },
+    "4103": {
+      "value": 4103,
+      "page": "FUNC_V2",
+      "name": "查看电量",
+      "i18nKey": "fun2_4103",
+      "zh": "查看电量",
+      "en": "Check Battery Level",
+      "keyType": 1
+    },
+    "4104": {
+      "value": 4104,
+      "page": "FUNC_V2",
+      "name": "锁定/解锁win键",
+      "i18nKey": "fun2_4104",
+      "zh": "锁定/解锁win键",
+      "en": "Lock/Unlock the Win Key",
+      "keyType": 1
+    },
+    "8192": {
+      "value": 8192,
+      "page": "FUNC_V2",
+      "name": "蓝牙通道1",
+      "i18nKey": "fun_text2",
+      "zh": "蓝牙通道1",
+      "en": "Bluetooth Channel 1",
+      "keyType": 1
+    },
+    "8193": {
+      "value": 8193,
+      "page": "FUNC_V2",
+      "name": "蓝牙通道2",
+      "i18nKey": "fun_text3",
+      "zh": "蓝牙通道2",
+      "en": "Bluetooth Channel 2",
+      "keyType": 1
+    },
+    "8194": {
+      "value": 8194,
+      "page": "FUNC_V2",
+      "name": "蓝牙通道3",
+      "i18nKey": "fun_text4",
+      "zh": "蓝牙通道3",
+      "en": "Bluetooth Channel 3",
+      "keyType": 1
+    },
+    "8195": {
+      "value": 8195,
+      "page": "FUNC_V2",
+      "name": "蓝牙通道4",
+      "i18nKey": "fun_text55",
+      "zh": "蓝牙通道4",
+      "en": "Bluetooth Channel 4",
+      "keyType": 1
+    },
+    "8196": {
+      "value": 8196,
+      "page": "FUNC_V2",
+      "name": "蓝牙通道5",
+      "i18nKey": "fun_text56",
+      "zh": "蓝牙通道5",
+      "en": "Bluetooth Channel 5",
+      "keyType": 1
+    },
+    "8197": {
+      "value": 8197,
+      "page": "FUNC_V2",
+      "name": "蓝牙通道1进入配对",
+      "i18nKey": "fun2_8197",
+      "zh": "蓝牙通道1进入配对",
+      "en": "Bluetooth channel 1 enters pairing",
+      "keyType": 2
+    },
+    "8198": {
+      "value": 8198,
+      "page": "FUNC_V2",
+      "name": "蓝牙通道2进入配对",
+      "i18nKey": "fun2_8198",
+      "zh": "蓝牙通道2进入配对",
+      "en": "Bluetooth channel 2 enters pairing",
+      "keyType": 2
+    },
+    "8199": {
+      "value": 8199,
+      "page": "FUNC_V2",
+      "name": "蓝牙通道3进入配对",
+      "i18nKey": "fun2_8199",
+      "zh": "蓝牙通道3进入配对",
+      "en": "Bluetooth channel 3 enters pairing",
+      "keyType": 2
+    },
+    "8200": {
+      "value": 8200,
+      "page": "FUNC_V2",
+      "name": "蓝牙通道4进入配对",
+      "i18nKey": "fun2_8200",
+      "zh": "蓝牙通道4进入配对",
+      "en": "Bluetooth channel 4 enters pairing",
+      "keyType": 2
+    },
+    "8201": {
+      "value": 8201,
+      "page": "FUNC_V2",
+      "name": "蓝牙通道5进入配对",
+      "i18nKey": "fun2_8201",
+      "zh": "蓝牙通道5进入配对",
+      "en": "Bluetooth channel 5 enters pairing",
+      "keyType": 2
+    },
+    "8202": {
+      "value": 8202,
+      "page": "FUNC_V2",
+      "name": "无线回连",
+      "i18nKey": "fun_text5",
+      "zh": "无线回连",
+      "en": "Wireless Reconnect",
+      "keyType": 1
+    },
+    "8203": {
+      "value": 8203,
+      "page": "FUNC_V2",
+      "name": "无线配对",
+      "i18nKey": "fun2_8203",
+      "zh": "无线配对",
+      "en": "Wireless pairing",
+      "keyType": 2
+    },
+    "8204": {
+      "value": 8204,
+      "page": "FUNC_V2",
+      "name": "切回USB模式",
+      "i18nKey": "fun2_8204",
+      "zh": "切回USB模式",
+      "en": "Switch back to USB mode",
+      "keyType": 1
+    },
+    "12288": {
+      "value": 12288,
+      "page": "FUNC_V2",
+      "name": "主灯光效果切换",
+      "i18nKey": "fun2_12288",
+      "zh": "主灯光效果切换",
+      "en": "Main lighting effect switching",
+      "keyType": 1
+    },
+    "12289": {
+      "value": 12289,
+      "page": "FUNC_V2",
+      "name": "主灯光颜色切换",
+      "i18nKey": "fun2_12289",
+      "zh": "主灯光颜色切换",
+      "en": "Main light color switching",
+      "keyType": 1
+    },
+    "12290": {
+      "value": 12290,
+      "page": "FUNC_V2",
+      "name": "主灯光亮度+",
+      "i18nKey": "fun2_12290",
+      "zh": "主灯光亮度+",
+      "en": "Main light brightness",
+      "keyType": 1
+    },
+    "12291": {
+      "value": 12291,
+      "page": "FUNC_V2",
+      "name": "主灯光亮度-",
+      "i18nKey": "fun2_12291",
+      "zh": "主灯光亮度-",
+      "en": "Main light brightness-",
+      "keyType": 1
+    },
+    "12292": {
+      "value": 12292,
+      "page": "FUNC_V2",
+      "name": "主灯光速度+",
+      "i18nKey": "fun2_12292",
+      "zh": "主灯光速度+",
+      "en": "main light speed",
+      "keyType": 1
+    },
+    "12293": {
+      "value": 12293,
+      "page": "FUNC_V2",
+      "name": "主灯光速度-",
+      "i18nKey": "fun2_12293",
+      "zh": "主灯光速度-",
+      "en": "Main light speed-",
+      "keyType": 1
+    },
+    "12294": {
+      "value": 12294,
+      "page": "FUNC_V2",
+      "name": "关闭主灯光",
+      "i18nKey": "fun2_12294",
+      "zh": "关闭主灯光",
+      "en": "Turn off main light",
+      "keyType": 1
+    },
+    "12295": {
+      "value": 12295,
+      "page": "FUNC_V2",
+      "name": "打开主灯光",
+      "i18nKey": "fun2_12295",
+      "zh": "打开主灯光",
+      "en": "Turn on main light",
+      "keyType": 1
+    },
+    "12296": {
+      "value": 12296,
+      "page": "FUNC_V2",
+      "name": "侧灯效果切换",
+      "i18nKey": "fun_text16",
+      "zh": "侧灯效果切换",
+      "en": "Side Light Effect Switch",
+      "keyType": 1
+    },
+    "12297": {
+      "value": 12297,
+      "page": "FUNC_V2",
+      "name": "侧灯颜色切换",
+      "i18nKey": "fun_text17",
+      "zh": "侧灯颜色切换",
+      "en": "Side Light Color Switch",
+      "keyType": 1
+    },
+    "12298": {
+      "value": 12298,
+      "page": "FUNC_V2",
+      "name": "侧灯亮度调节+",
+      "i18nKey": "fun2_12298",
+      "zh": "侧灯亮度调节+",
+      "en": "Side light brightness adjustment",
+      "keyType": 1
+    },
+    "12299": {
+      "value": 12299,
+      "page": "FUNC_V2",
+      "name": "侧灯亮度调节-",
+      "i18nKey": "fun2_12299",
+      "zh": "侧灯亮度调节-",
+      "en": "Side light brightness adjustment-",
+      "keyType": 1
+    },
+    "12300": {
+      "value": 12300,
+      "page": "FUNC_V2",
+      "name": "侧灯速度调节+",
+      "i18nKey": "fun2_12300",
+      "zh": "侧灯速度调节+",
+      "en": "Side light speed adjustment",
+      "keyType": 1
+    },
+    "12301": {
+      "value": 12301,
+      "page": "FUNC_V2",
+      "name": "侧灯速度调节-",
+      "i18nKey": "fun2_12301",
+      "zh": "侧灯速度调节-",
+      "en": "Side light speed adjustment-",
+      "keyType": 1
+    },
+    "12302": {
+      "value": 12302,
+      "page": "FUNC_V2",
+      "name": "关闭侧灯",
+      "i18nKey": "fun2_12302",
+      "zh": "关闭侧灯",
+      "en": "Turn off side lights",
+      "keyType": 1
+    },
+    "12303": {
+      "value": 12303,
+      "page": "FUNC_V2",
+      "name": "打开侧灯",
+      "i18nKey": "fun2_12303",
+      "zh": "打开侧灯",
+      "en": "turn on side lights",
+      "keyType": 1
+    },
+    "12304": {
+      "value": 12304,
+      "page": "FUNC_V2",
+      "name": "主灯区方向切换",
+      "i18nKey": "fun2_12304",
+      "zh": "主灯区方向切换",
+      "en": "Main light area direction switching",
+      "keyType": 1
+    },
+    "12305": {
+      "value": 12305,
+      "page": "FUNC_V2",
+      "name": "主灯开关切换",
+      "i18nKey": "fun2_12305",
+      "zh": "主灯开关切换",
+      "en": "Main light switch",
+      "keyType": 1
+    },
+    "12306": {
+      "value": 12306,
+      "page": "FUNC_V2",
+      "name": "氛围灯模式切换",
+      "i18nKey": "fun2_12306",
+      "zh": "氛围灯模式切换",
+      "en": "Ambient light mode switching",
+      "keyType": 1
+    },
+    "12307": {
+      "value": 12307,
+      "page": "FUNC_V2",
+      "name": "氛围灯颜色切换",
+      "i18nKey": "fun2_12307",
+      "zh": "氛围灯颜色切换",
+      "en": "Ambient light color switching",
+      "keyType": 1
+    },
+    "12308": {
+      "value": 12308,
+      "page": "FUNC_V2",
+      "name": "氛围灯亮度切换（+）",
+      "i18nKey": "fun2_12308",
+      "zh": "氛围灯亮度切换（+）",
+      "en": "Ambient light brightness switching ( )",
+      "keyType": 1
+    },
+    "12309": {
+      "value": 12309,
+      "page": "FUNC_V2",
+      "name": "氛围灯速度切换（+）",
+      "i18nKey": "fun2_12309",
+      "zh": "氛围灯速度切换（+）",
+      "en": "Ambient light speed switching ( )",
+      "keyType": 1
+    },
+    "12310": {
+      "value": 12310,
+      "page": "FUNC_V2",
+      "name": "侧灯色块颜色切换",
+      "i18nKey": "fun2_12310",
+      "zh": "侧灯色块颜色切换",
+      "en": "Side light color block color switching",
+      "keyType": 1
+    },
+    "12311": {
+      "value": 12311,
+      "page": "FUNC_V2",
+      "name": "全灯开/关切换",
+      "i18nKey": "fun2_12311",
+      "zh": "全灯开/关切换",
+      "en": "Full light on/off switching",
+      "keyType": 1
+    },
+    "12312": {
+      "value": 12312,
+      "page": "FUNC_V2",
+      "name": "点阵屏开/关",
+      "i18nKey": "fun2_12312",
+      "zh": "点阵屏开/关",
+      "en": "Turn the dot-matrix display on/off",
+      "keyType": 1
+    },
+    "12313": {
+      "value": 12313,
+      "page": "FUNC_V2",
+      "name": "GIF灯效切换",
+      "i18nKey": "fun2_12313",
+      "zh": "GIF灯效切换",
+      "en": "GIF Lighting Effects Switch",
+      "keyType": 1
+    },
+    "16384": {
+      "value": 16384,
+      "page": "FUNC_V2",
+      "name": "切换上一个界面",
+      "i18nKey": "fun2_16384",
+      "zh": "切换上一个界面",
+      "en": "Switch to the previous interface",
+      "keyType": 1
+    },
+    "16385": {
+      "value": 16385,
+      "page": "FUNC_V2",
+      "name": "切换下一个界面",
+      "i18nKey": "fun2_16385",
+      "zh": "切换下一个界面",
+      "en": "Switch to the next interface",
+      "keyType": 1
+    },
+    "16386": {
+      "value": 16386,
+      "page": "FUNC_V2",
+      "name": "确认键按下",
+      "i18nKey": "fun2_16386",
+      "zh": "确认键按下",
+      "en": "Confirm key pressed",
+      "keyType": 1
+    },
+    "28672": {
+      "value": 28672,
+      "page": "FUNC_V2",
+      "name": "打开驱动",
+      "i18nKey": "fun_text61",
+      "zh": "打开驱动",
+      "en": "Turn on the driver",
+      "keyType": 1
+    },
+    "28673": {
+      "value": 28673,
+      "page": "FUNC_V2",
+      "name": "系统亮度-",
+      "i18nKey": "fun2_28673",
+      "zh": "系统亮度-",
+      "en": "System Brightness-",
+      "keyType": 1
+    },
+    "28674": {
+      "value": 28674,
+      "page": "FUNC_V2",
+      "name": "系统亮度+",
+      "i18nKey": "fun2_28674",
+      "zh": "系统亮度+",
+      "en": "System Brightness +",
+      "keyType": 1
+    },
+    "28675": {
+      "value": 28675,
+      "page": "FUNC_V2",
+      "name": "系统任务切换/最近任务",
+      "i18nKey": "fun2_28675",
+      "zh": "系统任务切换/最近任务",
+      "en": "System Task Switching / Recent Tasks",
+      "keyType": 1
+    },
+    "28676": {
+      "value": 28676,
+      "page": "FUNC_V2",
+      "name": "系统主页",
+      "i18nKey": "fun2_28676",
+      "zh": "系统主页",
+      "en": "System Home Page",
+      "keyType": 1
+    },
+    "28677": {
+      "value": 28677,
+      "page": "FUNC_V2",
+      "name": "上一首",
+      "i18nKey": "medium_text7",
+      "zh": "上一首",
+      "en": "Previous Track",
+      "keyType": 1
+    },
+    "28678": {
+      "value": 28678,
+      "page": "FUNC_V2",
+      "name": "播放/暂停",
+      "i18nKey": "medium_text5",
+      "zh": "播放/暂停",
+      "en": "Play /Pause",
+      "keyType": 1
+    },
+    "28679": {
+      "value": 28679,
+      "page": "FUNC_V2",
+      "name": "下一首",
+      "i18nKey": "medium_text8",
+      "zh": "下一首",
+      "en": "Next Track",
+      "keyType": 1
+    },
+    "28680": {
+      "value": 28680,
+      "page": "FUNC_V2",
+      "name": "静音",
+      "i18nKey": "medium_text11",
+      "zh": "静音",
+      "en": "Mute",
+      "keyType": 1
+    },
+    "28681": {
+      "value": 28681,
+      "page": "FUNC_V2",
+      "name": "音量 -",
+      "i18nKey": "medium_text10",
+      "zh": "音量 -",
+      "en": "Volume -",
+      "keyType": 1
+    },
+    "28682": {
+      "value": 28682,
+      "page": "FUNC_V2",
+      "name": "音量 +",
+      "i18nKey": "medium_text9",
+      "zh": "音量 +",
+      "en": "Volume +",
+      "keyType": 1
+    }
+  },
+  "mk87FnLayerActions": [
+    {
+      "funcId": 1,
+      "name": "恢复出厂设置",
+      "i18nKey": "fun_text1",
+      "zh": "恢复出厂设置",
+      "en": "Restore Factory Settings",
+      "slots": [
+        "Spacebar"
+      ]
+    },
+    {
+      "funcId": 2,
+      "name": "蓝牙通道1",
+      "i18nKey": "fun_text2",
+      "zh": "蓝牙通道1",
+      "en": "Bluetooth Channel 1",
+      "slots": [
+        "Q"
+      ]
+    },
+    {
+      "funcId": 3,
+      "name": "蓝牙通道2",
+      "i18nKey": "fun_text3",
+      "zh": "蓝牙通道2",
+      "en": "Bluetooth Channel 2",
+      "slots": [
+        "W"
+      ]
+    },
+    {
+      "funcId": 4,
+      "name": "蓝牙通道3",
+      "i18nKey": "fun_text4",
+      "zh": "蓝牙通道3",
+      "en": "Bluetooth Channel 3",
+      "slots": [
+        "E"
+      ]
+    },
+    {
+      "funcId": 5,
+      "name": "无线回连",
+      "i18nKey": "fun_text5",
+      "zh": "无线回连",
+      "en": "Wireless Reconnect",
+      "slots": [
+        "R"
+      ]
+    },
+    {
+      "funcId": 7,
+      "name": "查询电量",
+      "i18nKey": "fun_text7",
+      "zh": "查询电量",
+      "en": "Check Battery",
+      "slots": [
+        "Back"
+      ]
+    },
+    {
+      "funcId": 11,
+      "name": "灯光效果切换",
+      "i18nKey": "fun_text8",
+      "zh": "灯光效果切换",
+      "en": "Light Effect Switch",
+      "slots": [
+        "\\\\ | "
+      ]
+    },
+    {
+      "funcId": 12,
+      "name": "灯光颜色切换",
+      "i18nKey": "fun_text9",
+      "zh": "灯光颜色切换",
+      "en": "Light Color Switch",
+      "slots": [
+        "→"
+      ]
+    },
+    {
+      "funcId": 13,
+      "name": "灯光亮度+",
+      "i18nKey": "fun_text10",
+      "zh": "灯光亮度+",
+      "en": "Increase Light Brightness",
+      "slots": [
+        "↑"
+      ]
+    },
+    {
+      "funcId": 14,
+      "name": "灯光亮度-",
+      "i18nKey": "fun_text11",
+      "zh": "灯光亮度-",
+      "en": "Decrease Light Brightness",
+      "slots": [
+        "↓"
+      ]
+    },
+    {
+      "funcId": 15,
+      "name": "灯光速度+",
+      "i18nKey": "fun_text12",
+      "zh": "灯光速度+",
+      "en": "Increase Light Speed",
+      "slots": [
+        "= +"
+      ]
+    },
+    {
+      "funcId": 16,
+      "name": "灯光速度-",
+      "i18nKey": "fun_text13",
+      "zh": "灯光速度-",
+      "en": "Decrease Light Speed",
+      "slots": [
+        "ˉ -"
+      ]
+    },
+    {
+      "funcId": 17,
+      "name": "关闭灯光",
+      "i18nKey": "fun_text14",
+      "zh": "关闭灯光",
+      "en": "Turn Off Lights",
+      "slots": [
+        "X"
+      ]
+    },
+    {
+      "funcId": 22,
+      "name": "锁定Win",
+      "i18nKey": "fun_text15",
+      "zh": "锁定Win",
+      "en": "Lock Win",
+      "slots": [
+        "L-Win"
+      ]
+    },
+    {
+      "funcId": 23,
+      "name": "侧灯效果切换",
+      "i18nKey": "fun_text16",
+      "zh": "侧灯效果切换",
+      "en": "Side Light Effect Switch",
+      "slots": [
+        "Enter"
+      ]
+    },
+    {
+      "funcId": 24,
+      "name": "侧灯颜色切换",
+      "i18nKey": "fun_text17",
+      "zh": "侧灯颜色切换",
+      "en": "Side Light Color Switch",
+      "slots": [
+        "' \""
+      ]
+    },
+    {
+      "funcId": 39,
+      "name": "关闭屏幕",
+      "i18nKey": "fun_text29",
+      "zh": "关闭屏幕",
+      "en": "Turn Off Screen",
+      "slots": [
+        "Insert"
+      ]
+    },
+    {
+      "funcId": 46,
+      "name": "旋钮模式切换",
+      "i18nKey": "fun_text36",
+      "zh": "旋钮模式切换",
+      "en": "Knob Mode Switch",
+      "slots": [
+        "(未知)"
+      ]
+    },
+    {
+      "funcId": 63,
+      "name": "GIF模式",
+      "i18nKey": "fun_text49",
+      "zh": "GIF模式",
+      "en": "GIF Mode",
+      "slots": [
+        "Home"
+      ]
+    },
+    {
+      "funcId": 71,
+      "name": "自定义灯光1",
+      "i18nKey": "fun_text57",
+      "zh": "自定义灯光1",
+      "en": "Custom Lights 1",
+      "slots": [
+        "1 !"
+      ]
+    },
+    {
+      "funcId": 72,
+      "name": "自定义灯光2",
+      "i18nKey": "fun_text58",
+      "zh": "自定义灯光2",
+      "en": "Custom Lights 2",
+      "slots": [
+        "2 @"
+      ]
+    },
+    {
+      "funcId": 78,
+      "name": "切换灯效方向",
+      "i18nKey": "fun_text64",
+      "zh": "切换灯效方向",
+      "en": "Switch the lighting effect direction",
+      "slots": [
+        "←"
+      ]
+    },
+    {
+      "funcId": 84,
+      "name": "显示屏语言切换为汉语",
+      "i18nKey": "fun_text70",
+      "zh": "显示屏语言切换为汉语",
+      "en": "Switch the display language to Chinese",
+      "slots": [
+        "C"
+      ]
+    },
+    {
+      "funcId": 85,
+      "name": "显示屏语言切换为英语",
+      "i18nKey": "fun_text71",
+      "zh": "显示屏语言切换为英语",
+      "en": "Switch the display language to English",
+      "slots": [
+        "V"
+      ]
+    },
+    {
+      "funcId": 89,
+      "name": "LOGO LED ON/OFF",
+      "i18nKey": null,
+      "zh": null,
+      "en": null,
+      "slots": [
+        "Del"
+      ]
+    },
+    {
+      "funcId": 98,
+      "name": "自定义灯光3",
+      "i18nKey": "fun_text80",
+      "zh": "自定义灯光3",
+      "en": "Custom Lights 3",
+      "slots": [
+        "3 #"
+      ]
+    },
+    {
+      "funcId": 99,
+      "name": "自定义灯光录制",
+      "i18nKey": "fun_text81",
+      "zh": "自定义灯光录制",
+      "en": "Custom light recording",
+      "slots": [
+        "` ~"
+      ]
+    },
+    {
+      "funcId": 138,
+      "name": "开启屏幕下方按键灯",
+      "i18nKey": "fun_text111",
+      "zh": "开启屏幕下方按键灯",
+      "en": "Turn on the button light below the screen",
+      "slots": [
+        "End"
+      ]
+    }
+  ],
+  "i18nMissingInPack": [
+    {
+      "value": 265,
+      "name": "CTRL+X",
+      "i18nKey": "fun_text222"
+    }
+  ],
+  "i18nKeysNotReferencedByTables": []
+}

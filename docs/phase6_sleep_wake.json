@@ -1,0 +1,27 @@
+{
+  "ts": "2026-11-01 08:27:20",
+  "duration": 420.0,
+  "n_events": 3,
+  "events": [
+    {
+      "t_ms": 59961,
+      "iface": "MI_03(0xFF60)",
+      "hex": "00 55 FC 04 30 00 00 01 00 FF FF FF FF FF FF FF FF 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00",
+      "tag": "DISCONNECT(0xFC/4)"
+    },
+    {
+      "t_ms": 213656,
+      "iface": "MI_02/COL05(0xFFFF)",
+      "hex": "05 A6 FF 01",
+      "tag": "WAKE(A6 FF 01)"
+    },
+    {
+      "t_ms": 273811,
+      "iface": "MI_03(0xFF60)",
+      "hex": "00 55 FC 04 30 00 00 01 00 FF FF FF FF FF FF FF FF 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00",
+      "tag": "DISCONNECT(0xFC/4)"
+    }
+  ],
+  "sleep_seen": false,
+  "wake_seen": true
+}

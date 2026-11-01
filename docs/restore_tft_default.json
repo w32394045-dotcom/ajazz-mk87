@@ -1,0 +1,23 @@
+{
+  "ts": "2026-11-01 07:36:30",
+  "source": "defaultGif.json (AK980_PRO)",
+  "frames": 135,
+  "delays_cs": [
+    10,
+    10,
+    10,
+    10,
+    10,
+    10,
+    10,
+    10,
+    10,
+    10
+  ],
+  "dry": false,
+  "data_len": 8748256,
+  "packets": 2136,
+  "ack_all": false,
+  "ack_ok": 2099,
+  "elapsed": 311.3
+}

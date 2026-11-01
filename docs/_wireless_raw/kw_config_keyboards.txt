@@ -1,0 +1,120 @@
+# token=config/keyboards hits=119 uniq=119
+@1824888	config/keyboards/ajazz/3141-10025-AJAZZ KEYBOARD.ts":AH,"/src/config/keyboards/ajazz/3141-32774-AK870MC.ts":MH,"/src/con
+@1824950	config/keyboards/ajazz/3141-32774-AK870MC.ts":MH,"/src/config/keyboards/ajazz/3141-32774-Gaming Keyboard.ts":PH,"/src/co
+@1825005	config/keyboards/ajazz/3141-32774-Gaming Keyboard.ts":PH,"/src/config/keyboards/ajazz/3141-32774-USB Keyboard.ts":IH,"/s
+@1825068	config/keyboards/ajazz/3141-32774-USB Keyboard.ts":IH,"/src/config/keyboards/ajazz/3141-32777-AJAZZ KEYBOARD.ts":RH,"/sr
+@1825128	config/keyboards/ajazz/3141-32777-AJAZZ KEYBOARD.ts":RH,"/src/config/keyboards/ajazz/3141-32777-AK820.ts":BH,"/src/confi
+@1825190	config/keyboards/ajazz/3141-32777-AK820.ts":BH,"/src/config/keyboards/ajazz/3141-32777-AK980 PRO.ts":HH,"/src/config/key
+@1825243	config/keyboards/ajazz/3141-32777-AK980 PRO.ts":HH,"/src/config/keyboards/ajazz/3141-32778-820PRO.ts":WH,"/src/config/ke
+@1825300	config/keyboards/ajazz/3141-32778-820PRO.ts":WH,"/src/config/keyboards/ajazz/3141-32778-AK820.ts":KH,"/src/config/keyboa
+@1825354	config/keyboards/ajazz/3141-32778-AK820.ts":KH,"/src/config/keyboards/ajazz/3141-32780-AJAZZ KEYBOARD.ts":JH,"/src/confi
+@1825407	config/keyboards/ajazz/3141-32780-AJAZZ KEYBOARD.ts":JH,"/src/config/keyboards/ajazz/3141-32781-AJAZZ SK98.ts":XH,"/src/
+@1825469	config/keyboards/ajazz/3141-32781-AJAZZ SK98.ts":XH,"/src/config/keyboards/ajazz/3141-32783-AJAZZ SK98.ts":QH,"/src/conf
+@1825527	config/keyboards/ajazz/3141-32783-AJAZZ SK98.ts":QH,"/src/config/keyboards/ajazz/3141-32790-AJAZZ KEYBOARD.ts":eU,"/src/
+@1825585	config/keyboards/ajazz/3141-32790-AJAZZ KEYBOARD.ts":eU,"/src/config/keyboards/ajazz/3141-32793-AJAZZ KEYBOARD.ts":nU,"/
+@1825647	config/keyboards/ajazz/3141-32793-AJAZZ KEYBOARD.ts":nU,"/src/config/keyboards/ajazz/3141-32799-AJAZZ Keyboard.ts":iU,"/
+@1825709	config/keyboards/ajazz/3141-32799-AJAZZ Keyboard.ts":iU,"/src/config/keyboards/ajazz/3141-32809-AK980 PRO.ts":oU,"/src/c
+@1825771	config/keyboards/ajazz/3141-32809-AK980 PRO.ts":oU,"/src/config/keyboards/ajazz/3141-32819-AK820MAX.ts":cU,"/src/config/
+@1825828	config/keyboards/ajazz/3141-32819-AK820MAX.ts":cU,"/src/config/keyboards/ajazz/3141-32825-AK980 PRO.ts":uU,"/src/config/
+@1825884	config/keyboards/ajazz/3141-32825-AK980 PRO.ts":uU,"/src/config/keyboards/ajazz/3141-32835-AK980 MAX.ts":fU,"/src/config
+@1825941	config/keyboards/ajazz/3141-32835-AK980 MAX.ts":fU,"/src/config/keyboards/ajazz/3141-32836-AJAZZ AK029.ts":mU,"/src/conf
+@1825998	config/keyboards/ajazz/3141-32836-AJAZZ AK029.ts":mU,"/src/config/keyboards/ajazz/3141-32836-AK820MAX.ts":gU,"/src/confi
+@1826057	config/keyboards/ajazz/3141-32836-AK820MAX.ts":gU,"/src/config/keyboards/ajazz/3141-32836-QS87.ts":vU,"/src/config/keybo
+@1826113	config/keyboards/ajazz/3141-32836-QS87.ts":vU,"/src/config/keyboards/ajazz/3141-32837-AJAZZ AK029.ts":bU,"/src/config/ke
+@1826165	config/keyboards/ajazz/3141-32837-AJAZZ AK029.ts":bU,"/src/config/keyboards/ajazz/3141-32838-AJAZZ AK029.ts":SU,"/src/co
+@1826224	config/keyboards/ajazz/3141-32838-AJAZZ AK029.ts":SU,"/src/config/keyboards/ajazz/3141-32839-AJAZZ KEYBOARD.ts":wU,"/src
+@1826283	config/keyboards/ajazz/3141-32839-AJAZZ KEYBOARD.ts":wU,"/src/config/keyboards/ajazz/3141-32841-820PRO.ts":EU,"/src/conf
+@1826345	config/keyboards/ajazz/3141-32841-820PRO.ts":EU,"/src/config/keyboards/ajazz/3141-32848-AK980 MAX.ts":OU,"/src/config/ke
+@1826399	config/keyboards/ajazz/3141-32848-AK980 MAX.ts":OU,"/src/config/keyboards/ajazz/3141-32849-AK980 MAX.ts":AU,"/src/config
+@1826456	config/keyboards/ajazz/3141-32849-AK980 MAX.ts":AU,"/src/config/keyboards/ajazz/3141-32850-AK980 MAX.ts":MU,"/src/config
+@1826513	config/keyboards/ajazz/3141-32850-AK980 MAX.ts":MU,"/src/config/keyboards/ajazz/3141-32851-AK980 MAX.ts":PU,"/src/config
+@1826570	config/keyboards/ajazz/3141-32851-AK980 MAX.ts":PU,"/src/config/keyboards/ajazz/3141-32852-AK980 MAX.ts":IU,"/src/config
+@1826627	config/keyboards/ajazz/3141-32852-AK980 MAX.ts":IU,"/src/config/keyboards/ajazz/3141-32880-AK820MAX.ts":RU,"/src/config/
+@1826684	config/keyboards/ajazz/3141-32880-AK820MAX.ts":RU,"/src/config/keyboards/ajazz/3141-32921-AJAZZ KEYBOARD.ts":BU,"/src/co
+@1826740	config/keyboards/ajazz/3141-32921-AJAZZ KEYBOARD.ts":BU,"/src/config/keyboards/ajazz/3141-32921-AK820.ts":HU,"/src/confi
+@1826802	config/keyboards/ajazz/3141-32921-AK820.ts":HU,"/src/config/keyboards/ajazz/3141-32923-AK820MAX.ts":WU,"/src/config/keyb
+@1826855	config/keyboards/ajazz/3141-32923-AK820MAX.ts":WU,"/src/config/keyboards/ajazz/3141-32928-AK820MAX.ts":KU,"/src/config/k
+@1826911	config/keyboards/ajazz/3141-32928-AK820MAX.ts":KU,"/src/config/keyboards/ajazz/3141-32944-AJAZZ Keyboard.ts":JU,"/src/co
+@1826967	config/keyboards/ajazz/3141-32944-AJAZZ Keyboard.ts":JU,"/src/config/keyboards/ajazz/3141-32944-AK820MAX.ts":XU,"/src/co
+@1827029	config/keyboards/ajazz/3141-32944-AK820MAX.ts":XU,"/src/config/keyboards/ajazz/3141-32945-AJAZZ KEYBOARD.ts":QU,"/src/co
+@1827085	config/keyboards/ajazz/3141-32945-AJAZZ KEYBOARD.ts":QU,"/src/config/keyboards/ajazz/3141-32945-AK820MAX.ts":eW,"/src/co
+@1827147	config/keyboards/ajazz/3141-32945-AK820MAX.ts":eW,"/src/config/keyboards/ajazz/3141-32946-AJAZZ AK680 MAX.ts":nW,"/src/c
+@1827203	config/keyboards/ajazz/3141-32946-AJAZZ AK680 MAX.ts":nW,"/src/config/keyboards/ajazz/3141-32948-AJAZZ AK680 MAX.ts":iW,
+@1827266	config/keyboards/ajazz/3141-32948-AJAZZ AK680 MAX.ts":iW,"/src/config/keyboards/ajazz/3141-32951-AJAZZ ALUX75 PRO.ts":oW
+@1827329	config/keyboards/ajazz/3141-32951-AJAZZ ALUX75 PRO.ts":oW,"/src/config/keyboards/ajazz/3141-32951-Gaming Keyboard.ts":cW
+@1827393	config/keyboards/ajazz/3141-32951-Gaming Keyboard.ts":cW,"/src/config/keyboards/ajazz/3141-32953-AK820 MAX Lightles.ts":
+@1827456	config/keyboards/ajazz/3141-32953-AK820 MAX Lightles.ts":uW,"/src/config/keyboards/ajazz/3141-32956-AJAZZ AK680 V2.ts":f
+@1827522	config/keyboards/ajazz/3141-32956-AJAZZ AK680 V2.ts":fW,"/src/config/keyboards/ajazz/3141-32961-AJAZZ AK680 V2.ts":mW,"/
+@1827584	config/keyboards/ajazz/3141-32961-AJAZZ AK680 V2.ts":mW,"/src/config/keyboards/ajazz/3141-32961-AJAZZ KEYBOARD.ts":gW,"/
+@1827646	config/keyboards/ajazz/3141-32961-AJAZZ KEYBOARD.ts":gW,"/src/config/keyboards/ajazz/3141-32962-AJAZZ AK680 V2.ts":vW,"/
+@1827708	config/keyboards/ajazz/3141-32962-AJAZZ AK680 V2.ts":vW,"/src/config/keyboards/ajazz/3141-32981-AJAZZ AK039.ts":bW,"/src
+@1827770	config/keyboards/ajazz/3141-32981-AJAZZ AK039.ts":bW,"/src/config/keyboards/ajazz/3141-32982-AJAZZ AK039.ts":SW,"/src/co
+@1827829	config/keyboards/ajazz/3141-32982-AJAZZ AK039.ts":SW,"/src/config/keyboards/ajazz/3141-32983-AJAZZ KEYBOARD.ts":wW,"/src
+@1827888	config/keyboards/ajazz/3141-32983-AJAZZ KEYBOARD.ts":wW,"/src/config/keyboards/ajazz/3141-33015-AJAZZ Keyboard.ts":EW,"/
+@1827950	config/keyboards/ajazz/3141-33015-AJAZZ Keyboard.ts":EW,"/src/config/keyboards/ajazz/3141-33037-Gaming Keyboard.ts":OW,"
+@1828012	config/keyboards/ajazz/3141-33037-Gaming Keyboard.ts":OW,"/src/config/keyboards/ajazz/3141-34817-AJAZZ KEYBOARD.ts":AW,"
+@1828075	config/keyboards/ajazz/3141-34817-AJAZZ KEYBOARD.ts":AW,"/src/config/keyboards/ajazz/3141-34818-AJAZZ AK980 V2 PRO.ts":M
+@1828137	config/keyboards/ajazz/3141-34818-AJAZZ AK980 V2 PRO.ts":MW,"/src/config/keyboards/ajazz/3141-34818-AJAZZ KEYBOARD.ts":P
+@1828203	config/keyboards/ajazz/3141-34818-AJAZZ KEYBOARD.ts":PW,"/src/config/keyboards/ajazz/3141-34818-AK980 PRO.ts":IW,"/src/c
+@1828265	config/keyboards/ajazz/3141-34818-AK980 PRO.ts":IW,"/src/config/keyboards/ajazz/3141-34818-CSOL Keyboard.ts":RW,"/src/co
+@1828322	config/keyboards/ajazz/3141-34818-CSOL Keyboard.ts":RW,"/src/config/keyboards/ajazz/3141-34818-MJ84+.ts":BW,"/src/config
+@1828383	config/keyboards/ajazz/3141-34818-MJ84+.ts":BW,"/src/config/keyboards/ajazz/3141-34818-gW997mgkb.ts":HW,"/src/config/key
+@1828436	config/keyboards/ajazz/3141-34818-gW997mgkb.ts":HW,"/src/config/keyboards/ajazz/3141-34819-AJAZZ AK980 V2 PRO.ts":WW,"/s
+@1828493	config/keyboards/ajazz/3141-34819-AJAZZ AK980 V2 PRO.ts":WW,"/src/config/keyboards/ajazz/3141-34819-AJAZZ KEYBOARD.ts":K
+@1828559	config/keyboards/ajazz/3141-34819-AJAZZ KEYBOARD.ts":KW,"/src/config/keyboards/ajazz/3141-34820-AJAZZ KEYBOARD.ts":JW,"/
+@1828621	config/keyboards/ajazz/3141-34820-AJAZZ KEYBOARD.ts":JW,"/src/config/keyboards/ajazz/3141-34820-gW997mgkb.ts":XW,"/src/c
+@1828683	config/keyboards/ajazz/3141-34820-gW997mgkb.ts":XW,"/src/config/keyboards/ajazz/3141-34829-AJAZZ KEYBOARD.ts":QW,"/src/c
+@1828740	config/keyboards/ajazz/3141-34829-AJAZZ KEYBOARD.ts":QW,"/src/config/keyboards/ajazz/3141-34829-AK820.ts":eG,"/src/confi
+@1828802	config/keyboards/ajazz/3141-34829-AK820.ts":eG,"/src/config/keyboards/ajazz/3141-34830-AK820.ts":nG,"/src/config/keyboar
+@1828855	config/keyboards/ajazz/3141-34830-AK820.ts":nG,"/src/config/keyboards/ajazz/3141-34831-AK820.ts":iG,"/src/config/keyboar
+@1828908	config/keyboards/ajazz/3141-34831-AK820.ts":iG,"/src/config/keyboards/ajazz/3141-34832-AK820.ts":oG,"/src/config/keyboar
+@1828961	config/keyboards/ajazz/3141-34832-AK820.ts":oG,"/src/config/keyboards/ajazz/3141-34833-AK820.ts":cG,"/src/config/keyboar
+@1829014	config/keyboards/ajazz/3141-34833-AK820.ts":cG,"/src/config/keyboards/ajazz/3141-34834-AK820.ts":uG,"/src/config/keyboar
+@1829067	config/keyboards/ajazz/3141-34834-AK820.ts":uG,"/src/config/keyboards/ajazz/3141-65273-HS USB Dongle-1-103.ts":fG,"/src/
+@1829120	config/keyboards/ajazz/3141-65273-HS USB Dongle-1-103.ts":fG,"/src/config/keyboards/ajazz/3141-65273-HS USB Dongle-1-109
+@1829187	config/keyboards/ajazz/3141-65273-HS USB Dongle-1-109.ts":mG,"/src/config/keyboards/ajazz/3141-65274-2.4G Dongle-1-100.t
+@1829254	config/keyboards/ajazz/3141-65274-2.4G Dongle-1-100.ts":gG,"/src/config/keyboards/ajazz/3141-65274-2.4G Dongle-1-101.ts"
+@1829319	config/keyboards/ajazz/3141-65274-2.4G Dongle-1-101.ts":vG,"/src/config/keyboards/ajazz/3141-65274-2.4G Dongle-1-102.ts"
+@1829384	config/keyboards/ajazz/3141-65274-2.4G Dongle-1-102.ts":bG,"/src/config/keyboards/ajazz/3141-65274-2.4G Dongle-1-104.ts"
+@1829449	config/keyboards/ajazz/3141-65274-2.4G Dongle-1-104.ts":SG,"/src/config/keyboards/ajazz/3141-65274-2.4G Dongle-1-106.ts"
+@1829514	config/keyboards/ajazz/3141-65274-2.4G Dongle-1-106.ts":wG,"/src/config/keyboards/ajazz/3141-65274-2.4G Dongle-1-24.ts":
+@1829579	config/keyboards/ajazz/3141-65274-2.4G Dongle-1-24.ts":EG,"/src/config/keyboards/ajazz/3141-65274-2.4G Dongle-1-29.ts":O
+@1829643	config/keyboards/ajazz/3141-65274-2.4G Dongle-1-29.ts":OG,"/src/config/keyboards/ajazz/3141-65274-2.4G Dongle-1-49.ts":A
+@1829707	config/keyboards/ajazz/3141-65274-2.4G Dongle-1-49.ts":AG,"/src/config/keyboards/ajazz/3141-65274-2.4G Dongle-1-66.ts":M
+@1829771	config/keyboards/ajazz/3141-65274-2.4G Dongle-1-66.ts":MG,"/src/config/keyboards/ajazz/3141-65274-2.4G Dongle-1-70.ts":P
+@1829835	config/keyboards/ajazz/3141-65274-2.4G Dongle-1-70.ts":PG,"/src/config/keyboards/ajazz/3141-65274-2.4G Dongle-1-72.ts":I
+@1829899	config/keyboards/ajazz/3141-65274-2.4G Dongle-1-72.ts":IG,"/src/config/keyboards/ajazz/3141-65274-2.4G Dongle-1-84.ts":R
+@1829963	config/keyboards/ajazz/3141-65274-2.4G Dongle-1-84.ts":RG,"/src/config/keyboards/ajazz/3141-65274-2.4G Dongle-1-85.ts":B
+@1830027	config/keyboards/ajazz/3141-65274-2.4G Dongle-1-85.ts":BG,"/src/config/keyboards/ajazz/3141-65274-2.4G Dongle-1-91.ts":H
+@1830091	config/keyboards/ajazz/3141-65274-2.4G Dongle-1-91.ts":HG,"/src/config/keyboards/ajazz/3141-65274-2.4G Dongle-1-98.ts":W
+@1830155	config/keyboards/ajazz/3141-65274-2.4G Dongle-1-98.ts":WG,"/src/config/keyboards/ajazz/3141-65274-2.4G Dongle-1-99.ts":K
+@1830219	config/keyboards/ajazz/3141-65274-2.4G Dongle-1-99.ts":KG,"/src/config/keyboards/ajazz/3141-65276-2.4G Dongle-1-12.ts":J
+@1830283	config/keyboards/ajazz/3141-65276-2.4G Dongle-1-12.ts":JG,"/src/config/keyboards/ajazz/3141-65276-AJAZZ AK820MAX.ts":XG,
+@1830347	config/keyboards/ajazz/3141-65276-AJAZZ AK820MAX.ts":XG,"/src/config/keyboards/ajazz/3141-65276-HS USB Dongle-1-12.ts":Q
+@1830409	config/keyboards/ajazz/3141-65276-HS USB Dongle-1-12.ts":QG,"/src/config/keyboards/ajazz/3141-65276-HS USB Dongle-1-14.t
+@1830475	config/keyboards/ajazz/3141-65276-HS USB Dongle-1-14.ts":eK,"/src/config/keyboards/ajazz/3141-65276-HS USB Dongle-1-21.t
+@1830541	config/keyboards/ajazz/3141-65276-HS USB Dongle-1-21.ts":nK,"/src/config/keyboards/ajazz/3141-65276-HS USB Dongle-1-32.t
+@1830607	config/keyboards/ajazz/3141-65276-HS USB Dongle-1-32.ts":iK,"/src/config/keyboards/ajazz/3141-65276-HS USB Dongle-1-41.t
+@1830673	config/keyboards/ajazz/3141-65276-HS USB Dongle-1-41.ts":oK,"/src/config/keyboards/ajazz/3141-65276-HS USB Dongle-1-48.t
+@1830739	config/keyboards/ajazz/3141-65276-HS USB Dongle-1-48.ts":cK,"/src/config/keyboards/ajazz/3141-65277-AJAZZ AK820MAX.ts":u
+@1830805	config/keyboards/ajazz/3141-65277-AJAZZ AK820MAX.ts":uK,"/src/config/keyboards/ajazz/3141-65278-2.4G Dongle-1-1.ts":fK,"
+@1830867	config/keyboards/ajazz/3141-65278-2.4G Dongle-1-1.ts":fK,"/src/config/keyboards/ajazz/3141-65278-2.4G Dongle-1-17.ts":mK
+@1830930	config/keyboards/ajazz/3141-65278-2.4G Dongle-1-17.ts":mK,"/src/config/keyboards/ajazz/3141-65278-2.4G Dongle-1-18.ts":g
+@1830994	config/keyboards/ajazz/3141-65278-2.4G Dongle-1-18.ts":gK,"/src/config/keyboards/ajazz/3141-65278-2.4G Dongle-1-2.ts":vK
+@1831058	config/keyboards/ajazz/3141-65278-2.4G Dongle-1-2.ts":vK,"/src/config/keyboards/ajazz/3141-65278-2.4G Dongle-1-22.ts":bK
+@1831121	config/keyboards/ajazz/3141-65278-2.4G Dongle-1-22.ts":bK,"/src/config/keyboards/ajazz/3141-65278-2.4G Dongle-1-33.ts":S
+@1831185	config/keyboards/ajazz/3141-65278-2.4G Dongle-1-33.ts":SK,"/src/config/keyboards/ajazz/3141-65278-2.4G Dongle-1-35.ts":w
+@1831249	config/keyboards/ajazz/3141-65278-2.4G Dongle-1-35.ts":wK,"/src/config/keyboards/ajazz/3141-65278-2.4G Dongle-1-42.ts":E
+@1831313	config/keyboards/ajazz/3141-65278-2.4G Dongle-1-42.ts":EK,"/src/config/keyboards/ajazz/3141-65278-2.4G Dongle-1-44.ts":O
+@1831377	config/keyboards/ajazz/3141-65278-2.4G Dongle-1-44.ts":OK,"/src/config/keyboards/ajazz/3141-65278-2.4G Dongle-1-5.ts":AK
+@1831441	config/keyboards/ajazz/3141-65278-2.4G Dongle-1-5.ts":AK,"/src/config/keyboards/ajazz/3141-65278-2.4G Dongle-1-50.ts":MK
+@1831504	config/keyboards/ajazz/3141-65278-2.4G Dongle-1-50.ts":MK,"/src/config/keyboards/ajazz/3141-65278-2.4G Dongle-1-51.ts":P
+@1831568	config/keyboards/ajazz/3141-65278-2.4G Dongle-1-51.ts":PK,"/src/config/keyboards/ajazz/3141-65278-2.4G Dongle-1-55.ts":I
+@1831632	config/keyboards/ajazz/3141-65278-2.4G Dongle-1-55.ts":IK,"/src/config/keyboards/ajazz/3141-65278-2.4G Dongle-1-56.ts":R
+@1831696	config/keyboards/ajazz/3141-65278-2.4G Dongle-1-56.ts":RK,"/src/config/keyboards/ajazz/3141-65278-2.4G Dongle-1-60.ts":B
+@1831760	config/keyboards/ajazz/3141-65278-2.4G Dongle-1-60.ts":BK,"/src/config/keyboards/ajazz/3141-65278-2.4G Dongle-1-62.ts":H
+@1831824	config/keyboards/ajazz/3141-65278-2.4G Dongle-1-62.ts":HK,"/src/config/keyboards/ajazz/3141-65278-2.4G Dongle-1-64.ts":W
+@1831888	config/keyboards/ajazz/3141-65278-2.4G Dongle-1-64.ts":WK,"/src/config/keyboards/ajazz/3141-65278-AJAZZ AK820MAX.ts":KK,
+@1831952	config/keyboards/ajazz/3141-65278-AJAZZ AK820MAX.ts":KK,"/src/config/keyboards/ajazz/3141-65278-AJAZZ AK980 PRO 2.4G.ts"
+@1832014	config/keyboards/ajazz/3141-65278-AJAZZ AK980 PRO 2.4G.ts":JK}),HY=oI(`webHID`,()=>{let e=eY(),t=Kt(new Map),n=R(``),r=K
+@1840329	config/keyboards/${t}/${e}.ts`:`/${e}.ts`,n.endsWith(i)||!t&&n.includes(`/${e}.ts`))return console.log(`✅ 找到配置文件: ${n}`)

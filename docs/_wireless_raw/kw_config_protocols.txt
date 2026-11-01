@@ -1,0 +1,13 @@
+# token=config/protocols hits=14 uniq=12
+@1792923	config/protocols/default/index.ts":()=>Q(()=>Promise.resolve().then(()=>zX),void 0)}),`../config/protocols/${a}/index.ts
+@1793013	config/protocols/${a}/index.ts`,5),s=[i?.device,i?.keyboardConfig,...r];return await o[t](...s)}catch(e){return console.
+@1793252	config/protocols/default/index.ts":()=>Q(()=>Promise.resolve().then(()=>zX),void 0)}),`../config/protocols/${n}/index.ts
+@1793342	config/protocols/${n}/index.ts`,5),a=[t,...r];return await i[e](...a)}catch(t){return console.error(`发送${e}报告失败：`,t),nul
+@1861873	config/protocols/default/characters.ts":()=>Q(()=>Promise.resolve().then(()=>nX),void 0)}),`../config/protocols/${r}/cha
+@1861968	config/protocols/${r}/characters.ts`,5);return n.allKeyCharsList.value=t.allKeyChars||[],n.basicList.value=t.basicChars|
+@1862882	config/protocols/default/lighting.ts":()=>Q(()=>import(`./lighting-DzPku7KQ.js`),[])}),`../config/protocols/${r}/lightin
+@1862973	config/protocols/${r}/lighting.ts`,5),i=[...t.defalutLightingModeList];if(e?.keyboardConfig?.lightingConfig?.hiddenDefau
+@1864495	config/protocols/default/index.ts":()=>Q(()=>Promise.resolve().then(()=>zX),void 0)}),`../config/protocols/${r}/index.ts
+@1864585	config/protocols/${r}/index.ts`,5);if(!t.getLEDEffect)throw Error(`当前协议不支持LED特效区功能`);let i=await t.getLEDEffect(e.device
+@1865027	config/protocols/${r}/index.ts`,5);if(!t.getCustomLEDData)throw Error(`当前协议不支持自定义LED数据功能`);let i=await t.getCustomLEDDat
+@1865488	config/protocols/${r}/index.ts`,5);if(!t.getMacroData)throw Error(`当前协议不支持宏功能`);let i=await t.getMacroData(e.device);n.m

@@ -1,0 +1,67 @@
+{
+  "ts": "2026-11-01 07:46:36",
+  "proto32": {
+    "usagePage": "0xFF60",
+    "out_len": 33
+  },
+  "proto64": {
+    "usagePage": "0xFF59",
+    "out_len": 65
+  },
+  "variants": [
+    {
+      "variant": "A",
+      "packets": 4,
+      "send_ms": 26.0,
+      "base_red": 1,
+      "red_after": 1,
+      "works": false,
+      "first_pkt": "00 AA 35 00 00 F8 00 F8 00 F8 00 F8 00 F8 00 F8 00 F8 00 F8"
+    },
+    {
+      "variant": "B",
+      "packets": 7,
+      "send_ms": 48.4,
+      "base_red": 1,
+      "red_after": 1,
+      "works": false,
+      "first_pkt": "00 AA 35 00 00 F8 00 F8 00 F8 00 F8 00 F8 00 F8 00 F8 00 F8"
+    },
+    {
+      "variant": "C",
+      "packets": 4,
+      "send_ms": 29.0,
+      "base_red": 1,
+      "red_after": 1,
+      "works": false,
+      "first_pkt": "00 AA 3C 38 00 00 00 00 F8 00 F8 00 F8 00 F8 00 F8 00 F8 00"
+    },
+    {
+      "variant": "D",
+      "packets": 15,
+      "send_ms": 102.5,
+      "base_red": 1,
+      "red_after": 1,
+      "works": false,
+      "first_pkt": "00 AA 32 18 00 00 00 00 00 FF 00 00 01 FF 00 00 02 FF 00 00"
+    },
+    {
+      "variant": "E",
+      "packets": 8,
+      "send_ms": 51.0,
+      "base_red": 1,
+      "red_after": 1,
+      "works": false,
+      "first_pkt": "00 AA 3C 08 00 00 00 00 00 F8 00 F8 00 F8 00 F8 00 F8 00 F8"
+    },
+    {
+      "variant": "F",
+      "packets": 3,
+      "send_ms": 21.5,
+      "base_red": 1,
+      "red_after": 1,
+      "works": false,
+      "first_pkt": "00 AA 35 00 00 F8 00 F8 00 F8 00 F8 00 F8 00 F8 00 F8 00 F8"
+    }
+  ]
+}

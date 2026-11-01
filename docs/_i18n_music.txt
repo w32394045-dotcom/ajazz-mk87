@@ -1,0 +1,28 @@
+﻿music_mode_text3 | �������� | Dance to the Beat
+music_mode_text20 | ˫�Ĺ��� | Dual Heart Dance
+music_mode_text12 | �������� | Dust Glow Spiral
+music_mode_text13 | �ݷ���ɽ | Dormant Volcano
+music_mode_text14 | ��ʸ���� | Light Arrow Piercing
+music_mode_text16 | ��빲�� | Light Cocoon Resonance
+music_mode_text17 | ������ | Tuning Fork Vibration
+music_mode_text15 | ө��켣 | Firefly Trail
+music_mode_text18 | �����Ź� | Curvature Legacy Track
+music_mode_text19 | �в��ɶ� | Row Wave Rhythm
+music_mode_text4 | ����Ƶ�� | Curvature Frequency Steps
+music_mode_text21 | �������� | Screen light linkage
+music_bg_text1 | �� | None
+music_bg_text8 | ��ɫ/��ɫ/��ɫ | Green/Yellow/Red
+music_bg_text9 | �ʺ�ɫ | Rainbow
+music_bg_text10 | ɫ�� | Color Spectrum
+music_bg_text11 | Ƶ��ѭ�� | Spectrum Loop
+music_bg_text2 | ��ɫ | White
+music_bg_text3 | ��ɫ | Red
+music_bg_text4 | ��ɫ | Orange
+music_bg_text5 | ��ɫ | Yellow
+music_bg_text6 | ��ɫ | Blue
+music_bg_text7 | ��ɫ | Green
+macro_mask_select1 | ���� | Routine
+macro_mask_select2 | �ٴΰ������� | Press the key again to end
+macro_mask_select3 | �ظ����� | Repeat Playback
+time_1 | 24Сʱ | 24 Hour
+time_2 | 12Сʱ | 12 Hour

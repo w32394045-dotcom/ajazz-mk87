@@ -1,0 +1,22 @@
+import {
+  n as e
+}from"./rolldown-runtime-Dd_uD5pT.js";
+import {
+  aa as t,ea as n,pa as r,x as i
+}from"./layout-classic-CMxiG14P.js";
+var a=t( {
+  __name:`musicDiy`,props: {
+    controller: {
+
+    }
+  },setup(e) {
+    return(t,a)=>(r(),n(i, {
+      controller:e.controller
+    },null,8,[`controller`]))
+  }
+}),o=e( {
+  default:()=>s
+}),s=a;
+export {
+  o as n,s as t
+};

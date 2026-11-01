@@ -1,0 +1,6338 @@
+{
+ "meta": {
+  "title": "AJAZZ MK87 (VID 0x0C45 / PID 0x8047) 按键映射 4 字节编码 —— 动作/页面类型表",
+  "source": "assets/layout-classic-CMxiG14P.js（官方网页驱动 bundle，rolldown 打包，未混淆）",
+  "generator": "scripts/gen_tables_json.js",
+  "generatedAt": "2026-10-31T22:01:54.663Z",
+  "bundleOffsets": {
+   "fxEnum": 1905045,
+   "pX_encode": 1905191,
+   "mX_decode": 1906069,
+   "hX_decodeKeyList": 1906554,
+   "gX_decodeWheelKeys": 1906769,
+   "kX_decodeFuncV2": 1909309,
+   "allKeyChars": 1868425,
+   "basicChars": 1874490,
+   "extendChars": 1879846,
+   "jaExtendChars": 1900008,
+   "specialChars": 1882523,
+   "funcChars": 1884055,
+   "funcV2Chars": 1900260,
+   "charactersExportMap": 1868284,
+   "mk87Config": 1194719,
+   "deviceInit": 1916075
+  },
+  "note": "table 里的 offset 是 bundle 内字符偏移（0-based）。条目内容为原样 JSON 化，未做语义改名。"
+ },
+ "pageTypes": [
+  {
+   "value": 0,
+   "key": "DEFAULT",
+   "local": "DEFAULT",
+   "meaning": "不修改 / 使用硬件默认",
+   "layout": "pX 不写任何字节 → 4 字节全 0",
+   "implemented": true,
+   "encodeImplemented": true,
+   "readBranch": "mX case DEFAULT"
+  },
+  {
+   "value": 1,
+   "key": "MOUSE",
+   "local": "MOUSE",
+   "meaning": "鼠标按键/滚轮",
+   "layout": "byte1=param1(1=按键,3=滚轮) byte2=value",
+   "implemented": true,
+   "encodeImplemented": true,
+   "readBranch": "mX case MOUSE"
+  },
+  {
+   "value": 2,
+   "key": "KEYBOARD",
+   "local": "KEYBOARD",
+   "meaning": "键盘按键（HID usage）",
+   "layout": "byte2=value(HID usage)；byte1 写入时恒 0（读取时可携带修饰键位图）",
+   "implemented": true,
+   "encodeImplemented": true,
+   "readBranch": "mX case KEYBOARD"
+  },
+  {
+   "value": 3,
+   "key": "CONSUMER_KEY",
+   "local": "CONSUMER_KEY",
+   "meaning": "多媒体/消费类按键（HID Consumer usage，16 位小端）",
+   "layout": "byte1=value&0xFF byte2=value>>8",
+   "implemented": true,
+   "encodeImplemented": true,
+   "readBranch": "mX case CONSUMER_KEY"
+  },
+  {
+   "value": 4,
+   "key": "SYSTEM_KEY",
+   "local": "SYSTEM_KEY",
+   "meaning": "系统键（保留，本驱动未实现）",
+   "layout": "pX/mX 都无分支 → 遇到会 warn「未知的页面类型」",
+   "implemented": false,
+   "encodeImplemented": false,
+   "readBranch": "mX default → warn"
+  },
+  {
+   "value": 5,
+   "key": "EXTRA_FUNCTION",
+   "local": "EXTRA_FUNCTION",
+   "meaning": "扩展功能（保留，本驱动未实现）",
+   "layout": "同上",
+   "implemented": false,
+   "encodeImplemented": false,
+   "readBranch": "mX default → warn"
+  },
+  {
+   "value": 6,
+   "key": "MACRO",
+   "local": "MACRO",
+   "meaning": "执行宏",
+   "layout": "byte1=macroId byte2=掩码/模式 byte3=掩码参数",
+   "implemented": true,
+   "encodeImplemented": true,
+   "readBranch": "mX case MACRO"
+  },
+  {
+   "value": 7,
+   "key": "CB",
+   "local": "CB",
+   "meaning": "Combination 组合键（修饰键+1 键）",
+   "layout": "byte1=修饰键1HID byte2=修饰键2HID byte3=主键HID",
+   "implemented": true,
+   "encodeImplemented": true,
+   "readBranch": "mX case CB"
+  },
+  {
+   "value": 8,
+   "key": "DKS",
+   "local": "DKS",
+   "meaning": "Dynamic Keystroke（磁轴，MK87 不支持）",
+   "layout": "byte1=value(DKS 索引 0..63)",
+   "implemented": true,
+   "encodeImplemented": true,
+   "readBranch": "mX case DKS"
+  },
+  {
+   "value": 9,
+   "key": "MT",
+   "local": "MT",
+   "meaning": "Mod-Tap / 长按短按（磁轴高级键）",
+   "layout": "byte1=键1HID byte2=键2HID byte3=时间/10ms",
+   "implemented": true,
+   "encodeImplemented": true,
+   "readBranch": "mX case MT"
+  },
+  {
+   "value": 10,
+   "key": "TGL",
+   "local": "TGL",
+   "meaning": "Toggle 切换键",
+   "layout": "byte1=value",
+   "implemented": true,
+   "encodeImplemented": true,
+   "readBranch": "mX case TGL"
+  },
+  {
+   "value": 11,
+   "key": "SOCD",
+   "local": "SOCD",
+   "meaning": "SOCD（磁轴高级键）",
+   "layout": "byte1=模式 byte2=键1HID byte3=键2HID",
+   "implemented": true,
+   "encodeImplemented": true,
+   "readBranch": "mX case SOCD"
+  },
+  {
+   "value": 12,
+   "key": "RS",
+   "local": "RS",
+   "meaning": "Rapid Trigger 迅洁（磁轴高级键）",
+   "layout": "byte1 恒 0 byte2=键1HID byte3=键2HID",
+   "implemented": true,
+   "encodeImplemented": true,
+   "readBranch": "mX case RS"
+  },
+  {
+   "value": 13,
+   "key": "FUNC",
+   "local": "FUNC",
+   "meaning": "固件内置功能动作（24 位 id）",
+   "layout": "byte1..3 = value>>16, value>>8, value",
+   "implemented": true,
+   "encodeImplemented": true,
+   "readBranch": "mX case FUNC"
+  },
+  {
+   "value": 14,
+   "key": "END",
+   "local": "END",
+   "meaning": "双键（两键同时/先后？官方 UI 为两个槽位）",
+   "layout": "byte1=键1HID byte2=键2HID",
+   "implemented": true,
+   "encodeImplemented": true,
+   "readBranch": "mX case END"
+  },
+  {
+   "value": 15,
+   "key": "MPT",
+   "local": "MPT",
+   "meaning": "多键同发（3 键）",
+   "layout": "byte1/2/3 = 3 个 HID usage",
+   "implemented": true,
+   "encodeImplemented": true,
+   "readBranch": "mX case MPT"
+  },
+  {
+   "value": "128..255",
+   "key": "FUNC_V2",
+   "local": "kX",
+   "meaning": "新一代功能动作页；pageType 最高位置 1，低 7 位是「功能码槽 A」的高 7 位",
+   "layout": "byte0 = 0x80 | (slotA>>8)&0x7F, byte1 = slotA&0xFF, byte2 = (slotB>>8)&0xFF, byte3 = slotB&0xFF",
+   "implemented": true,
+   "encodeImplemented": true,
+   "readBranch": "kX (pageType>=128)"
+  }
+ ],
+ "pageTypeEnumSource": "fX={DEFAULT:0,MOUSE:1,KEYBOARD:2,CONSUMER_KEY:3,SYSTEM_KEY:4,EXTRA_FUNCTION:5,MACRO:6,CB:7,DKS:8,MT:9,TGL:10,SOCD:11,RS:12,FUNC:13,END:14,MPT:15}",
+ "funcV2Layout": {
+  "marker": "0x80",
+  "slotA": "12-bit: (pageType & 0x7F) << 8 | param1  → 0..32767",
+  "slotB": "16-bit: param2 << 8 | param3 → 0..65535",
+  "keyType1": "value 写入 slotB（byte2/byte3），slotA=0",
+  "keyType2": "value 写入 slotA（byte0/byte1），slotB=0",
+  "decodeNameRule": "name = table_B.name || table_A.name（优先槽 B）；两槽各自独立查 iX/aX（当值 <4096）或 lX（否则）"
+ },
+ "tables": {
+  "allKeyChars": {
+   "local": "rX",
+   "offset": 1868425,
+   "end": 1874488,
+   "desc": "全部物理键canonical表：value=键位序号(0..120)，keyCode=HID usage，keyName=DOM code",
+   "count": 121,
+   "entries": [
+    {
+     "name": "ESC",
+     "value": 0,
+     "keyCode": 41,
+     "keyName": "Escape"
+    },
+    {
+     "name": "F1",
+     "value": 1,
+     "keyCode": 58,
+     "keyName": "F1"
+    },
+    {
+     "name": "F2",
+     "value": 2,
+     "keyCode": 59,
+     "keyName": "F2"
+    },
+    {
+     "name": "F3",
+     "value": 3,
+     "keyCode": 60,
+     "keyName": "F3"
+    },
+    {
+     "name": "F4",
+     "value": 4,
+     "keyCode": 61,
+     "keyName": "F4"
+    },
+    {
+     "name": "F5",
+     "value": 5,
+     "keyCode": 62,
+     "keyName": "F5"
+    },
+    {
+     "name": "F6",
+     "value": 6,
+     "keyCode": 63,
+     "keyName": "F6"
+    },
+    {
+     "name": "F7",
+     "value": 7,
+     "keyCode": 64,
+     "keyName": "F7"
+    },
+    {
+     "name": "F8",
+     "value": 8,
+     "keyCode": 65,
+     "keyName": "F8"
+    },
+    {
+     "name": "F9",
+     "value": 9,
+     "keyCode": 66,
+     "keyName": "F9"
+    },
+    {
+     "name": "F10",
+     "value": 10,
+     "keyCode": 67,
+     "keyName": "F10"
+    },
+    {
+     "name": "F11",
+     "value": 11,
+     "keyCode": 68,
+     "keyName": "F11"
+    },
+    {
+     "name": "F12",
+     "value": 12,
+     "keyCode": 69,
+     "keyName": "F12"
+    },
+    {
+     "name": "VOLINC",
+     "value": 13,
+     "keyCode": "",
+     "keyName": ""
+    },
+    {
+     "name": "VOLDEC",
+     "value": 14,
+     "keyCode": "",
+     "keyName": ""
+    },
+    {
+     "name": "MUTE",
+     "value": 15,
+     "keyCode": "",
+     "keyName": ""
+    },
+    {
+     "name": "GAT",
+     "value": 16,
+     "keyCode": 53,
+     "keyName": "Backquote"
+    },
+    {
+     "name": "1",
+     "value": 17,
+     "keyCode": 30,
+     "keyName": "Digit1"
+    },
+    {
+     "name": "2",
+     "value": 18,
+     "keyCode": 31,
+     "keyName": "Digit2"
+    },
+    {
+     "name": "3",
+     "value": 19,
+     "keyCode": 32,
+     "keyName": "Digit3"
+    },
+    {
+     "name": "4",
+     "value": 20,
+     "keyCode": 33,
+     "keyName": "Digit4"
+    },
+    {
+     "name": "5",
+     "value": 21,
+     "keyCode": 34,
+     "keyName": "Digit5"
+    },
+    {
+     "name": "6",
+     "value": 22,
+     "keyCode": 35,
+     "keyName": "Digit6"
+    },
+    {
+     "name": "7",
+     "value": 23,
+     "keyCode": 36,
+     "keyName": "Digit7"
+    },
+    {
+     "name": "8",
+     "value": 24,
+     "keyCode": 37,
+     "keyName": "Digit8"
+    },
+    {
+     "name": "9",
+     "value": 25,
+     "keyCode": 38,
+     "keyName": "Digit9"
+    },
+    {
+     "name": "0",
+     "value": 26,
+     "keyCode": 39,
+     "keyName": "Digit0"
+    },
+    {
+     "name": "-",
+     "value": 27,
+     "keyCode": 45,
+     "keyName": "Minus"
+    },
+    {
+     "name": "=",
+     "value": 28,
+     "keyCode": 46,
+     "keyName": "Equal"
+    },
+    {
+     "name": "NUMLOCK",
+     "value": 29,
+     "keyCode": 83,
+     "keyName": "NumLock"
+    },
+    {
+     "name": "PAD/",
+     "value": 30,
+     "keyCode": 84,
+     "keyName": "NumpadDivide"
+    },
+    {
+     "name": "PAD*",
+     "value": 31,
+     "keyCode": 85,
+     "keyName": "NumpadMultiply"
+    },
+    {
+     "name": "TAB",
+     "value": 32,
+     "keyCode": 43,
+     "keyName": "Tab"
+    },
+    {
+     "name": "Q",
+     "value": 33,
+     "keyCode": 20,
+     "keyName": "KeyQ"
+    },
+    {
+     "name": "W",
+     "value": 34,
+     "keyCode": 26,
+     "keyName": "KeyW"
+    },
+    {
+     "name": "E",
+     "value": 35,
+     "keyCode": 8,
+     "keyName": "KeyE"
+    },
+    {
+     "name": "R",
+     "value": 36,
+     "keyCode": 21,
+     "keyName": "KeyR"
+    },
+    {
+     "name": "T",
+     "value": 37,
+     "keyCode": 23,
+     "keyName": "KeyT"
+    },
+    {
+     "name": "Y",
+     "value": 38,
+     "keyCode": 28,
+     "keyName": "KeyY"
+    },
+    {
+     "name": "U",
+     "value": 39,
+     "keyCode": 24,
+     "keyName": "KeyU"
+    },
+    {
+     "name": "I",
+     "value": 40,
+     "keyCode": 12,
+     "keyName": "KeyI"
+    },
+    {
+     "name": "O",
+     "value": 41,
+     "keyCode": 18,
+     "keyName": "KeyO"
+    },
+    {
+     "name": "P",
+     "value": 42,
+     "keyCode": 19,
+     "keyName": "KeyP"
+    },
+    {
+     "name": "[",
+     "value": 43,
+     "keyCode": 47,
+     "keyName": "BracketLeft"
+    },
+    {
+     "name": "]",
+     "value": 44,
+     "keyCode": 48,
+     "keyName": "BracketRight"
+    },
+    {
+     "name": "PAD7",
+     "value": 45,
+     "keyCode": 95,
+     "keyName": "Numpad7"
+    },
+    {
+     "name": "PAD8",
+     "value": 46,
+     "keyCode": 96,
+     "keyName": "Numpad8"
+    },
+    {
+     "name": "PAD9",
+     "value": 47,
+     "keyCode": 97,
+     "keyName": "Numpad9"
+    },
+    {
+     "name": "CAPS",
+     "value": 48,
+     "keyCode": 57,
+     "keyName": "CapsLock"
+    },
+    {
+     "name": "A",
+     "value": 49,
+     "keyCode": 4,
+     "keyName": "KeyA"
+    },
+    {
+     "name": "S",
+     "value": 50,
+     "keyCode": 22,
+     "keyName": "KeyS"
+    },
+    {
+     "name": "D",
+     "value": 51,
+     "keyCode": 7,
+     "keyName": "KeyD"
+    },
+    {
+     "name": "F",
+     "value": 52,
+     "keyCode": 9,
+     "keyName": "KeyF"
+    },
+    {
+     "name": "G",
+     "value": 53,
+     "keyCode": 10,
+     "keyName": "KeyG"
+    },
+    {
+     "name": "H",
+     "value": 54,
+     "keyCode": 11,
+     "keyName": "KeyH"
+    },
+    {
+     "name": "J",
+     "value": 55,
+     "keyCode": 13,
+     "keyName": "KeyJ"
+    },
+    {
+     "name": "K",
+     "value": 56,
+     "keyCode": 14,
+     "keyName": "KeyK"
+    },
+    {
+     "name": "L",
+     "value": 57,
+     "keyCode": 15,
+     "keyName": "KeyL"
+    },
+    {
+     "name": ";",
+     "value": 58,
+     "keyCode": 51,
+     "keyName": "Semicolon"
+    },
+    {
+     "name": "'",
+     "value": 59,
+     "keyCode": 52,
+     "keyName": "Quote"
+    },
+    {
+     "name": "\\|",
+     "value": 60,
+     "keyCode": 49,
+     "keyName": "Backslash"
+    },
+    {
+     "name": "PAD4",
+     "value": 61,
+     "keyCode": 92,
+     "keyName": "Numpad4"
+    },
+    {
+     "name": "PAD5",
+     "value": 62,
+     "keyCode": 93,
+     "keyName": "Numpad5"
+    },
+    {
+     "name": "PAD6",
+     "value": 63,
+     "keyCode": 94,
+     "keyName": "Numpad6"
+    },
+    {
+     "name": "SHIFT_L",
+     "value": 64,
+     "keyCode": 225,
+     "keyName": "ShiftLeft"
+    },
+    {
+     "name": "Z",
+     "value": 65,
+     "keyCode": 29,
+     "keyName": "KeyZ"
+    },
+    {
+     "name": "X",
+     "value": 66,
+     "keyCode": 27,
+     "keyName": "KeyX"
+    },
+    {
+     "name": "C",
+     "value": 67,
+     "keyCode": 6,
+     "keyName": "KeyC"
+    },
+    {
+     "name": "V",
+     "value": 68,
+     "keyCode": 25,
+     "keyName": "KeyV"
+    },
+    {
+     "name": "B",
+     "value": 69,
+     "keyCode": 5,
+     "keyName": "KeyB"
+    },
+    {
+     "name": "N",
+     "value": 70,
+     "keyCode": 17,
+     "keyName": "KeyN"
+    },
+    {
+     "name": "M",
+     "value": 71,
+     "keyCode": 16,
+     "keyName": "KeyM"
+    },
+    {
+     "name": ",<",
+     "value": 72,
+     "keyCode": 54,
+     "keyName": "Comma"
+    },
+    {
+     "name": ".>",
+     "value": 73,
+     "keyCode": 55,
+     "keyName": "Period"
+    },
+    {
+     "name": "/ ?",
+     "value": 74,
+     "keyCode": 56,
+     "keyName": "Slash"
+    },
+    {
+     "name": "SHIFT_R",
+     "value": 75,
+     "keyCode": 229,
+     "keyName": "ShiftRight"
+    },
+    {
+     "name": "ENTER",
+     "value": 76,
+     "keyCode": 40,
+     "keyName": "Enter"
+    },
+    {
+     "name": "PAD1",
+     "value": 77,
+     "keyCode": 89,
+     "keyName": "Numpad1"
+    },
+    {
+     "name": "PAD2",
+     "value": 78,
+     "keyCode": 90,
+     "keyName": "Numpad2"
+    },
+    {
+     "name": "PAD3",
+     "value": 79,
+     "keyCode": 91,
+     "keyName": "Numpad3"
+    },
+    {
+     "name": "CTRL_L",
+     "value": 80,
+     "keyCode": 224,
+     "keyName": "ControlLeft"
+    },
+    {
+     "name": "WIN_L",
+     "value": 81,
+     "keyCode": 227,
+     "keyName": "MetaLeft"
+    },
+    {
+     "name": "ALT_L",
+     "value": 82,
+     "keyCode": 226,
+     "keyName": "AltLeft"
+    },
+    {
+     "name": "SPACE",
+     "value": 83,
+     "keyCode": 44,
+     "keyName": "Space"
+    },
+    {
+     "name": "ALT_R",
+     "value": 84,
+     "keyCode": 230,
+     "keyName": "AltRight"
+    },
+    {
+     "name": "Fn",
+     "value": 85,
+     "keyCode": "",
+     "keyName": ""
+    },
+    {
+     "name": "APP",
+     "value": 86,
+     "keyCode": 101,
+     "keyName": "ContextMenu"
+    },
+    {
+     "name": "CTRL_R",
+     "value": 87,
+     "keyCode": 228,
+     "keyName": "ControlRight"
+    },
+    {
+     "name": "LEFT",
+     "value": 88,
+     "keyCode": 80,
+     "keyName": "ArrowLeft"
+    },
+    {
+     "name": "DOWN",
+     "value": 89,
+     "keyCode": 81,
+     "keyName": "ArrowDown"
+    },
+    {
+     "name": "UP",
+     "value": 90,
+     "keyCode": 82,
+     "keyName": "ArrowUp"
+    },
+    {
+     "name": "RIGHT",
+     "value": 91,
+     "keyCode": 79,
+     "keyName": "ArrowRight"
+    },
+    {
+     "name": "BACKSPACE",
+     "value": 92,
+     "keyCode": 42,
+     "keyName": "Backspace"
+    },
+    {
+     "name": "PAD0",
+     "value": 93,
+     "keyCode": 98,
+     "keyName": "Numpad0"
+    },
+    {
+     "name": "PAD.",
+     "value": 94,
+     "keyCode": 99,
+     "keyName": "NumpadDecimal"
+    },
+    {
+     "name": "PAD ENTER.",
+     "value": 95,
+     "keyCode": 88,
+     "keyName": "NumpadEnter"
+    },
+    {
+     "name": "CALCU",
+     "value": 96,
+     "keyCode": 402,
+     "keyName": "LaunchApplication2"
+    },
+    {
+     "name": "K42",
+     "value": 97,
+     "keyCode": 50,
+     "keyName": ""
+    },
+    {
+     "name": "K45",
+     "value": 98,
+     "keyCode": 100,
+     "keyName": "IntlBackslash"
+    },
+    {
+     "name": "PRINT",
+     "value": 99,
+     "keyCode": 70,
+     "keyName": "PrintScreen"
+    },
+    {
+     "name": "SCROLL",
+     "value": 100,
+     "keyCode": 71,
+     "keyName": "ScrollLock"
+    },
+    {
+     "name": "WIN_R",
+     "value": 101,
+     "keyCode": 231,
+     "keyName": "MetaRight"
+    },
+    {
+     "name": "PAUSE",
+     "value": 102,
+     "keyCode": 72,
+     "keyName": "Pause"
+    },
+    {
+     "name": "INSERT",
+     "value": 103,
+     "keyCode": 73,
+     "keyName": "Insert"
+    },
+    {
+     "name": "HOME",
+     "value": 104,
+     "keyCode": 74,
+     "keyName": "Home"
+    },
+    {
+     "name": "PAGEUP",
+     "value": 105,
+     "keyCode": 75,
+     "keyName": "PageUp"
+    },
+    {
+     "name": "DELETE",
+     "value": 106,
+     "keyCode": 76,
+     "keyName": "Delete"
+    },
+    {
+     "name": "END",
+     "value": 107,
+     "keyCode": 77,
+     "keyName": "End"
+    },
+    {
+     "name": "PAGEDOWN",
+     "value": 108,
+     "keyCode": 78,
+     "keyName": "PageDown"
+    },
+    {
+     "name": "PAD-",
+     "value": 109,
+     "keyCode": 86,
+     "keyName": "NumpadSubtract"
+    },
+    {
+     "name": "PAD+",
+     "value": 110,
+     "keyCode": 87,
+     "keyName": "NumpadAdd"
+    },
+    {
+     "name": "SWITCH",
+     "value": 111,
+     "keyCode": "",
+     "keyName": ""
+    },
+    {
+     "name": "K107",
+     "value": 112,
+     "keyCode": 133,
+     "keyName": ""
+    },
+    {
+     "name": "K56",
+     "value": 113,
+     "keyCode": 135,
+     "keyName": "IntlRo"
+    },
+    {
+     "name": "K14",
+     "value": 114,
+     "keyCode": 137,
+     "keyName": "IntlYen"
+    },
+    {
+     "name": "K133",
+     "value": 115,
+     "keyCode": 136,
+     "keyName": "KanaMode"
+    },
+    {
+     "name": "K132",
+     "value": 116,
+     "keyCode": 138,
+     "keyName": "Convert"
+    },
+    {
+     "name": "K131",
+     "value": 117,
+     "keyCode": 139,
+     "keyName": "NonConvert"
+    },
+    {
+     "name": "K151",
+     "value": 118,
+     "keyCode": 144,
+     "keyName": ""
+    },
+    {
+     "name": "K150",
+     "value": 119,
+     "keyCode": 145,
+     "keyName": ""
+    },
+    {
+     "name": "F13",
+     "value": 120,
+     "keyCode": "",
+     "keyName": ""
+    }
+   ]
+  },
+  "basicChars": {
+   "local": "iX",
+   "offset": 1874490,
+   "end": 1879844,
+   "desc": "KEYBOARD 页、基础字符（字母/数字/符号），value=HID usage",
+   "count": 50,
+   "entries": [
+    {
+     "name": "A",
+     "value": 4,
+     "page": "KEYBOARD",
+     "jaText": "ちAa",
+     "jaTextBr": "A\nち",
+     "frText": "Q",
+     "huText": "A ä"
+    },
+    {
+     "name": "B",
+     "value": 5,
+     "page": "KEYBOARD",
+     "jaText": "こBb",
+     "jaTextBr": "B\nこ",
+     "huText": "B {"
+    },
+    {
+     "name": "C",
+     "value": 6,
+     "page": "KEYBOARD",
+     "jaText": "そCc",
+     "jaTextBr": "C\nそ",
+     "huText": "C &"
+    },
+    {
+     "name": "D",
+     "value": 7,
+     "page": "KEYBOARD",
+     "jaText": "しDd",
+     "jaTextBr": "D\nし",
+     "huText": "D Đ"
+    },
+    {
+     "name": "E",
+     "value": 8,
+     "page": "KEYBOARD",
+     "deText": "E€",
+     "ptText": "E° €",
+     "jaText": "いぃEe",
+     "jaTextBr": "E ぃ\nい",
+     "frText": "E€",
+     "esText": "E€",
+     "trText": "E€",
+     "huText": "E Ä"
+    },
+    {
+     "name": "F",
+     "value": 9,
+     "page": "KEYBOARD",
+     "jaText": "はFf",
+     "jaTextBr": "F\nは",
+     "huText": "F ["
+    },
+    {
+     "name": "G",
+     "value": 10,
+     "page": "KEYBOARD",
+     "jaText": "きGg",
+     "jaTextBr": "G\nき",
+     "huText": "G ]"
+    },
+    {
+     "name": "H",
+     "value": 11,
+     "page": "KEYBOARD",
+     "jaText": "くHh",
+     "jaTextBr": "H\nく"
+    },
+    {
+     "name": "I",
+     "value": 12,
+     "page": "KEYBOARD",
+     "jaText": "にIi",
+     "jaTextBr": "I\nに",
+     "huText": "I i"
+    },
+    {
+     "name": "J",
+     "value": 13,
+     "page": "KEYBOARD",
+     "jaText": "まJj",
+     "jaTextBr": "J\nま",
+     "huText": "J í"
+    },
+    {
+     "name": "K",
+     "value": 14,
+     "page": "KEYBOARD",
+     "jaText": "のKk",
+     "jaTextBr": "K\nの",
+     "huText": "K Ł"
+    },
+    {
+     "name": "L",
+     "value": 15,
+     "page": "KEYBOARD",
+     "jaText": "りLl",
+     "jaTextBr": "L\nり",
+     "huText": "L Ł"
+    },
+    {
+     "name": "M",
+     "value": 16,
+     "page": "KEYBOARD",
+     "jaText": "もMm",
+     "frText": ",?",
+     "jaTextBr": "M\nも",
+     "deText": "Mµ"
+    },
+    {
+     "name": "N",
+     "value": 17,
+     "page": "KEYBOARD",
+     "jaText": "みNn",
+     "jaTextBr": "N\nみ",
+     "huText": "N }"
+    },
+    {
+     "name": "O",
+     "value": 18,
+     "page": "KEYBOARD",
+     "jaText": "らOo",
+     "jaTextBr": "O\nら"
+    },
+    {
+     "name": "P",
+     "value": 19,
+     "page": "KEYBOARD",
+     "jaText": "せPp",
+     "jaTextBr": "P\nせ"
+    },
+    {
+     "name": "Q",
+     "value": 20,
+     "page": "KEYBOARD",
+     "deText": "Q@",
+     "ptText": "Q /",
+     "jaText": "たQq",
+     "jaTextBr": "Q\nた",
+     "frText": "A",
+     "trText": "Q@",
+     "huText": "Q \\"
+    },
+    {
+     "name": "R",
+     "value": 21,
+     "page": "KEYBOARD",
+     "jaText": "すRr",
+     "jaTextBr": "R\nす"
+    },
+    {
+     "name": "S",
+     "value": 22,
+     "page": "KEYBOARD",
+     "jaText": "とSs",
+     "jaTextBr": "S\nと",
+     "huText": "S đ"
+    },
+    {
+     "name": "T",
+     "value": 23,
+     "page": "KEYBOARD",
+     "jaText": "かTt",
+     "jaTextBr": "T\nか"
+    },
+    {
+     "name": "U",
+     "value": 24,
+     "page": "KEYBOARD",
+     "jaText": "なUu",
+     "huText": "U €",
+     "jaTextBr": "U\nな"
+    },
+    {
+     "name": "V",
+     "value": 25,
+     "page": "KEYBOARD",
+     "jaText": "ひVv",
+     "huText": "V @",
+     "jaTextBr": "V\nひ"
+    },
+    {
+     "name": "W",
+     "value": 26,
+     "page": "KEYBOARD",
+     "ptText": "W ?",
+     "jaText": "てWw",
+     "huText": "W I",
+     "frText": "Z",
+     "jaTextBr": "W\nて"
+    },
+    {
+     "name": "X",
+     "value": 27,
+     "page": "KEYBOARD",
+     "jaText": "さXx",
+     "huText": "X #",
+     "jaTextBr": "X\nさ"
+    },
+    {
+     "name": "Y",
+     "value": 28,
+     "page": "KEYBOARD",
+     "deText": "Z",
+     "jaText": "んYy",
+     "huText": "Z",
+     "jaTextBr": "Y\nん"
+    },
+    {
+     "name": "Z",
+     "value": 29,
+     "page": "KEYBOARD",
+     "deText": "Y",
+     "jaText": "つっZz",
+     "jaTextBr": "Z\nつ",
+     "frText": "W",
+     "esText": "Z",
+     "huText": "Y >"
+    },
+    {
+     "name": "1 !",
+     "value": 30,
+     "page": "KEYBOARD",
+     "deText": "1 !",
+     "ptText": "1! ¹",
+     "jaText": "ぬ1!",
+     "jaTextBr": "！\n1 ぬ",
+     "frText": "1&",
+     "esText": "1!|",
+     "trText": "!1>",
+     "huText": "1~ '"
+    },
+    {
+     "name": "2 @",
+     "value": 31,
+     "page": "KEYBOARD",
+     "deText": "2²\"",
+     "ptText": "2\" ²",
+     "jaText": "ふ2\"",
+     "jaTextBr": "“\n2 ふ",
+     "frText": "2é~",
+     "esText": "2\"@",
+     "trText": "'2£",
+     "huText": "2 ˇ \""
+    },
+    {
+     "name": "3 #",
+     "value": 32,
+     "page": "KEYBOARD",
+     "deText": "3³§",
+     "ptText": "3# ³",
+     "frText": "3\"#",
+     "esText": "3#·",
+     "trText": "^3#",
+     "huText": "3 ^ +",
+     "jaText": "あぁ3#",
+     "jaTextBr": "#　ぁ\n3 あ"
+    },
+    {
+     "name": "4 $",
+     "value": 33,
+     "page": "KEYBOARD",
+     "deText": "4 $",
+     "ptText": "4$£",
+     "frText": "4'{",
+     "esText": "4$~",
+     "trText": "+4$",
+     "huText": "4 ˘ !",
+     "jaText": "うぅ4$",
+     "jaTextBr": "$　ぅ\n4 う"
+    },
+    {
+     "name": "5 %",
+     "value": 34,
+     "page": "KEYBOARD",
+     "deText": "5 %",
+     "ptText": "5%¢",
+     "frText": "5([",
+     "esText": "5%",
+     "trText": "%5½",
+     "huText": "5 ° %",
+     "jaText": "えぇ5%",
+     "jaTextBr": "%　ぇ \n5 え"
+    },
+    {
+     "name": "6 ^",
+     "value": 35,
+     "page": "KEYBOARD",
+     "deText": "6 &",
+     "ptText": "6^ ¬",
+     "frText": "6-|",
+     "esText": "6^¬",
+     "trText": "&6",
+     "huText": "6 ˛ /",
+     "jaText": "おぉ6&",
+     "jaTextBr": "&  ぉ\n6 お"
+    },
+    {
+     "name": "7 &",
+     "value": 36,
+     "page": "KEYBOARD",
+     "deText": "7{/",
+     "jaText": "やゃ7'",
+     "jaTextBr": "❛　ゃ\n7 や",
+     "frText": "7è`",
+     "esText": "7/",
+     "trText": "/7{",
+     "huText": "7 ` ="
+    },
+    {
+     "name": "8 *",
+     "value": 37,
+     "page": "KEYBOARD",
+     "deText": "8[(",
+     "jaText": "ゆゅ8(",
+     "jaTextBr": "(　ゅ\n8 ゆ",
+     "frText": "8_\\",
+     "esText": "8(",
+     "trText": "(8[",
+     "huText": "8 ˙ ("
+    },
+    {
+     "name": "9 (",
+     "value": 38,
+     "page": "KEYBOARD",
+     "deText": "9])",
+     "jaText": "よょ9)",
+     "jaTextBr": ") 　ょ\n9 よ",
+     "frText": "9ç^",
+     "esText": "9)",
+     "trText": ")9]",
+     "huText": "9 ´ )"
+    },
+    {
+     "name": "0 )",
+     "value": 39,
+     "page": "KEYBOARD",
+     "deText": "0}=",
+     "jaText": "わを0",
+     "jaTextBr": "  を\n0　わ",
+     "frText": "0à@",
+     "esText": "0=",
+     "trText": "=0}",
+     "huText": "ö ˝"
+    },
+    {
+     "name": "ˉ -",
+     "value": 45,
+     "page": "KEYBOARD",
+     "deText": "ß?\\",
+     "jaText": "ほ-=",
+     "jaTextBr": "=\n-  ほ",
+     "frText": "°)]",
+     "esText": "'?",
+     "trText": "*?\\",
+     "huText": "ü ¨"
+    },
+    {
+     "name": "= +",
+     "value": 46,
+     "page": "KEYBOARD",
+     "deText": "´`",
+     "ptText": "=+ §",
+     "jaText": "へ^~",
+     "jaTextBr": "～\n＾  へ",
+     "frText": "=+}",
+     "esText": "¡¿",
+     "trText": "_-|",
+     "huText": "ó ¸"
+    },
+    {
+     "name": "[ {",
+     "value": 47,
+     "page": "KEYBOARD",
+     "deText": "Ü",
+     "ptText": "´ `",
+     "jaText": "゛@`",
+     "jaTextBr": "`\n@ \"",
+     "frText": "^¨",
+     "esText": "`[^",
+     "trText": "Ğ ¨",
+     "huText": "Ö ÷"
+    },
+    {
+     "name": "] }",
+     "value": 48,
+     "page": "KEYBOARD",
+     "deText": "+~*",
+     "ptText": "[ { ª",
+     "jaText": "゜「[{",
+     "jaTextBr": "{  [\n「  °",
+     "frText": "$£¤",
+     "esText": "+*]",
+     "trText": "Ü ~",
+     "huText": "Ú ×"
+    },
+    {
+     "name": "\\ |",
+     "value": 49,
+     "page": "KEYBOARD",
+     "deText": "#'",
+     "ptText": "] } º"
+    },
+    {
+     "name": "; :",
+     "value": 51,
+     "page": "KEYBOARD",
+     "deText": "Ö",
+     "ptText": "Ç",
+     "jaText": "れ;+",
+     "jaTextBr": "+\n; れ",
+     "frText": "M",
+     "esText": "Ñ",
+     "trText": "Ş ´",
+     "huText": "É $"
+    },
+    {
+     "name": "' \"",
+     "value": 52,
+     "page": "KEYBOARD",
+     "deText": "Ä",
+     "ptText": "~ ^",
+     "jaText": "け:*",
+     "jaTextBr": "*\n：け",
+     "frText": "ù%",
+     "esText": "´´{¨",
+     "trText": "İ",
+     "huText": "Á ß",
+     "GbText": "' @"
+    },
+    {
+     "name": "` ~",
+     "value": 53,
+     "page": "KEYBOARD",
+     "deText": "^°",
+     "jaText": "E/J",
+     "jaTextBr": "E/J",
+     "frText": "²",
+     "esText": "º\\ª",
+     "huText": "0 §",
+     "GbText": "`¬"
+    },
+    {
+     "name": ",<",
+     "value": 54,
+     "page": "KEYBOARD",
+     "deText": ",;",
+     "jaText": "ね、,<",
+     "jaTextBr": "<　、\n，ね",
+     "frText": ";.",
+     "esText": ",;",
+     "trText": "Ö",
+     "huText": "? , ;"
+    },
+    {
+     "name": ".>",
+     "value": 55,
+     "page": "KEYBOARD",
+     "deText": ".:'",
+     "jaText": "る。.>",
+     "jaTextBr": ">　。\n．る",
+     "frText": ":/",
+     "esText": ".:",
+     "trText": "Ç",
+     "huText": ": ."
+    },
+    {
+     "name": "/?",
+     "value": 56,
+     "page": "KEYBOARD",
+     "deText": "-_",
+     "ptText": "; :",
+     "jaText": "め・/?",
+     "jaTextBr": "? ・\n/ め",
+     "frText": "!§",
+     "esText": "-_",
+     "trText": ":.",
+     "huText": "-_  *"
+    },
+    {
+     "name": "\\",
+     "value": 100,
+     "page": "KEYBOARD",
+     "deText": "<|>",
+     "ptText": "|",
+     "frText": "><",
+     "esText": "<|>",
+     "trText": "><|",
+     "huText": "Í <",
+     "GbText": "| \\"
+    },
+    {
+     "name": "\\",
+     "value": 50,
+     "page": "KEYBOARD",
+     "jaText": "む」]}",
+     "jaTextBr": "}　」\n]　む",
+     "deText": "#'",
+     "esText": "Ç}",
+     "frText": "*µ",
+     "huText": "Ü ¤",
+     "GbText": "# ~"
+    },
+    {
+     "name": "Fn",
+     "value": 175,
+     "page": "KEYBOARD"
+    }
+   ]
+  },
+  "extendChars": {
+   "local": "aX",
+   "offset": 1879846,
+   "end": 1882521,
+   "desc": "KEYBOARD 页、扩展键（功能键/方向/小键盘/修饰键），value=HID usage；修饰键带 param1=修饰位图",
+   "count": 57,
+   "entries": [
+    {
+     "name": "Esc",
+     "value": 41,
+     "page": "KEYBOARD",
+     "frText": "Echap"
+    },
+    {
+     "name": "Tab",
+     "value": 43,
+     "page": "KEYBOARD"
+    },
+    {
+     "name": "Caps",
+     "value": 57,
+     "page": "KEYBOARD"
+    },
+    {
+     "name": "Backspace",
+     "value": 42,
+     "page": "KEYBOARD"
+    },
+    {
+     "name": "Enter",
+     "value": 40,
+     "page": "KEYBOARD"
+    },
+    {
+     "name": "Space Bar",
+     "value": 44,
+     "page": "KEYBOARD"
+    },
+    {
+     "name": "L-Ctrl",
+     "value": 224,
+     "param1": 1,
+     "page": "KEYBOARD",
+     "deText": "Strg"
+    },
+    {
+     "name": "R-Ctrl",
+     "value": 228,
+     "param1": 16,
+     "page": "KEYBOARD",
+     "deText": "Strg"
+    },
+    {
+     "name": "L-Shift",
+     "value": 225,
+     "param1": 2,
+     "page": "KEYBOARD"
+    },
+    {
+     "name": "R-Shift",
+     "value": 229,
+     "param1": 32,
+     "page": "KEYBOARD"
+    },
+    {
+     "name": "L-Alt",
+     "value": 226,
+     "param1": 4,
+     "page": "KEYBOARD"
+    },
+    {
+     "name": "R-Alt",
+     "value": 230,
+     "param1": 64,
+     "page": "KEYBOARD",
+     "deText": "AltGr",
+     "ptText": "AltGr",
+     "frText": "AltGr",
+     "esText": "AltGr",
+     "trText": "AltGr",
+     "huText": "AltGr",
+     "GbText": "AltGr"
+    },
+    {
+     "name": "L-Win",
+     "value": 227,
+     "param1": 8,
+     "page": "KEYBOARD"
+    },
+    {
+     "name": "Super",
+     "value": 101,
+     "page": "KEYBOARD",
+     "deText": "Menu",
+     "ptText": "Menu",
+     "GbText": "Menu"
+    },
+    {
+     "name": "↑",
+     "value": 82,
+     "page": "KEYBOARD"
+    },
+    {
+     "name": "↓",
+     "value": 81,
+     "page": "KEYBOARD"
+    },
+    {
+     "name": "→",
+     "value": 79,
+     "page": "KEYBOARD"
+    },
+    {
+     "name": "←",
+     "value": 80,
+     "page": "KEYBOARD"
+    },
+    {
+     "name": "Home",
+     "value": 74,
+     "page": "KEYBOARD",
+     "deText": "Pos1"
+    },
+    {
+     "name": "End",
+     "value": 77,
+     "page": "KEYBOARD",
+     "deText": "Ende",
+     "frText": "Fin"
+    },
+    {
+     "name": "Ins",
+     "value": 73,
+     "page": "KEYBOARD"
+    },
+    {
+     "name": "Del",
+     "value": 76,
+     "page": "KEYBOARD",
+     "deText": "Entf",
+     "frText": "Suppr",
+     "esText": "Sup"
+    },
+    {
+     "name": "PgUp",
+     "value": 75,
+     "page": "KEYBOARD",
+     "deText": "Bild↑",
+     "frText": "Pgpr"
+    },
+    {
+     "name": "PgDn",
+     "value": 78,
+     "page": "KEYBOARD",
+     "deText": "Bild↓",
+     "frText": "Pgsv"
+    },
+    {
+     "name": "Print",
+     "value": 70,
+     "page": "KEYBOARD",
+     "deText": "Druck"
+    },
+    {
+     "name": "Scroll",
+     "value": 71,
+     "page": "KEYBOARD",
+     "deText": "Rollen"
+    },
+    {
+     "name": "Pause",
+     "value": 72,
+     "page": "KEYBOARD"
+    },
+    {
+     "name": "F1",
+     "value": 58,
+     "page": "KEYBOARD"
+    },
+    {
+     "name": "F2",
+     "value": 59,
+     "page": "KEYBOARD"
+    },
+    {
+     "name": "F3",
+     "value": 60,
+     "page": "KEYBOARD"
+    },
+    {
+     "name": "F4",
+     "value": 61,
+     "page": "KEYBOARD"
+    },
+    {
+     "name": "F5",
+     "value": 62,
+     "page": "KEYBOARD"
+    },
+    {
+     "name": "F6",
+     "value": 63,
+     "page": "KEYBOARD"
+    },
+    {
+     "name": "F7",
+     "value": 64,
+     "page": "KEYBOARD"
+    },
+    {
+     "name": "F8",
+     "value": 65,
+     "page": "KEYBOARD"
+    },
+    {
+     "name": "F9",
+     "value": 66,
+     "page": "KEYBOARD"
+    },
+    {
+     "name": "F10",
+     "value": 67,
+     "page": "KEYBOARD"
+    },
+    {
+     "name": "F11",
+     "value": 68,
+     "page": "KEYBOARD"
+    },
+    {
+     "name": "F12",
+     "value": 69,
+     "page": "KEYBOARD"
+    },
+    {
+     "name": "Num Lock",
+     "value": 83,
+     "page": "KEYBOARD"
+    },
+    {
+     "name": "Num 1",
+     "value": 89,
+     "page": "KEYBOARD"
+    },
+    {
+     "name": "Num 2",
+     "value": 90,
+     "page": "KEYBOARD"
+    },
+    {
+     "name": "Num 3",
+     "value": 91,
+     "page": "KEYBOARD"
+    },
+    {
+     "name": "Num 4",
+     "value": 92,
+     "page": "KEYBOARD"
+    },
+    {
+     "name": "Num 5",
+     "value": 93,
+     "page": "KEYBOARD"
+    },
+    {
+     "name": "Num 6",
+     "value": 94,
+     "page": "KEYBOARD"
+    },
+    {
+     "name": "Num 7",
+     "value": 95,
+     "page": "KEYBOARD"
+    },
+    {
+     "name": "Num 8",
+     "value": 96,
+     "page": "KEYBOARD"
+    },
+    {
+     "name": "Num 9",
+     "value": 97,
+     "page": "KEYBOARD"
+    },
+    {
+     "name": "Num 0",
+     "value": 98,
+     "page": "KEYBOARD"
+    },
+    {
+     "name": "Num /",
+     "value": 84,
+     "page": "KEYBOARD"
+    },
+    {
+     "name": "Num .",
+     "value": 99,
+     "page": "KEYBOARD"
+    },
+    {
+     "name": "Num *",
+     "value": 85,
+     "page": "KEYBOARD"
+    },
+    {
+     "name": "Num -",
+     "value": 86,
+     "page": "KEYBOARD"
+    },
+    {
+     "name": "Num +",
+     "value": 87,
+     "page": "KEYBOARD"
+    },
+    {
+     "name": "Num Enter",
+     "value": 88,
+     "page": "KEYBOARD"
+    },
+    {
+     "name": "⊠",
+     "value": 111,
+     "page": "KEYBOARD"
+    }
+   ]
+  },
+  "jaExtendChars": {
+   "local": "cX",
+   "offset": 1900008,
+   "end": 1900258,
+   "desc": "KEYBOARD 页、日语键盘专用，value=HID usage",
+   "count": 5,
+   "entries": [
+    {
+     "name": "ー¥|",
+     "value": 137,
+     "page": "KEYBOARD",
+     "jaTextBr": "｜\n¥ －"
+    },
+    {
+     "name": "ろ\\_",
+     "value": 135,
+     "page": "KEYBOARD",
+     "jaTextBr": "_\n \\ろ"
+    },
+    {
+     "name": "無変換",
+     "value": 139,
+     "page": "KEYBOARD"
+    },
+    {
+     "name": "変換",
+     "value": 138,
+     "page": "KEYBOARD"
+    },
+    {
+     "name": "kana",
+     "value": 136,
+     "page": "KEYBOARD",
+     "jaTextBr": "KANA"
+    }
+   ]
+  },
+  "specialChars": {
+   "local": "oX",
+   "offset": 1882523,
+   "end": 1884053,
+   "desc": "MOUSE(7) + CONSUMER_KEY(17)，value=HID usage 或鼠标动作码，带 param1 区分鼠标子类型",
+   "count": 24,
+   "entries": [
+    {
+     "name": "鼠标左键",
+     "value": 1,
+     "param1": 1,
+     "text": "mouse_text1",
+     "page": "MOUSE"
+    },
+    {
+     "name": "鼠标中键",
+     "value": 4,
+     "param1": 1,
+     "text": "mouse_text2",
+     "page": "MOUSE"
+    },
+    {
+     "name": "鼠标右键",
+     "value": 2,
+     "param1": 1,
+     "text": "mouse_text3",
+     "page": "MOUSE"
+    },
+    {
+     "name": "鼠标向上滚动",
+     "value": 1,
+     "param1": 3,
+     "text": "mouse_text4",
+     "page": "MOUSE"
+    },
+    {
+     "name": "鼠标向下滚动",
+     "value": 255,
+     "param1": 3,
+     "text": "mouse_text5",
+     "page": "MOUSE"
+    },
+    {
+     "name": "鼠标前进键",
+     "value": 16,
+     "param1": 1,
+     "text": "mouse_text6",
+     "page": "MOUSE"
+    },
+    {
+     "name": "鼠标后退键",
+     "value": 8,
+     "param1": 1,
+     "text": "mouse_text7",
+     "page": "MOUSE"
+    },
+    {
+     "name": "我的电脑",
+     "value": 404,
+     "page": "CONSUMER_KEY",
+     "text": "medium_text1"
+    },
+    {
+     "name": "计算器",
+     "value": 402,
+     "page": "CONSUMER_KEY",
+     "text": "medium_text2"
+    },
+    {
+     "name": "邮箱",
+     "value": 394,
+     "page": "CONSUMER_KEY",
+     "text": "medium_text3"
+    },
+    {
+     "name": "多媒体",
+     "value": 387,
+     "page": "CONSUMER_KEY",
+     "text": "medium_text4"
+    },
+    {
+     "name": "播放/暂停",
+     "value": 205,
+     "page": "CONSUMER_KEY",
+     "text": "medium_text5"
+    },
+    {
+     "name": "播放停止",
+     "value": 183,
+     "page": "CONSUMER_KEY",
+     "text": "medium_text6"
+    },
+    {
+     "name": "上一首",
+     "value": 182,
+     "page": "CONSUMER_KEY",
+     "text": "medium_text7"
+    },
+    {
+     "name": "下一首",
+     "value": 181,
+     "page": "CONSUMER_KEY",
+     "text": "medium_text8"
+    },
+    {
+     "name": "音量 +",
+     "value": 233,
+     "page": "CONSUMER_KEY",
+     "text": "medium_text9"
+    },
+    {
+     "name": "音量 -",
+     "value": 234,
+     "page": "CONSUMER_KEY",
+     "text": "medium_text10"
+    },
+    {
+     "name": "静音",
+     "value": 226,
+     "page": "CONSUMER_KEY",
+     "text": "medium_text11"
+    },
+    {
+     "name": "主页",
+     "value": 547,
+     "page": "CONSUMER_KEY",
+     "text": "medium_text12"
+    },
+    {
+     "name": "刷新",
+     "value": 551,
+     "page": "CONSUMER_KEY",
+     "text": "medium_text13"
+    },
+    {
+     "name": "前进",
+     "value": 549,
+     "page": "CONSUMER_KEY",
+     "text": "medium_text14"
+    },
+    {
+     "name": "后退",
+     "value": 548,
+     "page": "CONSUMER_KEY",
+     "text": "medium_text15"
+    },
+    {
+     "name": "收藏",
+     "value": 554,
+     "page": "CONSUMER_KEY",
+     "text": "medium_text16"
+    },
+    {
+     "name": "搜索",
+     "value": 545,
+     "page": "CONSUMER_KEY",
+     "text": "medium_text17"
+    }
+   ]
+  },
+  "funcChars": {
+   "local": "sX",
+   "offset": 1884055,
+   "end": 1900006,
+   "desc": "FUNC 页（pageType=13），value=24 位固件功能 id",
+   "count": 292,
+   "entries": [
+    {
+     "name": "恢复出厂设置",
+     "value": 1,
+     "text": "fun_text1",
+     "page": "FUNC"
+    },
+    {
+     "name": "蓝牙通道1",
+     "value": 2,
+     "text": "fun_text2",
+     "page": "FUNC"
+    },
+    {
+     "name": "蓝牙通道2",
+     "value": 3,
+     "text": "fun_text3",
+     "page": "FUNC"
+    },
+    {
+     "name": "蓝牙通道3",
+     "value": 4,
+     "text": "fun_text4",
+     "page": "FUNC"
+    },
+    {
+     "name": "无线回连",
+     "value": 5,
+     "text": "fun_text5",
+     "page": "FUNC"
+    },
+    {
+     "name": "F区转换",
+     "value": 6,
+     "text": "fun_text6",
+     "page": "FUNC"
+    },
+    {
+     "name": "查询电量",
+     "value": 7,
+     "text": "fun_text7",
+     "page": "FUNC"
+    },
+    {
+     "name": "WIN",
+     "value": 8,
+     "page": "FUNC"
+    },
+    {
+     "name": "MAC",
+     "value": 9,
+     "page": "FUNC"
+    },
+    {
+     "name": "ANDROID",
+     "value": 10,
+     "page": "FUNC"
+    },
+    {
+     "name": "灯光效果切换",
+     "value": 11,
+     "text": "fun_text8",
+     "page": "FUNC"
+    },
+    {
+     "name": "灯光颜色切换",
+     "value": 12,
+     "text": "fun_text9",
+     "page": "FUNC"
+    },
+    {
+     "name": "灯光亮度+",
+     "value": 13,
+     "text": "fun_text10",
+     "page": "FUNC"
+    },
+    {
+     "name": "灯光亮度-",
+     "value": 14,
+     "text": "fun_text11",
+     "page": "FUNC"
+    },
+    {
+     "name": "灯光速度+",
+     "value": 15,
+     "text": "fun_text12",
+     "page": "FUNC"
+    },
+    {
+     "name": "灯光速度-",
+     "value": 16,
+     "text": "fun_text13",
+     "page": "FUNC"
+    },
+    {
+     "name": "关闭灯光",
+     "value": 17,
+     "text": "fun_text14",
+     "page": "FUNC"
+    },
+    {
+     "name": "ALT + TAB",
+     "value": 18,
+     "page": "FUNC"
+    },
+    {
+     "name": "WIN + E",
+     "value": 19,
+     "page": "FUNC"
+    },
+    {
+     "name": "WIN + TAB",
+     "value": 20,
+     "page": "FUNC"
+    },
+    {
+     "name": "WIN + H",
+     "value": 21,
+     "page": "FUNC"
+    },
+    {
+     "name": "锁定Win",
+     "value": 22,
+     "text": "fun_text15",
+     "page": "FUNC"
+    },
+    {
+     "name": "侧灯效果切换",
+     "value": 23,
+     "text": "fun_text16",
+     "page": "FUNC"
+    },
+    {
+     "name": "侧灯颜色切换",
+     "value": 24,
+     "text": "fun_text17",
+     "page": "FUNC"
+    },
+    {
+     "name": "侧灯亮度调节",
+     "value": 25,
+     "text": "fun_text18",
+     "page": "FUNC"
+    },
+    {
+     "name": "侧灯速度调节",
+     "value": 26,
+     "text": "fun_text19",
+     "page": "FUNC"
+    },
+    {
+     "name": "正面灯条效果切换",
+     "value": 27,
+     "text": "fun_text20",
+     "page": "FUNC"
+    },
+    {
+     "name": "正面灯条速度调节",
+     "value": 28,
+     "text": "fun_text21",
+     "page": "FUNC"
+    },
+    {
+     "name": "正面灯条颜色切换",
+     "value": 29,
+     "text": "fun_text22",
+     "page": "FUNC"
+    },
+    {
+     "name": "Ctrl + UP",
+     "value": 30,
+     "page": "FUNC"
+    },
+    {
+     "name": "USB模式",
+     "value": 31,
+     "text": "fun_text23",
+     "page": "FUNC"
+    },
+    {
+     "name": "灯效方向",
+     "value": 32,
+     "text": "fun_text24",
+     "page": "FUNC"
+    },
+    {
+     "name": "ALT + ESC",
+     "value": 33,
+     "page": "FUNC"
+    },
+    {
+     "name": "SHIFT + GAT",
+     "value": 34,
+     "page": "FUNC"
+    },
+    {
+     "name": "屏幕左切",
+     "value": 35,
+     "text": "fun_text25",
+     "page": "FUNC"
+    },
+    {
+     "name": "屏幕右切",
+     "value": 36,
+     "text": "fun_text26",
+     "page": "FUNC"
+    },
+    {
+     "name": "屏幕确认",
+     "value": 37,
+     "text": "fun_text27",
+     "page": "FUNC"
+    },
+    {
+     "name": "测试灯光",
+     "value": 38,
+     "text": "fun_text28",
+     "page": "FUNC"
+    },
+    {
+     "name": "关闭屏幕",
+     "value": 39,
+     "text": "fun_text29",
+     "page": "FUNC"
+    },
+    {
+     "name": "点阵屏灯效切换",
+     "value": 40,
+     "text": "fun_text30",
+     "page": "FUNC"
+    },
+    {
+     "name": "点阵屏亮度+",
+     "value": 41,
+     "text": "fun_text31",
+     "page": "FUNC"
+    },
+    {
+     "name": "点阵屏亮度-",
+     "value": 42,
+     "text": "fun_text32",
+     "page": "FUNC"
+    },
+    {
+     "name": "点阵屏速度-",
+     "value": 43,
+     "text": "fun_text33",
+     "page": "FUNC"
+    },
+    {
+     "name": "点阵屏速度+",
+     "value": 44,
+     "text": "fun_text34",
+     "page": "FUNC"
+    },
+    {
+     "name": "单键全键无线唤醒开关",
+     "value": 45,
+     "text": "fun_text35",
+     "page": "FUNC"
+    },
+    {
+     "name": "旋钮模式切换",
+     "value": 46,
+     "text": "fun_text36",
+     "page": "FUNC"
+    },
+    {
+     "name": "WIN + X",
+     "value": 47,
+     "page": "FUNC"
+    },
+    {
+     "name": "CTRL_CAP调换",
+     "value": 48,
+     "text": "fun_text37",
+     "page": "FUNC"
+    },
+    {
+     "name": "屏蔽/打开驱动设置",
+     "value": 49,
+     "text": "fun_text38",
+     "page": "FUNC"
+    },
+    {
+     "name": "CTRL+下",
+     "value": 50,
+     "text": "fun_text39",
+     "page": "FUNC"
+    },
+    {
+     "name": "灯光效果正向切换",
+     "value": 51,
+     "text": "fun_text40",
+     "page": "FUNC"
+    },
+    {
+     "name": "灯光效果反向切换",
+     "value": 52,
+     "text": "fun_text41",
+     "page": "FUNC"
+    },
+    {
+     "name": "WIN + D",
+     "value": 53,
+     "page": "FUNC"
+    },
+    {
+     "name": "拾音灯颜色切换",
+     "value": 54,
+     "text": "fun_text42",
+     "page": "FUNC"
+    },
+    {
+     "name": "拾音灯模式切换",
+     "value": 55,
+     "text": "fun_text43",
+     "page": "FUNC"
+    },
+    {
+     "name": "拾音灯开关",
+     "value": 56,
+     "text": "fun_text44",
+     "page": "FUNC"
+    },
+    {
+     "name": "Home",
+     "value": 57,
+     "page": "FUNC"
+    },
+    {
+     "name": "IOS",
+     "value": 58,
+     "page": "FUNC"
+    },
+    {
+     "name": "点阵屏测试模式",
+     "value": 59,
+     "text": "fun_text45",
+     "page": "FUNC"
+    },
+    {
+     "name": "点阵屏测试颜色",
+     "value": 60,
+     "text": "fun_text46",
+     "page": "FUNC"
+    },
+    {
+     "name": "正面灯条亮度切换",
+     "value": 61,
+     "text": "fun_text47",
+     "page": "FUNC"
+    },
+    {
+     "name": "点阵屏开关",
+     "value": 62,
+     "text": "fun_text48",
+     "page": "FUNC"
+    },
+    {
+     "name": "GIF模式",
+     "value": 63,
+     "text": "fun_text49",
+     "page": "FUNC"
+    },
+    {
+     "name": "正面灯条速度+",
+     "value": 64,
+     "text": "fun_text50",
+     "page": "FUNC"
+    },
+    {
+     "name": "正面灯条速度-",
+     "value": 65,
+     "text": "fun_text51",
+     "page": "FUNC"
+    },
+    {
+     "name": "正面灯条亮度+",
+     "value": 66,
+     "text": "fun_text52",
+     "page": "FUNC"
+    },
+    {
+     "name": "正面灯条亮度-",
+     "value": 67,
+     "text": "fun_text53",
+     "page": "FUNC"
+    },
+    {
+     "name": "屏蔽/开启按键宏",
+     "value": 68,
+     "text": "fun_text54",
+     "page": "FUNC"
+    },
+    {
+     "name": "蓝牙通道4",
+     "value": 69,
+     "text": "fun_text55",
+     "page": "FUNC"
+    },
+    {
+     "name": "蓝牙通道5",
+     "value": 70,
+     "text": "fun_text56",
+     "page": "FUNC"
+    },
+    {
+     "name": "自定义灯光1",
+     "value": 71,
+     "text": "fun_text57",
+     "page": "FUNC"
+    },
+    {
+     "name": "自定义灯光2",
+     "value": 72,
+     "text": "fun_text58",
+     "page": "FUNC"
+    },
+    {
+     "name": "开启/关闭极致省电",
+     "value": 73,
+     "text": "fun_text59",
+     "page": "FUNC"
+    },
+    {
+     "name": "侧灯色块颜色",
+     "value": 74,
+     "text": "fun_text60",
+     "page": "FUNC"
+    },
+    {
+     "name": "打开驱动",
+     "value": 75,
+     "text": "fun_text61",
+     "page": "FUNC"
+    },
+    {
+     "name": "RT精度切换",
+     "value": 76,
+     "text": "fun_text62",
+     "page": "FUNC"
+    },
+    {
+     "name": "灯效上下灯位开关",
+     "value": 77,
+     "text": "fun_text63",
+     "page": "FUNC"
+    },
+    {
+     "name": "切换灯效方向",
+     "value": 78,
+     "text": "fun_text64",
+     "page": "FUNC"
+    },
+    {
+     "name": "方向键转换",
+     "value": 79,
+     "text": "fun_text65",
+     "page": "FUNC"
+    },
+    {
+     "name": "背光亮度循环切换",
+     "value": 80,
+     "text": "fun_text66",
+     "page": "FUNC"
+    },
+    {
+     "name": "背光速度循环切换",
+     "value": 81,
+     "text": "fun_text67",
+     "page": "FUNC"
+    },
+    {
+     "name": "切换USB模式",
+     "value": 82,
+     "text": "fun_text68",
+     "page": "FUNC"
+    },
+    {
+     "name": "关闭侧灯",
+     "value": 83,
+     "text": "fun_text69",
+     "page": "FUNC"
+    },
+    {
+     "name": "显示屏语言切换为汉语",
+     "value": 84,
+     "text": "fun_text70",
+     "page": "FUNC"
+    },
+    {
+     "name": "显示屏语言切换为英语",
+     "value": 85,
+     "text": "fun_text71",
+     "page": "FUNC"
+    },
+    {
+     "name": "CTRL + SPACEBAR",
+     "value": 86,
+     "page": "FUNC"
+    },
+    {
+     "name": "侧灯RT深度灯效",
+     "value": 87,
+     "text": "fun_text72",
+     "page": "FUNC"
+    },
+    {
+     "name": "WIN + SPACEBAR",
+     "value": 88,
+     "page": "FUNC"
+    },
+    {
+     "name": "LOGO LED ON/OFF",
+     "value": 89,
+     "page": "FUNC"
+    },
+    {
+     "name": "切换点阵屏颜色",
+     "value": 90,
+     "text": "fun_text73",
+     "page": "FUNC"
+    },
+    {
+     "name": "灯条叠加模式",
+     "value": 91,
+     "text": "fun_text74",
+     "page": "FUNC"
+    },
+    {
+     "name": "ALT + SPACEBAR",
+     "value": 92,
+     "page": "FUNC"
+    },
+    {
+     "name": "一键白光",
+     "value": 93,
+     "text": "fun_text75",
+     "page": "FUNC"
+    },
+    {
+     "name": "截屏WIN+SHF+S",
+     "value": 94,
+     "text": "fun_text76",
+     "page": "FUNC"
+    },
+    {
+     "name": "开启/关闭APM计数",
+     "value": 95,
+     "text": "fun_text77",
+     "page": "FUNC"
+    },
+    {
+     "name": "开启/关闭极致省电",
+     "value": 96,
+     "text": "fun_text78",
+     "page": "FUNC"
+    },
+    {
+     "name": "一键进入动图",
+     "value": 97,
+     "text": "fun_text79",
+     "page": "FUNC"
+    },
+    {
+     "name": "自定义灯光3",
+     "value": 98,
+     "text": "fun_text80",
+     "page": "FUNC"
+    },
+    {
+     "name": "自定义灯光录制",
+     "value": 99,
+     "text": "fun_text81",
+     "page": "FUNC"
+    },
+    {
+     "name": "LOGO灯切换",
+     "value": 100,
+     "text": "fun_text82",
+     "page": "FUNC"
+    },
+    {
+     "name": "8K数据测试",
+     "value": 101,
+     "text": "fun_text83",
+     "page": "FUNC"
+    },
+    {
+     "name": "SOCD功能开关",
+     "value": 102,
+     "text": "fun_text84",
+     "page": "FUNC"
+    },
+    {
+     "name": "灯光效果复位",
+     "value": 103,
+     "text": "fun_text85",
+     "page": "FUNC"
+    },
+    {
+     "name": "主灯效/侧灯效亮度加",
+     "value": 104,
+     "text": "fun_text86",
+     "page": "FUNC"
+    },
+    {
+     "name": "主灯效/侧灯效亮度减",
+     "value": 105,
+     "text": "fun_text87",
+     "page": "FUNC"
+    },
+    {
+     "name": "主灯效/侧灯效速度加",
+     "value": 106,
+     "text": "fun_text88",
+     "page": "FUNC"
+    },
+    {
+     "name": "主灯效/侧灯效速度减",
+     "value": 107,
+     "text": "fun_text89",
+     "page": "FUNC"
+    },
+    {
+     "name": "频点测试",
+     "value": 108,
+     "text": "fun_text90",
+     "page": "FUNC"
+    },
+    {
+     "name": "WIN->MAC来回切换",
+     "value": 109,
+     "text": "fun_text91",
+     "page": "FUNC"
+    },
+    {
+     "name": "侧灯亮度+",
+     "value": 110,
+     "text": "fun_text92",
+     "page": "FUNC"
+    },
+    {
+     "name": "侧灯亮度-",
+     "value": 111,
+     "text": "fun_text93",
+     "page": "FUNC"
+    },
+    {
+     "name": "HOME->END",
+     "value": 112,
+     "page": "FUNC"
+    },
+    {
+     "name": "进入测试模式",
+     "value": 113,
+     "text": "fun_text94",
+     "page": "FUNC"
+    },
+    {
+     "name": "ALT_转换",
+     "value": 114,
+     "text": "fun_text95",
+     "page": "FUNC"
+    },
+    {
+     "name": "ENT_方向转换",
+     "value": 115,
+     "text": "fun_text96",
+     "page": "FUNC"
+    },
+    {
+     "name": "WASD切换为方向键",
+     "value": 116,
+     "text": "fun_text97",
+     "page": "FUNC"
+    },
+    {
+     "name": "DELETE->HOME",
+     "value": 117,
+     "page": "FUNC"
+    },
+    {
+     "name": "END->INSERT",
+     "value": 118,
+     "page": "FUNC"
+    },
+    {
+     "name": "PAGEUP->PRINT",
+     "value": 119,
+     "page": "FUNC"
+    },
+    {
+     "name": "PAGEDOWN->PAUSE",
+     "value": 120,
+     "page": "FUNC"
+    },
+    {
+     "name": "游戏模式切换",
+     "value": 121,
+     "text": "fun_text98",
+     "page": "FUNC"
+    },
+    {
+     "name": "灯箱亮度+",
+     "value": 122,
+     "text": "fun_text99",
+     "page": "FUNC"
+    },
+    {
+     "name": "灯箱亮度-",
+     "value": 123,
+     "text": "fun_text100",
+     "page": "FUNC"
+    },
+    {
+     "name": "灯箱速度+",
+     "value": 124,
+     "text": "fun_text101",
+     "page": "FUNC"
+    },
+    {
+     "name": "灯箱速度-",
+     "value": 125,
+     "text": "fun_text102",
+     "page": "FUNC"
+    },
+    {
+     "name": "LOGO灯效果切换",
+     "value": 126,
+     "text": "fun_text103",
+     "page": "FUNC"
+    },
+    {
+     "name": "灯箱扩散模式颜色切换",
+     "value": 127,
+     "text": "fun_text104",
+     "page": "FUNC"
+    },
+    {
+     "name": "灯箱效果切换",
+     "value": 128,
+     "text": "fun_text105",
+     "page": "FUNC"
+    },
+    {
+     "name": "灯箱颜色切换",
+     "value": 129,
+     "text": "fun_text106",
+     "page": "FUNC"
+    },
+    {
+     "name": "拾音灯亮度加",
+     "value": 130,
+     "text": "fun_text107",
+     "page": "FUNC"
+    },
+    {
+     "name": "拾音灯亮度减",
+     "value": 131,
+     "text": "fun_text108",
+     "page": "FUNC"
+    },
+    {
+     "name": "拾音灯底色切换",
+     "value": 132,
+     "text": "fun_text109",
+     "page": "FUNC"
+    },
+    {
+     "name": "拾音灯方向切换",
+     "value": 133,
+     "text": "fun_text110",
+     "page": "FUNC"
+    },
+    {
+     "name": "WIN+。",
+     "value": 134,
+     "page": "FUNC"
+    },
+    {
+     "name": "CTRL+WIN+SPACEBAR",
+     "value": 135,
+     "page": "FUNC"
+    },
+    {
+     "name": "WIN+SHIFT+3",
+     "value": 136,
+     "page": "FUNC"
+    },
+    {
+     "name": "WIN+SHIFT+4",
+     "value": 137,
+     "page": "FUNC"
+    },
+    {
+     "name": "开启屏幕下方按键灯",
+     "value": 138,
+     "text": "fun_text111",
+     "page": "FUNC"
+    },
+    {
+     "name": "红灯常亮",
+     "value": 139,
+     "text": "fun_text112",
+     "page": "FUNC"
+    },
+    {
+     "name": "绿灯常亮",
+     "value": 140,
+     "text": "fun_text113",
+     "page": "FUNC"
+    },
+    {
+     "name": "蓝灯常亮",
+     "value": 141,
+     "text": "fun_text114",
+     "page": "FUNC"
+    },
+    {
+     "name": "自定义灯光4",
+     "value": 142,
+     "text": "fun_text115",
+     "page": "FUNC"
+    },
+    {
+     "name": "自定义灯光5",
+     "value": 143,
+     "text": "fun_text116",
+     "page": "FUNC"
+    },
+    {
+     "name": "锁全键",
+     "value": 144,
+     "text": "fun_text117",
+     "page": "FUNC"
+    },
+    {
+     "name": "WIN+I",
+     "value": 145,
+     "page": "FUNC"
+    },
+    {
+     "name": "WIN+L",
+     "value": 146,
+     "page": "FUNC"
+    },
+    {
+     "name": "侧灯速度+",
+     "value": 147,
+     "text": "fun_text118",
+     "page": "FUNC"
+    },
+    {
+     "name": "侧灯速度-",
+     "value": 148,
+     "text": "fun_text119",
+     "page": "FUNC"
+    },
+    {
+     "name": "侧灯方向调节",
+     "value": 149,
+     "text": "fun_text120",
+     "page": "FUNC"
+    },
+    {
+     "name": "切换回报率",
+     "value": 150,
+     "text": "fun_text121",
+     "page": "FUNC"
+    },
+    {
+     "name": "PAGEUP->INSERT",
+     "value": 151,
+     "page": "FUNC"
+    },
+    {
+     "name": "PAGEDOWN->END",
+     "value": 152,
+     "page": "FUNC"
+    },
+    {
+     "name": "手动进校准",
+     "value": 153,
+     "text": "fun_text122",
+     "page": "FUNC"
+    },
+    {
+     "name": "12/24时间切换",
+     "value": 154,
+     "text": "fun_text123",
+     "page": "FUNC"
+    },
+    {
+     "name": "自定义灯效切换",
+     "value": 155,
+     "text": "fun_text124",
+     "page": "FUNC"
+    },
+    {
+     "name": "windows / MAC 系统切换",
+     "value": 156,
+     "text": "fun_text125",
+     "page": "FUNC"
+    },
+    {
+     "name": "pageup、pagedown锁",
+     "value": 157,
+     "text": "fun_text126",
+     "page": "FUNC"
+    },
+    {
+     "name": "CMD锁",
+     "value": 158,
+     "text": "fun_text127",
+     "page": "FUNC"
+    },
+    {
+     "name": "切换蜂鸣器模式",
+     "value": 159,
+     "text": "fun_text128",
+     "page": "FUNC"
+    },
+    {
+     "name": "开/关拾音灯",
+     "value": 160,
+     "text": "fun_text129",
+     "page": "FUNC"
+    },
+    {
+     "name": "显示屏切换主页",
+     "value": 161,
+     "text": "fun_text130",
+     "page": "FUNC"
+    },
+    {
+     "name": "氛围灯效亮度调节",
+     "value": 162,
+     "text": "fun_text131",
+     "page": "FUNC"
+    },
+    {
+     "name": "氛围灯效速度调节",
+     "value": 163,
+     "text": "fun_text132",
+     "page": "FUNC"
+    },
+    {
+     "name": "氛围灯效颜色切换",
+     "value": 164,
+     "text": "fun_text133",
+     "page": "FUNC"
+    },
+    {
+     "name": "氛围灯效切换",
+     "value": 165,
+     "text": "fun_text134",
+     "page": "FUNC"
+    },
+    {
+     "name": "灯光颜色正向切换",
+     "value": 166,
+     "text": "fun_text135",
+     "page": "FUNC"
+    },
+    {
+     "name": "灯光颜色反向切换",
+     "value": 167,
+     "text": "fun_text136",
+     "page": "FUNC"
+    },
+    {
+     "name": "旋钮下的LED开关",
+     "value": 168,
+     "text": "fun_text137",
+     "page": "FUNC"
+    },
+    {
+     "name": "有线模式切换",
+     "value": 169,
+     "text": "fun_text138",
+     "page": "FUNC"
+    },
+    {
+     "name": "切换指示灯模式",
+     "value": 170,
+     "text": "fun_text139",
+     "page": "FUNC"
+    },
+    {
+     "name": "切换数字键区和Fn键区",
+     "value": 171,
+     "text": "fun_text140",
+     "page": "FUNC"
+    },
+    {
+     "name": "GAT",
+     "value": 172,
+     "page": "FUNC"
+    },
+    {
+     "name": "编码器灯光",
+     "value": 173,
+     "text": "fun_text141",
+     "page": "FUNC"
+    },
+    {
+     "name": "8K回报率测试",
+     "value": 174,
+     "text": "fun_text142",
+     "page": "FUNC"
+    },
+    {
+     "name": "屏幕下方灯",
+     "value": 175,
+     "text": "fun_text143",
+     "page": "FUNC"
+    },
+    {
+     "name": "侧灯开关",
+     "value": 176,
+     "text": "fun_text144",
+     "page": "FUNC"
+    },
+    {
+     "name": "SHIFT_S问号",
+     "value": 177,
+     "text": "fun_text145",
+     "page": "FUNC"
+    },
+    {
+     "name": "AI音量加",
+     "value": 178,
+     "text": "fun_text146",
+     "page": "FUNC"
+    },
+    {
+     "name": "AI音量减",
+     "value": 179,
+     "text": "fun_text147",
+     "page": "FUNC"
+    },
+    {
+     "name": "AI屏幕亮度加",
+     "value": 180,
+     "text": "fun_text148",
+     "page": "FUNC"
+    },
+    {
+     "name": "AI屏幕亮度减",
+     "value": 181,
+     "text": "fun_text149",
+     "page": "FUNC"
+    },
+    {
+     "name": "恢复出厂设置（FN+R_ALT+ESC）",
+     "value": 182,
+     "text": "fun_text150",
+     "page": "FUNC"
+    },
+    {
+     "name": "DKS开关",
+     "value": 183,
+     "text": "fun_text151",
+     "page": "FUNC"
+    },
+    {
+     "name": "呼出SIRI",
+     "value": 184,
+     "text": "fun_text152",
+     "page": "FUNC"
+    },
+    {
+     "name": "LOGO灯开关",
+     "value": 185,
+     "text": "fun_text153",
+     "page": "FUNC"
+    },
+    {
+     "name": "爱心灯光模式",
+     "value": 186,
+     "text": "fun_text154",
+     "page": "FUNC"
+    },
+    {
+     "name": "6键/全键无冲",
+     "value": 187,
+     "text": "fun_text155",
+     "page": "FUNC"
+    },
+    {
+     "name": "LOGO灯颜色切换",
+     "value": 188,
+     "text": "fun_text156",
+     "page": "FUNC"
+    },
+    {
+     "name": "切换爱心模式下的灯光灯效",
+     "value": 189,
+     "text": "fun_text157",
+     "page": "FUNC"
+    },
+    {
+     "name": "切换到计算器模式",
+     "value": 190,
+     "text": "fun_text158",
+     "page": "FUNC"
+    },
+    {
+     "name": "打开/关闭灯箱",
+     "value": 191,
+     "text": "fun_text159",
+     "page": "FUNC"
+    },
+    {
+     "name": "显示屏切换用户动画",
+     "value": 192,
+     "text": "fun_text160",
+     "page": "FUNC"
+    },
+    {
+     "name": "灯效方向左",
+     "value": 193,
+     "text": "fun_text161",
+     "page": "FUNC"
+    },
+    {
+     "name": "灯效方向右",
+     "value": 194,
+     "text": "fun_text162",
+     "page": "FUNC"
+    },
+    {
+     "name": "切换成APP键",
+     "value": 195,
+     "text": "fun_text163",
+     "page": "FUNC"
+    },
+    {
+     "name": "灯光效果切换1",
+     "value": 196,
+     "text": "fun_text164",
+     "page": "FUNC"
+    },
+    {
+     "name": "灯光效果切换2",
+     "value": 197,
+     "text": "fun_text165",
+     "page": "FUNC"
+    },
+    {
+     "name": "灯光效果切换3",
+     "value": 198,
+     "text": "fun_text166",
+     "page": "FUNC"
+    },
+    {
+     "name": "灯光效果切换4",
+     "value": 199,
+     "text": "fun_text167",
+     "page": "FUNC"
+    },
+    {
+     "name": "profile1切换",
+     "value": 200,
+     "text": "fun_text168",
+     "page": "FUNC"
+    },
+    {
+     "name": "profile2切换",
+     "value": 201,
+     "text": "fun_text169",
+     "page": "FUNC"
+    },
+    {
+     "name": "profile3切换",
+     "value": 202,
+     "text": "fun_text170",
+     "page": "FUNC"
+    },
+    {
+     "name": "profile4切换",
+     "value": 203,
+     "text": "fun_text171",
+     "page": "FUNC"
+    },
+    {
+     "name": "打字显示",
+     "value": 204,
+     "text": "fun_text172",
+     "page": "FUNC"
+    },
+    {
+     "name": "退出测试模式",
+     "value": 205,
+     "text": "fun_text173",
+     "page": "FUNC"
+    },
+    {
+     "name": "LEFTALT+LEFTGUI+Q",
+     "value": 206,
+     "page": "FUNC"
+    },
+    {
+     "name": "LOGO灯亮度切换",
+     "value": 207,
+     "text": "fun_text174",
+     "page": "FUNC"
+    },
+    {
+     "name": "LOGO灯速度切换",
+     "value": 208,
+     "text": "fun_text175",
+     "page": "FUNC"
+    },
+    {
+     "name": "自定义宏1",
+     "value": 209,
+     "text": "fun_text176",
+     "page": "FUNC"
+    },
+    {
+     "name": "CTRL+SHIFT+O",
+     "value": 210,
+     "page": "FUNC"
+    },
+    {
+     "name": "一键进驱动",
+     "value": 211,
+     "text": "fun_text177",
+     "page": "FUNC"
+    },
+    {
+     "name": "打开自定义宏录制",
+     "value": 212,
+     "text": "fun_text178",
+     "page": "FUNC"
+    },
+    {
+     "name": "关闭自定义宏录制",
+     "value": 213,
+     "text": "fun_text179",
+     "page": "FUNC"
+    },
+    {
+     "name": "打开官网",
+     "value": 214,
+     "text": "fun_text180",
+     "page": "FUNC"
+    },
+    {
+     "name": "切换爱心灯效的颜色",
+     "value": 215,
+     "text": "fun_text181",
+     "page": "FUNC"
+    },
+    {
+     "name": "CTRL+DOWN",
+     "value": 216,
+     "page": "FUNC"
+    },
+    {
+     "name": "1~+转换为F1~F12",
+     "value": 217,
+     "text": "fun_text182",
+     "page": "FUNC"
+    },
+    {
+     "name": "Y~CMA转换为PRINT~PAGEDOWN",
+     "value": 218,
+     "text": "fun_text183",
+     "page": "FUNC"
+    },
+    {
+     "name": "?、R_ALT、APP、R_CTRL切换为方向键",
+     "value": 219,
+     "text": "fun_text184",
+     "page": "FUNC"
+    },
+    {
+     "name": "灯光速度调节",
+     "value": 220,
+     "text": "fun_text185",
+     "page": "FUNC"
+    },
+    {
+     "name": "偏频测试模式",
+     "value": 221,
+     "text": "fun_text186",
+     "page": "FUNC"
+    },
+    {
+     "name": "FN+HOME",
+     "value": 222,
+     "page": "FUNC"
+    },
+    {
+     "name": "USB灯效果切换",
+     "value": 223,
+     "text": "fun_text187",
+     "page": "FUNC"
+    },
+    {
+     "name": "USB灯速度切换",
+     "value": 224,
+     "text": "fun_text188",
+     "page": "FUNC"
+    },
+    {
+     "name": "USB灯亮度切换",
+     "value": 225,
+     "text": "fun_text189",
+     "page": "FUNC"
+    },
+    {
+     "name": "USB灯颜色切换",
+     "value": 226,
+     "text": "fun_text190",
+     "page": "FUNC"
+    },
+    {
+     "name": "切换按键延时",
+     "value": 227,
+     "text": "fun_text191",
+     "page": "FUNC"
+    },
+    {
+     "name": "点阵屏字符模式",
+     "value": 228,
+     "text": "fun_text192",
+     "page": "FUNC"
+    },
+    {
+     "name": "打开触摸模式",
+     "value": 229,
+     "text": "fun_text193",
+     "page": "FUNC"
+    },
+    {
+     "name": "满电检测",
+     "value": 230,
+     "text": "fun_text194",
+     "page": "FUNC"
+    },
+    {
+     "name": "充电指示灯开关",
+     "value": 231,
+     "text": "fun_text195",
+     "page": "FUNC"
+    },
+    {
+     "name": "切换最大亮度",
+     "value": 232,
+     "text": "fun_text196",
+     "page": "FUNC"
+    },
+    {
+     "name": "CTRL+P",
+     "value": 233,
+     "page": "FUNC"
+    },
+    {
+     "name": "CTRL+C",
+     "value": 234,
+     "page": "FUNC"
+    },
+    {
+     "name": "CTRL+V",
+     "value": 235,
+     "page": "FUNC"
+    },
+    {
+     "name": "CTRL+S",
+     "value": 236,
+     "page": "FUNC"
+    },
+    {
+     "name": "切换RT配置1",
+     "value": 237,
+     "page": "FUNC",
+     "text": "fun_text197"
+    },
+    {
+     "name": "切换RT配置2",
+     "value": 238,
+     "page": "FUNC",
+     "text": "fun_text198"
+    },
+    {
+     "name": "切换RT配置3",
+     "value": 239,
+     "page": "FUNC",
+     "text": "fun_text199"
+    },
+    {
+     "name": "切换RT配置4",
+     "value": 240,
+     "page": "FUNC",
+     "text": "fun_text200"
+    },
+    {
+     "name": "上下灯位切换",
+     "value": 241,
+     "page": "FUNC",
+     "text": "fun_text201"
+    },
+    {
+     "name": "win+M",
+     "value": 242,
+     "page": "FUNC"
+    },
+    {
+     "name": "F1~F12模式切换",
+     "value": 243,
+     "page": "FUNC",
+     "text": "fun_text202"
+    },
+    {
+     "name": "SHIFT+DOT",
+     "value": 244,
+     "page": "FUNC"
+    },
+    {
+     "name": "SHIFT+CMA",
+     "value": 245,
+     "page": "FUNC"
+    },
+    {
+     "name": "推杆_音量",
+     "value": 246,
+     "page": "FUNC",
+     "text": "fun_text203"
+    },
+    {
+     "name": "推杆_背光亮度",
+     "value": 247,
+     "page": "FUNC",
+     "text": "fun_text204"
+    },
+    {
+     "name": "推杆_屏幕亮度",
+     "value": 248,
+     "page": "FUNC",
+     "text": "fun_text205"
+    },
+    {
+     "name": "动态灯效开关",
+     "value": 249,
+     "page": "FUNC",
+     "text": "fun_text206"
+    },
+    {
+     "name": "上灯箱开启关闭",
+     "value": 250,
+     "page": "FUNC",
+     "text": "fun_text207"
+    },
+    {
+     "name": "左右侧灯切换",
+     "value": 251,
+     "page": "FUNC",
+     "text": "fun_text208"
+    },
+    {
+     "name": "左右侧灯开启关闭",
+     "value": 252,
+     "page": "FUNC",
+     "text": "fun_text209"
+    },
+    {
+     "name": "关闭所有灯光",
+     "value": 253,
+     "page": "FUNC",
+     "text": "fun_text210"
+    },
+    {
+     "name": "切换自定义灯光",
+     "value": 254,
+     "page": "FUNC",
+     "text": "fun_text211"
+    },
+    {
+     "name": "6键无冲",
+     "value": 255,
+     "page": "FUNC",
+     "text": "fun_text212"
+    },
+    {
+     "name": "全键无冲",
+     "value": 256,
+     "page": "FUNC",
+     "text": "fun_text213"
+    },
+    {
+     "name": "正面上灯条灯效切换",
+     "value": 257,
+     "page": "FUNC",
+     "text": "fun_text214"
+    },
+    {
+     "name": "正面上灯条亮度切换",
+     "value": 258,
+     "page": "FUNC",
+     "text": "fun_text215"
+    },
+    {
+     "name": "正面下灯条灯效切换",
+     "value": 259,
+     "page": "FUNC",
+     "text": "fun_text216"
+    },
+    {
+     "name": "正面下灯条亮度切换",
+     "value": 260,
+     "page": "FUNC",
+     "text": "fun_text217"
+    },
+    {
+     "name": "切换土耳其语",
+     "value": 261,
+     "page": "FUNC",
+     "text": "fun_text218"
+    },
+    {
+     "name": "切换日语",
+     "value": 262,
+     "page": "FUNC",
+     "text": "fun_text219"
+    },
+    {
+     "name": "侧灯亮度加",
+     "value": 263,
+     "page": "FUNC",
+     "text": "fun_text220"
+    },
+    {
+     "name": "侧灯亮度减",
+     "value": 264,
+     "page": "FUNC",
+     "text": "fun_text221"
+    },
+    {
+     "name": "CTRL+X",
+     "value": 265,
+     "page": "FUNC",
+     "text": "fun_text222"
+    },
+    {
+     "name": "WIN+C",
+     "value": 266,
+     "page": "FUNC"
+    },
+    {
+     "name": "WIN+V",
+     "value": 267,
+     "page": "FUNC"
+    },
+    {
+     "name": "点阵屏图案模式切换",
+     "value": 268,
+     "page": "FUNC",
+     "text": "fun_text223"
+    },
+    {
+     "name": "任务管理器",
+     "value": 269,
+     "page": "FUNC",
+     "text": "fun_text224"
+    },
+    {
+     "name": "Scroll锁定",
+     "value": 270,
+     "page": "FUNC",
+     "text": "fun_text225"
+    },
+    {
+     "name": "屏幕主页模式",
+     "value": 271,
+     "page": "FUNC",
+     "text": "fun_text226"
+    },
+    {
+     "name": "WIN+S",
+     "value": 272,
+     "page": "FUNC"
+    },
+    {
+     "name": "锁定F1-F12与组合键切换",
+     "value": 273,
+     "page": "FUNC",
+     "text": "fun_text227"
+    },
+    {
+     "name": "LOGO灯亮度加",
+     "value": 274,
+     "page": "FUNC",
+     "text": "fun_text228"
+    },
+    {
+     "name": "LOGO灯亮度减",
+     "value": 275,
+     "page": "FUNC",
+     "text": "fun_text229"
+    },
+    {
+     "name": "有线/无线模式切换",
+     "value": 276,
+     "page": "FUNC",
+     "text": "fun_text230"
+    },
+    {
+     "name": "Numlock指示灯开关",
+     "value": 277,
+     "page": "FUNC",
+     "text": "fun_text231"
+    },
+    {
+     "name": "触摸条调节屏幕亮度模式",
+     "value": 278,
+     "page": "FUNC",
+     "text": "fun_text232"
+    },
+    {
+     "name": "触摸条调节音量模式",
+     "value": 279,
+     "page": "FUNC",
+     "text": "fun_text233"
+    },
+    {
+     "name": "触摸条调节背光亮度模式",
+     "value": 280,
+     "page": "FUNC",
+     "text": "fun_text234"
+    },
+    {
+     "name": "触摸条调节背光速度模式",
+     "value": 281,
+     "page": "FUNC",
+     "text": "fun_text235"
+    },
+    {
+     "name": "进出按键低延时模式",
+     "value": 282,
+     "page": "FUNC",
+     "text": "fun_text236"
+    },
+    {
+     "name": "进入低功耗模式",
+     "value": 283,
+     "page": "FUNC",
+     "text": "fun_text237"
+    },
+    {
+     "name": "屏幕动图轮询切换",
+     "value": 284,
+     "page": "FUNC",
+     "text": "fun_text238"
+    },
+    {
+     "name": "切换休眠时间",
+     "value": 285,
+     "page": "FUNC",
+     "text": "fun_text239"
+    },
+    {
+     "name": "多窗口切换",
+     "value": 286,
+     "page": "FUNC",
+     "text": "medium_text18"
+    },
+    {
+     "name": "一键进配对",
+     "value": 287,
+     "page": "FUNC",
+     "text": "fun_text240"
+    },
+    {
+     "name": "点阵屏灯效反向切换",
+     "value": 288,
+     "page": "FUNC",
+     "text": "fun_text241"
+    },
+    {
+     "name": "语言模式切换",
+     "value": 289,
+     "page": "FUNC",
+     "text": "fun_text242"
+    },
+    {
+     "name": "切换上一个灯效",
+     "value": 290,
+     "page": "FUNC",
+     "text": "fun_text243"
+    },
+    {
+     "name": "显示当前通道",
+     "value": 291,
+     "page": "FUNC",
+     "text": "fun_text244"
+    },
+    {
+     "name": "复位灯效",
+     "value": 292,
+     "page": "FUNC",
+     "text": "fun_text245"
+    }
+   ]
+  },
+  "funcV2Chars": {
+   "local": "lX",
+   "offset": 1900260,
+   "end": 1904669,
+   "desc": "FUNC_V2 页（pageType>=128），value=功能码，keyType=1 写入槽B / 2 写入槽A",
+   "count": 62,
+   "entries": [
+    {
+     "name": "恢复出厂设置",
+     "value": 4096,
+     "keyType": 2,
+     "text": "fun_text1",
+     "page": "FUNC_V2"
+    },
+    {
+     "name": "切换至Windows系统",
+     "value": 4097,
+     "keyType": 2,
+     "text": "fun2_4097",
+     "page": "FUNC_V2"
+    },
+    {
+     "name": "切换至MAC系统",
+     "value": 4098,
+     "keyType": 2,
+     "text": "fun2_4098",
+     "page": "FUNC_V2"
+    },
+    {
+     "name": "切换至Android系统",
+     "value": 4099,
+     "keyType": 2,
+     "text": "fun2_4099",
+     "page": "FUNC_V2"
+    },
+    {
+     "name": "切换IOS系统",
+     "value": 4100,
+     "keyType": 2,
+     "text": "fun2_4100",
+     "page": "FUNC_V2"
+    },
+    {
+     "name": "Win/MAC循环切换",
+     "value": 4101,
+     "keyType": 1,
+     "text": "fun2_4101",
+     "page": "FUNC_V2"
+    },
+    {
+     "name": "WASD<->方向键",
+     "value": 4102,
+     "keyType": 1,
+     "text": "fun2_4102",
+     "page": "FUNC_V2"
+    },
+    {
+     "name": "查看电量",
+     "value": 4103,
+     "keyType": 1,
+     "text": "fun2_4103",
+     "page": "FUNC_V2"
+    },
+    {
+     "name": "锁定/解锁win键",
+     "value": 4104,
+     "keyType": 1,
+     "text": "fun2_4104",
+     "page": "FUNC_V2"
+    },
+    {
+     "name": "蓝牙通道1",
+     "value": 8192,
+     "keyType": 1,
+     "text": "fun_text2",
+     "page": "FUNC_V2"
+    },
+    {
+     "name": "蓝牙通道2",
+     "value": 8193,
+     "keyType": 1,
+     "text": "fun_text3",
+     "page": "FUNC_V2"
+    },
+    {
+     "name": "蓝牙通道3",
+     "value": 8194,
+     "keyType": 1,
+     "text": "fun_text4",
+     "page": "FUNC_V2"
+    },
+    {
+     "name": "蓝牙通道4",
+     "value": 8195,
+     "keyType": 1,
+     "text": "fun_text55",
+     "page": "FUNC_V2"
+    },
+    {
+     "name": "蓝牙通道5",
+     "value": 8196,
+     "keyType": 1,
+     "text": "fun_text56",
+     "page": "FUNC_V2"
+    },
+    {
+     "name": "蓝牙通道1进入配对",
+     "value": 8197,
+     "keyType": 2,
+     "text": "fun2_8197",
+     "page": "FUNC_V2"
+    },
+    {
+     "name": "蓝牙通道2进入配对",
+     "value": 8198,
+     "keyType": 2,
+     "text": "fun2_8198",
+     "page": "FUNC_V2"
+    },
+    {
+     "name": "蓝牙通道3进入配对",
+     "value": 8199,
+     "keyType": 2,
+     "text": "fun2_8199",
+     "page": "FUNC_V2"
+    },
+    {
+     "name": "蓝牙通道4进入配对",
+     "value": 8200,
+     "keyType": 2,
+     "text": "fun2_8200",
+     "page": "FUNC_V2"
+    },
+    {
+     "name": "蓝牙通道5进入配对",
+     "value": 8201,
+     "keyType": 2,
+     "text": "fun2_8201",
+     "page": "FUNC_V2"
+    },
+    {
+     "name": "无线回连",
+     "value": 8202,
+     "keyType": 1,
+     "text": "fun_text5",
+     "page": "FUNC_V2"
+    },
+    {
+     "name": "无线配对",
+     "value": 8203,
+     "keyType": 2,
+     "text": "fun2_8203",
+     "page": "FUNC_V2"
+    },
+    {
+     "name": "切回USB模式",
+     "value": 8204,
+     "keyType": 1,
+     "text": "fun2_8204",
+     "page": "FUNC_V2"
+    },
+    {
+     "name": "主灯光效果切换",
+     "value": 12288,
+     "keyType": 1,
+     "text": "fun2_12288",
+     "page": "FUNC_V2"
+    },
+    {
+     "name": "主灯光颜色切换",
+     "value": 12289,
+     "keyType": 1,
+     "text": "fun2_12289",
+     "page": "FUNC_V2"
+    },
+    {
+     "name": "主灯光亮度+",
+     "value": 12290,
+     "keyType": 1,
+     "text": "fun2_12290",
+     "page": "FUNC_V2"
+    },
+    {
+     "name": "主灯光亮度-",
+     "value": 12291,
+     "keyType": 1,
+     "text": "fun2_12291",
+     "page": "FUNC_V2"
+    },
+    {
+     "name": "主灯光速度+",
+     "value": 12292,
+     "keyType": 1,
+     "text": "fun2_12292",
+     "page": "FUNC_V2"
+    },
+    {
+     "name": "主灯光速度-",
+     "value": 12293,
+     "keyType": 1,
+     "text": "fun2_12293",
+     "page": "FUNC_V2"
+    },
+    {
+     "name": "关闭主灯光",
+     "value": 12294,
+     "keyType": 1,
+     "text": "fun2_12294",
+     "page": "FUNC_V2"
+    },
+    {
+     "name": "打开主灯光",
+     "value": 12295,
+     "keyType": 1,
+     "text": "fun2_12295",
+     "page": "FUNC_V2"
+    },
+    {
+     "name": "侧灯效果切换",
+     "value": 12296,
+     "keyType": 1,
+     "text": "fun_text16",
+     "page": "FUNC_V2"
+    },
+    {
+     "name": "侧灯颜色切换",
+     "value": 12297,
+     "keyType": 1,
+     "text": "fun_text17",
+     "page": "FUNC_V2"
+    },
+    {
+     "name": "侧灯亮度调节+",
+     "value": 12298,
+     "keyType": 1,
+     "text": "fun2_12298",
+     "page": "FUNC_V2"
+    },
+    {
+     "name": "侧灯亮度调节-",
+     "value": 12299,
+     "keyType": 1,
+     "text": "fun2_12299",
+     "page": "FUNC_V2"
+    },
+    {
+     "name": "侧灯速度调节+",
+     "value": 12300,
+     "keyType": 1,
+     "text": "fun2_12300",
+     "page": "FUNC_V2"
+    },
+    {
+     "name": "侧灯速度调节-",
+     "value": 12301,
+     "keyType": 1,
+     "text": "fun2_12301",
+     "page": "FUNC_V2"
+    },
+    {
+     "name": "关闭侧灯",
+     "value": 12302,
+     "keyType": 1,
+     "text": "fun2_12302",
+     "page": "FUNC_V2"
+    },
+    {
+     "name": "打开侧灯",
+     "value": 12303,
+     "keyType": 1,
+     "text": "fun2_12303",
+     "page": "FUNC_V2"
+    },
+    {
+     "name": "主灯区方向切换",
+     "value": 12304,
+     "keyType": 1,
+     "text": "fun2_12304",
+     "page": "FUNC_V2"
+    },
+    {
+     "name": "主灯开关切换",
+     "value": 12305,
+     "keyType": 1,
+     "text": "fun2_12305",
+     "page": "FUNC_V2"
+    },
+    {
+     "name": "氛围灯模式切换",
+     "value": 12306,
+     "keyType": 1,
+     "text": "fun2_12306",
+     "page": "FUNC_V2"
+    },
+    {
+     "name": "氛围灯颜色切换",
+     "value": 12307,
+     "keyType": 1,
+     "text": "fun2_12307",
+     "page": "FUNC_V2"
+    },
+    {
+     "name": "氛围灯亮度切换（+）",
+     "value": 12308,
+     "keyType": 1,
+     "text": "fun2_12308",
+     "page": "FUNC_V2"
+    },
+    {
+     "name": "氛围灯速度切换（+）",
+     "value": 12309,
+     "keyType": 1,
+     "text": "fun2_12309",
+     "page": "FUNC_V2"
+    },
+    {
+     "name": "侧灯色块颜色切换",
+     "value": 12310,
+     "keyType": 1,
+     "text": "fun2_12310",
+     "page": "FUNC_V2"
+    },
+    {
+     "name": "全灯开/关切换",
+     "value": 12311,
+     "keyType": 1,
+     "text": "fun2_12311",
+     "page": "FUNC_V2"
+    },
+    {
+     "name": "点阵屏开/关",
+     "value": 12312,
+     "keyType": 1,
+     "text": "fun2_12312",
+     "page": "FUNC_V2"
+    },
+    {
+     "name": "GIF灯效切换",
+     "value": 12313,
+     "keyType": 1,
+     "text": "fun2_12313",
+     "page": "FUNC_V2"
+    },
+    {
+     "name": "切换上一个界面",
+     "value": 16384,
+     "keyType": 1,
+     "text": "fun2_16384",
+     "page": "FUNC_V2"
+    },
+    {
+     "name": "切换下一个界面",
+     "value": 16385,
+     "keyType": 1,
+     "text": "fun2_16385",
+     "page": "FUNC_V2"
+    },
+    {
+     "name": "确认键按下",
+     "value": 16386,
+     "keyType": 1,
+     "text": "fun2_16386",
+     "page": "FUNC_V2"
+    },
+    {
+     "name": "打开驱动",
+     "value": 28672,
+     "keyType": 1,
+     "text": "fun_text61",
+     "page": "FUNC_V2"
+    },
+    {
+     "name": "系统亮度-",
+     "value": 28673,
+     "keyType": 1,
+     "text": "fun2_28673",
+     "page": "FUNC_V2"
+    },
+    {
+     "name": "系统亮度+",
+     "value": 28674,
+     "keyType": 1,
+     "text": "fun2_28674",
+     "page": "FUNC_V2"
+    },
+    {
+     "name": "系统任务切换/最近任务",
+     "value": 28675,
+     "keyType": 1,
+     "text": "fun2_28675",
+     "page": "FUNC_V2"
+    },
+    {
+     "name": "系统主页",
+     "value": 28676,
+     "keyType": 1,
+     "text": "fun2_28676",
+     "page": "FUNC_V2"
+    },
+    {
+     "name": "上一首",
+     "value": 28677,
+     "keyType": 1,
+     "text": "medium_text7",
+     "page": "FUNC_V2"
+    },
+    {
+     "name": "播放/暂停",
+     "value": 28678,
+     "keyType": 1,
+     "text": "medium_text5",
+     "page": "FUNC_V2"
+    },
+    {
+     "name": "下一首",
+     "value": 28679,
+     "keyType": 1,
+     "text": "medium_text8",
+     "page": "FUNC_V2"
+    },
+    {
+     "name": "静音",
+     "value": 28680,
+     "keyType": 1,
+     "text": "medium_text11",
+     "page": "FUNC_V2"
+    },
+    {
+     "name": "音量 -",
+     "value": 28681,
+     "keyType": 1,
+     "text": "medium_text10",
+     "page": "FUNC_V2"
+    },
+    {
+     "name": "音量 +",
+     "value": 28682,
+     "keyType": 1,
+     "text": "medium_text9",
+     "page": "FUNC_V2"
+    }
+   ]
+  }
+ },
+ "tablesOrder": [
+  "allKeyChars",
+  "basicChars",
+  "extendChars",
+  "jaExtendChars",
+  "specialChars",
+  "funcChars",
+  "funcV2Chars"
+ ],
+ "mk87KeyboardConfig": {
+  "local": "TU",
+  "offset": 1194719,
+  "vendorId": 3141,
+  "productId": 32839,
+  "name": "AJAZZ KEYBOARD",
+  "connectType": "USB",
+  "routesName": [
+   "customKeys",
+   "lighting",
+   "macro",
+   "tft",
+   "settings"
+  ],
+  "customKeysConfig": {
+   "isShowFn": true,
+   "isShowNormalFuncKeys": true,
+   "fnFuncIds": [],
+   "fnDisabledKeyIds": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11,
+    12
+   ]
+  },
+  "macroConfig": {
+   "isShowFn": true
+  },
+  "tftConfig": {
+   "name": "AK980_PRO",
+   "localforageKey": "w240h135",
+   "width": 240,
+   "height": 135
+  },
+  "musicConfig": {
+   "version": 1,
+   "maxColOffset": 0,
+   "keyOffset": [
+    {
+     "name": "F1",
+     "value": 1,
+     "offsetX": 1
+    },
+    {
+     "name": "Z",
+     "value": 65,
+     "offsetX": 1
+    },
+    {
+     "name": "↑",
+     "value": 90,
+     "offsetX": 2
+    },
+    {
+     "name": "Spacebar",
+     "value": 83,
+     "offsetX": 3
+    },
+    {
+     "name": "R-Alt",
+     "value": 84,
+     "offsetX": 3
+    }
+   ]
+  },
+  "wheelKeys": null,
+  "keyCount": 87,
+  "keyListBySlot": [
+   {
+    "slot": 0,
+    "row": 0,
+    "name": "Esc",
+    "keyCode": 41,
+    "key": "Escape"
+   },
+   {
+    "slot": 1,
+    "row": 0,
+    "name": "F1",
+    "keyCode": 58,
+    "key": "F1"
+   },
+   {
+    "slot": 2,
+    "row": 0,
+    "name": "F2",
+    "keyCode": 59,
+    "key": "F2"
+   },
+   {
+    "slot": 3,
+    "row": 0,
+    "name": "F3",
+    "keyCode": 60,
+    "key": "F3"
+   },
+   {
+    "slot": 4,
+    "row": 0,
+    "name": "F4",
+    "keyCode": 61,
+    "key": "F4"
+   },
+   {
+    "slot": 5,
+    "row": 0,
+    "name": "F5",
+    "keyCode": 62,
+    "key": "F5"
+   },
+   {
+    "slot": 6,
+    "row": 0,
+    "name": "F6",
+    "keyCode": 63,
+    "key": "F6"
+   },
+   {
+    "slot": 7,
+    "row": 0,
+    "name": "F7",
+    "keyCode": 64,
+    "key": "F7"
+   },
+   {
+    "slot": 8,
+    "row": 0,
+    "name": "F8",
+    "keyCode": 65,
+    "key": "F8"
+   },
+   {
+    "slot": 9,
+    "row": 0,
+    "name": "F9",
+    "keyCode": 66,
+    "key": "F9"
+   },
+   {
+    "slot": 10,
+    "row": 0,
+    "name": "F10",
+    "keyCode": 67,
+    "key": "F10"
+   },
+   {
+    "slot": 11,
+    "row": 0,
+    "name": "F11",
+    "keyCode": 68,
+    "key": "F11"
+   },
+   {
+    "slot": 12,
+    "row": 0,
+    "name": "F12",
+    "keyCode": 69,
+    "key": "F12"
+   },
+   {
+    "slot": 16,
+    "row": 1,
+    "name": "` ~",
+    "keyCode": 53,
+    "key": "Backquote"
+   },
+   {
+    "slot": 17,
+    "row": 1,
+    "name": "1 !",
+    "keyCode": 30,
+    "key": "Digit1"
+   },
+   {
+    "slot": 18,
+    "row": 1,
+    "name": "2 @",
+    "keyCode": 31,
+    "key": "Digit2"
+   },
+   {
+    "slot": 19,
+    "row": 1,
+    "name": "3 #",
+    "keyCode": 32,
+    "key": "Digit3"
+   },
+   {
+    "slot": 20,
+    "row": 1,
+    "name": "4 $",
+    "keyCode": 33,
+    "key": "Digit4"
+   },
+   {
+    "slot": 21,
+    "row": 1,
+    "name": "5 %",
+    "keyCode": 34,
+    "key": "Digit5"
+   },
+   {
+    "slot": 22,
+    "row": 1,
+    "name": "6 ^",
+    "keyCode": 35,
+    "key": "Digit6"
+   },
+   {
+    "slot": 23,
+    "row": 1,
+    "name": "7 &",
+    "keyCode": 36,
+    "key": "Digit7"
+   },
+   {
+    "slot": 24,
+    "row": 1,
+    "name": "8 *",
+    "keyCode": 37,
+    "key": "Digit8"
+   },
+   {
+    "slot": 25,
+    "row": 1,
+    "name": "9 (",
+    "keyCode": 38,
+    "key": "Digit9"
+   },
+   {
+    "slot": 26,
+    "row": 1,
+    "name": "0 )",
+    "keyCode": 39,
+    "key": "Digit0"
+   },
+   {
+    "slot": 27,
+    "row": 1,
+    "name": "ˉ -",
+    "keyCode": 45,
+    "key": "Minus"
+   },
+   {
+    "slot": 28,
+    "row": 1,
+    "name": "= +",
+    "keyCode": 46,
+    "key": "Equal"
+   },
+   {
+    "slot": 32,
+    "row": 2,
+    "name": "Tab",
+    "keyCode": 43,
+    "key": "Tab"
+   },
+   {
+    "slot": 33,
+    "row": 2,
+    "name": "Q",
+    "keyCode": 20,
+    "key": "KeyQ"
+   },
+   {
+    "slot": 34,
+    "row": 2,
+    "name": "W",
+    "keyCode": 26,
+    "key": "KeyW"
+   },
+   {
+    "slot": 35,
+    "row": 2,
+    "name": "E",
+    "keyCode": 8,
+    "key": "KeyE"
+   },
+   {
+    "slot": 36,
+    "row": 2,
+    "name": "R",
+    "keyCode": 21,
+    "key": "KeyR"
+   },
+   {
+    "slot": 37,
+    "row": 2,
+    "name": "T",
+    "keyCode": 23,
+    "key": "KeyT"
+   },
+   {
+    "slot": 38,
+    "row": 2,
+    "name": "Y",
+    "keyCode": 28,
+    "key": "KeyY"
+   },
+   {
+    "slot": 39,
+    "row": 2,
+    "name": "U",
+    "keyCode": 24,
+    "key": "KeyU"
+   },
+   {
+    "slot": 40,
+    "row": 2,
+    "name": "I",
+    "keyCode": 12,
+    "key": "KeyI"
+   },
+   {
+    "slot": 41,
+    "row": 2,
+    "name": "O",
+    "keyCode": 18,
+    "key": "KeyO"
+   },
+   {
+    "slot": 42,
+    "row": 2,
+    "name": "P",
+    "keyCode": 19,
+    "key": "KeyP"
+   },
+   {
+    "slot": 43,
+    "row": 2,
+    "name": "[ {",
+    "keyCode": 47,
+    "key": "BracketLeft"
+   },
+   {
+    "slot": 44,
+    "row": 2,
+    "name": "] }",
+    "keyCode": 48,
+    "key": "BracketRight"
+   },
+   {
+    "slot": 48,
+    "row": 3,
+    "name": "Caps",
+    "keyCode": 57,
+    "key": "CapsLock"
+   },
+   {
+    "slot": 49,
+    "row": 3,
+    "name": "A",
+    "keyCode": 4,
+    "key": "KeyA"
+   },
+   {
+    "slot": 50,
+    "row": 3,
+    "name": "S",
+    "keyCode": 22,
+    "key": "KeyS"
+   },
+   {
+    "slot": 51,
+    "row": 3,
+    "name": "D",
+    "keyCode": 7,
+    "key": "KeyD"
+   },
+   {
+    "slot": 52,
+    "row": 3,
+    "name": "F",
+    "keyCode": 9,
+    "key": "KeyF"
+   },
+   {
+    "slot": 53,
+    "row": 3,
+    "name": "G",
+    "keyCode": 10,
+    "key": "KeyG"
+   },
+   {
+    "slot": 54,
+    "row": 3,
+    "name": "H",
+    "keyCode": 11,
+    "key": "KeyH"
+   },
+   {
+    "slot": 55,
+    "row": 3,
+    "name": "J",
+    "keyCode": 13,
+    "key": "KeyJ"
+   },
+   {
+    "slot": 56,
+    "row": 3,
+    "name": "K",
+    "keyCode": 14,
+    "key": "KeyK"
+   },
+   {
+    "slot": 57,
+    "row": 3,
+    "name": "L",
+    "keyCode": 15,
+    "key": "KeyL"
+   },
+   {
+    "slot": 58,
+    "row": 3,
+    "name": "; :",
+    "keyCode": 51,
+    "key": "Semicolon"
+   },
+   {
+    "slot": 59,
+    "row": 3,
+    "name": "' \"",
+    "keyCode": 52,
+    "key": "Quote"
+   },
+   {
+    "slot": 60,
+    "row": 2,
+    "name": "\\ | ",
+    "keyCode": 49,
+    "key": "Backslash"
+   },
+   {
+    "slot": 64,
+    "row": 4,
+    "name": "L-Shift",
+    "keyCode": 225,
+    "key": "ShiftLeft"
+   },
+   {
+    "slot": 65,
+    "row": 4,
+    "name": "Z",
+    "keyCode": 29,
+    "key": "KeyZ"
+   },
+   {
+    "slot": 66,
+    "row": 4,
+    "name": "X",
+    "keyCode": 27,
+    "key": "KeyX"
+   },
+   {
+    "slot": 67,
+    "row": 4,
+    "name": "C",
+    "keyCode": 6,
+    "key": "KeyC"
+   },
+   {
+    "slot": 68,
+    "row": 4,
+    "name": "V",
+    "keyCode": 25,
+    "key": "KeyV"
+   },
+   {
+    "slot": 69,
+    "row": 4,
+    "name": "B",
+    "keyCode": 5,
+    "key": "KeyB"
+   },
+   {
+    "slot": 70,
+    "row": 4,
+    "name": "N",
+    "keyCode": 17,
+    "key": "KeyN"
+   },
+   {
+    "slot": 71,
+    "row": 4,
+    "name": "M",
+    "keyCode": 16,
+    "key": "KeyM"
+   },
+   {
+    "slot": 72,
+    "row": 4,
+    "name": ", <",
+    "keyCode": 54,
+    "key": "Comma"
+   },
+   {
+    "slot": 73,
+    "row": 4,
+    "name": ". >",
+    "keyCode": 55,
+    "key": "Period"
+   },
+   {
+    "slot": 74,
+    "row": 4,
+    "name": "/ ?",
+    "keyCode": 56,
+    "key": "Slash"
+   },
+   {
+    "slot": 75,
+    "row": 4,
+    "name": "R-Shift",
+    "keyCode": 229,
+    "key": "ShiftRight"
+   },
+   {
+    "slot": 76,
+    "row": 3,
+    "name": "Enter",
+    "keyCode": 40,
+    "key": "Enter"
+   },
+   {
+    "slot": 80,
+    "row": 5,
+    "name": "L-Ctrl",
+    "keyCode": 224,
+    "key": "ControlLeft"
+   },
+   {
+    "slot": 81,
+    "row": 5,
+    "name": "L-Win",
+    "keyCode": 227,
+    "key": "MetaLeft"
+   },
+   {
+    "slot": 82,
+    "row": 5,
+    "name": "L-Alt",
+    "keyCode": 226,
+    "key": "AltLeft"
+   },
+   {
+    "slot": 83,
+    "row": 5,
+    "name": "Spacebar",
+    "keyCode": 44,
+    "key": "Space"
+   },
+   {
+    "slot": 84,
+    "row": 5,
+    "name": "R-Alt",
+    "keyCode": 230,
+    "key": "AltRight"
+   },
+   {
+    "slot": 85,
+    "row": 5,
+    "name": "Fn",
+    "keyCode": 175,
+    "key": "-1"
+   },
+   {
+    "slot": 86,
+    "row": 5,
+    "name": "Super",
+    "keyCode": 101,
+    "key": "ContextMenu"
+   },
+   {
+    "slot": 87,
+    "row": 5,
+    "name": "R-Ctrl",
+    "keyCode": 228,
+    "key": "ControlRight"
+   },
+   {
+    "slot": 88,
+    "row": 5,
+    "name": "←",
+    "keyCode": 80,
+    "key": "ArrowLeft"
+   },
+   {
+    "slot": 89,
+    "row": 5,
+    "name": "↓",
+    "keyCode": 81,
+    "key": "ArrowDown"
+   },
+   {
+    "slot": 90,
+    "row": 4,
+    "name": "↑",
+    "keyCode": 82,
+    "key": "ArrowUp"
+   },
+   {
+    "slot": 91,
+    "row": 5,
+    "name": "→",
+    "keyCode": 79,
+    "key": "ArrowRight"
+   },
+   {
+    "slot": 92,
+    "row": 1,
+    "name": "Back",
+    "keyCode": 42,
+    "key": "Backspace"
+   },
+   {
+    "slot": 99,
+    "row": 0,
+    "name": "Print",
+    "keyCode": 70,
+    "key": "PrintScreen"
+   },
+   {
+    "slot": 100,
+    "row": 0,
+    "name": "Scroll",
+    "keyCode": 71,
+    "key": "ScrollLock"
+   },
+   {
+    "slot": 102,
+    "row": 0,
+    "name": "Pause",
+    "keyCode": 72,
+    "key": "Pause"
+   },
+   {
+    "slot": 103,
+    "row": 1,
+    "name": "Insert",
+    "keyCode": 73,
+    "key": "Insert"
+   },
+   {
+    "slot": 104,
+    "row": 1,
+    "name": "Home",
+    "keyCode": 74,
+    "key": "Home"
+   },
+   {
+    "slot": 105,
+    "row": 1,
+    "name": "PgUp",
+    "keyCode": 75,
+    "key": "PageUp"
+   },
+   {
+    "slot": 106,
+    "row": 2,
+    "name": "Del",
+    "keyCode": 76,
+    "key": "Delete"
+   },
+   {
+    "slot": 107,
+    "row": 2,
+    "name": "End",
+    "keyCode": 77,
+    "key": "End"
+   },
+   {
+    "slot": 108,
+    "row": 2,
+    "name": "PgDn",
+    "keyCode": 78,
+    "key": "PageDown"
+   }
+  ],
+  "keyListRaw": [
+   [
+    {
+     "className": "",
+     "value": 0,
+     "name": "Esc",
+     "keyCode": 41,
+     "key": "Escape"
+    },
+    {
+     "className": "ml-15",
+     "value": 1,
+     "name": "F1",
+     "keyCode": 58,
+     "key": "F1"
+    },
+    {
+     "className": "",
+     "value": 2,
+     "name": "F2",
+     "keyCode": 59,
+     "key": "F2"
+    },
+    {
+     "className": "",
+     "value": 3,
+     "name": "F3",
+     "keyCode": 60,
+     "key": "F3"
+    },
+    {
+     "className": "",
+     "value": 4,
+     "name": "F4",
+     "keyCode": 61,
+     "key": "F4"
+    },
+    {
+     "className": "ml-auto",
+     "value": 5,
+     "name": "F5",
+     "keyCode": 62,
+     "key": "F5"
+    },
+    {
+     "className": "",
+     "value": 6,
+     "name": "F6",
+     "keyCode": 63,
+     "key": "F6"
+    },
+    {
+     "className": "",
+     "value": 7,
+     "name": "F7",
+     "keyCode": 64,
+     "key": "F7"
+    },
+    {
+     "className": "",
+     "value": 8,
+     "name": "F8",
+     "keyCode": 65,
+     "key": "F8"
+    },
+    {
+     "className": "ml-auto",
+     "value": 9,
+     "name": "F9",
+     "keyCode": 66,
+     "key": "F9"
+    },
+    {
+     "className": "",
+     "value": 10,
+     "name": "F10",
+     "keyCode": 67,
+     "key": "F10"
+    },
+    {
+     "className": "",
+     "value": 11,
+     "name": "F11",
+     "keyCode": 68,
+     "key": "F11"
+    },
+    {
+     "className": "",
+     "value": 12,
+     "name": "F12",
+     "keyCode": 69,
+     "key": "F12"
+    },
+    {
+     "className": "ml-5",
+     "value": 99,
+     "name": "Print",
+     "keyCode": 70,
+     "key": "PrintScreen"
+    },
+    {
+     "className": "",
+     "value": 100,
+     "name": "Scroll",
+     "keyCode": 71,
+     "key": "ScrollLock"
+    },
+    {
+     "className": "",
+     "value": 102,
+     "name": "Pause",
+     "keyCode": 72,
+     "key": "Pause"
+    }
+   ],
+   [
+    {
+     "className": "",
+     "value": 16,
+     "name": "` ~",
+     "keyCode": 53,
+     "key": "Backquote"
+    },
+    {
+     "className": "",
+     "value": 17,
+     "name": "1 !",
+     "keyCode": 30,
+     "key": "Digit1"
+    },
+    {
+     "className": "",
+     "value": 18,
+     "name": "2 @",
+     "keyCode": 31,
+     "key": "Digit2"
+    },
+    {
+     "className": "",
+     "value": 19,
+     "name": "3 #",
+     "keyCode": 32,
+     "key": "Digit3"
+    },
+    {
+     "className": "",
+     "value": 20,
+     "name": "4 $",
+     "keyCode": 33,
+     "key": "Digit4"
+    },
+    {
+     "className": "",
+     "value": 21,
+     "name": "5 %",
+     "keyCode": 34,
+     "key": "Digit5"
+    },
+    {
+     "className": "",
+     "value": 22,
+     "name": "6 ^",
+     "keyCode": 35,
+     "key": "Digit6"
+    },
+    {
+     "className": "",
+     "value": 23,
+     "name": "7 &",
+     "keyCode": 36,
+     "key": "Digit7"
+    },
+    {
+     "className": "",
+     "value": 24,
+     "name": "8 *",
+     "keyCode": 37,
+     "key": "Digit8"
+    },
+    {
+     "className": "",
+     "value": 25,
+     "name": "9 (",
+     "keyCode": 38,
+     "key": "Digit9"
+    },
+    {
+     "className": "",
+     "value": 26,
+     "name": "0 )",
+     "keyCode": 39,
+     "key": "Digit0"
+    },
+    {
+     "className": "",
+     "value": 27,
+     "name": "ˉ -",
+     "keyCode": 45,
+     "key": "Minus"
+    },
+    {
+     "className": "",
+     "value": 28,
+     "name": "= +",
+     "keyCode": 46,
+     "key": "Equal"
+    },
+    {
+     "className": "flex-1",
+     "value": 92,
+     "name": "Back",
+     "keyCode": 42,
+     "key": "Backspace"
+    },
+    {
+     "className": "ml-5",
+     "value": 103,
+     "name": "Insert",
+     "keyCode": 73,
+     "key": "Insert"
+    },
+    {
+     "className": "",
+     "value": 104,
+     "name": "Home",
+     "keyCode": 74,
+     "key": "Home"
+    },
+    {
+     "className": "",
+     "value": 105,
+     "name": "PgUp",
+     "keyCode": 75,
+     "key": "PageUp"
+    }
+   ],
+   [
+    {
+     "className": "w-22",
+     "value": 32,
+     "name": "Tab",
+     "keyCode": 43,
+     "key": "Tab"
+    },
+    {
+     "className": "",
+     "value": 33,
+     "name": "Q",
+     "keyCode": 20,
+     "key": "KeyQ"
+    },
+    {
+     "className": "",
+     "value": 34,
+     "name": "W",
+     "keyCode": 26,
+     "key": "KeyW"
+    },
+    {
+     "className": "",
+     "value": 35,
+     "name": "E",
+     "keyCode": 8,
+     "key": "KeyE"
+    },
+    {
+     "className": "",
+     "value": 36,
+     "name": "R",
+     "keyCode": 21,
+     "key": "KeyR"
+    },
+    {
+     "className": "",
+     "value": 37,
+     "name": "T",
+     "keyCode": 23,
+     "key": "KeyT"
+    },
+    {
+     "className": "",
+     "value": 38,
+     "name": "Y",
+     "keyCode": 28,
+     "key": "KeyY"
+    },
+    {
+     "className": "",
+     "value": 39,
+     "name": "U",
+     "keyCode": 24,
+     "key": "KeyU"
+    },
+    {
+     "className": "",
+     "value": 40,
+     "name": "I",
+     "keyCode": 12,
+     "key": "KeyI"
+    },
+    {
+     "className": "",
+     "value": 41,
+     "name": "O",
+     "keyCode": 18,
+     "key": "KeyO"
+    },
+    {
+     "className": "",
+     "value": 42,
+     "name": "P",
+     "keyCode": 19,
+     "key": "KeyP"
+    },
+    {
+     "className": "",
+     "value": 43,
+     "name": "[ {",
+     "keyCode": 47,
+     "key": "BracketLeft"
+    },
+    {
+     "className": "",
+     "value": 44,
+     "name": "] }",
+     "keyCode": 48,
+     "key": "BracketRight"
+    },
+    {
+     "className": "w-23",
+     "value": 60,
+     "name": "\\ | ",
+     "keyCode": 49,
+     "key": "Backslash"
+    },
+    {
+     "className": "ml-5",
+     "value": 106,
+     "name": "Del",
+     "keyCode": 76,
+     "key": "Delete"
+    },
+    {
+     "className": "",
+     "value": 107,
+     "name": "End",
+     "keyCode": 77,
+     "key": "End"
+    },
+    {
+     "className": "",
+     "value": 108,
+     "name": "PgDn",
+     "keyCode": 78,
+     "key": "PageDown"
+    }
+   ],
+   [
+    {
+     "className": "w-27",
+     "value": 48,
+     "name": "Caps",
+     "keyCode": 57,
+     "key": "CapsLock"
+    },
+    {
+     "className": "",
+     "value": 49,
+     "name": "A",
+     "keyCode": 4,
+     "key": "KeyA"
+    },
+    {
+     "className": "",
+     "value": 50,
+     "name": "S",
+     "keyCode": 22,
+     "key": "KeyS"
+    },
+    {
+     "className": "",
+     "value": 51,
+     "name": "D",
+     "keyCode": 7,
+     "key": "KeyD"
+    },
+    {
+     "className": "",
+     "value": 52,
+     "name": "F",
+     "keyCode": 9,
+     "key": "KeyF"
+    },
+    {
+     "className": "",
+     "value": 53,
+     "name": "G",
+     "keyCode": 10,
+     "key": "KeyG"
+    },
+    {
+     "className": "",
+     "value": 54,
+     "name": "H",
+     "keyCode": 11,
+     "key": "KeyH"
+    },
+    {
+     "className": "",
+     "value": 55,
+     "name": "J",
+     "keyCode": 13,
+     "key": "KeyJ"
+    },
+    {
+     "className": "",
+     "value": 56,
+     "name": "K",
+     "keyCode": 14,
+     "key": "KeyK"
+    },
+    {
+     "className": "",
+     "value": 57,
+     "name": "L",
+     "keyCode": 15,
+     "key": "KeyL"
+    },
+    {
+     "className": "",
+     "value": 58,
+     "name": "; :",
+     "keyCode": 51,
+     "key": "Semicolon"
+    },
+    {
+     "className": "",
+     "value": 59,
+     "name": "' \"",
+     "keyCode": 52,
+     "key": "Quote"
+    },
+    {
+     "className": "w-33 mr-auto",
+     "value": 76,
+     "name": "Enter",
+     "keyCode": 40,
+     "key": "Enter"
+    }
+   ],
+   [
+    {
+     "className": "w-34",
+     "value": 64,
+     "name": "L-Shift",
+     "keyCode": 225,
+     "key": "ShiftLeft"
+    },
+    {
+     "className": "",
+     "value": 65,
+     "name": "Z",
+     "keyCode": 29,
+     "key": "KeyZ"
+    },
+    {
+     "className": "",
+     "value": 66,
+     "name": "X",
+     "keyCode": 27,
+     "key": "KeyX"
+    },
+    {
+     "className": "",
+     "value": 67,
+     "name": "C",
+     "keyCode": 6,
+     "key": "KeyC"
+    },
+    {
+     "className": "",
+     "value": 68,
+     "name": "V",
+     "keyCode": 25,
+     "key": "KeyV"
+    },
+    {
+     "className": "",
+     "value": 69,
+     "name": "B",
+     "keyCode": 5,
+     "key": "KeyB"
+    },
+    {
+     "className": "",
+     "value": 70,
+     "name": "N",
+     "keyCode": 17,
+     "key": "KeyN"
+    },
+    {
+     "className": "",
+     "value": 71,
+     "name": "M",
+     "keyCode": 16,
+     "key": "KeyM"
+    },
+    {
+     "className": "",
+     "value": 72,
+     "name": ", <",
+     "keyCode": 54,
+     "key": "Comma"
+    },
+    {
+     "className": "",
+     "value": 73,
+     "name": ". >",
+     "keyCode": 55,
+     "key": "Period"
+    },
+    {
+     "className": "",
+     "value": 74,
+     "name": "/ ?",
+     "keyCode": 56,
+     "key": "Slash"
+    },
+    {
+     "className": "w-41 mr-auto",
+     "value": 75,
+     "name": "R-Shift",
+     "keyCode": 229,
+     "key": "ShiftRight"
+    },
+    {
+     "className": "ml-5 mr-15",
+     "value": 90,
+     "name": "↑",
+     "keyCode": 82,
+     "key": "ArrowUp"
+    }
+   ],
+   [
+    {
+     "className": "w-18",
+     "value": 80,
+     "name": "L-Ctrl",
+     "keyCode": 224,
+     "key": "ControlLeft"
+    },
+    {
+     "className": "w-18",
+     "value": 81,
+     "name": "L-Win",
+     "keyCode": 227,
+     "key": "MetaLeft"
+    },
+    {
+     "className": "w-18",
+     "value": 82,
+     "name": "L-Alt",
+     "keyCode": 226,
+     "key": "AltLeft"
+    },
+    {
+     "className": "flex-1",
+     "value": 83,
+     "name": "Spacebar",
+     "keyCode": 44,
+     "key": "Space"
+    },
+    {
+     "className": "w-18",
+     "value": 84,
+     "name": "R-Alt",
+     "keyCode": 230,
+     "key": "AltRight"
+    },
+    {
+     "className": "w-18",
+     "value": 85,
+     "name": "Fn",
+     "keyCode": 175,
+     "key": "-1"
+    },
+    {
+     "className": "w-18",
+     "value": 86,
+     "name": "Super",
+     "keyCode": 101,
+     "key": "ContextMenu"
+    },
+    {
+     "className": "w-18",
+     "value": 87,
+     "name": "R-Ctrl",
+     "keyCode": 228,
+     "key": "ControlRight"
+    },
+    {
+     "className": "ml-5",
+     "value": 88,
+     "name": "←",
+     "keyCode": 80,
+     "key": "ArrowLeft"
+    },
+    {
+     "className": "",
+     "value": 89,
+     "name": "↓",
+     "keyCode": 81,
+     "key": "ArrowDown"
+    },
+    {
+     "className": "",
+     "value": 91,
+     "name": "→",
+     "keyCode": 79,
+     "key": "ArrowRight"
+    }
+   ]
+  ],
+  "isEmptySlot": [
+   13,
+   14,
+   15,
+   29,
+   30,
+   31,
+   45,
+   46,
+   47,
+   61,
+   62,
+   63,
+   77,
+   78,
+   79,
+   93,
+   94,
+   95,
+   96,
+   97,
+   98,
+   101,
+   109,
+   110,
+   111,
+   112,
+   113,
+   114,
+   115,
+   116,
+   117,
+   118,
+   119,
+   120,
+   121,
+   122,
+   123,
+   124,
+   125,
+   126,
+   127
+  ]
+ },
+ "keyboardLayoutNote": "512 字节 = 128 槽 × 4 字节；槽号 = allKeyChars(rX) 的 value（canonical key id），也是 MK87 keyList 里每个键的 value（slot = value*4 的字节偏移）",
+ "deviceObserved": {
+  "source": "docs/keymap_device_report.txt（硬件通道由 Lead 读取；本 JSON 只做汇总）",
+  "caution": "真机普通层非零槽里有若干不在 keyboardConfig.keyList 里；SET_KEY 是整块覆盖，改键必须读-改-写整 512 字节。",
+  "readLengthPitfall": "512 字节按 56 字节/包传 → 扁平化得 560 字节，官方代码 .slice(0,512)，必须截断。",
+  "normalNonZeroCount": 112,
+  "normalSlotCount": 128,
+  "normalEntries": [
+   {
+    "slot": 0,
+    "name": "Esc",
+    "bytes": "02 00 29 00"
+   },
+   {
+    "slot": 1,
+    "name": "F1",
+    "bytes": "02 00 3a 00"
+   },
+   {
+    "slot": 2,
+    "name": "F2",
+    "bytes": "02 00 3b 00"
+   },
+   {
+    "slot": 3,
+    "name": "F3",
+    "bytes": "02 00 3c 00"
+   },
+   {
+    "slot": 4,
+    "name": "F4",
+    "bytes": "02 00 3d 00"
+   },
+   {
+    "slot": 5,
+    "name": "F5",
+    "bytes": "02 00 3e 00"
+   },
+   {
+    "slot": 6,
+    "name": "F6",
+    "bytes": "02 00 3f 00"
+   },
+   {
+    "slot": 7,
+    "name": "F7",
+    "bytes": "02 00 40 00"
+   },
+   {
+    "slot": 8,
+    "name": "F8",
+    "bytes": "02 00 41 00"
+   },
+   {
+    "slot": 9,
+    "name": "F9",
+    "bytes": "02 00 42 00"
+   },
+   {
+    "slot": 10,
+    "name": "F10",
+    "bytes": "02 00 43 00"
+   },
+   {
+    "slot": 11,
+    "name": "F11",
+    "bytes": "02 00 44 00"
+   },
+   {
+    "slot": 12,
+    "name": "F12",
+    "bytes": "02 00 45 00"
+   },
+   {
+    "slot": 13,
+    "name": "未在配置中",
+    "bytes": "03 e9 00 00"
+   },
+   {
+    "slot": 14,
+    "name": "未在配置中",
+    "bytes": "03 ea 00 00"
+   },
+   {
+    "slot": 15,
+    "name": "未在配置中",
+    "bytes": "02 00 98 00"
+   },
+   {
+    "slot": 16,
+    "name": "` ~",
+    "bytes": "02 00 35 00"
+   },
+   {
+    "slot": 17,
+    "name": "1 !",
+    "bytes": "02 00 1e 00"
+   },
+   {
+    "slot": 18,
+    "name": "2 @",
+    "bytes": "02 00 1f 00"
+   },
+   {
+    "slot": 19,
+    "name": "3 #",
+    "bytes": "02 00 20 00"
+   },
+   {
+    "slot": 20,
+    "name": "4 $",
+    "bytes": "02 00 21 00"
+   },
+   {
+    "slot": 21,
+    "name": "5 %",
+    "bytes": "02 00 22 00"
+   },
+   {
+    "slot": 22,
+    "name": "6 ^",
+    "bytes": "02 00 23 00"
+   },
+   {
+    "slot": 23,
+    "name": "7 &",
+    "bytes": "02 00 24 00"
+   },
+   {
+    "slot": 24,
+    "name": "8 *",
+    "bytes": "02 00 25 00"
+   },
+   {
+    "slot": 25,
+    "name": "9 (",
+    "bytes": "02 00 26 00"
+   },
+   {
+    "slot": 26,
+    "name": "0 )",
+    "bytes": "02 00 27 00"
+   },
+   {
+    "slot": 27,
+    "name": "ˉ -",
+    "bytes": "02 00 2d 00"
+   },
+   {
+    "slot": 28,
+    "name": "= +",
+    "bytes": "02 00 2e 00"
+   },
+   {
+    "slot": 29,
+    "name": "未在配置中",
+    "bytes": "02 00 53 00"
+   },
+   {
+    "slot": 30,
+    "name": "未在配置中",
+    "bytes": "02 00 54 00"
+   },
+   {
+    "slot": 31,
+    "name": "未在配置中",
+    "bytes": "02 00 55 00"
+   },
+   {
+    "slot": 32,
+    "name": "Tab",
+    "bytes": "02 00 2b 00"
+   },
+   {
+    "slot": 33,
+    "name": "Q",
+    "bytes": "02 00 14 00"
+   },
+   {
+    "slot": 34,
+    "name": "W",
+    "bytes": "02 00 1a 00"
+   },
+   {
+    "slot": 35,
+    "name": "E",
+    "bytes": "02 00 08 00"
+   },
+   {
+    "slot": 36,
+    "name": "R",
+    "bytes": "02 00 15 00"
+   },
+   {
+    "slot": 37,
+    "name": "T",
+    "bytes": "02 00 17 00"
+   },
+   {
+    "slot": 38,
+    "name": "Y",
+    "bytes": "02 00 1c 00"
+   },
+   {
+    "slot": 39,
+    "name": "U",
+    "bytes": "02 00 18 00"
+   },
+   {
+    "slot": 40,
+    "name": "I",
+    "bytes": "02 00 0c 00"
+   },
+   {
+    "slot": 41,
+    "name": "O",
+    "bytes": "02 00 12 00"
+   },
+   {
+    "slot": 42,
+    "name": "P",
+    "bytes": "02 00 13 00"
+   },
+   {
+    "slot": 43,
+    "name": "[ {",
+    "bytes": "02 00 2f 00"
+   },
+   {
+    "slot": 44,
+    "name": "] }",
+    "bytes": "02 00 30 00"
+   },
+   {
+    "slot": 45,
+    "name": "未在配置中",
+    "bytes": "02 00 5f 00"
+   },
+   {
+    "slot": 46,
+    "name": "未在配置中",
+    "bytes": "02 00 60 00"
+   },
+   {
+    "slot": 47,
+    "name": "未在配置中",
+    "bytes": "02 00 61 00"
+   },
+   {
+    "slot": 48,
+    "name": "Caps",
+    "bytes": "02 00 39 00"
+   },
+   {
+    "slot": 49,
+    "name": "A",
+    "bytes": "02 00 04 00"
+   },
+   {
+    "slot": 50,
+    "name": "S",
+    "bytes": "02 00 16 00"
+   },
+   {
+    "slot": 51,
+    "name": "D",
+    "bytes": "02 00 07 00"
+   },
+   {
+    "slot": 52,
+    "name": "F",
+    "bytes": "02 00 09 00"
+   },
+   {
+    "slot": 53,
+    "name": "G",
+    "bytes": "02 00 0a 00"
+   },
+   {
+    "slot": 54,
+    "name": "H",
+    "bytes": "02 00 0b 00"
+   },
+   {
+    "slot": 55,
+    "name": "J",
+    "bytes": "02 00 0d 00"
+   },
+   {
+    "slot": 56,
+    "name": "K",
+    "bytes": "02 00 0e 00"
+   },
+   {
+    "slot": 57,
+    "name": "L",
+    "bytes": "02 00 0f 00"
+   },
+   {
+    "slot": 58,
+    "name": "; :",
+    "bytes": "02 00 33 00"
+   },
+   {
+    "slot": 59,
+    "name": "' \"",
+    "bytes": "02 00 34 00"
+   },
+   {
+    "slot": 60,
+    "name": "\\\\ | ",
+    "bytes": "02 00 31 00"
+   },
+   {
+    "slot": 61,
+    "name": "未在配置中",
+    "bytes": "02 00 5c 00"
+   },
+   {
+    "slot": 62,
+    "name": "未在配置中",
+    "bytes": "02 00 5d 00"
+   },
+   {
+    "slot": 63,
+    "name": "未在配置中",
+    "bytes": "02 00 5e 00"
+   },
+   {
+    "slot": 64,
+    "name": "L-Shift",
+    "bytes": "02 00 e1 00"
+   },
+   {
+    "slot": 65,
+    "name": "Z",
+    "bytes": "02 00 1d 00"
+   },
+   {
+    "slot": 66,
+    "name": "X",
+    "bytes": "02 00 1b 00"
+   },
+   {
+    "slot": 67,
+    "name": "C",
+    "bytes": "02 00 06 00"
+   },
+   {
+    "slot": 68,
+    "name": "V",
+    "bytes": "02 00 19 00"
+   },
+   {
+    "slot": 69,
+    "name": "B",
+    "bytes": "02 00 05 00"
+   },
+   {
+    "slot": 70,
+    "name": "N",
+    "bytes": "02 00 11 00"
+   },
+   {
+    "slot": 71,
+    "name": "M",
+    "bytes": "02 00 10 00"
+   },
+   {
+    "slot": 72,
+    "name": ", <",
+    "bytes": "02 00 36 00"
+   },
+   {
+    "slot": 73,
+    "name": ". >",
+    "bytes": "02 00 37 00"
+   },
+   {
+    "slot": 74,
+    "name": "/ ?",
+    "bytes": "02 00 38 00"
+   },
+   {
+    "slot": 75,
+    "name": "R-Shift",
+    "bytes": "02 00 e5 00"
+   },
+   {
+    "slot": 76,
+    "name": "Enter",
+    "bytes": "02 00 28 00"
+   },
+   {
+    "slot": 77,
+    "name": "未在配置中",
+    "bytes": "02 00 59 00"
+   },
+   {
+    "slot": 78,
+    "name": "未在配置中",
+    "bytes": "02 00 5a 00"
+   },
+   {
+    "slot": 79,
+    "name": "未在配置中",
+    "bytes": "02 00 5b 00"
+   },
+   {
+    "slot": 80,
+    "name": "L-Ctrl",
+    "bytes": "02 00 e0 00"
+   },
+   {
+    "slot": 81,
+    "name": "L-Win",
+    "bytes": "02 00 e3 00"
+   },
+   {
+    "slot": 82,
+    "name": "L-Alt",
+    "bytes": "02 00 e2 00"
+   },
+   {
+    "slot": 83,
+    "name": "Spacebar",
+    "bytes": "02 00 2c 00"
+   },
+   {
+    "slot": 84,
+    "name": "R-Alt",
+    "bytes": "02 00 e6 00"
+   },
+   {
+    "slot": 85,
+    "name": "Fn",
+    "bytes": "02 00 af 00"
+   },
+   {
+    "slot": 86,
+    "name": "Super",
+    "bytes": "02 00 65 00"
+   },
+   {
+    "slot": 87,
+    "name": "R-Ctrl",
+    "bytes": "02 00 e4 00"
+   },
+   {
+    "slot": 88,
+    "name": "←",
+    "bytes": "02 00 50 00"
+   },
+   {
+    "slot": 89,
+    "name": "↓",
+    "bytes": "02 00 51 00"
+   },
+   {
+    "slot": 90,
+    "name": "↑",
+    "bytes": "02 00 52 00"
+   },
+   {
+    "slot": 91,
+    "name": "→",
+    "bytes": "02 00 4f 00"
+   },
+   {
+    "slot": 92,
+    "name": "Back",
+    "bytes": "02 00 2a 00"
+   },
+   {
+    "slot": 93,
+    "name": "未在配置中",
+    "bytes": "02 00 62 00"
+   },
+   {
+    "slot": 94,
+    "name": "未在配置中",
+    "bytes": "02 00 63 00"
+   },
+   {
+    "slot": 95,
+    "name": "未在配置中",
+    "bytes": "02 00 58 00"
+   },
+   {
+    "slot": 96,
+    "name": "未在配置中",
+    "bytes": "02 00 7d 00"
+   },
+   {
+    "slot": 97,
+    "name": "未在配置中",
+    "bytes": "02 00 32 00"
+   },
+   {
+    "slot": 98,
+    "name": "未在配置中",
+    "bytes": "02 00 64 00"
+   },
+   {
+    "slot": 99,
+    "name": "Print",
+    "bytes": "02 00 46 00"
+   },
+   {
+    "slot": 100,
+    "name": "Scroll",
+    "bytes": "02 00 47 00"
+   },
+   {
+    "slot": 101,
+    "name": "未在配置中",
+    "bytes": "02 00 e7 00"
+   },
+   {
+    "slot": 102,
+    "name": "Pause",
+    "bytes": "02 00 48 00"
+   },
+   {
+    "slot": 103,
+    "name": "Insert",
+    "bytes": "02 00 49 00"
+   },
+   {
+    "slot": 104,
+    "name": "Home",
+    "bytes": "02 00 4a 00"
+   },
+   {
+    "slot": 105,
+    "name": "PgUp",
+    "bytes": "02 00 4b 00"
+   },
+   {
+    "slot": 106,
+    "name": "Del",
+    "bytes": "02 00 4c 00"
+   },
+   {
+    "slot": 107,
+    "name": "End",
+    "bytes": "02 00 4d 00"
+   },
+   {
+    "slot": 108,
+    "name": "PgDn",
+    "bytes": "02 00 4e 00"
+   },
+   {
+    "slot": 109,
+    "name": "未在配置中",
+    "bytes": "02 00 56 00"
+   },
+   {
+    "slot": 110,
+    "name": "未在配置中",
+    "bytes": "02 00 57 00"
+   },
+   {
+    "slot": 111,
+    "name": "未在配置中",
+    "bytes": "02 00 7d 00"
+   }
+  ],
+  "extraNonZeroSlotsNotInConfig": [
+   {
+    "slot": 13,
+    "name": "未在配置中",
+    "bytes": "03 e9 00 00"
+   },
+   {
+    "slot": 14,
+    "name": "未在配置中",
+    "bytes": "03 ea 00 00"
+   },
+   {
+    "slot": 15,
+    "name": "未在配置中",
+    "bytes": "02 00 98 00"
+   },
+   {
+    "slot": 29,
+    "name": "未在配置中",
+    "bytes": "02 00 53 00"
+   },
+   {
+    "slot": 30,
+    "name": "未在配置中",
+    "bytes": "02 00 54 00"
+   },
+   {
+    "slot": 31,
+    "name": "未在配置中",
+    "bytes": "02 00 55 00"
+   },
+   {
+    "slot": 45,
+    "name": "未在配置中",
+    "bytes": "02 00 5f 00"
+   },
+   {
+    "slot": 46,
+    "name": "未在配置中",
+    "bytes": "02 00 60 00"
+   },
+   {
+    "slot": 47,
+    "name": "未在配置中",
+    "bytes": "02 00 61 00"
+   },
+   {
+    "slot": 61,
+    "name": "未在配置中",
+    "bytes": "02 00 5c 00"
+   },
+   {
+    "slot": 62,
+    "name": "未在配置中",
+    "bytes": "02 00 5d 00"
+   },
+   {
+    "slot": 63,
+    "name": "未在配置中",
+    "bytes": "02 00 5e 00"
+   },
+   {
+    "slot": 77,
+    "name": "未在配置中",
+    "bytes": "02 00 59 00"
+   },
+   {
+    "slot": 78,
+    "name": "未在配置中",
+    "bytes": "02 00 5a 00"
+   },
+   {
+    "slot": 79,
+    "name": "未在配置中",
+    "bytes": "02 00 5b 00"
+   },
+   {
+    "slot": 93,
+    "name": "未在配置中",
+    "bytes": "02 00 62 00"
+   },
+   {
+    "slot": 94,
+    "name": "未在配置中",
+    "bytes": "02 00 63 00"
+   },
+   {
+    "slot": 95,
+    "name": "未在配置中",
+    "bytes": "02 00 58 00"
+   },
+   {
+    "slot": 96,
+    "name": "未在配置中",
+    "bytes": "02 00 7d 00"
+   },
+   {
+    "slot": 97,
+    "name": "未在配置中",
+    "bytes": "02 00 32 00"
+   },
+   {
+    "slot": 98,
+    "name": "未在配置中",
+    "bytes": "02 00 64 00"
+   },
+   {
+    "slot": 101,
+    "name": "未在配置中",
+    "bytes": "02 00 e7 00"
+   },
+   {
+    "slot": 109,
+    "name": "未在配置中",
+    "bytes": "02 00 56 00"
+   },
+   {
+    "slot": 110,
+    "name": "未在配置中",
+    "bytes": "02 00 57 00"
+   },
+   {
+    "slot": 111,
+    "name": "未在配置中",
+    "bytes": "02 00 7d 00"
+   }
+  ],
+  "fnPageTypes": [
+   13
+  ],
+  "fnVsNormalEntries": [
+   {
+    "slot": 15,
+    "name": "未在配置中",
+    "fnBytes": "0d 00 00 2e"
+   },
+   {
+    "slot": 16,
+    "name": "` ~",
+    "fnBytes": "0d 00 00 63"
+   },
+   {
+    "slot": 17,
+    "name": "1 !",
+    "fnBytes": "0d 00 00 47"
+   },
+   {
+    "slot": 19,
+    "name": "3 #",
+    "fnBytes": "0d 00 00 62"
+   },
+   {
+    "slot": 27,
+    "name": "ˉ -",
+    "fnBytes": "0d 00 00 10"
+   },
+   {
+    "slot": 28,
+    "name": "= +",
+    "fnBytes": "0d 00 00 0f"
+   },
+   {
+    "slot": 33,
+    "name": "Q",
+    "fnBytes": "0d 00 00 02"
+   },
+   {
+    "slot": 34,
+    "name": "W",
+    "fnBytes": "0d 00 00 03"
+   },
+   {
+    "slot": 35,
+    "name": "E",
+    "fnBytes": "0d 00 00 04"
+   },
+   {
+    "slot": 36,
+    "name": "R",
+    "fnBytes": "0d 00 00 05"
+   },
+   {
+    "slot": 59,
+    "name": "' \"",
+    "fnBytes": "0d 00 00 18"
+   },
+   {
+    "slot": 60,
+    "name": "\\\\ | ",
+    "fnBytes": "0d 00 00 0b"
+   },
+   {
+    "slot": 66,
+    "name": "X",
+    "fnBytes": "0d 00 00 11"
+   },
+   {
+    "slot": 67,
+    "name": "C",
+    "fnBytes": "0d 00 00 54"
+   },
+   {
+    "slot": 68,
+    "name": "V",
+    "fnBytes": "0d 00 00 55"
+   },
+   {
+    "slot": 76,
+    "name": "Enter",
+    "fnBytes": "0d 00 00 17"
+   },
+   {
+    "slot": 81,
+    "name": "L-Win",
+    "fnBytes": "0d 00 00 16"
+   },
+   {
+    "slot": 83,
+    "name": "Spacebar",
+    "fnBytes": "0d 00 00 01"
+   },
+   {
+    "slot": 88,
+    "name": "←",
+    "fnBytes": "0d 00 00 4e"
+   },
+   {
+    "slot": 89,
+    "name": "↓",
+    "fnBytes": "0d 00 00 0e"
+   },
+   {
+    "slot": 90,
+    "name": "↑",
+    "fnBytes": "0d 00 00 0d"
+   },
+   {
+    "slot": 92,
+    "name": "Back",
+    "fnBytes": "0d 00 00 07"
+   },
+   {
+    "slot": 103,
+    "name": "Insert",
+    "fnBytes": "0d 00 00 27"
+   },
+   {
+    "slot": 104,
+    "name": "Home",
+    "fnBytes": "0d 00 00 3f"
+   },
+   {
+    "slot": 106,
+    "name": "Del",
+    "fnBytes": "0d 00 00 59"
+   },
+   {
+    "slot": 107,
+    "name": "End",
+    "fnBytes": "0d 00 00 8a"
+   }
+  ]
+ }
+}

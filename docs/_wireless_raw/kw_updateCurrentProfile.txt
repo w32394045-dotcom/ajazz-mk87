@@ -1,0 +1,8 @@
+# token=updateCurrentProfile hits=7 uniq=7
+@1837810	updateCurrentProfile:t}=await Q(async()=>{let{updateCurrentProfile:e}=await Promise.resolve().then(()=>oQ);return{updateCurrentProfile:e}},void 0),n=$I(e,{});n.
+@1837856	updateCurrentProfile:e}=await Promise.resolve().then(()=>oQ);return{updateCurrentProfile:e}},void 0),n=$I(e,{});n.value.magneticAxisRTConfig&&(n.value.magneticA
+@1837924	updateCurrentProfile:e}},void 0),n=$I(e,{});n.value.magneticAxisRTConfig&&(n.value.magneticAxisRTConfig=void 0,await t(e))}location.reload()});n&&typeof n==`obj
+@1841543	updateCurrentProfile:a}=await Q(async()=>{let{syncHardwareProfiles:e,updateCurrentProfile:t}=await Promise.resolve().then(()=>oQ);return{syncHardwareProfiles:e,
+@1841612	updateCurrentProfile:t}=await Promise.resolve().then(()=>oQ);return{syncHardwareProfiles:e,updateCurrentProfile:t}},void 0);await i(n.value)||await a(n.value)}}
+@1841703	updateCurrentProfile:t}},void 0);await i(n.value)||await a(n.value)}}!g.value&&r.value?.keyboardConfig?.tftConfig?.isShowTftInfo&&await P(n.value)}return $loadi
+@1983582	updateCurrentProfile:()=>vQ,updateProfile:()=>_Q}),sQ=e(aQ(),1),cQ=oL(`profile-switch`),lQ=async e=>{try{let t=await sQ.default.getItem(`${e}-profile`);if(t)ret

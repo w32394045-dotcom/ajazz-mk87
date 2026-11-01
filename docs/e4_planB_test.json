@@ -1,0 +1,797 @@
+﻿{
+    "startTime":  "2026-11-01T08:35:28",
+    "mode":  "auto",
+    "elevated":  true,
+    "steps":  [
+                  {
+                      "time":  "08:35:31.826",
+                      "name":  "snapshot:initial",
+                      "data":  [
+                                   {
+                                       "instanceId":  "HID\\VID_0C45\u0026PID_FEFE\u0026MI_02\u0026COL01\\8\u0026195F4F95\u00260\u00260000",
+                                       "status":  "OK",
+                                       "class":  "HIDClass",
+                                       "problem":  "CM_PROB_NONE",
+                                       "friendly":  "符合 HID 标准的用户控制设备"
+                                   },
+                                   {
+                                       "instanceId":  "HID\\VID_0C45\u0026PID_FEFE\u0026MI_04\\8\u0026D00E8E7\u00260\u00260000",
+                                       "status":  "OK",
+                                       "class":  "HIDClass",
+                                       "problem":  "CM_PROB_NONE",
+                                       "friendly":  "符合 HID 标准的供应商定义设备"
+                                   },
+                                   {
+                                       "instanceId":  "HID\\VID_0C45\u0026PID_FEFE\u0026MI_02\u0026COL02\\8\u0026195F4F95\u00260\u00260001",
+                                       "status":  "OK",
+                                       "class":  "HIDClass",
+                                       "problem":  "CM_PROB_NONE",
+                                       "friendly":  "符合 HID 标准的系统控制器"
+                                   },
+                                   {
+                                       "instanceId":  "HID\\VID_0C45\u0026PID_FEFE\u0026MI_01\\8\u00262C8F6BD3\u00260\u00260000",
+                                       "status":  "OK",
+                                       "class":  "Mouse",
+                                       "problem":  "CM_PROB_NONE",
+                                       "friendly":  "HID-compliant mouse"
+                                   },
+                                   {
+                                       "instanceId":  "USB\\VID_0C45\u0026PID_FEFE\u0026MI_04\\7\u0026883A9E9\u00260\u00260004",
+                                       "status":  "OK",
+                                       "class":  "HIDClass",
+                                       "problem":  "CM_PROB_NONE",
+                                       "friendly":  "USB 输入设备"
+                                   },
+                                   {
+                                       "instanceId":  "USB\\VID_0C45\u0026PID_FEFE\u0026MI_03\\7\u0026883A9E9\u00260\u00260003",
+                                       "status":  "OK",
+                                       "class":  "HIDClass",
+                                       "problem":  "CM_PROB_NONE",
+                                       "friendly":  "USB 输入设备"
+                                   },
+                                   {
+                                       "instanceId":  "HID\\VID_0C45\u0026PID_FEFE\u0026MI_02\u0026COL03\\8\u0026195F4F95\u00260\u00260002",
+                                       "status":  "OK",
+                                       "class":  "Keyboard",
+                                       "problem":  "CM_PROB_NONE",
+                                       "friendly":  "HID Keyboard Device"
+                                   },
+                                   {
+                                       "instanceId":  "USB\\VID_0C45\u0026PID_FEFE\u0026MI_02\\7\u0026883A9E9\u00260\u00260002",
+                                       "status":  "OK",
+                                       "class":  "HIDClass",
+                                       "problem":  "CM_PROB_NONE",
+                                       "friendly":  "USB 输入设备"
+                                   },
+                                   {
+                                       "instanceId":  "USB\\VID_0C45\u0026PID_FEFE\u0026MI_01\\7\u0026883A9E9\u00260\u00260001",
+                                       "status":  "OK",
+                                       "class":  "HIDClass",
+                                       "problem":  "CM_PROB_NONE",
+                                       "friendly":  "USB 输入设备"
+                                   },
+                                   {
+                                       "instanceId":  "USB\\VID_0C45\u0026PID_FEFE\u0026MI_00\\7\u0026883A9E9\u00260\u00260000",
+                                       "status":  "OK",
+                                       "class":  "HIDClass",
+                                       "problem":  "CM_PROB_NONE",
+                                       "friendly":  "USB 输入设备"
+                                   },
+                                   {
+                                       "instanceId":  "USB\\VID_0C45\u0026PID_FEFE\\6\u002654CA98\u00260\u00262",
+                                       "status":  "OK",
+                                       "class":  "USB",
+                                       "problem":  "CM_PROB_NONE",
+                                       "friendly":  "USB Composite Device"
+                                   },
+                                   {
+                                       "instanceId":  "HID\\VID_0C45\u0026PID_FEFE\u0026MI_02\u0026COL04\\8\u0026195F4F95\u00260\u00260003",
+                                       "status":  "OK",
+                                       "class":  "HIDClass",
+                                       "problem":  "CM_PROB_NONE",
+                                       "friendly":  "符合 HID 标准的系统多轴控制器"
+                                   },
+                                   {
+                                       "instanceId":  "USB\\VID_0C45\u0026PID_8047\\6\u002654CA98\u00260\u00261",
+                                       "status":  "Error",
+                                       "class":  "USB",
+                                       "problem":  "CM_PROB_FAILED_START",
+                                       "friendly":  "USB Composite Device"
+                                   },
+                                   {
+                                       "instanceId":  "HID\\VID_0C45\u0026PID_FEFE\u0026MI_00\\8\u0026424BE0A\u00260\u00260000",
+                                       "status":  "OK",
+                                       "class":  "Keyboard",
+                                       "problem":  "CM_PROB_NONE",
+                                       "friendly":  "HID Keyboard Device"
+                                   },
+                                   {
+                                       "instanceId":  "HID\\VID_0C45\u0026PID_FEFE\u0026MI_03\\8\u002662F3357\u00260\u00260000",
+                                       "status":  "OK",
+                                       "class":  "HIDClass",
+                                       "problem":  "CM_PROB_NONE",
+                                       "friendly":  "符合 HID 标准的供应商定义设备"
+                                   },
+                                   {
+                                       "instanceId":  "HID\\VID_0C45\u0026PID_FEFE\u0026MI_02\u0026COL05\\8\u0026195F4F95\u00260\u00260004",
+                                       "status":  "OK",
+                                       "class":  "HIDClass",
+                                       "problem":  "CM_PROB_NONE",
+                                       "friendly":  "符合 HID 标准的供应商定义设备"
+                                   }
+                               ]
+                  },
+                  {
+                      "time":  "08:35:31.894",
+                      "name":  "plan",
+                      "data":  {
+                                   "targetStatus":  "Error",
+                                   "otherStatus":  "OK",
+                                   "target":  "USB\\VID_0C45\u0026PID_8047\\6\u002654CA98\u00260\u00261",
+                                   "other":  "USB\\VID_0C45\u0026PID_FEFE\\6\u002654CA98\u00260\u00262"
+                               }
+                  },
+                  {
+                      "time":  "08:35:34.772",
+                      "name":  "disable-other-fail",
+                      "data":  {
+                                   "error":  "常规故障 ",
+                                   "instanceId":  "USB\\VID_0C45\u0026PID_FEFE\\6\u002654CA98\u00260\u00262"
+                               }
+                  },
+                  {
+                      "time":  "08:35:39.019",
+                      "name":  "snapshot:after-disable-other",
+                      "data":  [
+                                   {
+                                       "instanceId":  "HID\\VID_0C45\u0026PID_FEFE\u0026MI_02\u0026COL01\\8\u0026195F4F95\u00260\u00260000",
+                                       "status":  "OK",
+                                       "class":  "HIDClass",
+                                       "problem":  "CM_PROB_NONE",
+                                       "friendly":  "符合 HID 标准的用户控制设备"
+                                   },
+                                   {
+                                       "instanceId":  "HID\\VID_0C45\u0026PID_FEFE\u0026MI_04\\8\u0026D00E8E7\u00260\u00260000",
+                                       "status":  "OK",
+                                       "class":  "HIDClass",
+                                       "problem":  "CM_PROB_NONE",
+                                       "friendly":  "符合 HID 标准的供应商定义设备"
+                                   },
+                                   {
+                                       "instanceId":  "HID\\VID_0C45\u0026PID_FEFE\u0026MI_02\u0026COL02\\8\u0026195F4F95\u00260\u00260001",
+                                       "status":  "OK",
+                                       "class":  "HIDClass",
+                                       "problem":  "CM_PROB_NONE",
+                                       "friendly":  "符合 HID 标准的系统控制器"
+                                   },
+                                   {
+                                       "instanceId":  "HID\\VID_0C45\u0026PID_FEFE\u0026MI_01\\8\u00262C8F6BD3\u00260\u00260000",
+                                       "status":  "OK",
+                                       "class":  "Mouse",
+                                       "problem":  "CM_PROB_NONE",
+                                       "friendly":  "HID-compliant mouse"
+                                   },
+                                   {
+                                       "instanceId":  "USB\\VID_0C45\u0026PID_FEFE\u0026MI_04\\7\u0026883A9E9\u00260\u00260004",
+                                       "status":  "OK",
+                                       "class":  "HIDClass",
+                                       "problem":  "CM_PROB_NONE",
+                                       "friendly":  "USB 输入设备"
+                                   },
+                                   {
+                                       "instanceId":  "USB\\VID_0C45\u0026PID_FEFE\u0026MI_03\\7\u0026883A9E9\u00260\u00260003",
+                                       "status":  "OK",
+                                       "class":  "HIDClass",
+                                       "problem":  "CM_PROB_NONE",
+                                       "friendly":  "USB 输入设备"
+                                   },
+                                   {
+                                       "instanceId":  "HID\\VID_0C45\u0026PID_FEFE\u0026MI_02\u0026COL03\\8\u0026195F4F95\u00260\u00260002",
+                                       "status":  "OK",
+                                       "class":  "Keyboard",
+                                       "problem":  "CM_PROB_NONE",
+                                       "friendly":  "HID Keyboard Device"
+                                   },
+                                   {
+                                       "instanceId":  "USB\\VID_0C45\u0026PID_FEFE\u0026MI_02\\7\u0026883A9E9\u00260\u00260002",
+                                       "status":  "OK",
+                                       "class":  "HIDClass",
+                                       "problem":  "CM_PROB_NONE",
+                                       "friendly":  "USB 输入设备"
+                                   },
+                                   {
+                                       "instanceId":  "USB\\VID_0C45\u0026PID_FEFE\u0026MI_01\\7\u0026883A9E9\u00260\u00260001",
+                                       "status":  "OK",
+                                       "class":  "HIDClass",
+                                       "problem":  "CM_PROB_NONE",
+                                       "friendly":  "USB 输入设备"
+                                   },
+                                   {
+                                       "instanceId":  "USB\\VID_0C45\u0026PID_FEFE\u0026MI_00\\7\u0026883A9E9\u00260\u00260000",
+                                       "status":  "OK",
+                                       "class":  "HIDClass",
+                                       "problem":  "CM_PROB_NONE",
+                                       "friendly":  "USB 输入设备"
+                                   },
+                                   {
+                                       "instanceId":  "USB\\VID_0C45\u0026PID_FEFE\\6\u002654CA98\u00260\u00262",
+                                       "status":  "OK",
+                                       "class":  "USB",
+                                       "problem":  "CM_PROB_NONE",
+                                       "friendly":  "USB Composite Device"
+                                   },
+                                   {
+                                       "instanceId":  "HID\\VID_0C45\u0026PID_FEFE\u0026MI_02\u0026COL04\\8\u0026195F4F95\u00260\u00260003",
+                                       "status":  "OK",
+                                       "class":  "HIDClass",
+                                       "problem":  "CM_PROB_NONE",
+                                       "friendly":  "符合 HID 标准的系统多轴控制器"
+                                   },
+                                   {
+                                       "instanceId":  "USB\\VID_0C45\u0026PID_8047\\6\u002654CA98\u00260\u00261",
+                                       "status":  "Error",
+                                       "class":  "USB",
+                                       "problem":  "CM_PROB_FAILED_START",
+                                       "friendly":  "USB Composite Device"
+                                   },
+                                   {
+                                       "instanceId":  "HID\\VID_0C45\u0026PID_FEFE\u0026MI_00\\8\u0026424BE0A\u00260\u00260000",
+                                       "status":  "OK",
+                                       "class":  "Keyboard",
+                                       "problem":  "CM_PROB_NONE",
+                                       "friendly":  "HID Keyboard Device"
+                                   },
+                                   {
+                                       "instanceId":  "HID\\VID_0C45\u0026PID_FEFE\u0026MI_03\\8\u002662F3357\u00260\u00260000",
+                                       "status":  "OK",
+                                       "class":  "HIDClass",
+                                       "problem":  "CM_PROB_NONE",
+                                       "friendly":  "符合 HID 标准的供应商定义设备"
+                                   },
+                                   {
+                                       "instanceId":  "HID\\VID_0C45\u0026PID_FEFE\u0026MI_02\u0026COL05\\8\u0026195F4F95\u00260\u00260004",
+                                       "status":  "OK",
+                                       "class":  "HIDClass",
+                                       "problem":  "CM_PROB_NONE",
+                                       "friendly":  "符合 HID 标准的供应商定义设备"
+                                   }
+                               ]
+                  },
+                  {
+                      "time":  "08:35:41.745",
+                      "name":  "disable-target-fail",
+                      "data":  {
+                                   "error":  "常规故障 "
+                               }
+                  },
+                  {
+                      "time":  "08:35:45.050",
+                      "name":  "enable-target-ok",
+                      "data":  "USB\\VID_0C45\u0026PID_8047\\6\u002654CA98\u00260\u00261"
+                  },
+                  {
+                      "time":  "08:35:49.748",
+                      "name":  "snapshot:after-target-cycle",
+                      "data":  [
+                                   {
+                                       "instanceId":  "HID\\VID_0C45\u0026PID_FEFE\u0026MI_02\u0026COL01\\8\u0026195F4F95\u00260\u00260000",
+                                       "status":  "OK",
+                                       "class":  "HIDClass",
+                                       "problem":  "CM_PROB_NONE",
+                                       "friendly":  "符合 HID 标准的用户控制设备"
+                                   },
+                                   {
+                                       "instanceId":  "HID\\VID_0C45\u0026PID_FEFE\u0026MI_04\\8\u0026D00E8E7\u00260\u00260000",
+                                       "status":  "OK",
+                                       "class":  "HIDClass",
+                                       "problem":  "CM_PROB_NONE",
+                                       "friendly":  "符合 HID 标准的供应商定义设备"
+                                   },
+                                   {
+                                       "instanceId":  "HID\\VID_0C45\u0026PID_FEFE\u0026MI_02\u0026COL02\\8\u0026195F4F95\u00260\u00260001",
+                                       "status":  "OK",
+                                       "class":  "HIDClass",
+                                       "problem":  "CM_PROB_NONE",
+                                       "friendly":  "符合 HID 标准的系统控制器"
+                                   },
+                                   {
+                                       "instanceId":  "HID\\VID_0C45\u0026PID_FEFE\u0026MI_01\\8\u00262C8F6BD3\u00260\u00260000",
+                                       "status":  "OK",
+                                       "class":  "Mouse",
+                                       "problem":  "CM_PROB_NONE",
+                                       "friendly":  "HID-compliant mouse"
+                                   },
+                                   {
+                                       "instanceId":  "USB\\VID_0C45\u0026PID_FEFE\u0026MI_04\\7\u0026883A9E9\u00260\u00260004",
+                                       "status":  "OK",
+                                       "class":  "HIDClass",
+                                       "problem":  "CM_PROB_NONE",
+                                       "friendly":  "USB 输入设备"
+                                   },
+                                   {
+                                       "instanceId":  "USB\\VID_0C45\u0026PID_FEFE\u0026MI_03\\7\u0026883A9E9\u00260\u00260003",
+                                       "status":  "OK",
+                                       "class":  "HIDClass",
+                                       "problem":  "CM_PROB_NONE",
+                                       "friendly":  "USB 输入设备"
+                                   },
+                                   {
+                                       "instanceId":  "HID\\VID_0C45\u0026PID_FEFE\u0026MI_02\u0026COL03\\8\u0026195F4F95\u00260\u00260002",
+                                       "status":  "OK",
+                                       "class":  "Keyboard",
+                                       "problem":  "CM_PROB_NONE",
+                                       "friendly":  "HID Keyboard Device"
+                                   },
+                                   {
+                                       "instanceId":  "USB\\VID_0C45\u0026PID_FEFE\u0026MI_02\\7\u0026883A9E9\u00260\u00260002",
+                                       "status":  "OK",
+                                       "class":  "HIDClass",
+                                       "problem":  "CM_PROB_NONE",
+                                       "friendly":  "USB 输入设备"
+                                   },
+                                   {
+                                       "instanceId":  "USB\\VID_0C45\u0026PID_FEFE\u0026MI_01\\7\u0026883A9E9\u00260\u00260001",
+                                       "status":  "OK",
+                                       "class":  "HIDClass",
+                                       "problem":  "CM_PROB_NONE",
+                                       "friendly":  "USB 输入设备"
+                                   },
+                                   {
+                                       "instanceId":  "USB\\VID_0C45\u0026PID_FEFE\u0026MI_00\\7\u0026883A9E9\u00260\u00260000",
+                                       "status":  "OK",
+                                       "class":  "HIDClass",
+                                       "problem":  "CM_PROB_NONE",
+                                       "friendly":  "USB 输入设备"
+                                   },
+                                   {
+                                       "instanceId":  "USB\\VID_0C45\u0026PID_FEFE\\6\u002654CA98\u00260\u00262",
+                                       "status":  "OK",
+                                       "class":  "USB",
+                                       "problem":  "CM_PROB_NONE",
+                                       "friendly":  "USB Composite Device"
+                                   },
+                                   {
+                                       "instanceId":  "HID\\VID_0C45\u0026PID_FEFE\u0026MI_02\u0026COL04\\8\u0026195F4F95\u00260\u00260003",
+                                       "status":  "OK",
+                                       "class":  "HIDClass",
+                                       "problem":  "CM_PROB_NONE",
+                                       "friendly":  "符合 HID 标准的系统多轴控制器"
+                                   },
+                                   {
+                                       "instanceId":  "USB\\VID_0C45\u0026PID_8047\\6\u002654CA98\u00260\u00261",
+                                       "status":  "Error",
+                                       "class":  "USB",
+                                       "problem":  "CM_PROB_FAILED_START",
+                                       "friendly":  "USB Composite Device"
+                                   },
+                                   {
+                                       "instanceId":  "HID\\VID_0C45\u0026PID_FEFE\u0026MI_00\\8\u0026424BE0A\u00260\u00260000",
+                                       "status":  "OK",
+                                       "class":  "Keyboard",
+                                       "problem":  "CM_PROB_NONE",
+                                       "friendly":  "HID Keyboard Device"
+                                   },
+                                   {
+                                       "instanceId":  "HID\\VID_0C45\u0026PID_FEFE\u0026MI_03\\8\u002662F3357\u00260\u00260000",
+                                       "status":  "OK",
+                                       "class":  "HIDClass",
+                                       "problem":  "CM_PROB_NONE",
+                                       "friendly":  "符合 HID 标准的供应商定义设备"
+                                   },
+                                   {
+                                       "instanceId":  "HID\\VID_0C45\u0026PID_FEFE\u0026MI_02\u0026COL05\\8\u0026195F4F95\u00260\u00260004",
+                                       "status":  "OK",
+                                       "class":  "HIDClass",
+                                       "problem":  "CM_PROB_NONE",
+                                       "friendly":  "符合 HID 标准的供应商定义设备"
+                                   }
+                               ]
+                  },
+                  {
+                      "time":  "08:35:49.814",
+                      "name":  "locate",
+                      "data":  {
+                                   "result":  0,
+                                   "devInst":  1,
+                                   "instanceId":  "USB\\VID_0C45\u0026PID_8047\\6\u002654CA98\u00260\u00261"
+                               }
+                  },
+                  {
+                      "time":  "08:35:49.829",
+                      "name":  "reenumerate",
+                      "data":  {
+                                   "flags":  0,
+                                   "result":  51,
+                                   "instanceId":  "USB\\VID_0C45\u0026PID_8047\\6\u002654CA98\u00260\u00261"
+                               }
+                  },
+                  {
+                      "time":  "08:35:54.735",
+                      "name":  "snapshot:after-reenum0",
+                      "data":  [
+                                   {
+                                       "instanceId":  "HID\\VID_0C45\u0026PID_FEFE\u0026MI_02\u0026COL01\\8\u0026195F4F95\u00260\u00260000",
+                                       "status":  "OK",
+                                       "class":  "HIDClass",
+                                       "problem":  "CM_PROB_NONE",
+                                       "friendly":  "符合 HID 标准的用户控制设备"
+                                   },
+                                   {
+                                       "instanceId":  "HID\\VID_0C45\u0026PID_FEFE\u0026MI_04\\8\u0026D00E8E7\u00260\u00260000",
+                                       "status":  "OK",
+                                       "class":  "HIDClass",
+                                       "problem":  "CM_PROB_NONE",
+                                       "friendly":  "符合 HID 标准的供应商定义设备"
+                                   },
+                                   {
+                                       "instanceId":  "HID\\VID_0C45\u0026PID_FEFE\u0026MI_02\u0026COL02\\8\u0026195F4F95\u00260\u00260001",
+                                       "status":  "OK",
+                                       "class":  "HIDClass",
+                                       "problem":  "CM_PROB_NONE",
+                                       "friendly":  "符合 HID 标准的系统控制器"
+                                   },
+                                   {
+                                       "instanceId":  "HID\\VID_0C45\u0026PID_FEFE\u0026MI_01\\8\u00262C8F6BD3\u00260\u00260000",
+                                       "status":  "OK",
+                                       "class":  "Mouse",
+                                       "problem":  "CM_PROB_NONE",
+                                       "friendly":  "HID-compliant mouse"
+                                   },
+                                   {
+                                       "instanceId":  "USB\\VID_0C45\u0026PID_FEFE\u0026MI_04\\7\u0026883A9E9\u00260\u00260004",
+                                       "status":  "OK",
+                                       "class":  "HIDClass",
+                                       "problem":  "CM_PROB_NONE",
+                                       "friendly":  "USB 输入设备"
+                                   },
+                                   {
+                                       "instanceId":  "USB\\VID_0C45\u0026PID_FEFE\u0026MI_03\\7\u0026883A9E9\u00260\u00260003",
+                                       "status":  "OK",
+                                       "class":  "HIDClass",
+                                       "problem":  "CM_PROB_NONE",
+                                       "friendly":  "USB 输入设备"
+                                   },
+                                   {
+                                       "instanceId":  "HID\\VID_0C45\u0026PID_FEFE\u0026MI_02\u0026COL03\\8\u0026195F4F95\u00260\u00260002",
+                                       "status":  "OK",
+                                       "class":  "Keyboard",
+                                       "problem":  "CM_PROB_NONE",
+                                       "friendly":  "HID Keyboard Device"
+                                   },
+                                   {
+                                       "instanceId":  "USB\\VID_0C45\u0026PID_FEFE\u0026MI_02\\7\u0026883A9E9\u00260\u00260002",
+                                       "status":  "OK",
+                                       "class":  "HIDClass",
+                                       "problem":  "CM_PROB_NONE",
+                                       "friendly":  "USB 输入设备"
+                                   },
+                                   {
+                                       "instanceId":  "USB\\VID_0C45\u0026PID_FEFE\u0026MI_01\\7\u0026883A9E9\u00260\u00260001",
+                                       "status":  "OK",
+                                       "class":  "HIDClass",
+                                       "problem":  "CM_PROB_NONE",
+                                       "friendly":  "USB 输入设备"
+                                   },
+                                   {
+                                       "instanceId":  "USB\\VID_0C45\u0026PID_FEFE\u0026MI_00\\7\u0026883A9E9\u00260\u00260000",
+                                       "status":  "OK",
+                                       "class":  "HIDClass",
+                                       "problem":  "CM_PROB_NONE",
+                                       "friendly":  "USB 输入设备"
+                                   },
+                                   {
+                                       "instanceId":  "USB\\VID_0C45\u0026PID_FEFE\\6\u002654CA98\u00260\u00262",
+                                       "status":  "OK",
+                                       "class":  "USB",
+                                       "problem":  "CM_PROB_NONE",
+                                       "friendly":  "USB Composite Device"
+                                   },
+                                   {
+                                       "instanceId":  "HID\\VID_0C45\u0026PID_FEFE\u0026MI_02\u0026COL04\\8\u0026195F4F95\u00260\u00260003",
+                                       "status":  "OK",
+                                       "class":  "HIDClass",
+                                       "problem":  "CM_PROB_NONE",
+                                       "friendly":  "符合 HID 标准的系统多轴控制器"
+                                   },
+                                   {
+                                       "instanceId":  "USB\\VID_0C45\u0026PID_8047\\6\u002654CA98\u00260\u00261",
+                                       "status":  "Error",
+                                       "class":  "USB",
+                                       "problem":  "CM_PROB_FAILED_START",
+                                       "friendly":  "USB Composite Device"
+                                   },
+                                   {
+                                       "instanceId":  "HID\\VID_0C45\u0026PID_FEFE\u0026MI_00\\8\u0026424BE0A\u00260\u00260000",
+                                       "status":  "OK",
+                                       "class":  "Keyboard",
+                                       "problem":  "CM_PROB_NONE",
+                                       "friendly":  "HID Keyboard Device"
+                                   },
+                                   {
+                                       "instanceId":  "HID\\VID_0C45\u0026PID_FEFE\u0026MI_03\\8\u002662F3357\u00260\u00260000",
+                                       "status":  "OK",
+                                       "class":  "HIDClass",
+                                       "problem":  "CM_PROB_NONE",
+                                       "friendly":  "符合 HID 标准的供应商定义设备"
+                                   },
+                                   {
+                                       "instanceId":  "HID\\VID_0C45\u0026PID_FEFE\u0026MI_02\u0026COL05\\8\u0026195F4F95\u00260\u00260004",
+                                       "status":  "OK",
+                                       "class":  "HIDClass",
+                                       "problem":  "CM_PROB_NONE",
+                                       "friendly":  "符合 HID 标准的供应商定义设备"
+                                   }
+                               ]
+                  },
+                  {
+                      "time":  "08:35:54.738",
+                      "name":  "locate",
+                      "data":  {
+                                   "result":  0,
+                                   "devInst":  1,
+                                   "instanceId":  "USB\\VID_0C45\u0026PID_8047\\6\u002654CA98\u00260\u00261"
+                               }
+                  },
+                  {
+                      "time":  "08:35:54.738",
+                      "name":  "reenumerate",
+                      "data":  {
+                                   "flags":  2,
+                                   "result":  51,
+                                   "instanceId":  "USB\\VID_0C45\u0026PID_8047\\6\u002654CA98\u00260\u00261"
+                               }
+                  },
+                  {
+                      "time":  "08:35:59.498",
+                      "name":  "snapshot:after-reenum2",
+                      "data":  [
+                                   {
+                                       "instanceId":  "HID\\VID_0C45\u0026PID_FEFE\u0026MI_02\u0026COL01\\8\u0026195F4F95\u00260\u00260000",
+                                       "status":  "OK",
+                                       "class":  "HIDClass",
+                                       "problem":  "CM_PROB_NONE",
+                                       "friendly":  "符合 HID 标准的用户控制设备"
+                                   },
+                                   {
+                                       "instanceId":  "HID\\VID_0C45\u0026PID_FEFE\u0026MI_04\\8\u0026D00E8E7\u00260\u00260000",
+                                       "status":  "OK",
+                                       "class":  "HIDClass",
+                                       "problem":  "CM_PROB_NONE",
+                                       "friendly":  "符合 HID 标准的供应商定义设备"
+                                   },
+                                   {
+                                       "instanceId":  "HID\\VID_0C45\u0026PID_FEFE\u0026MI_02\u0026COL02\\8\u0026195F4F95\u00260\u00260001",
+                                       "status":  "OK",
+                                       "class":  "HIDClass",
+                                       "problem":  "CM_PROB_NONE",
+                                       "friendly":  "符合 HID 标准的系统控制器"
+                                   },
+                                   {
+                                       "instanceId":  "HID\\VID_0C45\u0026PID_FEFE\u0026MI_01\\8\u00262C8F6BD3\u00260\u00260000",
+                                       "status":  "OK",
+                                       "class":  "Mouse",
+                                       "problem":  "CM_PROB_NONE",
+                                       "friendly":  "HID-compliant mouse"
+                                   },
+                                   {
+                                       "instanceId":  "USB\\VID_0C45\u0026PID_FEFE\u0026MI_04\\7\u0026883A9E9\u00260\u00260004",
+                                       "status":  "OK",
+                                       "class":  "HIDClass",
+                                       "problem":  "CM_PROB_NONE",
+                                       "friendly":  "USB 输入设备"
+                                   },
+                                   {
+                                       "instanceId":  "USB\\VID_0C45\u0026PID_FEFE\u0026MI_03\\7\u0026883A9E9\u00260\u00260003",
+                                       "status":  "OK",
+                                       "class":  "HIDClass",
+                                       "problem":  "CM_PROB_NONE",
+                                       "friendly":  "USB 输入设备"
+                                   },
+                                   {
+                                       "instanceId":  "HID\\VID_0C45\u0026PID_FEFE\u0026MI_02\u0026COL03\\8\u0026195F4F95\u00260\u00260002",
+                                       "status":  "OK",
+                                       "class":  "Keyboard",
+                                       "problem":  "CM_PROB_NONE",
+                                       "friendly":  "HID Keyboard Device"
+                                   },
+                                   {
+                                       "instanceId":  "USB\\VID_0C45\u0026PID_FEFE\u0026MI_02\\7\u0026883A9E9\u00260\u00260002",
+                                       "status":  "OK",
+                                       "class":  "HIDClass",
+                                       "problem":  "CM_PROB_NONE",
+                                       "friendly":  "USB 输入设备"
+                                   },
+                                   {
+                                       "instanceId":  "USB\\VID_0C45\u0026PID_FEFE\u0026MI_01\\7\u0026883A9E9\u00260\u00260001",
+                                       "status":  "OK",
+                                       "class":  "HIDClass",
+                                       "problem":  "CM_PROB_NONE",
+                                       "friendly":  "USB 输入设备"
+                                   },
+                                   {
+                                       "instanceId":  "USB\\VID_0C45\u0026PID_FEFE\u0026MI_00\\7\u0026883A9E9\u00260\u00260000",
+                                       "status":  "OK",
+                                       "class":  "HIDClass",
+                                       "problem":  "CM_PROB_NONE",
+                                       "friendly":  "USB 输入设备"
+                                   },
+                                   {
+                                       "instanceId":  "USB\\VID_0C45\u0026PID_FEFE\\6\u002654CA98\u00260\u00262",
+                                       "status":  "OK",
+                                       "class":  "USB",
+                                       "problem":  "CM_PROB_NONE",
+                                       "friendly":  "USB Composite Device"
+                                   },
+                                   {
+                                       "instanceId":  "HID\\VID_0C45\u0026PID_FEFE\u0026MI_02\u0026COL04\\8\u0026195F4F95\u00260\u00260003",
+                                       "status":  "OK",
+                                       "class":  "HIDClass",
+                                       "problem":  "CM_PROB_NONE",
+                                       "friendly":  "符合 HID 标准的系统多轴控制器"
+                                   },
+                                   {
+                                       "instanceId":  "USB\\VID_0C45\u0026PID_8047\\6\u002654CA98\u00260\u00261",
+                                       "status":  "Error",
+                                       "class":  "USB",
+                                       "problem":  "CM_PROB_FAILED_START",
+                                       "friendly":  "USB Composite Device"
+                                   },
+                                   {
+                                       "instanceId":  "HID\\VID_0C45\u0026PID_FEFE\u0026MI_00\\8\u0026424BE0A\u00260\u00260000",
+                                       "status":  "OK",
+                                       "class":  "Keyboard",
+                                       "problem":  "CM_PROB_NONE",
+                                       "friendly":  "HID Keyboard Device"
+                                   },
+                                   {
+                                       "instanceId":  "HID\\VID_0C45\u0026PID_FEFE\u0026MI_03\\8\u002662F3357\u00260\u00260000",
+                                       "status":  "OK",
+                                       "class":  "HIDClass",
+                                       "problem":  "CM_PROB_NONE",
+                                       "friendly":  "符合 HID 标准的供应商定义设备"
+                                   },
+                                   {
+                                       "instanceId":  "HID\\VID_0C45\u0026PID_FEFE\u0026MI_02\u0026COL05\\8\u0026195F4F95\u00260\u00260004",
+                                       "status":  "OK",
+                                       "class":  "HIDClass",
+                                       "problem":  "CM_PROB_NONE",
+                                       "friendly":  "符合 HID 标准的供应商定义设备"
+                                   }
+                               ]
+                  },
+                  {
+                      "time":  "08:36:02.213",
+                      "name":  "snapshot:final",
+                      "data":  [
+                                   {
+                                       "instanceId":  "HID\\VID_0C45\u0026PID_FEFE\u0026MI_02\u0026COL01\\8\u0026195F4F95\u00260\u00260000",
+                                       "status":  "OK",
+                                       "class":  "HIDClass",
+                                       "problem":  "CM_PROB_NONE",
+                                       "friendly":  "符合 HID 标准的用户控制设备"
+                                   },
+                                   {
+                                       "instanceId":  "HID\\VID_0C45\u0026PID_FEFE\u0026MI_04\\8\u0026D00E8E7\u00260\u00260000",
+                                       "status":  "OK",
+                                       "class":  "HIDClass",
+                                       "problem":  "CM_PROB_NONE",
+                                       "friendly":  "符合 HID 标准的供应商定义设备"
+                                   },
+                                   {
+                                       "instanceId":  "HID\\VID_0C45\u0026PID_FEFE\u0026MI_02\u0026COL02\\8\u0026195F4F95\u00260\u00260001",
+                                       "status":  "OK",
+                                       "class":  "HIDClass",
+                                       "problem":  "CM_PROB_NONE",
+                                       "friendly":  "符合 HID 标准的系统控制器"
+                                   },
+                                   {
+                                       "instanceId":  "HID\\VID_0C45\u0026PID_FEFE\u0026MI_01\\8\u00262C8F6BD3\u00260\u00260000",
+                                       "status":  "OK",
+                                       "class":  "Mouse",
+                                       "problem":  "CM_PROB_NONE",
+                                       "friendly":  "HID-compliant mouse"
+                                   },
+                                   {
+                                       "instanceId":  "USB\\VID_0C45\u0026PID_FEFE\u0026MI_04\\7\u0026883A9E9\u00260\u00260004",
+                                       "status":  "OK",
+                                       "class":  "HIDClass",
+                                       "problem":  "CM_PROB_NONE",
+                                       "friendly":  "USB 输入设备"
+                                   },
+                                   {
+                                       "instanceId":  "USB\\VID_0C45\u0026PID_FEFE\u0026MI_03\\7\u0026883A9E9\u00260\u00260003",
+                                       "status":  "OK",
+                                       "class":  "HIDClass",
+                                       "problem":  "CM_PROB_NONE",
+                                       "friendly":  "USB 输入设备"
+                                   },
+                                   {
+                                       "instanceId":  "HID\\VID_0C45\u0026PID_FEFE\u0026MI_02\u0026COL03\\8\u0026195F4F95\u00260\u00260002",
+                                       "status":  "OK",
+                                       "class":  "Keyboard",
+                                       "problem":  "CM_PROB_NONE",
+                                       "friendly":  "HID Keyboard Device"
+                                   },
+                                   {
+                                       "instanceId":  "USB\\VID_0C45\u0026PID_FEFE\u0026MI_02\\7\u0026883A9E9\u00260\u00260002",
+                                       "status":  "OK",
+                                       "class":  "HIDClass",
+                                       "problem":  "CM_PROB_NONE",
+                                       "friendly":  "USB 输入设备"
+                                   },
+                                   {
+                                       "instanceId":  "USB\\VID_0C45\u0026PID_FEFE\u0026MI_01\\7\u0026883A9E9\u00260\u00260001",
+                                       "status":  "OK",
+                                       "class":  "HIDClass",
+                                       "problem":  "CM_PROB_NONE",
+                                       "friendly":  "USB 输入设备"
+                                   },
+                                   {
+                                       "instanceId":  "USB\\VID_0C45\u0026PID_FEFE\u0026MI_00\\7\u0026883A9E9\u00260\u00260000",
+                                       "status":  "OK",
+                                       "class":  "HIDClass",
+                                       "problem":  "CM_PROB_NONE",
+                                       "friendly":  "USB 输入设备"
+                                   },
+                                   {
+                                       "instanceId":  "USB\\VID_0C45\u0026PID_FEFE\\6\u002654CA98\u00260\u00262",
+                                       "status":  "OK",
+                                       "class":  "USB",
+                                       "problem":  "CM_PROB_NONE",
+                                       "friendly":  "USB Composite Device"
+                                   },
+                                   {
+                                       "instanceId":  "HID\\VID_0C45\u0026PID_FEFE\u0026MI_02\u0026COL04\\8\u0026195F4F95\u00260\u00260003",
+                                       "status":  "OK",
+                                       "class":  "HIDClass",
+                                       "problem":  "CM_PROB_NONE",
+                                       "friendly":  "符合 HID 标准的系统多轴控制器"
+                                   },
+                                   {
+                                       "instanceId":  "USB\\VID_0C45\u0026PID_8047\\6\u002654CA98\u00260\u00261",
+                                       "status":  "Error",
+                                       "class":  "USB",
+                                       "problem":  "CM_PROB_FAILED_START",
+                                       "friendly":  "USB Composite Device"
+                                   },
+                                   {
+                                       "instanceId":  "HID\\VID_0C45\u0026PID_FEFE\u0026MI_00\\8\u0026424BE0A\u00260\u00260000",
+                                       "status":  "OK",
+                                       "class":  "Keyboard",
+                                       "problem":  "CM_PROB_NONE",
+                                       "friendly":  "HID Keyboard Device"
+                                   },
+                                   {
+                                       "instanceId":  "HID\\VID_0C45\u0026PID_FEFE\u0026MI_03\\8\u002662F3357\u00260\u00260000",
+                                       "status":  "OK",
+                                       "class":  "HIDClass",
+                                       "problem":  "CM_PROB_NONE",
+                                       "friendly":  "符合 HID 标准的供应商定义设备"
+                                   },
+                                   {
+                                       "instanceId":  "HID\\VID_0C45\u0026PID_FEFE\u0026MI_02\u0026COL05\\8\u0026195F4F95\u00260\u00260004",
+                                       "status":  "OK",
+                                       "class":  "HIDClass",
+                                       "problem":  "CM_PROB_NONE",
+                                       "friendly":  "符合 HID 标准的供应商定义设备"
+                                   }
+                               ]
+                  },
+                  {
+                      "time":  "08:36:04.948",
+                      "name":  "result",
+                      "data":  {
+                                   "targetStatus":  "Error",
+                                   "targetOK":  false,
+                                   "children":  0
+                               }
+                  }
+              ],
+    "disabled":  [
+
+                 ],
+    "targetOK":  false,
+    "restored":  null,
+    "targetFinalStatus":  "Error",
+    "childrenCount":  0
+}

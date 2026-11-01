@@ -1,0 +1,2 @@
+# token=RX( hits=1 uniq=1
+@1951800	RX(i.subarray(e,l));u=t>>8&255,d=t&255}l

@@ -1,0 +1,25 @@
+# token=connectType hits=144 uniq=24
+@1057477	connectType:`USB`,routesName:[`customKeys`,`l
+@1261377	connectType:`USB`,routesName:[`customKeys`,`m
+@1481500	connectType:`2.4G`,routesName:[`customKeys`,`
+@1834913	connectType===`2.4G`&&(await te(n.value),awai
+@1835339	connectType===`2.4G`&&(await te(e),await N(e)
+@1932638	connectType===`USB`){let t=a-8,s=Math.ceil(r.
+@1932948	connectType===`2.4G`&&a===64&&s===1){let t=a-
+@1937423	connectType===`USB`&&await LX(e.productId)||e
+@1937940	connectType===`2.4G`,addrStart:e,parseAddr:e=
+@1944837	connectType===`USB`?await LX(e.productId):e;i
+@2000577	connectType,l=await i(r,{...a,productName:s})
+@2016652	connectType===`USB`)),g=K(()=>h.value.map(([e
+@2018581	connectType===`2.4G`?$message.error($(`messag
+@2019163	connectType===`USB`)return;let p=o?.keyboardC
+@2246580	connectType===`USB`?0:1,layouts:{rows:e.ledCo
+@2303621	connectType:a,keyList:s,musicConfig:c}=e.keyb
+@2340055	connectType:i,keyList:a,musicConfig:o}=e.keyb
+@2441361	connectType===`USB`){let n=await o(`getAllLig
+@2441468	connectType===`2.4G`&&n===64&&s.value?.device
+@2494450	connectType===`USB`?(H(),U(`div`,dpe,[W(`h4`,
+@2496531	connectType===`USB`||z(n).performanceConfig?.
+@2499490	connectType===`2.4G`&&A.value){A.value=e;retu
+@2508101	connectType===`2.4G`||z(r).settingsConfig?.is
+@2510381	connectType===`2.4G`&&z(n).gameModeInfo?.wire

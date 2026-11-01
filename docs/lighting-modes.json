@@ -1,0 +1,3488 @@
+{
+  "$schema": "ajazz-mk87-lighting/1.0",
+  "generatedBy": "scripts/lighting_gen_json.js",
+  "generatedAt": "2026-10-31T22:33:24.987Z",
+  "device": {
+    "vid": "0x0C45 (3141)",
+    "pid": "0x8047 (32839)",
+    "name": "AJAZZ KEYBOARD",
+    "configOffsetInBundle": "1194719..1200783 (assets/layout-classic-CMxiG14P.js)",
+    "tftConfigName": "AK980_PRO",
+    "routesName": [
+      "customKeys",
+      "lighting",
+      "macro",
+      "tft",
+      "settings"
+    ],
+    "protocolsChunk": "assets/lighting-DzPku7KQ.js = config/protocols/default/lighting.ts",
+    "note": "keyboardConfig.protocol 未定义 → 走 default 协议配置，模式表来自上面这个 chunk"
+  },
+  "sources": [
+    {
+      "file": "assets/lighting-DzPku7KQ.js",
+      "what": "模式表（defalutLightingModeList / appendLightingModeList / lightBoxModeList / sideLightModeList / CUSTOM_LIGHTING_MODE）"
+    },
+    {
+      "file": "assets/lightingPane-J3Fl9UJi.js",
+      "what": "灯效参数面板：colorMode 单选、亮度/速度滑条、方向按钮、effectModeType、颜色选择器、键组选择器"
+    },
+    {
+      "file": "assets/layout-classic-CMxiG14P.js @2439551..2452600",
+      "what": "lighting 路由页 setup：tabs、isCustomMode=[20,21,128]、mode=0 关灯、定时切换、LED 实时回读"
+    },
+    {
+      "file": "assets/layout-classic-CMxiG14P.js @2285100..2288300",
+      "what": "lightingPane 组合式函数 C7：自定义模式判定、customLedData 写入、setCustomLEDData 防抖"
+    },
+    {
+      "file": "assets/layout-classic-CMxiG14P.js @1930197..1931110",
+      "what": "协议实现 vZ(setLEDEffect) / bZ(setCustomLEDData) / _Z(getLEDEffect) / yZ(getCustomLEDData)"
+    },
+    {
+      "file": "assets/keyboard-BfmQGlU0.js",
+      "what": "预览键盘（DOM 网格，非位图）：ledId ↔ 键 value 的实时上色"
+    }
+  ],
+  "lightingConfig": {
+    "minBrightness": 1,
+    "maxBrightness": 6,
+    "minSpeed": 1,
+    "maxSpeed": 6,
+    "isShowLightBox": false,
+    "lightBoxList": [
+      1,
+      2,
+      3,
+      5
+    ],
+    "isShowLightBoxEdit": true
+  },
+  "lightingConfigMeaning": {
+    "minBrightness": "亮度滑条下限（MK87=1）",
+    "maxBrightness": "亮度滑条上限（MK87=6）",
+    "minSpeed": "速度滑条下限（MK87=1）",
+    "maxSpeed": "速度滑条上限（MK87=6）",
+    "isShowLightBox": "MK87=false → 不显示「灯箱」tab，也不读 GET_LIGHT_BOX",
+    "lightBoxList": "仅当 isShowLightBox=true 才用于过滤 lightBoxModeList（MK87 无效）",
+    "isShowLightBoxEdit": "灯箱编辑入口开关（MK87 因 tab 不显示而无效果）",
+    "absentFlags": {
+      "isShowSideLight": "缺省 → 无「侧灯」tab",
+      "isShowGifEffect": "缺省 → 无「GIF 灯效」tab，且 lighting 里 mode 255 分支不可达",
+      "isEnableLightSync": "缺省 → 预览键盘不做 getAllLightsRGB 实时上色轮询",
+      "isSingleColor": "缺省 → 不禁用颜色按钮",
+      "hiddenDefaultEffect": "缺省 → 不隐藏任何默认模式",
+      "customEffect": "缺省 → 不追加 23..33/254 这批扩展模式"
+    }
+  },
+  "modeListForThisDevice": [
+    {
+      "mode": 1,
+      "name": "静态恒亮",
+      "textKey": "lighting_icon1",
+      "icon": "i-carbon:sun",
+      "sort": 10,
+      "ui": {
+        "isShowColor": true,
+        "isShowSecondaryRGB": false,
+        "isShowSpeed": false,
+        "speedValue": null,
+        "isShowDirection": false,
+        "directionPosition": null,
+        "directionValue": null,
+        "isHideColorMode": false,
+        "isShowEffectModeType": false
+      },
+      "effectModeTypeOptions": null,
+      "params": [
+        "color"
+      ]
+    },
+    {
+      "mode": 2,
+      "name": "单点亮",
+      "textKey": "lighting_icon2",
+      "icon": "i-carbon:data-enrichment",
+      "sort": 20,
+      "ui": {
+        "isShowColor": true,
+        "isShowSecondaryRGB": false,
+        "isShowSpeed": true,
+        "speedValue": 3,
+        "isShowDirection": false,
+        "directionPosition": null,
+        "directionValue": null,
+        "isHideColorMode": false,
+        "isShowEffectModeType": false
+      },
+      "effectModeTypeOptions": null,
+      "params": [
+        "color",
+        "speed"
+      ]
+    },
+    {
+      "mode": 3,
+      "name": "单熄灭",
+      "textKey": "lighting_icon3",
+      "icon": "i-carbon:idea",
+      "sort": 30,
+      "ui": {
+        "isShowColor": true,
+        "isShowSecondaryRGB": false,
+        "isShowSpeed": true,
+        "speedValue": 3,
+        "isShowDirection": false,
+        "directionPosition": null,
+        "directionValue": null,
+        "isHideColorMode": false,
+        "isShowEffectModeType": false
+      },
+      "effectModeTypeOptions": null,
+      "params": [
+        "color",
+        "speed"
+      ]
+    },
+    {
+      "mode": 4,
+      "name": "繁星点点",
+      "textKey": "lighting_icon4",
+      "icon": "i-ion:sparkles-outline",
+      "sort": 40,
+      "ui": {
+        "isShowColor": true,
+        "isShowSecondaryRGB": false,
+        "isShowSpeed": true,
+        "speedValue": 3,
+        "isShowDirection": false,
+        "directionPosition": null,
+        "directionValue": null,
+        "isHideColorMode": false,
+        "isShowEffectModeType": false
+      },
+      "effectModeTypeOptions": null,
+      "params": [
+        "color",
+        "speed"
+      ]
+    },
+    {
+      "mode": 5,
+      "name": "漫天飞雪",
+      "textKey": "lighting_icon5",
+      "icon": "i-carbon:snow-heavy",
+      "sort": 50,
+      "ui": {
+        "isShowColor": true,
+        "isShowSecondaryRGB": false,
+        "isShowSpeed": true,
+        "speedValue": 3,
+        "isShowDirection": false,
+        "directionPosition": null,
+        "directionValue": null,
+        "isHideColorMode": false,
+        "isShowEffectModeType": false
+      },
+      "effectModeTypeOptions": null,
+      "params": [
+        "color",
+        "speed"
+      ]
+    },
+    {
+      "mode": 6,
+      "name": "百花争艳",
+      "textKey": "lighting_icon6",
+      "icon": "i-ion:flower-outline",
+      "sort": 60,
+      "ui": {
+        "isShowColor": false,
+        "isShowSecondaryRGB": false,
+        "isShowSpeed": true,
+        "speedValue": 3,
+        "isShowDirection": false,
+        "directionPosition": null,
+        "directionValue": null,
+        "isHideColorMode": false,
+        "isShowEffectModeType": false
+      },
+      "effectModeTypeOptions": null,
+      "params": [
+        "speed"
+      ]
+    },
+    {
+      "mode": 7,
+      "name": "动态呼吸",
+      "textKey": "lighting_icon7",
+      "icon": "i-carbon:windy",
+      "sort": 70,
+      "ui": {
+        "isShowColor": true,
+        "isShowSecondaryRGB": false,
+        "isShowSpeed": true,
+        "speedValue": 3,
+        "isShowDirection": false,
+        "directionPosition": null,
+        "directionValue": null,
+        "isHideColorMode": false,
+        "isShowEffectModeType": false
+      },
+      "effectModeTypeOptions": null,
+      "params": [
+        "color",
+        "speed"
+      ]
+    },
+    {
+      "mode": 8,
+      "name": "光谱循环",
+      "textKey": "lighting_icon8",
+      "icon": "i-ion:ios-loop-strong",
+      "sort": 80,
+      "ui": {
+        "isShowColor": false,
+        "isShowSecondaryRGB": false,
+        "isShowSpeed": true,
+        "speedValue": 3,
+        "isShowDirection": false,
+        "directionPosition": null,
+        "directionValue": null,
+        "isHideColorMode": false,
+        "isShowEffectModeType": false
+      },
+      "effectModeTypeOptions": null,
+      "params": [
+        "speed"
+      ]
+    },
+    {
+      "mode": 9,
+      "name": "彩泉涌动",
+      "textKey": "lighting_icon9",
+      "icon": "i-carbon:soil-moisture-global",
+      "sort": 90,
+      "ui": {
+        "isShowColor": true,
+        "isShowSecondaryRGB": false,
+        "isShowSpeed": true,
+        "speedValue": 3,
+        "isShowDirection": false,
+        "directionPosition": null,
+        "directionValue": null,
+        "isHideColorMode": false,
+        "isShowEffectModeType": false
+      },
+      "effectModeTypeOptions": null,
+      "params": [
+        "color",
+        "speed"
+      ]
+    },
+    {
+      "mode": 10,
+      "name": "多彩纵横",
+      "textKey": "lighting_icon10",
+      "icon": "i-carbon:chevron-sort",
+      "sort": 100,
+      "ui": {
+        "isShowColor": true,
+        "isShowSecondaryRGB": false,
+        "isShowSpeed": true,
+        "speedValue": 3,
+        "isShowDirection": true,
+        "directionPosition": "top",
+        "directionValue": 3,
+        "isHideColorMode": false,
+        "isShowEffectModeType": false
+      },
+      "effectModeTypeOptions": null,
+      "params": [
+        "color",
+        "speed",
+        "direction"
+      ]
+    },
+    {
+      "mode": 11,
+      "name": "随波逐流",
+      "textKey": "lighting_icon11",
+      "icon": "i-carbon:binding-02",
+      "sort": 110,
+      "ui": {
+        "isShowColor": true,
+        "isShowSecondaryRGB": false,
+        "isShowSpeed": true,
+        "speedValue": 3,
+        "isShowDirection": true,
+        "directionPosition": "left",
+        "directionValue": 0,
+        "isHideColorMode": false,
+        "isShowEffectModeType": false
+      },
+      "effectModeTypeOptions": null,
+      "params": [
+        "color",
+        "speed",
+        "direction"
+      ]
+    },
+    {
+      "mode": 12,
+      "name": "峰回路转",
+      "textKey": "lighting_icon12",
+      "icon": "i-carbon:mountain",
+      "sort": 120,
+      "ui": {
+        "isShowColor": true,
+        "isShowSecondaryRGB": false,
+        "isShowSpeed": true,
+        "speedValue": 3,
+        "isShowDirection": true,
+        "directionPosition": "left",
+        "directionValue": 0,
+        "isHideColorMode": false,
+        "isShowEffectModeType": false
+      },
+      "effectModeTypeOptions": null,
+      "params": [
+        "color",
+        "speed",
+        "direction"
+      ]
+    },
+    {
+      "mode": 13,
+      "name": "一触即发",
+      "textKey": "lighting_icon13",
+      "icon": "i-carbon:lightning",
+      "sort": 130,
+      "ui": {
+        "isShowColor": true,
+        "isShowSecondaryRGB": false,
+        "isShowSpeed": true,
+        "speedValue": 3,
+        "isShowDirection": false,
+        "directionPosition": null,
+        "directionValue": null,
+        "isHideColorMode": false,
+        "isShowEffectModeType": false
+      },
+      "effectModeTypeOptions": null,
+      "params": [
+        "color",
+        "speed"
+      ]
+    },
+    {
+      "mode": 14,
+      "name": "一石二鸟",
+      "textKey": "lighting_icon14",
+      "icon": "i-carbon:switch-layer-2",
+      "sort": 140,
+      "ui": {
+        "isShowColor": true,
+        "isShowSecondaryRGB": false,
+        "isShowSpeed": true,
+        "speedValue": 3,
+        "isShowDirection": false,
+        "directionPosition": null,
+        "directionValue": null,
+        "isHideColorMode": false,
+        "isShowEffectModeType": false
+      },
+      "effectModeTypeOptions": null,
+      "params": [
+        "color",
+        "speed"
+      ]
+    },
+    {
+      "mode": 15,
+      "name": "涟漪扩散",
+      "textKey": "lighting_icon15",
+      "icon": "i-ion:radio-outline",
+      "sort": 150,
+      "ui": {
+        "isShowColor": true,
+        "isShowSecondaryRGB": false,
+        "isShowSpeed": true,
+        "speedValue": 3,
+        "isShowDirection": false,
+        "directionPosition": null,
+        "directionValue": null,
+        "isHideColorMode": false,
+        "isShowEffectModeType": false
+      },
+      "effectModeTypeOptions": null,
+      "params": [
+        "color",
+        "speed"
+      ]
+    },
+    {
+      "mode": 16,
+      "name": "川流不息",
+      "textKey": "lighting_icon16",
+      "icon": "i-carbon:smoke",
+      "sort": 160,
+      "ui": {
+        "isShowColor": true,
+        "isShowSecondaryRGB": false,
+        "isShowSpeed": true,
+        "speedValue": 3,
+        "isShowDirection": true,
+        "directionPosition": "left",
+        "directionValue": 0,
+        "isHideColorMode": false,
+        "isShowEffectModeType": false
+      },
+      "effectModeTypeOptions": null,
+      "params": [
+        "color",
+        "speed",
+        "direction"
+      ]
+    },
+    {
+      "mode": 17,
+      "name": "重峦叠嶂",
+      "textKey": "lighting_icon17",
+      "icon": "i-ion:prism-outline",
+      "sort": 170,
+      "ui": {
+        "isShowColor": true,
+        "isShowSecondaryRGB": false,
+        "isShowSpeed": true,
+        "speedValue": 3,
+        "isShowDirection": false,
+        "directionPosition": null,
+        "directionValue": null,
+        "isHideColorMode": false,
+        "isShowEffectModeType": false
+      },
+      "effectModeTypeOptions": null,
+      "params": [
+        "color",
+        "speed"
+      ]
+    },
+    {
+      "mode": 18,
+      "name": "斜风细雨",
+      "textKey": "lighting_icon18",
+      "icon": "i-ion:rainy-outline",
+      "sort": 180,
+      "ui": {
+        "isShowColor": true,
+        "isShowSecondaryRGB": false,
+        "isShowSpeed": true,
+        "speedValue": 3,
+        "isShowDirection": true,
+        "directionPosition": "left",
+        "directionValue": 0,
+        "isHideColorMode": false,
+        "isShowEffectModeType": false
+      },
+      "effectModeTypeOptions": null,
+      "params": [
+        "color",
+        "speed",
+        "direction"
+      ]
+    },
+    {
+      "mode": 19,
+      "name": "来回穿梭",
+      "textKey": "lighting_icon19",
+      "icon": "i-ion:swap-horizontal-outline",
+      "sort": 190,
+      "ui": {
+        "isShowColor": true,
+        "isShowSecondaryRGB": false,
+        "isShowSpeed": true,
+        "speedValue": 3,
+        "isShowDirection": false,
+        "directionPosition": null,
+        "directionValue": null,
+        "isHideColorMode": false,
+        "isShowEffectModeType": false
+      },
+      "effectModeTypeOptions": null,
+      "params": [
+        "color",
+        "speed"
+      ]
+    },
+    {
+      "mode": 128,
+      "name": "自定义",
+      "textKey": "lighting_icon20",
+      "icon": "i-ion:create-outline",
+      "sort": 1280,
+      "ui": {
+        "isShowColor": true,
+        "isShowSecondaryRGB": false,
+        "isShowSpeed": false,
+        "speedValue": null,
+        "isShowDirection": false,
+        "directionPosition": null,
+        "directionValue": null,
+        "isHideColorMode": false,
+        "isShowEffectModeType": false
+      },
+      "effectModeTypeOptions": null,
+      "params": [
+        "color"
+      ]
+    }
+  ],
+  "modeListForThisDeviceValues": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15,
+    16,
+    17,
+    18,
+    19,
+    128
+  ],
+  "modeListAllProtocolModes": {
+    "default": [
+      {
+        "mode": 1,
+        "name": "静态恒亮",
+        "textKey": "lighting_icon1",
+        "icon": "i-carbon:sun",
+        "sort": 10,
+        "ui": {
+          "isShowColor": true,
+          "isShowSecondaryRGB": false,
+          "isShowSpeed": false,
+          "speedValue": null,
+          "isShowDirection": false,
+          "directionPosition": null,
+          "directionValue": null,
+          "isHideColorMode": false,
+          "isShowEffectModeType": false
+        },
+        "effectModeTypeOptions": null,
+        "params": [
+          "color"
+        ]
+      },
+      {
+        "mode": 2,
+        "name": "单点亮",
+        "textKey": "lighting_icon2",
+        "icon": "i-carbon:data-enrichment",
+        "sort": 20,
+        "ui": {
+          "isShowColor": true,
+          "isShowSecondaryRGB": false,
+          "isShowSpeed": true,
+          "speedValue": 3,
+          "isShowDirection": false,
+          "directionPosition": null,
+          "directionValue": null,
+          "isHideColorMode": false,
+          "isShowEffectModeType": false
+        },
+        "effectModeTypeOptions": null,
+        "params": [
+          "color",
+          "speed"
+        ]
+      },
+      {
+        "mode": 3,
+        "name": "单熄灭",
+        "textKey": "lighting_icon3",
+        "icon": "i-carbon:idea",
+        "sort": 30,
+        "ui": {
+          "isShowColor": true,
+          "isShowSecondaryRGB": false,
+          "isShowSpeed": true,
+          "speedValue": 3,
+          "isShowDirection": false,
+          "directionPosition": null,
+          "directionValue": null,
+          "isHideColorMode": false,
+          "isShowEffectModeType": false
+        },
+        "effectModeTypeOptions": null,
+        "params": [
+          "color",
+          "speed"
+        ]
+      },
+      {
+        "mode": 4,
+        "name": "繁星点点",
+        "textKey": "lighting_icon4",
+        "icon": "i-ion:sparkles-outline",
+        "sort": 40,
+        "ui": {
+          "isShowColor": true,
+          "isShowSecondaryRGB": false,
+          "isShowSpeed": true,
+          "speedValue": 3,
+          "isShowDirection": false,
+          "directionPosition": null,
+          "directionValue": null,
+          "isHideColorMode": false,
+          "isShowEffectModeType": false
+        },
+        "effectModeTypeOptions": null,
+        "params": [
+          "color",
+          "speed"
+        ]
+      },
+      {
+        "mode": 5,
+        "name": "漫天飞雪",
+        "textKey": "lighting_icon5",
+        "icon": "i-carbon:snow-heavy",
+        "sort": 50,
+        "ui": {
+          "isShowColor": true,
+          "isShowSecondaryRGB": false,
+          "isShowSpeed": true,
+          "speedValue": 3,
+          "isShowDirection": false,
+          "directionPosition": null,
+          "directionValue": null,
+          "isHideColorMode": false,
+          "isShowEffectModeType": false
+        },
+        "effectModeTypeOptions": null,
+        "params": [
+          "color",
+          "speed"
+        ]
+      },
+      {
+        "mode": 6,
+        "name": "百花争艳",
+        "textKey": "lighting_icon6",
+        "icon": "i-ion:flower-outline",
+        "sort": 60,
+        "ui": {
+          "isShowColor": false,
+          "isShowSecondaryRGB": false,
+          "isShowSpeed": true,
+          "speedValue": 3,
+          "isShowDirection": false,
+          "directionPosition": null,
+          "directionValue": null,
+          "isHideColorMode": false,
+          "isShowEffectModeType": false
+        },
+        "effectModeTypeOptions": null,
+        "params": [
+          "speed"
+        ]
+      },
+      {
+        "mode": 7,
+        "name": "动态呼吸",
+        "textKey": "lighting_icon7",
+        "icon": "i-carbon:windy",
+        "sort": 70,
+        "ui": {
+          "isShowColor": true,
+          "isShowSecondaryRGB": false,
+          "isShowSpeed": true,
+          "speedValue": 3,
+          "isShowDirection": false,
+          "directionPosition": null,
+          "directionValue": null,
+          "isHideColorMode": false,
+          "isShowEffectModeType": false
+        },
+        "effectModeTypeOptions": null,
+        "params": [
+          "color",
+          "speed"
+        ]
+      },
+      {
+        "mode": 8,
+        "name": "光谱循环",
+        "textKey": "lighting_icon8",
+        "icon": "i-ion:ios-loop-strong",
+        "sort": 80,
+        "ui": {
+          "isShowColor": false,
+          "isShowSecondaryRGB": false,
+          "isShowSpeed": true,
+          "speedValue": 3,
+          "isShowDirection": false,
+          "directionPosition": null,
+          "directionValue": null,
+          "isHideColorMode": false,
+          "isShowEffectModeType": false
+        },
+        "effectModeTypeOptions": null,
+        "params": [
+          "speed"
+        ]
+      },
+      {
+        "mode": 9,
+        "name": "彩泉涌动",
+        "textKey": "lighting_icon9",
+        "icon": "i-carbon:soil-moisture-global",
+        "sort": 90,
+        "ui": {
+          "isShowColor": true,
+          "isShowSecondaryRGB": false,
+          "isShowSpeed": true,
+          "speedValue": 3,
+          "isShowDirection": false,
+          "directionPosition": null,
+          "directionValue": null,
+          "isHideColorMode": false,
+          "isShowEffectModeType": false
+        },
+        "effectModeTypeOptions": null,
+        "params": [
+          "color",
+          "speed"
+        ]
+      },
+      {
+        "mode": 10,
+        "name": "多彩纵横",
+        "textKey": "lighting_icon10",
+        "icon": "i-carbon:chevron-sort",
+        "sort": 100,
+        "ui": {
+          "isShowColor": true,
+          "isShowSecondaryRGB": false,
+          "isShowSpeed": true,
+          "speedValue": 3,
+          "isShowDirection": true,
+          "directionPosition": "top",
+          "directionValue": 3,
+          "isHideColorMode": false,
+          "isShowEffectModeType": false
+        },
+        "effectModeTypeOptions": null,
+        "params": [
+          "color",
+          "speed",
+          "direction"
+        ]
+      },
+      {
+        "mode": 11,
+        "name": "随波逐流",
+        "textKey": "lighting_icon11",
+        "icon": "i-carbon:binding-02",
+        "sort": 110,
+        "ui": {
+          "isShowColor": true,
+          "isShowSecondaryRGB": false,
+          "isShowSpeed": true,
+          "speedValue": 3,
+          "isShowDirection": true,
+          "directionPosition": "left",
+          "directionValue": 0,
+          "isHideColorMode": false,
+          "isShowEffectModeType": false
+        },
+        "effectModeTypeOptions": null,
+        "params": [
+          "color",
+          "speed",
+          "direction"
+        ]
+      },
+      {
+        "mode": 12,
+        "name": "峰回路转",
+        "textKey": "lighting_icon12",
+        "icon": "i-carbon:mountain",
+        "sort": 120,
+        "ui": {
+          "isShowColor": true,
+          "isShowSecondaryRGB": false,
+          "isShowSpeed": true,
+          "speedValue": 3,
+          "isShowDirection": true,
+          "directionPosition": "left",
+          "directionValue": 0,
+          "isHideColorMode": false,
+          "isShowEffectModeType": false
+        },
+        "effectModeTypeOptions": null,
+        "params": [
+          "color",
+          "speed",
+          "direction"
+        ]
+      },
+      {
+        "mode": 13,
+        "name": "一触即发",
+        "textKey": "lighting_icon13",
+        "icon": "i-carbon:lightning",
+        "sort": 130,
+        "ui": {
+          "isShowColor": true,
+          "isShowSecondaryRGB": false,
+          "isShowSpeed": true,
+          "speedValue": 3,
+          "isShowDirection": false,
+          "directionPosition": null,
+          "directionValue": null,
+          "isHideColorMode": false,
+          "isShowEffectModeType": false
+        },
+        "effectModeTypeOptions": null,
+        "params": [
+          "color",
+          "speed"
+        ]
+      },
+      {
+        "mode": 14,
+        "name": "一石二鸟",
+        "textKey": "lighting_icon14",
+        "icon": "i-carbon:switch-layer-2",
+        "sort": 140,
+        "ui": {
+          "isShowColor": true,
+          "isShowSecondaryRGB": false,
+          "isShowSpeed": true,
+          "speedValue": 3,
+          "isShowDirection": false,
+          "directionPosition": null,
+          "directionValue": null,
+          "isHideColorMode": false,
+          "isShowEffectModeType": false
+        },
+        "effectModeTypeOptions": null,
+        "params": [
+          "color",
+          "speed"
+        ]
+      },
+      {
+        "mode": 15,
+        "name": "涟漪扩散",
+        "textKey": "lighting_icon15",
+        "icon": "i-ion:radio-outline",
+        "sort": 150,
+        "ui": {
+          "isShowColor": true,
+          "isShowSecondaryRGB": false,
+          "isShowSpeed": true,
+          "speedValue": 3,
+          "isShowDirection": false,
+          "directionPosition": null,
+          "directionValue": null,
+          "isHideColorMode": false,
+          "isShowEffectModeType": false
+        },
+        "effectModeTypeOptions": null,
+        "params": [
+          "color",
+          "speed"
+        ]
+      },
+      {
+        "mode": 16,
+        "name": "川流不息",
+        "textKey": "lighting_icon16",
+        "icon": "i-carbon:smoke",
+        "sort": 160,
+        "ui": {
+          "isShowColor": true,
+          "isShowSecondaryRGB": false,
+          "isShowSpeed": true,
+          "speedValue": 3,
+          "isShowDirection": true,
+          "directionPosition": "left",
+          "directionValue": 0,
+          "isHideColorMode": false,
+          "isShowEffectModeType": false
+        },
+        "effectModeTypeOptions": null,
+        "params": [
+          "color",
+          "speed",
+          "direction"
+        ]
+      },
+      {
+        "mode": 17,
+        "name": "重峦叠嶂",
+        "textKey": "lighting_icon17",
+        "icon": "i-ion:prism-outline",
+        "sort": 170,
+        "ui": {
+          "isShowColor": true,
+          "isShowSecondaryRGB": false,
+          "isShowSpeed": true,
+          "speedValue": 3,
+          "isShowDirection": false,
+          "directionPosition": null,
+          "directionValue": null,
+          "isHideColorMode": false,
+          "isShowEffectModeType": false
+        },
+        "effectModeTypeOptions": null,
+        "params": [
+          "color",
+          "speed"
+        ]
+      },
+      {
+        "mode": 18,
+        "name": "斜风细雨",
+        "textKey": "lighting_icon18",
+        "icon": "i-ion:rainy-outline",
+        "sort": 180,
+        "ui": {
+          "isShowColor": true,
+          "isShowSecondaryRGB": false,
+          "isShowSpeed": true,
+          "speedValue": 3,
+          "isShowDirection": true,
+          "directionPosition": "left",
+          "directionValue": 0,
+          "isHideColorMode": false,
+          "isShowEffectModeType": false
+        },
+        "effectModeTypeOptions": null,
+        "params": [
+          "color",
+          "speed",
+          "direction"
+        ]
+      },
+      {
+        "mode": 19,
+        "name": "来回穿梭",
+        "textKey": "lighting_icon19",
+        "icon": "i-ion:swap-horizontal-outline",
+        "sort": 190,
+        "ui": {
+          "isShowColor": true,
+          "isShowSecondaryRGB": false,
+          "isShowSpeed": true,
+          "speedValue": 3,
+          "isShowDirection": false,
+          "directionPosition": null,
+          "directionValue": null,
+          "isHideColorMode": false,
+          "isShowEffectModeType": false
+        },
+        "effectModeTypeOptions": null,
+        "params": [
+          "color",
+          "speed"
+        ]
+      },
+      {
+        "mode": 128,
+        "name": "自定义",
+        "textKey": "lighting_icon20",
+        "icon": "i-ion:create-outline",
+        "sort": 1280,
+        "ui": {
+          "isShowColor": true,
+          "isShowSecondaryRGB": false,
+          "isShowSpeed": false,
+          "speedValue": null,
+          "isShowDirection": false,
+          "directionPosition": null,
+          "directionValue": null,
+          "isHideColorMode": false,
+          "isShowEffectModeType": false
+        },
+        "effectModeTypeOptions": null,
+        "params": [
+          "color"
+        ]
+      }
+    ],
+    "append": [
+      {
+        "mode": 23,
+        "name": "彩虹风车",
+        "textKey": "lighting_icon21",
+        "icon": "i-tabler:windmill",
+        "sort": 230,
+        "ui": {
+          "isShowColor": false,
+          "isShowSecondaryRGB": false,
+          "isShowSpeed": true,
+          "speedValue": 5,
+          "isShowDirection": true,
+          "directionPosition": "left",
+          "directionValue": null,
+          "isHideColorMode": false,
+          "isShowEffectModeType": false
+        },
+        "effectModeTypeOptions": null,
+        "params": [
+          "speed",
+          "direction"
+        ]
+      },
+      {
+        "mode": 24,
+        "name": "七彩聚拢",
+        "textKey": "lighting_icon22",
+        "icon": "i-carbon:data-collection",
+        "sort": 240,
+        "ui": {
+          "isShowColor": true,
+          "isShowSecondaryRGB": false,
+          "isShowSpeed": true,
+          "speedValue": 5,
+          "isShowDirection": false,
+          "directionPosition": null,
+          "directionValue": null,
+          "isHideColorMode": false,
+          "isShowEffectModeType": false
+        },
+        "effectModeTypeOptions": null,
+        "params": [
+          "color",
+          "speed"
+        ]
+      },
+      {
+        "mode": 25,
+        "name": "霓虹叠影",
+        "textKey": "lighting_icon23",
+        "icon": "i-ion:recording-sharp",
+        "sort": 250,
+        "ui": {
+          "isShowColor": true,
+          "isShowSecondaryRGB": false,
+          "isShowSpeed": true,
+          "speedValue": 5,
+          "isShowDirection": true,
+          "directionPosition": "left",
+          "directionValue": null,
+          "isHideColorMode": false,
+          "isShowEffectModeType": false
+        },
+        "effectModeTypeOptions": null,
+        "params": [
+          "color",
+          "speed",
+          "direction"
+        ]
+      },
+      {
+        "mode": 254,
+        "name": "心动时刻",
+        "textKey": "lighting_icon28",
+        "icon": "i-carbon:favorite",
+        "sort": 260,
+        "ui": {
+          "isShowColor": true,
+          "isShowSecondaryRGB": true,
+          "isShowSpeed": true,
+          "speedValue": 5,
+          "isShowDirection": false,
+          "directionPosition": null,
+          "directionValue": null,
+          "isHideColorMode": false,
+          "isShowEffectModeType": true
+        },
+        "effectModeTypeOptions": [
+          {
+            "name": "爱心呼吸",
+            "text": "color_model_heart",
+            "value": 0
+          },
+          {
+            "name": "背景呼吸",
+            "text": "color_model_background",
+            "value": 1
+          },
+          {
+            "name": "同时呼吸",
+            "text": "color_model_both",
+            "value": 2
+          },
+          {
+            "name": "常亮模式",
+            "text": "color_model_constant",
+            "value": 3
+          }
+        ],
+        "params": [
+          "color",
+          "secondaryColor",
+          "speed",
+          "effectModeType"
+        ]
+      },
+      {
+        "mode": 26,
+        "name": "生命潮汐",
+        "textKey": "lighting_icon34",
+        "icon": "i-carbon-tides",
+        "sort": 270,
+        "ui": {
+          "isShowColor": true,
+          "isShowSecondaryRGB": false,
+          "isShowSpeed": true,
+          "speedValue": 5,
+          "isShowDirection": false,
+          "directionPosition": null,
+          "directionValue": null,
+          "isHideColorMode": false,
+          "isShowEffectModeType": false
+        },
+        "effectModeTypeOptions": null,
+        "params": [
+          "color",
+          "speed"
+        ]
+      },
+      {
+        "mode": 27,
+        "name": "硅基呼吸",
+        "textKey": "lighting_icon35",
+        "icon": "i-hugeicons:microchip",
+        "sort": 280,
+        "ui": {
+          "isShowColor": true,
+          "isShowSecondaryRGB": false,
+          "isShowSpeed": true,
+          "speedValue": 5,
+          "isShowDirection": false,
+          "directionPosition": null,
+          "directionValue": null,
+          "isHideColorMode": false,
+          "isShowEffectModeType": false
+        },
+        "effectModeTypeOptions": null,
+        "params": [
+          "color",
+          "speed"
+        ]
+      },
+      {
+        "mode": 28,
+        "name": "渐变常亮",
+        "textKey": "lighting_icon37",
+        "icon": "i-carbon:sun",
+        "sort": 10,
+        "ui": {
+          "isShowColor": true,
+          "isShowSecondaryRGB": false,
+          "isShowSpeed": false,
+          "speedValue": null,
+          "isShowDirection": false,
+          "directionPosition": null,
+          "directionValue": null,
+          "isHideColorMode": false,
+          "isShowEffectModeType": false
+        },
+        "effectModeTypeOptions": null,
+        "params": [
+          "color"
+        ]
+      },
+      {
+        "mode": 29,
+        "name": "单色呼吸",
+        "textKey": "lighting_icon38",
+        "icon": "i-carbon:windy",
+        "sort": 30,
+        "ui": {
+          "isShowColor": true,
+          "isShowSecondaryRGB": false,
+          "isShowSpeed": true,
+          "speedValue": 5,
+          "isShowDirection": false,
+          "directionPosition": null,
+          "directionValue": null,
+          "isHideColorMode": true,
+          "isShowEffectModeType": false
+        },
+        "effectModeTypeOptions": null,
+        "params": [
+          "color",
+          "speed",
+          "(hidden:colorMode)"
+        ]
+      },
+      {
+        "mode": 30,
+        "name": "动态常亮",
+        "textKey": "lighting_icon39",
+        "icon": "i-carbon:sun",
+        "sort": 40,
+        "ui": {
+          "isShowColor": true,
+          "isShowSecondaryRGB": false,
+          "isShowSpeed": false,
+          "speedValue": null,
+          "isShowDirection": false,
+          "directionPosition": null,
+          "directionValue": null,
+          "isHideColorMode": false,
+          "isShowEffectModeType": false
+        },
+        "effectModeTypeOptions": null,
+        "params": [
+          "color"
+        ]
+      },
+      {
+        "mode": 31,
+        "name": "多彩纵横1",
+        "textKey": "lighting_icon40",
+        "icon": "i-carbon:chevron-sort",
+        "sort": 100,
+        "ui": {
+          "isShowColor": true,
+          "isShowSecondaryRGB": false,
+          "isShowSpeed": true,
+          "speedValue": 3,
+          "isShowDirection": false,
+          "directionPosition": null,
+          "directionValue": null,
+          "isHideColorMode": false,
+          "isShowEffectModeType": false
+        },
+        "effectModeTypeOptions": null,
+        "params": [
+          "color",
+          "speed"
+        ]
+      },
+      {
+        "mode": 32,
+        "name": "RGB 动态呼吸",
+        "textKey": "lighting_icon41",
+        "icon": "i-carbon:windy",
+        "sort": 70,
+        "ui": {
+          "isShowColor": true,
+          "isShowSecondaryRGB": false,
+          "isShowSpeed": true,
+          "speedValue": 3,
+          "isShowDirection": false,
+          "directionPosition": null,
+          "directionValue": null,
+          "isHideColorMode": false,
+          "isShowEffectModeType": false
+        },
+        "effectModeTypeOptions": null,
+        "params": [
+          "color",
+          "speed"
+        ]
+      },
+      {
+        "mode": 33,
+        "name": "多彩纵横2",
+        "textKey": "lighting_icon42",
+        "icon": "i-carbon:chevron-sort",
+        "sort": 100,
+        "ui": {
+          "isShowColor": true,
+          "isShowSecondaryRGB": false,
+          "isShowSpeed": true,
+          "speedValue": 3,
+          "isShowDirection": false,
+          "directionPosition": null,
+          "directionValue": null,
+          "isHideColorMode": false,
+          "isShowEffectModeType": false
+        },
+        "effectModeTypeOptions": null,
+        "params": [
+          "color",
+          "speed"
+        ]
+      }
+    ],
+    "appendNote": "只有 lightingConfig.customEffect 里列出的才会出现在 UI；MK87 未配置 → 这 12 个模式在 MK87 网页上不可见"
+  },
+  "lightBoxModes": [
+    {
+      "mode": 1,
+      "name": "流光",
+      "textKey": "lighting_icon24",
+      "icon": "i-carbon:ibm-event-streams",
+      "sort": 10,
+      "ui": {
+        "isShowColor": false,
+        "isShowSecondaryRGB": false,
+        "isShowSpeed": true,
+        "speedValue": null,
+        "isShowDirection": false,
+        "directionPosition": null,
+        "directionValue": null,
+        "isHideColorMode": false,
+        "isShowEffectModeType": false
+      },
+      "effectModeTypeOptions": null,
+      "params": [
+        "speed"
+      ]
+    },
+    {
+      "mode": 2,
+      "name": "静态恒亮",
+      "textKey": "lighting_icon1",
+      "icon": "i-carbon:sun",
+      "sort": 20,
+      "ui": {
+        "isShowColor": true,
+        "isShowSecondaryRGB": false,
+        "isShowSpeed": false,
+        "speedValue": null,
+        "isShowDirection": false,
+        "directionPosition": null,
+        "directionValue": null,
+        "isHideColorMode": false,
+        "isShowEffectModeType": false
+      },
+      "effectModeTypeOptions": null,
+      "params": [
+        "color"
+      ]
+    },
+    {
+      "mode": 3,
+      "name": "动态呼吸",
+      "textKey": "lighting_icon7",
+      "icon": "i-carbon:windy",
+      "sort": 30,
+      "ui": {
+        "isShowColor": true,
+        "isShowSecondaryRGB": false,
+        "isShowSpeed": true,
+        "speedValue": 5,
+        "isShowDirection": false,
+        "directionPosition": null,
+        "directionValue": null,
+        "isHideColorMode": false,
+        "isShowEffectModeType": false
+      },
+      "effectModeTypeOptions": null,
+      "params": [
+        "color",
+        "speed"
+      ]
+    },
+    {
+      "mode": 4,
+      "name": "光谱循环",
+      "textKey": "lighting_icon8",
+      "icon": "i-ion:ios-loop-strong",
+      "sort": 40,
+      "ui": {
+        "isShowColor": false,
+        "isShowSecondaryRGB": false,
+        "isShowSpeed": true,
+        "speedValue": 5,
+        "isShowDirection": false,
+        "directionPosition": null,
+        "directionValue": null,
+        "isHideColorMode": false,
+        "isShowEffectModeType": false
+      },
+      "effectModeTypeOptions": null,
+      "params": [
+        "speed"
+      ]
+    },
+    {
+      "mode": 5,
+      "name": "关闭背光",
+      "textKey": "lighting_icon25",
+      "icon": "i-carbon:close-outline",
+      "sort": 500,
+      "ui": {
+        "isShowColor": false,
+        "isShowSecondaryRGB": false,
+        "isShowSpeed": false,
+        "speedValue": null,
+        "isShowDirection": false,
+        "directionPosition": null,
+        "directionValue": null,
+        "isHideColorMode": false,
+        "isShowEffectModeType": false
+      },
+      "effectModeTypeOptions": null,
+      "params": []
+    },
+    {
+      "mode": 6,
+      "name": "灵动",
+      "textKey": "lighting_icon26",
+      "icon": "i-carbon:global-loan-and-trial",
+      "sort": 50,
+      "ui": {
+        "isShowColor": false,
+        "isShowSecondaryRGB": false,
+        "isShowSpeed": true,
+        "speedValue": 5,
+        "isShowDirection": false,
+        "directionPosition": null,
+        "directionValue": null,
+        "isHideColorMode": false,
+        "isShowEffectModeType": false
+      },
+      "effectModeTypeOptions": null,
+      "params": [
+        "speed"
+      ]
+    },
+    {
+      "mode": 7,
+      "name": "连锁反应",
+      "textKey": "lighting_icon27",
+      "icon": "i-carbon:ibm-cloud-direct-link-2-dedicated",
+      "sort": 60,
+      "ui": {
+        "isShowColor": false,
+        "isShowSecondaryRGB": false,
+        "isShowSpeed": true,
+        "speedValue": 5,
+        "isShowDirection": false,
+        "directionPosition": null,
+        "directionValue": null,
+        "isHideColorMode": false,
+        "isShowEffectModeType": false
+      },
+      "effectModeTypeOptions": null,
+      "params": [
+        "speed"
+      ]
+    },
+    {
+      "mode": 8,
+      "name": "拾音灯效1",
+      "textKey": "lighting_icon29",
+      "icon": "i-hugeicons:lamp",
+      "sort": 70,
+      "ui": {
+        "isShowColor": false,
+        "isShowSecondaryRGB": false,
+        "isShowSpeed": true,
+        "speedValue": 5,
+        "isShowDirection": false,
+        "directionPosition": null,
+        "directionValue": null,
+        "isHideColorMode": false,
+        "isShowEffectModeType": false
+      },
+      "effectModeTypeOptions": null,
+      "params": [
+        "speed"
+      ]
+    },
+    {
+      "mode": 9,
+      "name": "拾音灯效2",
+      "textKey": "lighting_icon30",
+      "icon": "i-hugeicons:lamp",
+      "sort": 80,
+      "ui": {
+        "isShowColor": false,
+        "isShowSecondaryRGB": false,
+        "isShowSpeed": true,
+        "speedValue": 5,
+        "isShowDirection": false,
+        "directionPosition": null,
+        "directionValue": null,
+        "isHideColorMode": false,
+        "isShowEffectModeType": false
+      },
+      "effectModeTypeOptions": null,
+      "params": [
+        "speed"
+      ]
+    },
+    {
+      "mode": 10,
+      "name": "拾音灯效3",
+      "textKey": "lighting_icon31",
+      "icon": "i-hugeicons:lamp",
+      "sort": 90,
+      "ui": {
+        "isShowColor": false,
+        "isShowSecondaryRGB": false,
+        "isShowSpeed": true,
+        "speedValue": 5,
+        "isShowDirection": false,
+        "directionPosition": null,
+        "directionValue": null,
+        "isHideColorMode": false,
+        "isShowEffectModeType": false
+      },
+      "effectModeTypeOptions": null,
+      "params": [
+        "speed"
+      ]
+    },
+    {
+      "mode": 11,
+      "name": "拾音灯效4",
+      "textKey": "lighting_icon32",
+      "icon": "i-hugeicons:lamp",
+      "sort": 100,
+      "ui": {
+        "isShowColor": false,
+        "isShowSecondaryRGB": false,
+        "isShowSpeed": true,
+        "speedValue": 5,
+        "isShowDirection": false,
+        "directionPosition": null,
+        "directionValue": null,
+        "isHideColorMode": false,
+        "isShowEffectModeType": false
+      },
+      "effectModeTypeOptions": null,
+      "params": [
+        "speed"
+      ]
+    },
+    {
+      "mode": 12,
+      "name": "跑马灯效",
+      "textKey": "lighting_icon36",
+      "icon": "i-ion:star-outline",
+      "sort": 100,
+      "ui": {
+        "isShowColor": false,
+        "isShowSecondaryRGB": false,
+        "isShowSpeed": true,
+        "speedValue": 5,
+        "isShowDirection": false,
+        "directionPosition": null,
+        "directionValue": null,
+        "isHideColorMode": false,
+        "isShowEffectModeType": false
+      },
+      "effectModeTypeOptions": null,
+      "params": [
+        "speed"
+      ]
+    }
+  ],
+  "sideLightModes": [
+    {
+      "mode": 1,
+      "name": "流光",
+      "textKey": "lighting_icon24",
+      "icon": "i-carbon:ibm-event-streams",
+      "sort": 10,
+      "ui": {
+        "isShowColor": false,
+        "isShowSecondaryRGB": false,
+        "isShowSpeed": true,
+        "speedValue": null,
+        "isShowDirection": false,
+        "directionPosition": null,
+        "directionValue": null,
+        "isHideColorMode": false,
+        "isShowEffectModeType": false
+      },
+      "effectModeTypeOptions": null,
+      "params": [
+        "speed"
+      ]
+    },
+    {
+      "mode": 2,
+      "name": "静态恒亮",
+      "textKey": "lighting_icon1",
+      "icon": "i-carbon:sun",
+      "sort": 20,
+      "ui": {
+        "isShowColor": true,
+        "isShowSecondaryRGB": false,
+        "isShowSpeed": false,
+        "speedValue": null,
+        "isShowDirection": false,
+        "directionPosition": null,
+        "directionValue": null,
+        "isHideColorMode": false,
+        "isShowEffectModeType": false
+      },
+      "effectModeTypeOptions": null,
+      "params": [
+        "color"
+      ]
+    },
+    {
+      "mode": 3,
+      "name": "动态呼吸",
+      "textKey": "lighting_icon7",
+      "icon": "i-carbon:windy",
+      "sort": 30,
+      "ui": {
+        "isShowColor": true,
+        "isShowSecondaryRGB": false,
+        "isShowSpeed": true,
+        "speedValue": 5,
+        "isShowDirection": false,
+        "directionPosition": null,
+        "directionValue": null,
+        "isHideColorMode": false,
+        "isShowEffectModeType": false
+      },
+      "effectModeTypeOptions": null,
+      "params": [
+        "color",
+        "speed"
+      ]
+    },
+    {
+      "mode": 4,
+      "name": "光谱循环",
+      "textKey": "lighting_icon8",
+      "icon": "i-ion:ios-loop-strong",
+      "sort": 40,
+      "ui": {
+        "isShowColor": false,
+        "isShowSecondaryRGB": false,
+        "isShowSpeed": true,
+        "speedValue": 5,
+        "isShowDirection": false,
+        "directionPosition": null,
+        "directionValue": null,
+        "isHideColorMode": false,
+        "isShowEffectModeType": false
+      },
+      "effectModeTypeOptions": null,
+      "params": [
+        "speed"
+      ]
+    },
+    {
+      "mode": 5,
+      "name": "关闭背光",
+      "textKey": "lighting_icon25",
+      "icon": "i-carbon:close-outline",
+      "sort": 500,
+      "ui": {
+        "isShowColor": false,
+        "isShowSecondaryRGB": false,
+        "isShowSpeed": false,
+        "speedValue": null,
+        "isShowDirection": false,
+        "directionPosition": null,
+        "directionValue": null,
+        "isHideColorMode": false,
+        "isShowEffectModeType": false
+      },
+      "effectModeTypeOptions": null,
+      "params": []
+    },
+    {
+      "mode": 6,
+      "name": "滚动颜色",
+      "textKey": "lighting_icon33",
+      "icon": "i-carbon:auto-scroll",
+      "sort": 60,
+      "ui": {
+        "isShowColor": true,
+        "isShowSecondaryRGB": false,
+        "isShowSpeed": false,
+        "speedValue": 5,
+        "isShowDirection": false,
+        "directionPosition": null,
+        "directionValue": null,
+        "isHideColorMode": false,
+        "isShowEffectModeType": false
+      },
+      "effectModeTypeOptions": null,
+      "params": [
+        "color"
+      ]
+    }
+  ],
+  "customLighting": {
+    "CUSTOM_LIGHTING_MODE": 128,
+    "customModeFamily": [
+      20,
+      21,
+      128
+    ],
+    "customModeFamilyEvidence": "isCustomMode = [20,21,128].includes(ledEffect.mode)  (bundle @2442576)",
+    "howUIEntersCustomMode": "点击模式网格里 value=128「自定义」→ handleChangeLightingMode → ledEffect.mode=128, direction=directionValue??0 → setLEDEffect",
+    "dataTable": "SET_CUSTOM_LED_DATA(36) 512B = 128 × [idx, R, G, B]，idx 写数组下标",
+    "firmwareFnKeys": {
+      "71": "自定义灯光1（Fn+1）",
+      "72": "自定义灯光2（Fn+2）",
+      "98": "自定义灯光3（Fn+3）",
+      "99": "自定义灯光录制（Fn+`）",
+      "note": "来自 docs/keymap-tables.json funcChars；FUNC 动作由固件处理，网页端没有对应命令（SET_KEYBOARD_CUSTOM_FUNCTION_ON/OFF(48/49) 在 bundle 里从未被调用）"
+    },
+    "recordCheckbox": "键组选择器的「录制」复选框只改选中行为（isRecord=true 时新框选会并入已选键），不下发任何命令；真正的录制是固件 Fn+` 触发",
+    "unknown": [
+      "固件上报 20/21/128 与 FUNC 71/72/98 的一一对应关系未在 bundle 里写明（【推断】按顺序对应 1/2/3）",
+      "20/21 是否共享同一张 512B 表未验证（网页端只写同一张表）"
+    ]
+  },
+  "customLightingFlow": {
+    "readOnInit": [
+      "GET_LED_EFFECT(19) contentSize=16 → {mode,red,green,blue,driverSetting,secondary*,colorMode,brightness,speed,direction,effectModeType,checkCodeL/H}",
+      "GET_CUSTOM_LED_DATA(20) contentSize=512 → 128 × {ledId,red,green,blue}",
+      "两者都在 deviceInit 里，且仅当 routesName 含 \"lighting\"（bundle @1863050 附近 / protocol_commands.js deviceInit）"
+    ],
+    "steps": [
+      {
+        "step": 1,
+        "ui": "进入 lighting 页 → 点「自定义」(128)",
+        "wire": "SET_LED_EFFECT(35) mode=128（其余字段沿用 deviceStorage.ledEffect；direction=directionValue??0）",
+        "note": "isCustomMode 变 true → 预览键盘进入可点选状态 + 右侧出现颜色选择器/键组选择器",
+        "evidence": "Ce @2444105"
+      },
+      {
+        "step": 2,
+        "ui": "在预览键盘上框选键（可全选/反选/按 WASD/数字/方向键分组）",
+        "wire": "自定义模式下会发 SET_CUSTOM_LED_DATA(36)：把当前取色器颜色刷到新选中的键",
+        "note": "selectedKeys=[{row,col}]，disabledLight 的键被过滤；非自定义模式则纯前端不改数据",
+        "evidence": "_e @2443245"
+      },
+      {
+        "step": 3,
+        "ui": "选颜色（iro 取色器 / HEX / RGB 输入 / 预设色）",
+        "wire": "自定义模式下 → SET_CUSTOM_LED_DATA(36)；普通模式 → SET_LED_EFFECT(35) colorMode=0 + RGB",
+        "note": "取色器 emit getColor → {red,green,blue}，0..255 整数，不做量化",
+        "evidence": "re / Oe @2443606"
+      },
+      {
+        "step": 4,
+        "ui": "颜色落到已选中的键",
+        "wire": "SET_CUSTOM_LED_DATA(36) 512B（300ms 防抖）",
+        "note": "customLedData[key.value] = 颜色；发送前 pauseLightSync、发完 100ms 后 resumeLightSync（MK87 因 isEnableLightSync 缺省 → 空操作）",
+        "evidence": "C7 le @2287426"
+      },
+      {
+        "step": 5,
+        "ui": "重置（清空自定义颜色）",
+        "wire": "SET_CUSTOM_LED_DATA(36) 全 0",
+        "note": "customLedData 全部 red/green/blue=0，index 字节仍写下标"
+      },
+      {
+        "step": 6,
+        "ui": "切到别的灯效模式",
+        "wire": "SET_LED_EFFECT(35) mode=新模式",
+        "note": "离开自定义模式（isCustomMode=false，预览键盘回到不可点选）"
+      }
+    ],
+    "notUsed": [
+      "setKeyData / SET_KEY(34)：只用于改键页，与灯效无关",
+      "SET_KEYBOARD_CUSTOM_FUNCTION_ON/OFF(48/49)：enum 里有，bundle 里 0 次调用"
+    ],
+    "colorQuantization": "无量化：iro 取色器输出 sRGB 0..255 整数，直接写进 512B 的 R/G/B 字节；HEX 输入按 2 位一组 parseInt(...,16)。仅音乐律动 2.4G 通道会把 RGB888 压成 RGB565（AV/jV），键盘灯效不走那条路"
+  },
+  "params": {
+    "brightness": {
+      "field": "payload[9]",
+      "rangeThisDevice": [
+        1,
+        6
+      ],
+      "step": 1,
+      "ui": "滑块 step=1，值显示为 brightness + $t(gif_text14)",
+      "zeroMeaning": "协议层原样下发 0；网页 UI 最小值=1，所以「0」只能由外部工具发；是否等同关灯未在 bundle 里定义【推断】更可靠的做法是 mode=0"
+    },
+    "speed": {
+      "field": "payload[10]",
+      "rangeThisDevice": [
+        1,
+        6
+      ],
+      "step": 1,
+      "ui": "仅 currentLighting.isShowSpeed 为 true 的模式显示"
+    },
+    "direction": {
+      "field": "payload[11]",
+      "values": {
+        "0": "右/正向",
+        "1": "左",
+        "2": "上",
+        "3": "下"
+      },
+      "uiEvidence": "directionPosition==='top' 时两个按钮分别发 2/3 并显示上下箭头；否则发 1/0 并显示左右箭头（lightingPane chunk）",
+      "defaultsFromModeList": {
+        "10": 3,
+        "11": 0,
+        "12": 0,
+        "16": 0,
+        "18": 0
+      },
+      "note": "切模式时 handleChangeLightingMode 会把 direction 重置为该模式的 directionValue ?? 0"
+    },
+    "colorMode": {
+      "field": "payload[8]",
+      "values": {
+        "0": "单色（用 payload[1..3] 的 RGB；取色器一动就强制 0）",
+        "1": "RGB/多色（用固件内置配色，忽略 payload[1..3]）"
+      },
+      "uiEvidence": "$t('lighting_single_color')=0 与 'RGB'=1 两个单选；选颜色时 updateLedEffectPatch({colorMode:0,...})",
+      "default": "设备实测 colorMode=1",
+      "hiddenFor": "模式表里 isHideColorMode=true 的模式（仅 29 单色呼吸）不显示这个单选"
+    },
+    "effectModeType": {
+      "field": "payload[12]",
+      "onlyMode": 254,
+      "values": [
+        {
+          "name": "爱心呼吸",
+          "text": "color_model_heart",
+          "value": 0
+        },
+        {
+          "name": "背景呼吸",
+          "text": "color_model_background",
+          "value": 1
+        },
+        {
+          "name": "同时呼吸",
+          "text": "color_model_both",
+          "value": 2
+        },
+        {
+          "name": "常亮模式",
+          "text": "color_model_constant",
+          "value": 3
+        }
+      ],
+      "uiLabelKey": "music_text1",
+      "note": "MK87 无 254（未在 customEffect 里）→ 该控件不出现"
+    },
+    "driverSetting": {
+      "field": "payload[4]",
+      "value": "255 硬编码",
+      "note": "官方 setLEDEffect 不接受该字段；读回时字段名叫 driverSetting"
+    },
+    "checkCode": {
+      "field": "payload[14],[15]",
+      "value": "0xAA,0x55 固定",
+      "note": "读回时字段名叫 checkCodeL/checkCodeH，值恒为 AA/55"
+    },
+    "payload13": "保留，恒 0",
+    "speedValueInModeList": "lightingList 里的 speedValue 在 bundle 里从未被读取（死字段）；切模式不会自动改 speed"
+  },
+  "wireFormats": {
+    "setLedEffect": {
+      "cmd": 35,
+      "ackCmd": "0x23",
+      "len": 16,
+      "layout": "[0]=mode [1]=R [2]=G [3]=B [4]=255 [5..7]=副色 [8]=colorMode [9]=brightness [10]=speed [11]=direction [12]=effectModeType [13]=0 [14]=0xAA [15]=0x55",
+      "frame": "AA 23 10 00 00 00 01 00 | payload(16) ... 其余补 0（64B report）",
+      "verifiedOnDevice": "01 FF FF FF FF 00 00 00 01 05 03 00 00 00 AA 55（docs/protocol.md §6 实测回读）"
+    },
+    "setCustomLedData": {
+      "cmd": 36,
+      "ackCmd": "0x24",
+      "len": 512,
+      "layout": "128 × [idx, R, G, B]；idx = 数组下标（不是读到过的 ledId 字段）",
+      "chunking": "NX 按 reportCount-8=56 字节/包 切 10 包，addr 递增"
+    },
+    "getLedEffect": {
+      "cmd": 19,
+      "len": 16,
+      "note": "读回字段名 driverSetting/checkCodeL/checkCodeH 与写入名不同"
+    },
+    "getCustomLedData": {
+      "cmd": 20,
+      "len": 512
+    },
+    "streamFrameHeader": "AA cmd seqHi seqLo totalHi totalLo 0 0 | 数据（每包 4104-8=4096 字节）",
+    "setLedUserAnimation": {
+      "cmd": 65,
+      "ackCmd": "0x41",
+      "payload": "4B 前导[帧数LE16, ceil(106-speed)LE16] + 帧数×键数×RGB"
+    },
+    "setLedData": {
+      "cmd": 66,
+      "note": "setGifLighting 用它做「GIF 灯效」下发/预览；setLedSyncAnimation 也可指定 ACK=65 复用此命令"
+    },
+    "clearLedData": {
+      "cmd": 54,
+      "note": "网页端只在点阵屏/LED 数据组件用到（清 LED 缓冲），键盘灯效页不用"
+    },
+    "musicData": {
+      "cmd": "50 (GET_LED_DATA 复用为写通道) / 53 (SET_MUSIC_DATA) / 60 (24G 64B)",
+      "v1Shape": "每键 4 字节 [ledId,R,G,B] + 1 字节 level(0..7)=round(amplitude*7)（v2 浏览器侧采样路径）",
+      "v1ForMK87": "MK87 musicConfig.version=1 → 浏览器不发 LED 数据，交给本机助手 Music.exe（见 helperApi）"
+    },
+    "helperApi": {
+      "base": "http://127.0.0.1:9191",
+      "endpoints": [
+        "GET /api/keyboard/layout/base64?data=<urlencoded base64(JSON)>  — 下发键盘几何（name,vid,pid,deviceMode,layouts{rows,cols,keys[{row,col,code,index,name,disabledLight}]}）",
+        "GET /api/keyboard/musiceffect?param=<mode>&<amplitude>&<backmode>&<backmodebrightness>&1 — 设音乐律动参数（300ms 防抖）",
+        "GET /api/keyboard/musiceffect/ — 读当前每键颜色（预览用）",
+        "GET /api/keyboard/musiceffect/close/ — 关闭音乐律动",
+        "GET /api/audio/amplitude — 读振幅（v2 用）",
+        "GET /api/hardware/info — 硬件信息"
+      ]
+    }
+  },
+  "musicConfig": {
+    "version": 1,
+    "maxColOffset": 0,
+    "keyOffset": [
+      {
+        "name": "F1",
+        "value": 1,
+        "offsetX": 1
+      },
+      {
+        "name": "Z",
+        "value": 65,
+        "offsetX": 1
+      },
+      {
+        "name": "↑",
+        "value": 90,
+        "offsetX": 2
+      },
+      {
+        "name": "Spacebar",
+        "value": 83,
+        "offsetX": 3
+      },
+      {
+        "name": "R-Alt",
+        "value": 84,
+        "offsetX": 3
+      }
+    ]
+  },
+  "musicTabs": {
+    "versionUsedByMK87": 1,
+    "componentSelected": "version===1 → musicV1（O7）；version===2 → musicV2（X7）；MK87 走 musicV1",
+    "musicV1Ui": {
+      "modeList": [
+        {
+          "value": 1,
+          "textKey": "music_mode_text1"
+        },
+        {
+          "value": 2,
+          "textKey": "music_mode_text2"
+        },
+        {
+          "value": 13,
+          "textKey": "music_mode_text3"
+        },
+        {
+          "value": 4,
+          "textKey": "music_mode_text4"
+        },
+        {
+          "value": 5,
+          "textKey": "music_mode_text5"
+        },
+        {
+          "value": 6,
+          "textKey": "music_mode_text6"
+        },
+        {
+          "value": 7,
+          "textKey": "music_mode_text7"
+        },
+        {
+          "value": 8,
+          "textKey": "music_mode_text8"
+        },
+        {
+          "value": 9,
+          "textKey": "music_mode_text9"
+        },
+        {
+          "value": 11,
+          "textKey": "music_mode_text10"
+        },
+        {
+          "value": 10,
+          "textKey": "music_mode_text11"
+        },
+        {
+          "value": 100,
+          "textKey": "music_mode_text21"
+        }
+      ],
+      "backmodeList": [
+        {
+          "value": 0,
+          "textKey": "music_bg_text1"
+        },
+        {
+          "value": 6,
+          "textKey": "music_bg_text2"
+        },
+        {
+          "value": 7,
+          "textKey": "music_bg_text3"
+        },
+        {
+          "value": 8,
+          "textKey": "music_bg_text4"
+        },
+        {
+          "value": 9,
+          "textKey": "music_bg_text5"
+        },
+        {
+          "value": 10,
+          "textKey": "music_bg_text6"
+        },
+        {
+          "value": 11,
+          "textKey": "music_bg_text7"
+        },
+        {
+          "value": 1,
+          "textKey": "music_bg_text8"
+        },
+        {
+          "value": 2,
+          "textKey": "music_bg_text9"
+        },
+        {
+          "value": 4,
+          "textKey": "music_bg_text10"
+        },
+        {
+          "value": 5,
+          "textKey": "music_bg_text11"
+        }
+      ],
+      "amplitude": {
+        "min": 1,
+        "max": 100,
+        "unit": "%",
+        "textKey": "music_text3"
+      },
+      "backmodeBrightness": {
+        "min": 1,
+        "max": 100,
+        "unit": "%",
+        "textKey": "music_text4"
+      },
+      "storeKey": "musicV1Config {mode,amplitude,backmode,backmodebrightness}",
+      "requiresPlugin": "hasDownloadPlugin（未装 Music.exe 时显示下载按钮，指向 https://config.driveall.cn/music/v2/Music.exe）"
+    },
+    "musicV2Ui": {
+      "note": "MK87 不用；v2 多了 ledModeList/点阵屏显示模式、测试模式、10..100 背景亮度，浏览器侧采样画布后按 setMusicData 直发"
+    }
+  },
+  "gifLighting": {
+    "available": false,
+    "why": "lightingConfig.isShowGifEffect 缺省 → tabs 里不 push gif；且 ledEffect.mode=255 分支不可达",
+    "protocolStillThere": {
+      "uploadCmd": "65 SET_LED_USER_ANIMATION（4B 前导 + 帧×键×RGB，4096B/包，8B 流式头）",
+      "bootCmd": "64 SET_LED_BOOT_ANIMATION 只在 enum 里，bundle 0 次调用（开机动画也走上一条 65）",
+      "maxFrames": "deviceInfo.ledMaxFrames（GET_DEVICE_INFO[26..27]，MK87 实测 0 → 代码里退化成 260 帧上限）",
+      "frameRate": "delay = ceil(106 - speed)（speed 来自 GIF 记录）",
+      "keyOrder": "只取非 disabledLight 的键，按 keyList 行优先顺序；数据来自编辑器画布像素（hex → RV() → {r,g,b}）"
+    }
+  },
+  "ledKeyMap": {
+    "howItWorks": "LED id == 键位矩阵槽位 value；官方预览键盘用 ledId 直接匹配 key.value 上色，customLedData 也用 key.value 做下标",
+    "evidence": [
+      "bundle @2442358: t.find(t=>t.ledId===e.value) → bgColor=`rgb(...)`（displayKeyList 生成）",
+      "bundle @2443402: _.value[m.value[t.row][t.col].value].red=... （customLedData 下标 = 键 value）",
+      "bundle @2441996: getAllLightsRGB24G 回包按 keyList 展平顺序逐键取色 → ledId: r.value"
+    ],
+    "previewIsDomNotBitmap": "预览键盘是 DOM 网格（key-item w-14 h-14 + className 控制键宽），kb_bg.png 只是产品图（keyboardImg 字段），不参与逐键上色 → 不存在「从图里反推 LED 索引」的隐藏表",
+    "caveat": "【推断】87 键的实际 LED 序号 = 矩阵槽位序号；同一固件与 98 键带屏机型共用固定矩阵（128 槽），空槽位 13-15/29-31/45-47/61-63/77-79/93-98/101/109-127 在 87 键板上无对应物理灯。需真机逐点点亮确认（按 rowsInPreview 逐格点，不要按 0..86 数）",
+    "rowsInPreview": [
+      {
+        "row": 0,
+        "width": 16,
+        "keys": [
+          {
+            "ledId": 0,
+            "name": "Esc",
+            "keyCode": 41,
+            "className": ""
+          },
+          {
+            "ledId": 1,
+            "name": "F1",
+            "keyCode": 58,
+            "className": "ml-15"
+          },
+          {
+            "ledId": 2,
+            "name": "F2",
+            "keyCode": 59,
+            "className": ""
+          },
+          {
+            "ledId": 3,
+            "name": "F3",
+            "keyCode": 60,
+            "className": ""
+          },
+          {
+            "ledId": 4,
+            "name": "F4",
+            "keyCode": 61,
+            "className": ""
+          },
+          {
+            "ledId": 5,
+            "name": "F5",
+            "keyCode": 62,
+            "className": "ml-auto"
+          },
+          {
+            "ledId": 6,
+            "name": "F6",
+            "keyCode": 63,
+            "className": ""
+          },
+          {
+            "ledId": 7,
+            "name": "F7",
+            "keyCode": 64,
+            "className": ""
+          },
+          {
+            "ledId": 8,
+            "name": "F8",
+            "keyCode": 65,
+            "className": ""
+          },
+          {
+            "ledId": 9,
+            "name": "F9",
+            "keyCode": 66,
+            "className": "ml-auto"
+          },
+          {
+            "ledId": 10,
+            "name": "F10",
+            "keyCode": 67,
+            "className": ""
+          },
+          {
+            "ledId": 11,
+            "name": "F11",
+            "keyCode": 68,
+            "className": ""
+          },
+          {
+            "ledId": 12,
+            "name": "F12",
+            "keyCode": 69,
+            "className": ""
+          },
+          {
+            "ledId": 99,
+            "name": "Print",
+            "keyCode": 70,
+            "className": "ml-5"
+          },
+          {
+            "ledId": 100,
+            "name": "Scroll",
+            "keyCode": 71,
+            "className": ""
+          },
+          {
+            "ledId": 102,
+            "name": "Pause",
+            "keyCode": 72,
+            "className": ""
+          }
+        ]
+      },
+      {
+        "row": 1,
+        "width": 17,
+        "keys": [
+          {
+            "ledId": 16,
+            "name": "` ~",
+            "keyCode": 53,
+            "className": ""
+          },
+          {
+            "ledId": 17,
+            "name": "1 !",
+            "keyCode": 30,
+            "className": ""
+          },
+          {
+            "ledId": 18,
+            "name": "2 @",
+            "keyCode": 31,
+            "className": ""
+          },
+          {
+            "ledId": 19,
+            "name": "3 #",
+            "keyCode": 32,
+            "className": ""
+          },
+          {
+            "ledId": 20,
+            "name": "4 $",
+            "keyCode": 33,
+            "className": ""
+          },
+          {
+            "ledId": 21,
+            "name": "5 %",
+            "keyCode": 34,
+            "className": ""
+          },
+          {
+            "ledId": 22,
+            "name": "6 ^",
+            "keyCode": 35,
+            "className": ""
+          },
+          {
+            "ledId": 23,
+            "name": "7 &",
+            "keyCode": 36,
+            "className": ""
+          },
+          {
+            "ledId": 24,
+            "name": "8 *",
+            "keyCode": 37,
+            "className": ""
+          },
+          {
+            "ledId": 25,
+            "name": "9 (",
+            "keyCode": 38,
+            "className": ""
+          },
+          {
+            "ledId": 26,
+            "name": "0 )",
+            "keyCode": 39,
+            "className": ""
+          },
+          {
+            "ledId": 27,
+            "name": "ˉ -",
+            "keyCode": 45,
+            "className": ""
+          },
+          {
+            "ledId": 28,
+            "name": "= +",
+            "keyCode": 46,
+            "className": ""
+          },
+          {
+            "ledId": 92,
+            "name": "Back",
+            "keyCode": 42,
+            "className": "flex-1"
+          },
+          {
+            "ledId": 103,
+            "name": "Insert",
+            "keyCode": 73,
+            "className": "ml-5"
+          },
+          {
+            "ledId": 104,
+            "name": "Home",
+            "keyCode": 74,
+            "className": ""
+          },
+          {
+            "ledId": 105,
+            "name": "PgUp",
+            "keyCode": 75,
+            "className": ""
+          }
+        ]
+      },
+      {
+        "row": 2,
+        "width": 17,
+        "keys": [
+          {
+            "ledId": 32,
+            "name": "Tab",
+            "keyCode": 43,
+            "className": "w-22"
+          },
+          {
+            "ledId": 33,
+            "name": "Q",
+            "keyCode": 20,
+            "className": ""
+          },
+          {
+            "ledId": 34,
+            "name": "W",
+            "keyCode": 26,
+            "className": ""
+          },
+          {
+            "ledId": 35,
+            "name": "E",
+            "keyCode": 8,
+            "className": ""
+          },
+          {
+            "ledId": 36,
+            "name": "R",
+            "keyCode": 21,
+            "className": ""
+          },
+          {
+            "ledId": 37,
+            "name": "T",
+            "keyCode": 23,
+            "className": ""
+          },
+          {
+            "ledId": 38,
+            "name": "Y",
+            "keyCode": 28,
+            "className": ""
+          },
+          {
+            "ledId": 39,
+            "name": "U",
+            "keyCode": 24,
+            "className": ""
+          },
+          {
+            "ledId": 40,
+            "name": "I",
+            "keyCode": 12,
+            "className": ""
+          },
+          {
+            "ledId": 41,
+            "name": "O",
+            "keyCode": 18,
+            "className": ""
+          },
+          {
+            "ledId": 42,
+            "name": "P",
+            "keyCode": 19,
+            "className": ""
+          },
+          {
+            "ledId": 43,
+            "name": "[ {",
+            "keyCode": 47,
+            "className": ""
+          },
+          {
+            "ledId": 44,
+            "name": "] }",
+            "keyCode": 48,
+            "className": ""
+          },
+          {
+            "ledId": 60,
+            "name": "\\ | ",
+            "keyCode": 49,
+            "className": "w-23"
+          },
+          {
+            "ledId": 106,
+            "name": "Del",
+            "keyCode": 76,
+            "className": "ml-5"
+          },
+          {
+            "ledId": 107,
+            "name": "End",
+            "keyCode": 77,
+            "className": ""
+          },
+          {
+            "ledId": 108,
+            "name": "PgDn",
+            "keyCode": 78,
+            "className": ""
+          }
+        ]
+      },
+      {
+        "row": 3,
+        "width": 13,
+        "keys": [
+          {
+            "ledId": 48,
+            "name": "Caps",
+            "keyCode": 57,
+            "className": "w-27"
+          },
+          {
+            "ledId": 49,
+            "name": "A",
+            "keyCode": 4,
+            "className": ""
+          },
+          {
+            "ledId": 50,
+            "name": "S",
+            "keyCode": 22,
+            "className": ""
+          },
+          {
+            "ledId": 51,
+            "name": "D",
+            "keyCode": 7,
+            "className": ""
+          },
+          {
+            "ledId": 52,
+            "name": "F",
+            "keyCode": 9,
+            "className": ""
+          },
+          {
+            "ledId": 53,
+            "name": "G",
+            "keyCode": 10,
+            "className": ""
+          },
+          {
+            "ledId": 54,
+            "name": "H",
+            "keyCode": 11,
+            "className": ""
+          },
+          {
+            "ledId": 55,
+            "name": "J",
+            "keyCode": 13,
+            "className": ""
+          },
+          {
+            "ledId": 56,
+            "name": "K",
+            "keyCode": 14,
+            "className": ""
+          },
+          {
+            "ledId": 57,
+            "name": "L",
+            "keyCode": 15,
+            "className": ""
+          },
+          {
+            "ledId": 58,
+            "name": "; :",
+            "keyCode": 51,
+            "className": ""
+          },
+          {
+            "ledId": 59,
+            "name": "' \"",
+            "keyCode": 52,
+            "className": ""
+          },
+          {
+            "ledId": 76,
+            "name": "Enter",
+            "keyCode": 40,
+            "className": "w-33 mr-auto"
+          }
+        ]
+      },
+      {
+        "row": 4,
+        "width": 13,
+        "keys": [
+          {
+            "ledId": 64,
+            "name": "L-Shift",
+            "keyCode": 225,
+            "className": "w-34"
+          },
+          {
+            "ledId": 65,
+            "name": "Z",
+            "keyCode": 29,
+            "className": ""
+          },
+          {
+            "ledId": 66,
+            "name": "X",
+            "keyCode": 27,
+            "className": ""
+          },
+          {
+            "ledId": 67,
+            "name": "C",
+            "keyCode": 6,
+            "className": ""
+          },
+          {
+            "ledId": 68,
+            "name": "V",
+            "keyCode": 25,
+            "className": ""
+          },
+          {
+            "ledId": 69,
+            "name": "B",
+            "keyCode": 5,
+            "className": ""
+          },
+          {
+            "ledId": 70,
+            "name": "N",
+            "keyCode": 17,
+            "className": ""
+          },
+          {
+            "ledId": 71,
+            "name": "M",
+            "keyCode": 16,
+            "className": ""
+          },
+          {
+            "ledId": 72,
+            "name": ", <",
+            "keyCode": 54,
+            "className": ""
+          },
+          {
+            "ledId": 73,
+            "name": ". >",
+            "keyCode": 55,
+            "className": ""
+          },
+          {
+            "ledId": 74,
+            "name": "/ ?",
+            "keyCode": 56,
+            "className": ""
+          },
+          {
+            "ledId": 75,
+            "name": "R-Shift",
+            "keyCode": 229,
+            "className": "w-41 mr-auto"
+          },
+          {
+            "ledId": 90,
+            "name": "↑",
+            "keyCode": 82,
+            "className": "ml-5 mr-15"
+          }
+        ]
+      },
+      {
+        "row": 5,
+        "width": 11,
+        "keys": [
+          {
+            "ledId": 80,
+            "name": "L-Ctrl",
+            "keyCode": 224,
+            "className": "w-18"
+          },
+          {
+            "ledId": 81,
+            "name": "L-Win",
+            "keyCode": 227,
+            "className": "w-18"
+          },
+          {
+            "ledId": 82,
+            "name": "L-Alt",
+            "keyCode": 226,
+            "className": "w-18"
+          },
+          {
+            "ledId": 83,
+            "name": "Spacebar",
+            "keyCode": 44,
+            "className": "flex-1"
+          },
+          {
+            "ledId": 84,
+            "name": "R-Alt",
+            "keyCode": 230,
+            "className": "w-18"
+          },
+          {
+            "ledId": 85,
+            "name": "Fn",
+            "keyCode": 175,
+            "className": "w-18"
+          },
+          {
+            "ledId": 86,
+            "name": "Super",
+            "keyCode": 101,
+            "className": "w-18"
+          },
+          {
+            "ledId": 87,
+            "name": "R-Ctrl",
+            "keyCode": 228,
+            "className": "w-18"
+          },
+          {
+            "ledId": 88,
+            "name": "←",
+            "keyCode": 80,
+            "className": "ml-5"
+          },
+          {
+            "ledId": 89,
+            "name": "↓",
+            "keyCode": 81,
+            "className": ""
+          },
+          {
+            "ledId": 91,
+            "name": "→",
+            "keyCode": 79,
+            "className": ""
+          }
+        ]
+      }
+    ],
+    "table": [
+      {
+        "ledId": 0,
+        "row": 0,
+        "col": 0,
+        "name": "Esc",
+        "keyCode": 41,
+        "key": "Escape"
+      },
+      {
+        "ledId": 1,
+        "row": 0,
+        "col": 1,
+        "name": "F1",
+        "keyCode": 58,
+        "key": "F1"
+      },
+      {
+        "ledId": 2,
+        "row": 0,
+        "col": 2,
+        "name": "F2",
+        "keyCode": 59,
+        "key": "F2"
+      },
+      {
+        "ledId": 3,
+        "row": 0,
+        "col": 3,
+        "name": "F3",
+        "keyCode": 60,
+        "key": "F3"
+      },
+      {
+        "ledId": 4,
+        "row": 0,
+        "col": 4,
+        "name": "F4",
+        "keyCode": 61,
+        "key": "F4"
+      },
+      {
+        "ledId": 5,
+        "row": 0,
+        "col": 5,
+        "name": "F5",
+        "keyCode": 62,
+        "key": "F5"
+      },
+      {
+        "ledId": 6,
+        "row": 0,
+        "col": 6,
+        "name": "F6",
+        "keyCode": 63,
+        "key": "F6"
+      },
+      {
+        "ledId": 7,
+        "row": 0,
+        "col": 7,
+        "name": "F7",
+        "keyCode": 64,
+        "key": "F7"
+      },
+      {
+        "ledId": 8,
+        "row": 0,
+        "col": 8,
+        "name": "F8",
+        "keyCode": 65,
+        "key": "F8"
+      },
+      {
+        "ledId": 9,
+        "row": 0,
+        "col": 9,
+        "name": "F9",
+        "keyCode": 66,
+        "key": "F9"
+      },
+      {
+        "ledId": 10,
+        "row": 0,
+        "col": 10,
+        "name": "F10",
+        "keyCode": 67,
+        "key": "F10"
+      },
+      {
+        "ledId": 11,
+        "row": 0,
+        "col": 11,
+        "name": "F11",
+        "keyCode": 68,
+        "key": "F11"
+      },
+      {
+        "ledId": 12,
+        "row": 0,
+        "col": 12,
+        "name": "F12",
+        "keyCode": 69,
+        "key": "F12"
+      },
+      {
+        "ledId": 16,
+        "row": 1,
+        "col": 0,
+        "name": "` ~",
+        "keyCode": 53,
+        "key": "Backquote"
+      },
+      {
+        "ledId": 17,
+        "row": 1,
+        "col": 1,
+        "name": "1 !",
+        "keyCode": 30,
+        "key": "Digit1"
+      },
+      {
+        "ledId": 18,
+        "row": 1,
+        "col": 2,
+        "name": "2 @",
+        "keyCode": 31,
+        "key": "Digit2"
+      },
+      {
+        "ledId": 19,
+        "row": 1,
+        "col": 3,
+        "name": "3 #",
+        "keyCode": 32,
+        "key": "Digit3"
+      },
+      {
+        "ledId": 20,
+        "row": 1,
+        "col": 4,
+        "name": "4 $",
+        "keyCode": 33,
+        "key": "Digit4"
+      },
+      {
+        "ledId": 21,
+        "row": 1,
+        "col": 5,
+        "name": "5 %",
+        "keyCode": 34,
+        "key": "Digit5"
+      },
+      {
+        "ledId": 22,
+        "row": 1,
+        "col": 6,
+        "name": "6 ^",
+        "keyCode": 35,
+        "key": "Digit6"
+      },
+      {
+        "ledId": 23,
+        "row": 1,
+        "col": 7,
+        "name": "7 &",
+        "keyCode": 36,
+        "key": "Digit7"
+      },
+      {
+        "ledId": 24,
+        "row": 1,
+        "col": 8,
+        "name": "8 *",
+        "keyCode": 37,
+        "key": "Digit8"
+      },
+      {
+        "ledId": 25,
+        "row": 1,
+        "col": 9,
+        "name": "9 (",
+        "keyCode": 38,
+        "key": "Digit9"
+      },
+      {
+        "ledId": 26,
+        "row": 1,
+        "col": 10,
+        "name": "0 )",
+        "keyCode": 39,
+        "key": "Digit0"
+      },
+      {
+        "ledId": 27,
+        "row": 1,
+        "col": 11,
+        "name": "ˉ -",
+        "keyCode": 45,
+        "key": "Minus"
+      },
+      {
+        "ledId": 28,
+        "row": 1,
+        "col": 12,
+        "name": "= +",
+        "keyCode": 46,
+        "key": "Equal"
+      },
+      {
+        "ledId": 32,
+        "row": 2,
+        "col": 0,
+        "name": "Tab",
+        "keyCode": 43,
+        "key": "Tab"
+      },
+      {
+        "ledId": 33,
+        "row": 2,
+        "col": 1,
+        "name": "Q",
+        "keyCode": 20,
+        "key": "KeyQ"
+      },
+      {
+        "ledId": 34,
+        "row": 2,
+        "col": 2,
+        "name": "W",
+        "keyCode": 26,
+        "key": "KeyW"
+      },
+      {
+        "ledId": 35,
+        "row": 2,
+        "col": 3,
+        "name": "E",
+        "keyCode": 8,
+        "key": "KeyE"
+      },
+      {
+        "ledId": 36,
+        "row": 2,
+        "col": 4,
+        "name": "R",
+        "keyCode": 21,
+        "key": "KeyR"
+      },
+      {
+        "ledId": 37,
+        "row": 2,
+        "col": 5,
+        "name": "T",
+        "keyCode": 23,
+        "key": "KeyT"
+      },
+      {
+        "ledId": 38,
+        "row": 2,
+        "col": 6,
+        "name": "Y",
+        "keyCode": 28,
+        "key": "KeyY"
+      },
+      {
+        "ledId": 39,
+        "row": 2,
+        "col": 7,
+        "name": "U",
+        "keyCode": 24,
+        "key": "KeyU"
+      },
+      {
+        "ledId": 40,
+        "row": 2,
+        "col": 8,
+        "name": "I",
+        "keyCode": 12,
+        "key": "KeyI"
+      },
+      {
+        "ledId": 41,
+        "row": 2,
+        "col": 9,
+        "name": "O",
+        "keyCode": 18,
+        "key": "KeyO"
+      },
+      {
+        "ledId": 42,
+        "row": 2,
+        "col": 10,
+        "name": "P",
+        "keyCode": 19,
+        "key": "KeyP"
+      },
+      {
+        "ledId": 43,
+        "row": 2,
+        "col": 11,
+        "name": "[ {",
+        "keyCode": 47,
+        "key": "BracketLeft"
+      },
+      {
+        "ledId": 44,
+        "row": 2,
+        "col": 12,
+        "name": "] }",
+        "keyCode": 48,
+        "key": "BracketRight"
+      },
+      {
+        "ledId": 48,
+        "row": 3,
+        "col": 0,
+        "name": "Caps",
+        "keyCode": 57,
+        "key": "CapsLock"
+      },
+      {
+        "ledId": 49,
+        "row": 3,
+        "col": 1,
+        "name": "A",
+        "keyCode": 4,
+        "key": "KeyA"
+      },
+      {
+        "ledId": 50,
+        "row": 3,
+        "col": 2,
+        "name": "S",
+        "keyCode": 22,
+        "key": "KeyS"
+      },
+      {
+        "ledId": 51,
+        "row": 3,
+        "col": 3,
+        "name": "D",
+        "keyCode": 7,
+        "key": "KeyD"
+      },
+      {
+        "ledId": 52,
+        "row": 3,
+        "col": 4,
+        "name": "F",
+        "keyCode": 9,
+        "key": "KeyF"
+      },
+      {
+        "ledId": 53,
+        "row": 3,
+        "col": 5,
+        "name": "G",
+        "keyCode": 10,
+        "key": "KeyG"
+      },
+      {
+        "ledId": 54,
+        "row": 3,
+        "col": 6,
+        "name": "H",
+        "keyCode": 11,
+        "key": "KeyH"
+      },
+      {
+        "ledId": 55,
+        "row": 3,
+        "col": 7,
+        "name": "J",
+        "keyCode": 13,
+        "key": "KeyJ"
+      },
+      {
+        "ledId": 56,
+        "row": 3,
+        "col": 8,
+        "name": "K",
+        "keyCode": 14,
+        "key": "KeyK"
+      },
+      {
+        "ledId": 57,
+        "row": 3,
+        "col": 9,
+        "name": "L",
+        "keyCode": 15,
+        "key": "KeyL"
+      },
+      {
+        "ledId": 58,
+        "row": 3,
+        "col": 10,
+        "name": "; :",
+        "keyCode": 51,
+        "key": "Semicolon"
+      },
+      {
+        "ledId": 59,
+        "row": 3,
+        "col": 11,
+        "name": "' \"",
+        "keyCode": 52,
+        "key": "Quote"
+      },
+      {
+        "ledId": 60,
+        "row": 2,
+        "col": 13,
+        "name": "\\ | ",
+        "keyCode": 49,
+        "key": "Backslash"
+      },
+      {
+        "ledId": 64,
+        "row": 4,
+        "col": 0,
+        "name": "L-Shift",
+        "keyCode": 225,
+        "key": "ShiftLeft"
+      },
+      {
+        "ledId": 65,
+        "row": 4,
+        "col": 1,
+        "name": "Z",
+        "keyCode": 29,
+        "key": "KeyZ"
+      },
+      {
+        "ledId": 66,
+        "row": 4,
+        "col": 2,
+        "name": "X",
+        "keyCode": 27,
+        "key": "KeyX"
+      },
+      {
+        "ledId": 67,
+        "row": 4,
+        "col": 3,
+        "name": "C",
+        "keyCode": 6,
+        "key": "KeyC"
+      },
+      {
+        "ledId": 68,
+        "row": 4,
+        "col": 4,
+        "name": "V",
+        "keyCode": 25,
+        "key": "KeyV"
+      },
+      {
+        "ledId": 69,
+        "row": 4,
+        "col": 5,
+        "name": "B",
+        "keyCode": 5,
+        "key": "KeyB"
+      },
+      {
+        "ledId": 70,
+        "row": 4,
+        "col": 6,
+        "name": "N",
+        "keyCode": 17,
+        "key": "KeyN"
+      },
+      {
+        "ledId": 71,
+        "row": 4,
+        "col": 7,
+        "name": "M",
+        "keyCode": 16,
+        "key": "KeyM"
+      },
+      {
+        "ledId": 72,
+        "row": 4,
+        "col": 8,
+        "name": ", <",
+        "keyCode": 54,
+        "key": "Comma"
+      },
+      {
+        "ledId": 73,
+        "row": 4,
+        "col": 9,
+        "name": ". >",
+        "keyCode": 55,
+        "key": "Period"
+      },
+      {
+        "ledId": 74,
+        "row": 4,
+        "col": 10,
+        "name": "/ ?",
+        "keyCode": 56,
+        "key": "Slash"
+      },
+      {
+        "ledId": 75,
+        "row": 4,
+        "col": 11,
+        "name": "R-Shift",
+        "keyCode": 229,
+        "key": "ShiftRight"
+      },
+      {
+        "ledId": 76,
+        "row": 3,
+        "col": 12,
+        "name": "Enter",
+        "keyCode": 40,
+        "key": "Enter"
+      },
+      {
+        "ledId": 80,
+        "row": 5,
+        "col": 0,
+        "name": "L-Ctrl",
+        "keyCode": 224,
+        "key": "ControlLeft"
+      },
+      {
+        "ledId": 81,
+        "row": 5,
+        "col": 1,
+        "name": "L-Win",
+        "keyCode": 227,
+        "key": "MetaLeft"
+      },
+      {
+        "ledId": 82,
+        "row": 5,
+        "col": 2,
+        "name": "L-Alt",
+        "keyCode": 226,
+        "key": "AltLeft"
+      },
+      {
+        "ledId": 83,
+        "row": 5,
+        "col": 3,
+        "name": "Spacebar",
+        "keyCode": 44,
+        "key": "Space"
+      },
+      {
+        "ledId": 84,
+        "row": 5,
+        "col": 4,
+        "name": "R-Alt",
+        "keyCode": 230,
+        "key": "AltRight"
+      },
+      {
+        "ledId": 85,
+        "row": 5,
+        "col": 5,
+        "name": "Fn",
+        "keyCode": 175,
+        "key": "-1"
+      },
+      {
+        "ledId": 86,
+        "row": 5,
+        "col": 6,
+        "name": "Super",
+        "keyCode": 101,
+        "key": "ContextMenu"
+      },
+      {
+        "ledId": 87,
+        "row": 5,
+        "col": 7,
+        "name": "R-Ctrl",
+        "keyCode": 228,
+        "key": "ControlRight"
+      },
+      {
+        "ledId": 88,
+        "row": 5,
+        "col": 8,
+        "name": "←",
+        "keyCode": 80,
+        "key": "ArrowLeft"
+      },
+      {
+        "ledId": 89,
+        "row": 5,
+        "col": 9,
+        "name": "↓",
+        "keyCode": 81,
+        "key": "ArrowDown"
+      },
+      {
+        "ledId": 90,
+        "row": 4,
+        "col": 12,
+        "name": "↑",
+        "keyCode": 82,
+        "key": "ArrowUp"
+      },
+      {
+        "ledId": 91,
+        "row": 5,
+        "col": 10,
+        "name": "→",
+        "keyCode": 79,
+        "key": "ArrowRight"
+      },
+      {
+        "ledId": 92,
+        "row": 1,
+        "col": 13,
+        "name": "Back",
+        "keyCode": 42,
+        "key": "Backspace"
+      },
+      {
+        "ledId": 99,
+        "row": 0,
+        "col": 13,
+        "name": "Print",
+        "keyCode": 70,
+        "key": "PrintScreen"
+      },
+      {
+        "ledId": 100,
+        "row": 0,
+        "col": 14,
+        "name": "Scroll",
+        "keyCode": 71,
+        "key": "ScrollLock"
+      },
+      {
+        "ledId": 102,
+        "row": 0,
+        "col": 15,
+        "name": "Pause",
+        "keyCode": 72,
+        "key": "Pause"
+      },
+      {
+        "ledId": 103,
+        "row": 1,
+        "col": 14,
+        "name": "Insert",
+        "keyCode": 73,
+        "key": "Insert"
+      },
+      {
+        "ledId": 104,
+        "row": 1,
+        "col": 15,
+        "name": "Home",
+        "keyCode": 74,
+        "key": "Home"
+      },
+      {
+        "ledId": 105,
+        "row": 1,
+        "col": 16,
+        "name": "PgUp",
+        "keyCode": 75,
+        "key": "PageUp"
+      },
+      {
+        "ledId": 106,
+        "row": 2,
+        "col": 14,
+        "name": "Del",
+        "keyCode": 76,
+        "key": "Delete"
+      },
+      {
+        "ledId": 107,
+        "row": 2,
+        "col": 15,
+        "name": "End",
+        "keyCode": 77,
+        "key": "End"
+      },
+      {
+        "ledId": 108,
+        "row": 2,
+        "col": 16,
+        "name": "PgDn",
+        "keyCode": 78,
+        "key": "PageDown"
+      }
+    ],
+    "slotsWithoutKey": [
+      13,
+      14,
+      15,
+      29,
+      30,
+      31,
+      45,
+      46,
+      47,
+      61,
+      62,
+      63,
+      77,
+      78,
+      79,
+      93,
+      94,
+      95,
+      96,
+      97,
+      98,
+      101,
+      109,
+      110,
+      111,
+      112,
+      113,
+      114,
+      115,
+      116,
+      117,
+      118,
+      119,
+      120,
+      121,
+      122,
+      123,
+      124,
+      125,
+      126,
+      127
+    ]
+  },
+  "uiI18nKeys": {
+    "tabs": {
+      "color": "color_name",
+      "lightBox": "light_box",
+      "sideLight": "side_light",
+      "music": "icon_6",
+      "musicDiy": "music_diy",
+      "gif": "gif_text2",
+      "aiLighting": "ai-lighting"
+    },
+    "panel": {
+      "title": "lighting",
+      "editSection": "lighting_edit",
+      "colorMode": "lighting_color_mode",
+      "singleColor": "lighting_single_color",
+      "brightness": "lighting_brightness",
+      "speed": "lighting_speed",
+      "direction": "lighting_direction",
+      "colorSection": "lighting_color",
+      "rgbSelect": "lighting_rgb_select",
+      "mainRgb": "lighting_main_rgb",
+      "secondaryRgb": "lighting_secondary_rgb",
+      "unit": "gif_text14",
+      "effectModeType": "music_text1"
+    },
+    "modeNames": {
+      "1": "lighting_icon1",
+      "2": "lighting_icon2",
+      "3": "lighting_icon3",
+      "4": "lighting_icon4",
+      "5": "lighting_icon5",
+      "6": "lighting_icon6",
+      "7": "lighting_icon7",
+      "8": "lighting_icon8",
+      "9": "lighting_icon9",
+      "10": "lighting_icon10",
+      "11": "lighting_icon11",
+      "12": "lighting_icon12",
+      "13": "lighting_icon13",
+      "14": "lighting_icon14",
+      "15": "lighting_icon15",
+      "16": "lighting_icon16",
+      "17": "lighting_icon17",
+      "18": "lighting_icon18",
+      "19": "lighting_icon19",
+      "23": "lighting_icon21",
+      "24": "lighting_icon22",
+      "25": "lighting_icon23",
+      "26": "lighting_icon34",
+      "27": "lighting_icon35",
+      "28": "lighting_icon37",
+      "29": "lighting_icon38",
+      "30": "lighting_icon39",
+      "31": "lighting_icon40",
+      "32": "lighting_icon41",
+      "33": "lighting_icon42",
+      "128": "lighting_icon20",
+      "254": "lighting_icon28"
+    }
+  },
+  "openQuestions": [
+    "mode 20/21 与 FUNC 71/72/98 的对应关系（bundle 只给出 [20,21,128] 三值判定）",
+    "brightness=0 是否等同关灯（UI 不可达；协议未定义；建议用 mode=0）",
+    "128 个 LED 里 87 个物理键的真实 LED 序号需真机逐点点亮验证",
+    "GET_LED_EFFECT 里 driverSetting(=255) 的真实固件含义未知"
+  ]
+}

@@ -1,0 +1,4786 @@
+{
+  "account_btn": {
+    "zh": "修改密码",
+    "en": "Change Password"
+  },
+  "account_dow": {
+    "zh": "我的下载",
+    "en": "My Downloads"
+  },
+  "account_err1": {
+    "zh": "密码限制6-25字符",
+    "en": "Password must be between 6 and 25 characters"
+  },
+  "account_err2": {
+    "zh": "两次密码不一致",
+    "en": "Passwords do not match"
+  },
+  "account_err3": {
+    "zh": "密码不能为空",
+    "en": "Password cannot be empty"
+  },
+  "account_err4": {
+    "zh": "旧密码与新密码一致",
+    "en": "Old password is the same as the new password"
+  },
+  "account_err5": {
+    "zh": "原密码不能为空",
+    "en": "Current password cannot be empty"
+  },
+  "account_input1": {
+    "zh": "原密码",
+    "en": "Current Password"
+  },
+  "account_input2": {
+    "zh": "请输入原密码",
+    "en": "Please Enter Your Current Password"
+  },
+  "account_input3": {
+    "zh": "新密码",
+    "en": "New Password"
+  },
+  "account_input4": {
+    "zh": "请输入新密码（6-25个字符之间）",
+    "en": "Please Enter a New Password (6-25 characters)"
+  },
+  "account_input5": {
+    "zh": "确认密码",
+    "en": "Confirm Password"
+  },
+  "account_input6": {
+    "zh": "再次输入您设置的新密码",
+    "en": "Re-enter Your New Password"
+  },
+  "account_input7": {
+    "zh": "密码",
+    "en": "password"
+  },
+  "account_input8": {
+    "zh": "请输入密码",
+    "en": "Please enter password"
+  },
+  "account_success": {
+    "zh": "修改密码成功，需要重新登录！",
+    "en": "Password changed successfully, please log in again!"
+  },
+  "account_title": {
+    "zh": "账号信息",
+    "en": "Account Information"
+  },
+  "add_device_btn": {
+    "zh": "添加设备",
+    "en": "Add device"
+  },
+  "adjustName": {
+    "zh": "调整键盘闲置多少分钟后灯光关灯",
+    "en": "Adjust how many minutes of keyboard inactivity before the lights turn off"
+  },
+  "ai_led_prompt": {
+    "zh": "根据文档生成点阵灯光代码，规格为 {0} 行 {1} 列，帧数上限为 {2} 帧，要求：",
+    "en": "Generate dot matrix lighting code according to the document. The specifications are {0} rows and {1} columns. The upper limit of the number of frames is {2} frames. The requirements are:"
+  },
+  "ai_lighting_import_btn": {
+    "zh": "导入预设",
+    "en": "Import presets"
+  },
+  "ai_lighting_import_code_label": {
+    "zh": "预设代码",
+    "en": "Default code"
+  },
+  "ai_lighting_import_code_placeholder": {
+    "zh": "将 AI 生成的预设代码粘贴到此处",
+    "en": "Paste the AI-generated preset code here"
+  },
+  "ai_lighting_import_copy_prompt": {
+    "zh": "复制提示词",
+    "en": "copy prompt word"
+  },
+  "ai_lighting_import_copy_success": {
+    "zh": "提示词已复制到剪贴板",
+    "en": "The prompt word has been copied to the clipboard"
+  },
+  "ai_lighting_import_duplicate": {
+    "zh": "已有相同 id，请修改后重试",
+    "en": "The same id already exists, please modify it and try again"
+  },
+  "ai_lighting_import_failed": {
+    "zh": "导入失败，请检查代码格式",
+    "en": "Import failed, please check the code format"
+  },
+  "ai_lighting_import_guide_link": {
+    "zh": "预设生成指南",
+    "en": "Preset generation guide"
+  },
+  "ai_lighting_import_guide_title": {
+    "zh": "用AI一键生成专属灯光预设",
+    "en": "Use AI to generate exclusive lighting presets with one click"
+  },
+  "ai_lighting_import_invalid": {
+    "zh": "缺少必要字段，请检查代码格式",
+    "en": "Required fields are missing, please check the code format"
+  },
+  "ai_lighting_import_send_ai": {
+    "zh": "发给AI，再",
+    "en": "Send it to AI, then"
+  },
+  "ai_lighting_import_subtitle": {
+    "zh": "粘贴对应代码到下方即可导入",
+    "en": "Paste the corresponding code below to import it"
+  },
+  "ai_lighting_import_success": {
+    "zh": "导入成功",
+    "en": "Import successful"
+  },
+  "ai_lighting_import_tell_ai": {
+    "zh": "告诉它你想要的效果，比如彩虹渐变、七彩烟花......将生成的代码粘贴到下方即可导入。",
+    "en": "Tell it the effect you want, such as rainbow gradient, colorful fireworks... Paste the generated code below to import it."
+  },
+  "ai_lighting_import_title": {
+    "zh": "导入素材",
+    "en": "Import material"
+  },
+  "ai_lighting_keyboard_reset": {
+    "zh": "重置键盘",
+    "en": "Reset keyboard"
+  },
+  "ai_lighting_prompt": {
+    "zh": "根据文档生成灯光代码，要求：",
+    "en": "Generate lighting codes according to the documentation, requiring:"
+  },
+  "all_key_name": {
+    "zh": "全键与单键唤醒",
+    "en": "All Key & Single Key Wakeup"
+  },
+  "all_key_text": {
+    "zh": "单键唤醒模式下，键盘休眠功耗更低，续航时间更长，当开关打开时为“单键唤醒”",
+    "en": "In single key wakeup mode, the keyboard consumes less power in sleep mode and has a longer battery life. When the switch is turned on, it is set to 'Single Key Wakeup'."
+  },
+  "all_string": {
+    "zh": "全部字符",
+    "en": "All Characters"
+  },
+  "allocation": {
+    "zh": "分配",
+    "en": "allocation"
+  },
+  "aurora": {
+    "zh": "极光轴",
+    "en": "Aurora axis"
+  },
+  "auto_calibration": {
+    "zh": "自适应动态校准(Beta)",
+    "en": "Adaptive Dynamic Calibration (Beta)"
+  },
+  "auto_calibration_text": {
+    "zh": "开启后校准变为自适应动态校准，在键盘使用过程中都会进行校准修正，每次触发都会进行修正补偿行程参数，更好的匹配轴体，提高动志使用精度。(ps:建议断电后再进行更换轴体，以确保精度准确)",
+    "en": "After enabling, calibration becomes adaptive dynamic calibration. During keyboard use, calibration adjustments will be made continuously. Each trigger will adjust the travel parameters to better match the switches, improving dynamic usage accuracy. (Note: It is recommended to disconnect power before replacing switches to ensure accuracy.)"
+  },
+  "axail_tips": {
+    "zh": "切换成功，请重新校准这些按键",
+    "en": "Switching successful, please recalibrate these keys."
+  },
+  "axios_14": {
+    "zh": "海木轴",
+    "en": "Seawood Axis"
+  },
+  "axis_1": {
+    "zh": "磁皇轴",
+    "en": "Magnetic Emperor Axis"
+  },
+  "axis_10": {
+    "zh": "灵云轴",
+    "en": "Spirit Cloud Switch"
+  },
+  "axis_11": {
+    "zh": "烟云轴",
+    "en": "Smoke Cloud Switch"
+  },
+  "axis_12": {
+    "zh": "风云轴",
+    "en": "Wind Cloud Switch"
+  },
+  "axis_13": {
+    "zh": "兵王轴",
+    "en": "Soldier King Switch"
+  },
+  "axis_14": {
+    "zh": "莱奥伯格轴",
+    "en": "Leoborg Axis"
+  },
+  "axis_15": {
+    "zh": "库迪轴",
+    "en": "Cuddy Axis"
+  },
+  "axis_16": {
+    "zh": "天王轴",
+    "en": "Emperor Axis"
+  },
+  "axis_17": {
+    "zh": "磁珀轴",
+    "en": "Magnetic axle"
+  },
+  "axis_18": {
+    "zh": "蜜桃轴",
+    "en": "Peach shaft"
+  },
+  "axis_19": {
+    "zh": "蓝冰轴",
+    "en": "Blue Ice Shaft"
+  },
+  "axis_2": {
+    "zh": "磁灵轴",
+    "en": "Magnetic Spirit Axis"
+  },
+  "axis_20": {
+    "zh": "海皇轴",
+    "en": "Neptune Axis"
+  },
+  "axis_21": {
+    "zh": "冰魂轴",
+    "en": "Ice Soul Axis"
+  },
+  "axis_22": {
+    "zh": "欧米伽轴",
+    "en": "Omega Axis"
+  },
+  "axis_23": {
+    "zh": "磁静轴",
+    "en": "magnetostatic axis"
+  },
+  "axis_24": {
+    "zh": "静默轴",
+    "en": "silent axis"
+  },
+  "axis_25": {
+    "zh": "禾金黄蓝轴",
+    "en": "Golden yellow blue axis"
+  },
+  "axis_26": {
+    "zh": "磁霜轴",
+    "en": "Magnetic frost shaft"
+  },
+  "axis_27": {
+    "zh": "蓝天轴",
+    "en": "blue sky axis"
+  },
+  "axis_28": {
+    "zh": "璃玉轴",
+    "en": "glass jade axis"
+  },
+  "axis_29": {
+    "zh": "晶域轴",
+    "en": "crystal domain axis"
+  },
+  "axis_3": {
+    "zh": "北极轴",
+    "en": "Arctic Axis"
+  },
+  "axis_30": {
+    "zh": "炎擎轴",
+    "en": "Flame Qing Axis"
+  },
+  "axis_31": {
+    "zh": "磁粉轴",
+    "en": "Magnetic powder shaft"
+  },
+  "axis_32": {
+    "zh": "空谷轴",
+    "en": "hollow axis"
+  },
+  "axis_33": {
+    "zh": "钛灵轴",
+    "en": "Titanium Spirit Shaft"
+  },
+  "axis_34": {
+    "zh": "冰皇轴",
+    "en": "Ice King Axis"
+  },
+  "axis_35": {
+    "zh": "冰云轴",
+    "en": "ice cloud axis"
+  },
+  "axis_36": {
+    "zh": "星云轴",
+    "en": "nebula axis"
+  },
+  "axis_37": {
+    "zh": "暴雪轴",
+    "en": "blizzard axis"
+  },
+  "axis_38": {
+    "zh": "白星磁轴pro",
+    "en": "white star magnetic axis pro"
+  },
+  "axis_39": {
+    "zh": "极磁轴",
+    "en": "polar magnetic axis"
+  },
+  "axis_4": {
+    "zh": "桃晶轴",
+    "en": "Peach Crystal Switch"
+  },
+  "axis_40": {
+    "zh": "月琥磁轴",
+    "en": "moon amber magnetic axis"
+  },
+  "axis_41": {
+    "zh": "天青轴",
+    "en": "Celadon Axis"
+  },
+  "axis_42": {
+    "zh": "无极V3轴",
+    "en": "Wuji V3 Axis"
+  },
+  "axis_43": {
+    "zh": "万磁V2轴",
+    "en": "WanCi V2 Axis"
+  },
+  "axis_44": {
+    "zh": "静音轴",
+    "en": "Silent Axis"
+  },
+  "axis_5": {
+    "zh": "禾金北极轴",
+    "en": "Hejin Arctic Switch"
+  },
+  "axis_6": {
+    "zh": "灰木/形意/咏春轴",
+    "en": "Graywood/Yingyi/Yongchun Switch"
+  },
+  "axis_7": {
+    "zh": "黑皇轴",
+    "en": "Black Emperor Switch"
+  },
+  "axis_8": {
+    "zh": "高特轴",
+    "en": "Gateron Switch"
+  },
+  "axis_9": {
+    "zh": "磁稻轴",
+    "en": "Magnetic Rice Switch"
+  },
+  "axis_def": {
+    "zh": "默认轴",
+    "en": "Default Axis"
+  },
+  "axiz_purple": {
+    "zh": "紫星轴",
+    "en": "Purple Star Axis"
+  },
+  "axle_1": {
+    "zh": "TTC万磁王轴",
+    "en": "Magnetic King Switch"
+  },
+  "axle_2": {
+    "zh": "佳达隆磁玉轴",
+    "en": " Jiada Magnetic Jade"
+  },
+  "axle_3": {
+    "zh": "佳达隆磁白轴",
+    "en": "Jiada Magnetic White"
+  },
+  "axle_4": {
+    "zh": "禾金粉轴",
+    "en": "Kailh Pink Switch"
+  },
+  "bottom": {
+    "zh": "触底优化",
+    "en": "Bottom Optimization"
+  },
+  "bottom_text": {
+    "zh": "部分轴体行程存在公差范围，启用后只要触底即可判定为触发，以避免轴体公差产生的重置指令。",
+    "en": "Some axles have tolerance ranges in their travel; when enabled, touching the bottom is sufficient to determine activation, avoiding reset commands caused by axle tolerances."
+  },
+  "browser_not_support_webhid": {
+    "zh": "浏览器不支持WebHID",
+    "en": "Browser does not support WebHID"
+  },
+  "calibration_close": {
+    "zh": "保存校准",
+    "en": "Save Calibration"
+  },
+  "calibration_current_key": {
+    "zh": "当前键",
+    "en": "current key"
+  },
+  "calibration_current_travel": {
+    "zh": "当前行程",
+    "en": "Current itinerary"
+  },
+  "calibration_progress_label": {
+    "zh": "校准进度",
+    "en": "Calibration progress"
+  },
+  "calibration_text": {
+    "zh": "请将需要校准的按键完全按下,当按键显示绿色时说明校准成功.",
+    "en": "Please press the key that needs calibration completely. When the key shows green, it indicates that the calibration is successful."
+  },
+  "calibration_title": {
+    "zh": "行程校准",
+    "en": "Travel Calibration"
+  },
+  "calibration_waiting_key": {
+    "zh": "等待按键",
+    "en": "Wait for key press"
+  },
+  "calibration_waveform_title": {
+    "zh": "实时键程波形",
+    "en": "Real-time keystroke waveform"
+  },
+  "cancel": {
+    "zh": "取消",
+    "en": "Cancel"
+  },
+  "cancel_select_text": {
+    "zh": "取消全选",
+    "en": "Cancel Select All"
+  },
+  "cb_duplicate_hotkey": {
+    "zh": "热键不能重复选择",
+    "en": "Hotkeys cannot be selected repeatedly"
+  },
+  "cb_error1": {
+    "zh": "热键和常规按键不能共用",
+    "en": "Hotkeys and regular buttons cannot be shared"
+  },
+  "cb_error2": {
+    "zh": "热键和常规按键不能为空",
+    "en": "Hotkeys and regular buttons cannot be empty"
+  },
+  "cb_text1": {
+    "zh": "绑定按键",
+    "en": "Bind keys"
+  },
+  "cb_text2": {
+    "zh": "热键一",
+    "en": "Hotkey 1"
+  },
+  "cb_text3": {
+    "zh": "热键二",
+    "en": "Hotkey 2"
+  },
+  "cb_text4": {
+    "zh": "常规按键",
+    "en": "Regular keys"
+  },
+  "cb_text5": {
+    "zh": "热键一和热键二(仅支持Ctrl、Shift、Alt、Win)",
+    "en": "Hotkey 1 and Hotkey 2 (only support Ctrl, Shift, Alt, Win)"
+  },
+  "charging_in_progress": {
+    "zh": "充电中",
+    "en": "Charging"
+  },
+  "closeDayName": {
+    "zh": "关闭时间",
+    "en": "Turn Off Time"
+  },
+  "collapseSidebar": {
+    "zh": "收起侧边栏",
+    "en": "Collapse the sidebar"
+  },
+  "color_model_background": {
+    "zh": "背景呼吸",
+    "en": "background breathing"
+  },
+  "color_model_both": {
+    "zh": "同时呼吸",
+    "en": "Breathe simultaneously"
+  },
+  "color_model_constant": {
+    "zh": "常亮模式",
+    "en": "Always on mode"
+  },
+  "color_model_heart": {
+    "zh": "爱心呼吸",
+    "en": "loving breath"
+  },
+  "color_name": {
+    "zh": "主面板灯效",
+    "en": "Main Panel Lighting Effects"
+  },
+  "colourful": {
+    "zh": "多彩",
+    "en": "colourful"
+  },
+  "community_author": {
+    "zh": "作者：",
+    "en": "Author:"
+  },
+  "community_no_more": {
+    "zh": "没有更多了",
+    "en": "That's all there is."
+  },
+  "confirm": {
+    "zh": "确定",
+    "en": "Confirm"
+  },
+  "createFile": {
+    "zh": "创建配置文件",
+    "en": "Create File"
+  },
+  "darkenDayName": {
+    "zh": "变暗时间",
+    "en": "Dim Time"
+  },
+  "defa_axis": {
+    "zh": "默境轴",
+    "en": "Silent Realm Axis"
+  },
+  "default_mode": {
+    "zh": "默认模式",
+    "en": "Default mode"
+  },
+  "direction_key": {
+    "zh": "方向键",
+    "en": "Arrow keys"
+  },
+  "dks_mask_text": {
+    "zh": "设置第一个和最后一个DKS动作的触发点。",
+    "en": "Set the trigger points for the first and last DKS actions."
+  },
+  "dks_mask_tips1": {
+    "zh": "重置为全局",
+    "en": "Reset to Global"
+  },
+  "dks_mask_tips2": {
+    "zh": "按键起点",
+    "en": "Key Starting Point"
+  },
+  "dks_mask_tips3": {
+    "zh": "完成抬起",
+    "en": "Complete Lift"
+  },
+  "download_success": {
+    "zh": "下载成功，已添加pfofile",
+    "en": "Download Successful, Profile Added"
+  },
+  "end_icon1": {
+    "zh": "按下",
+    "en": "press"
+  },
+  "end_icon2": {
+    "zh": "松开",
+    "en": "release"
+  },
+  "endurance_mode1": {
+    "zh": "省电模式",
+    "en": "Power-Saving Mode"
+  },
+  "endurance_mode2": {
+    "zh": "办公模式",
+    "en": "Work Arrangements"
+  },
+  "endurance_mode3": {
+    "zh": "电竞模式",
+    "en": "Esports Mode"
+  },
+  "endurance_mode_title": {
+    "zh": "键盘模式",
+    "en": "Keyboard Mode"
+  },
+  "endurance_text": {
+    "zh": "当前配置下，满电使用设备的参考时间",
+    "en": "Estimated device usage time on a full charge with the current settings"
+  },
+  "endurance_title": {
+    "zh": "续航时间",
+    "en": "Battery Life"
+  },
+  "error": {
+    "zh": "操作失败",
+    "en": "Operation failed"
+  },
+  "error4": {
+    "zh": "请先选择按键功能",
+    "en": "Please select the button function first."
+  },
+  "esc": {
+    "zh": "返回",
+    "en": "Back"
+  },
+  "exit_login": {
+    "zh": "退出登录",
+    "en": "Exit Login"
+  },
+  "exit_login_tips": {
+    "zh": "是否退出登录？",
+    "en": "Do You Want to Log Out?"
+  },
+  "expandSidebar": {
+    "zh": "展开侧边栏",
+    "en": "Expand the sidebar"
+  },
+  "fast": {
+    "zh": "快速触发",
+    "en": "Fast Trigger"
+  },
+  "fast_text": {
+    "zh": "快速触发将根据您按下或释放按键的意图动态地调整您的触发行程和重置行程",
+    "en": "Fast trigger will dynamically adjust your trigger and reset distance based on your intention when pressing or releasing the key."
+  },
+  "fast_trigger_desc": {
+    "zh": "独立开关：开启后不会锁定触发点。",
+    "en": "Independent switch: The trigger point will not be locked when turned on."
+  },
+  "feedback_allow_contact": {
+    "zh": "5. 是否允许产品团队联系您?",
+    "en": "5. Allow the product team to contact you?"
+  },
+  "feedback_contact_placeholder": {
+    "zh": "请填写您的联系方式（电话/微信/QQ/邮箱）",
+    "en": "Please enter your contact info (phone/WeChat/QQ/email)"
+  },
+  "feedback_description": {
+    "zh": "3. 问题描述",
+    "en": "3. Problem description"
+  },
+  "feedback_device_headset": {
+    "zh": "耳机",
+    "en": "Headset"
+  },
+  "feedback_device_keyboard": {
+    "zh": "键盘",
+    "en": "Keyboard"
+  },
+  "feedback_device_mouse": {
+    "zh": "鼠标",
+    "en": "Mouse"
+  },
+  "feedback_device_speaker": {
+    "zh": "音响",
+    "en": "Speaker"
+  },
+  "feedback_device_type": {
+    "zh": "1. 请选择设备类型",
+    "en": "1. Please select device type"
+  },
+  "feedback_no": {
+    "zh": "否",
+    "en": "No"
+  },
+  "feedback_placeholder": {
+    "zh": "请输入",
+    "en": "Please enter"
+  },
+  "feedback_product_model": {
+    "zh": "2. 请输入产品型号",
+    "en": "2. Please enter product model"
+  },
+  "feedback_submit": {
+    "zh": "提交反馈",
+    "en": "Submit Feedback"
+  },
+  "feedback_submit_fail": {
+    "zh": "反馈提交失败，请稍后重试",
+    "en": "Failed to submit feedback. Please try again later"
+  },
+  "feedback_submit_success": {
+    "zh": "反馈提交成功，感谢您的建议！",
+    "en": "Feedback submitted successfully. Thank you!"
+  },
+  "feedback_subtitle": {
+    "zh": "我们很乐意聆听您的反馈，您的反馈将帮助我们改进{0}",
+    "en": "We'd love to hear your feedback. It will help us improve {0}"
+  },
+  "feedback_title": {
+    "zh": "{0} 驱动建议反馈",
+    "en": "{0} Driver Suggestion Feedback"
+  },
+  "feedback_upload_fail": {
+    "zh": "文件上传失败，请稍后重试",
+    "en": "File upload failed. Please try again later"
+  },
+  "feedback_upload_image_size_error": {
+    "zh": "单张图片不能超过 {0}",
+    "en": "A single image cannot exceed {0}"
+  },
+  "feedback_upload_limit": {
+    "zh": "最多只能上传 {0} 个文件",
+    "en": "Only {0} files can be uploaded"
+  },
+  "feedback_upload_tip_count": {
+    "zh": "数量：最多上传 {0} 个文件",
+    "en": "Quantity: Upload up to {0} files"
+  },
+  "feedback_upload_tip_image": {
+    "zh": "图片：支持 jpg、jpeg、png 格式，单张图片不超过 {0}",
+    "en": "Pictures: Support jpg, jpeg, png formats, a single picture does not exceed {0}"
+  },
+  "feedback_upload_tip_video": {
+    "zh": "视频：支持 MP4、MOV、AVI 格式，单个视频不超过 {0}",
+    "en": "Video: Supports MP4, MOV, AVI formats, a single video does not exceed {0}"
+  },
+  "feedback_upload_title": {
+    "zh": "4. 上传图片或视频",
+    "en": "4. Upload images or videos"
+  },
+  "feedback_upload_type_error": {
+    "zh": "仅支持 jpg、jpeg、png、MP4、MOV、AVI 格式",
+    "en": "Only jpg, jpeg, png, MP4, MOV, AVI formats are supported"
+  },
+  "feedback_upload_video_size_error": {
+    "zh": "单个视频不能超过 {0}",
+    "en": "A single video cannot exceed {0}"
+  },
+  "feedback_version": {
+    "zh": "版本号",
+    "en": "Version"
+  },
+  "feedback_version_placeholder": {
+    "zh": "请输入版本号",
+    "en": "Please enter version"
+  },
+  "feedback_yes": {
+    "zh": "是",
+    "en": "Yes"
+  },
+  "file_error": {
+    "zh": "导入失败，文件类型不一致！！！",
+    "en": "Import failed, file type mismatch!!!"
+  },
+  "firmware_corrupted": {
+    "zh": "固件损坏",
+    "en": "Corrupted firmware"
+  },
+  "fn_text": {
+    "zh": "普通层",
+    "en": "Normal Layer"
+  },
+  "fun2_12288": {
+    "zh": "主灯光效果切换",
+    "en": "Main lighting effect switching"
+  },
+  "fun2_12289": {
+    "zh": "主灯光颜色切换",
+    "en": "Main light color switching"
+  },
+  "fun2_12290": {
+    "zh": "主灯光亮度+",
+    "en": "Main light brightness"
+  },
+  "fun2_12291": {
+    "zh": "主灯光亮度-",
+    "en": "Main light brightness-"
+  },
+  "fun2_12292": {
+    "zh": "主灯光速度+",
+    "en": "main light speed"
+  },
+  "fun2_12293": {
+    "zh": "主灯光速度-",
+    "en": "Main light speed-"
+  },
+  "fun2_12294": {
+    "zh": "关闭主灯光",
+    "en": "Turn off main light"
+  },
+  "fun2_12295": {
+    "zh": "打开主灯光",
+    "en": "Turn on main light"
+  },
+  "fun2_12298": {
+    "zh": "侧灯亮度调节+",
+    "en": "Side light brightness adjustment"
+  },
+  "fun2_12299": {
+    "zh": "侧灯亮度调节-",
+    "en": "Side light brightness adjustment-"
+  },
+  "fun2_12300": {
+    "zh": "侧灯速度调节+",
+    "en": "Side light speed adjustment"
+  },
+  "fun2_12301": {
+    "zh": "侧灯速度调节-",
+    "en": "Side light speed adjustment-"
+  },
+  "fun2_12302": {
+    "zh": "关闭侧灯",
+    "en": "Turn off side lights"
+  },
+  "fun2_12303": {
+    "zh": "打开侧灯",
+    "en": "turn on side lights"
+  },
+  "fun2_12304": {
+    "zh": "主灯区方向切换",
+    "en": "Main light area direction switching"
+  },
+  "fun2_12305": {
+    "zh": "主灯开关切换",
+    "en": "Main light switch"
+  },
+  "fun2_12306": {
+    "zh": "氛围灯模式切换",
+    "en": "Ambient light mode switching"
+  },
+  "fun2_12307": {
+    "zh": "氛围灯颜色切换",
+    "en": "Ambient light color switching"
+  },
+  "fun2_12308": {
+    "zh": "氛围灯亮度切换（+）",
+    "en": "Ambient light brightness switching ( )"
+  },
+  "fun2_12309": {
+    "zh": "氛围灯速度切换（+）",
+    "en": "Ambient light speed switching ( )"
+  },
+  "fun2_12310": {
+    "zh": "侧灯色块颜色切换",
+    "en": "Side light color block color switching"
+  },
+  "fun2_12311": {
+    "zh": "全灯开/关切换",
+    "en": "Full light on/off switching"
+  },
+  "fun2_12312": {
+    "zh": "点阵屏开/关",
+    "en": "Turn the dot-matrix display on/off"
+  },
+  "fun2_12313": {
+    "zh": "GIF灯效切换",
+    "en": "GIF Lighting Effects Switch"
+  },
+  "fun2_16384": {
+    "zh": "切换上一个界面",
+    "en": "Switch to the previous interface"
+  },
+  "fun2_16385": {
+    "zh": "切换下一个界面",
+    "en": "Switch to the next interface"
+  },
+  "fun2_16386": {
+    "zh": "确认键按下",
+    "en": "Confirm key pressed"
+  },
+  "fun2_28673": {
+    "zh": "系统亮度-",
+    "en": "System Brightness-"
+  },
+  "fun2_28674": {
+    "zh": "系统亮度+",
+    "en": "System Brightness +"
+  },
+  "fun2_28675": {
+    "zh": "系统任务切换/最近任务",
+    "en": "System Task Switching / Recent Tasks"
+  },
+  "fun2_28676": {
+    "zh": "系统主页",
+    "en": "System Home Page"
+  },
+  "fun2_4097": {
+    "zh": "切换至Windows系统",
+    "en": "Switch to Windows system"
+  },
+  "fun2_4098": {
+    "zh": "切换至MAC系统",
+    "en": "Switch to MAC system"
+  },
+  "fun2_4099": {
+    "zh": "切换至Android系统",
+    "en": "Switch to Android system"
+  },
+  "fun2_4100": {
+    "zh": "切换IOS系统",
+    "en": "Switch to iOS"
+  },
+  "fun2_4101": {
+    "zh": "Win/MAC循环切换",
+    "en": "Win/Mac Cycle Switching"
+  },
+  "fun2_4102": {
+    "zh": "WASD<->方向键",
+    "en": "WASD <-> Arrow Keys"
+  },
+  "fun2_4103": {
+    "zh": "查看电量",
+    "en": "Check Battery Level"
+  },
+  "fun2_4104": {
+    "zh": "锁定/解锁win键",
+    "en": "Lock/Unlock the Win Key"
+  },
+  "fun2_8197": {
+    "zh": "蓝牙通道1进入配对",
+    "en": "Bluetooth channel 1 enters pairing"
+  },
+  "fun2_8198": {
+    "zh": "蓝牙通道2进入配对",
+    "en": "Bluetooth channel 2 enters pairing"
+  },
+  "fun2_8199": {
+    "zh": "蓝牙通道3进入配对",
+    "en": "Bluetooth channel 3 enters pairing"
+  },
+  "fun2_8200": {
+    "zh": "蓝牙通道4进入配对",
+    "en": "Bluetooth channel 4 enters pairing"
+  },
+  "fun2_8201": {
+    "zh": "蓝牙通道5进入配对",
+    "en": "Bluetooth channel 5 enters pairing"
+  },
+  "fun2_8203": {
+    "zh": "无线配对",
+    "en": "Wireless pairing"
+  },
+  "fun2_8204": {
+    "zh": "切回USB模式",
+    "en": "Switch back to USB mode"
+  },
+  "fun_text1": {
+    "zh": "恢复出厂设置",
+    "en": "Restore Factory Settings"
+  },
+  "fun_text10": {
+    "zh": "灯光亮度+",
+    "en": "Increase Light Brightness"
+  },
+  "fun_text100": {
+    "zh": "灯箱亮度-",
+    "en": "Light box brightness-"
+  },
+  "fun_text101": {
+    "zh": "灯箱速度+",
+    "en": "Lightbox speed"
+  },
+  "fun_text102": {
+    "zh": "灯箱速度-",
+    "en": "Lightbox speed-"
+  },
+  "fun_text103": {
+    "zh": "LOGO灯效果切换",
+    "en": "LOGO light effect switching"
+  },
+  "fun_text104": {
+    "zh": "灯箱扩散模式颜色切换",
+    "en": "Lightbox diffusion mode color switching"
+  },
+  "fun_text105": {
+    "zh": "灯箱效果切换",
+    "en": "Lightbox effect switching"
+  },
+  "fun_text106": {
+    "zh": "灯箱颜色切换",
+    "en": "Lightbox color switching"
+  },
+  "fun_text107": {
+    "zh": "拾音灯亮度加",
+    "en": "Increased brightness of pickup light"
+  },
+  "fun_text108": {
+    "zh": "拾音灯亮度减",
+    "en": "The brightness of the pickup light is reduced"
+  },
+  "fun_text109": {
+    "zh": "拾音灯底色切换",
+    "en": "Switching the background color of the pickup light"
+  },
+  "fun_text11": {
+    "zh": "灯光亮度-",
+    "en": "Decrease Light Brightness"
+  },
+  "fun_text110": {
+    "zh": "拾音灯方向切换",
+    "en": "Pickup light direction switching"
+  },
+  "fun_text111": {
+    "zh": "开启屏幕下方按键灯",
+    "en": "Turn on the button light below the screen"
+  },
+  "fun_text112": {
+    "zh": "红灯常亮",
+    "en": "Red light always on"
+  },
+  "fun_text113": {
+    "zh": "绿灯常亮",
+    "en": "Green light is always on"
+  },
+  "fun_text114": {
+    "zh": "蓝灯常亮",
+    "en": "Blue light always on"
+  },
+  "fun_text115": {
+    "zh": "自定义灯光4",
+    "en": "Custom lighting 4"
+  },
+  "fun_text116": {
+    "zh": "自定义灯光5",
+    "en": "Custom lighting 5"
+  },
+  "fun_text117": {
+    "zh": "锁全键",
+    "en": "lock full key"
+  },
+  "fun_text118": {
+    "zh": "侧灯速度+",
+    "en": "side light speed"
+  },
+  "fun_text119": {
+    "zh": "侧灯速度-",
+    "en": "Side light speed-"
+  },
+  "fun_text12": {
+    "zh": "灯光速度+",
+    "en": "Increase Light Speed"
+  },
+  "fun_text120": {
+    "zh": "侧灯方向调节",
+    "en": "Side light direction adjustment"
+  },
+  "fun_text121": {
+    "zh": "切换回报率",
+    "en": "Switch rate of return"
+  },
+  "fun_text122": {
+    "zh": "手动进校准",
+    "en": "Manual calibration"
+  },
+  "fun_text123": {
+    "zh": "12/24时间切换",
+    "en": "12/24 time switch"
+  },
+  "fun_text124": {
+    "zh": "自定义灯效切换",
+    "en": "Custom lighting effect switching"
+  },
+  "fun_text125": {
+    "zh": "windows",
+    "en": "windows"
+  },
+  "fun_text126": {
+    "zh": "pageup、pagedown锁",
+    "en": "pageup, pagedown lock"
+  },
+  "fun_text127": {
+    "zh": "CMD锁",
+    "en": "CMD lock"
+  },
+  "fun_text128": {
+    "zh": "切换蜂鸣器模式",
+    "en": "Switch buzzer mode"
+  },
+  "fun_text129": {
+    "zh": "开/关拾音灯",
+    "en": "Turn on/off pickup light"
+  },
+  "fun_text13": {
+    "zh": "灯光速度-",
+    "en": "Decrease Light Speed"
+  },
+  "fun_text130": {
+    "zh": "显示屏切换主页",
+    "en": "Display switch homepage"
+  },
+  "fun_text131": {
+    "zh": "氛围灯效亮度调节",
+    "en": "Ambient lighting effect brightness adjustment"
+  },
+  "fun_text132": {
+    "zh": "氛围灯效速度调节",
+    "en": "Ambient lighting effect speed adjustment"
+  },
+  "fun_text133": {
+    "zh": "氛围灯效颜色切换",
+    "en": "Ambient lighting effect color switching"
+  },
+  "fun_text134": {
+    "zh": "氛围灯效切换",
+    "en": "Ambient lighting effect switching"
+  },
+  "fun_text135": {
+    "zh": "灯光颜色正向切换",
+    "en": "Light color forward switching"
+  },
+  "fun_text136": {
+    "zh": "灯光颜色反向切换",
+    "en": "Light color reverse switching"
+  },
+  "fun_text137": {
+    "zh": "旋钮下的LED开关",
+    "en": "LED switch under the knob"
+  },
+  "fun_text138": {
+    "zh": "有线模式切换",
+    "en": "Wired mode switching"
+  },
+  "fun_text139": {
+    "zh": "切换指示灯模式",
+    "en": "Switch indicator light mode"
+  },
+  "fun_text14": {
+    "zh": "关闭灯光",
+    "en": "Turn Off Lights"
+  },
+  "fun_text140": {
+    "zh": "切换数字键区和Fn键区",
+    "en": "Switch between numeric keypad and Fn keypad"
+  },
+  "fun_text141": {
+    "zh": "编码器灯光",
+    "en": "Encoder light"
+  },
+  "fun_text142": {
+    "zh": "8K回报率测试",
+    "en": "8K return rate test"
+  },
+  "fun_text143": {
+    "zh": "屏幕下方灯",
+    "en": "light under screen"
+  },
+  "fun_text144": {
+    "zh": "侧灯开关",
+    "en": "side light switch"
+  },
+  "fun_text145": {
+    "zh": "SHIFT_S问号",
+    "en": "SHIFT_Squestion mark"
+  },
+  "fun_text146": {
+    "zh": "AI音量加",
+    "en": "AI volume plus"
+  },
+  "fun_text147": {
+    "zh": "AI音量减",
+    "en": "AI volume reduction"
+  },
+  "fun_text148": {
+    "zh": "AI屏幕亮度加",
+    "en": "AI screen brightness plus"
+  },
+  "fun_text149": {
+    "zh": "AI屏幕亮度减",
+    "en": "AI screen brightness reduction"
+  },
+  "fun_text15": {
+    "zh": "锁定Win",
+    "en": "Lock Win"
+  },
+  "fun_text150": {
+    "zh": "恢复出厂设置（FN+R_ALT+ESC）",
+    "en": "Restore factory settings (FN R_ALT ESC)"
+  },
+  "fun_text151": {
+    "zh": "DKS开关",
+    "en": "DKS switch"
+  },
+  "fun_text152": {
+    "zh": "呼出SIRI",
+    "en": "Outbound SIRI"
+  },
+  "fun_text153": {
+    "zh": "LOGO灯开关",
+    "en": "LOGO light switch"
+  },
+  "fun_text154": {
+    "zh": "爱心灯光模式",
+    "en": "Love light mode"
+  },
+  "fun_text155": {
+    "zh": "6键/全键无冲",
+    "en": "6 keys/all keys without rollover"
+  },
+  "fun_text156": {
+    "zh": "LOGO灯颜色切换",
+    "en": "LOGO light color switching"
+  },
+  "fun_text157": {
+    "zh": "切换爱心模式下的灯光灯效",
+    "en": "Switch the lighting effect in love mode"
+  },
+  "fun_text158": {
+    "zh": "切换到计算器模式",
+    "en": "Switch to calculator mode"
+  },
+  "fun_text159": {
+    "zh": "打开/关闭灯箱",
+    "en": "Turn on/off lightbox"
+  },
+  "fun_text16": {
+    "zh": "侧灯效果切换",
+    "en": "Side Light Effect Switch"
+  },
+  "fun_text160": {
+    "zh": "显示屏切换用户动画",
+    "en": "Display switching user animation"
+  },
+  "fun_text161": {
+    "zh": "灯效方向左",
+    "en": "Lighting effect direction left"
+  },
+  "fun_text162": {
+    "zh": "灯效方向右",
+    "en": "Light effect direction right"
+  },
+  "fun_text163": {
+    "zh": "切换成APP键",
+    "en": "Switch to APP key"
+  },
+  "fun_text164": {
+    "zh": "灯光效果切换1",
+    "en": "Lighting effect switch 1"
+  },
+  "fun_text165": {
+    "zh": "灯光效果切换2",
+    "en": "Lighting effect switch 2"
+  },
+  "fun_text166": {
+    "zh": "灯光效果切换3",
+    "en": "Lighting effect switching 3"
+  },
+  "fun_text167": {
+    "zh": "灯光效果切换4",
+    "en": "Lighting effect switching 4"
+  },
+  "fun_text168": {
+    "zh": "profile1切换",
+    "en": "profile1 switch"
+  },
+  "fun_text169": {
+    "zh": "profile2切换",
+    "en": "profile2 switch"
+  },
+  "fun_text17": {
+    "zh": "侧灯颜色切换",
+    "en": "Side Light Color Switch"
+  },
+  "fun_text170": {
+    "zh": "profile3切换",
+    "en": "profile3 switch"
+  },
+  "fun_text171": {
+    "zh": "profile4切换",
+    "en": "profile4 switch"
+  },
+  "fun_text172": {
+    "zh": "打字显示",
+    "en": "Typing display"
+  },
+  "fun_text173": {
+    "zh": "退出测试模式",
+    "en": "Exit test mode"
+  },
+  "fun_text174": {
+    "zh": "LOGO灯亮度切换",
+    "en": "LOGO light brightness switch"
+  },
+  "fun_text175": {
+    "zh": "LOGO灯速度切换",
+    "en": "LOGO light speed switching"
+  },
+  "fun_text176": {
+    "zh": "自定义快捷指令1",
+    "en": "Custom shortcut command 1"
+  },
+  "fun_text177": {
+    "zh": "一键进驱动",
+    "en": "One-click driver entry"
+  },
+  "fun_text178": {
+    "zh": "打开自定义快捷指令录制",
+    "en": "Turn on custom shortcut recording"
+  },
+  "fun_text179": {
+    "zh": "关闭自定义快捷指令录制",
+    "en": "Turn off custom shortcut recording"
+  },
+  "fun_text18": {
+    "zh": "侧灯亮度调节",
+    "en": "Side Light Brightness Adjustment"
+  },
+  "fun_text180": {
+    "zh": "打开官网",
+    "en": "Open the official website"
+  },
+  "fun_text181": {
+    "zh": "切换爱心灯效的颜色",
+    "en": "Switch the color of the love light effect"
+  },
+  "fun_text182": {
+    "zh": "1~+转换为F1~F12",
+    "en": "1~ converted to F1~F12"
+  },
+  "fun_text183": {
+    "zh": "Y~CMA转换为PRINT~PAGEDOWN",
+    "en": "Convert Y~CMA to PRINT~PAGEDOWN"
+  },
+  "fun_text184": {
+    "zh": "?、R_ALT、APP、R_CTRL切换为方向键",
+    "en": "?, R_ALT, APP, R_CTRL switch to direction keys"
+  },
+  "fun_text185": {
+    "zh": "灯光速度调节",
+    "en": "Light speed adjustment"
+  },
+  "fun_text186": {
+    "zh": "偏频测试模式",
+    "en": "Offset frequency test mode"
+  },
+  "fun_text187": {
+    "zh": "USB灯效果切换",
+    "en": "USB light effect switching"
+  },
+  "fun_text188": {
+    "zh": "USB灯速度切换",
+    "en": "USB light speed switching"
+  },
+  "fun_text189": {
+    "zh": "USB灯亮度切换",
+    "en": "USB light brightness switching"
+  },
+  "fun_text19": {
+    "zh": "侧灯速度调节",
+    "en": "Side Light Speed Adjustment"
+  },
+  "fun_text190": {
+    "zh": "USB灯颜色切换",
+    "en": "USB light color switching"
+  },
+  "fun_text191": {
+    "zh": "切换按键延时",
+    "en": "Switch button delay"
+  },
+  "fun_text192": {
+    "zh": "点阵屏字符模式",
+    "en": "Dot matrix character mode"
+  },
+  "fun_text193": {
+    "zh": "打开触摸模式",
+    "en": "Turn on touch mode"
+  },
+  "fun_text194": {
+    "zh": "满电检测",
+    "en": "Full battery detection"
+  },
+  "fun_text195": {
+    "zh": "充电指示灯开关",
+    "en": "Charging indicator switch"
+  },
+  "fun_text196": {
+    "zh": "切换最大亮度",
+    "en": "Toggle maximum brightness"
+  },
+  "fun_text197": {
+    "zh": "切换RT配置1",
+    "en": "Switch RT configuration 1"
+  },
+  "fun_text198": {
+    "zh": "切换RT配置2",
+    "en": "Switch RT configuration 2"
+  },
+  "fun_text199": {
+    "zh": "切换RT配置3",
+    "en": "Switch RT configuration 3"
+  },
+  "fun_text2": {
+    "zh": "蓝牙通道1",
+    "en": "Bluetooth Channel 1"
+  },
+  "fun_text20": {
+    "zh": "正面灯条效果切换",
+    "en": "Front Light Strip Effect Switch"
+  },
+  "fun_text200": {
+    "zh": "切换RT配置4",
+    "en": "Switch RT configuration 4"
+  },
+  "fun_text201": {
+    "zh": "上下灯位切换",
+    "en": "Switching up and down light positions"
+  },
+  "fun_text202": {
+    "zh": "F1~F12模式切换",
+    "en": "F1~F12 mode switching"
+  },
+  "fun_text203": {
+    "zh": "推杆_音量",
+    "en": "Fader_Volume"
+  },
+  "fun_text204": {
+    "zh": "推杆_背光亮度",
+    "en": "Push rod_backlight brightness"
+  },
+  "fun_text205": {
+    "zh": "推杆_屏幕亮度",
+    "en": "Fader_screen brightness"
+  },
+  "fun_text206": {
+    "zh": "动态灯效开关",
+    "en": "Dynamic light effect switch"
+  },
+  "fun_text207": {
+    "zh": "上灯箱开启关闭",
+    "en": "Turn on and off the upper light box"
+  },
+  "fun_text208": {
+    "zh": "左右侧灯切换",
+    "en": "Left and right side light switching"
+  },
+  "fun_text209": {
+    "zh": "左右侧灯开启关闭",
+    "en": "Turn on and off the left and right side lights"
+  },
+  "fun_text21": {
+    "zh": "正面灯条速度调节",
+    "en": "Front Light Strip Speed Adjustment"
+  },
+  "fun_text210": {
+    "zh": "关闭所有灯光",
+    "en": "Turn off all lights"
+  },
+  "fun_text211": {
+    "zh": "切换自定义灯光",
+    "en": "Switch custom lights"
+  },
+  "fun_text212": {
+    "zh": "6键无冲",
+    "en": "6 keys without rollover"
+  },
+  "fun_text213": {
+    "zh": "全键无冲",
+    "en": "No rollover for all keys"
+  },
+  "fun_text214": {
+    "zh": "正面上灯条灯效切换",
+    "en": "Lighting effect switching on the front light bar"
+  },
+  "fun_text215": {
+    "zh": "正面上灯条亮度切换",
+    "en": "Light bar brightness switch on the front"
+  },
+  "fun_text216": {
+    "zh": "正面下灯条灯效切换",
+    "en": "Front lower light bar light effect switching"
+  },
+  "fun_text217": {
+    "zh": "正面下灯条亮度切换",
+    "en": "Brightness switch of front lower light bar"
+  },
+  "fun_text218": {
+    "zh": "切换土耳其语",
+    "en": "Switch to Turkish"
+  },
+  "fun_text219": {
+    "zh": "切换日语",
+    "en": "Switch Japanese"
+  },
+  "fun_text22": {
+    "zh": "正面灯条颜色切换",
+    "en": "Front Light Strip Color Switch"
+  },
+  "fun_text220": {
+    "zh": "侧灯亮度加",
+    "en": "Side light brightness plus"
+  },
+  "fun_text221": {
+    "zh": "侧灯亮度减",
+    "en": "Side light brightness decreases"
+  },
+  "fun_text223": {
+    "zh": "点阵屏图案模式切换",
+    "en": "Dot matrix screen pattern mode switching"
+  },
+  "fun_text224": {
+    "zh": "任务管理器",
+    "en": "task manager"
+  },
+  "fun_text225": {
+    "zh": "Scroll锁定",
+    "en": "ScrollLock"
+  },
+  "fun_text226": {
+    "zh": "屏幕主页模式",
+    "en": "Screen Home Mode"
+  },
+  "fun_text227": {
+    "zh": "锁定F1-F12与组合键切换",
+    "en": "Lock F1-F12 and combo key switching"
+  },
+  "fun_text228": {
+    "zh": "LOGO灯亮度加",
+    "en": "Increase LOGO light brightness"
+  },
+  "fun_text229": {
+    "zh": "LOGO灯亮度减",
+    "en": "Decrease LOGO light brightness"
+  },
+  "fun_text23": {
+    "zh": "USB模式",
+    "en": "USB Mode"
+  },
+  "fun_text230": {
+    "zh": "有线/无线模式切换",
+    "en": "Wired/Wireless mode switch"
+  },
+  "fun_text231": {
+    "zh": "Numlock指示灯开关",
+    "en": "NumLock indicator light switch"
+  },
+  "fun_text232": {
+    "zh": "触摸条调节屏幕亮度模式",
+    "en": "Touch bar screen brightness mode"
+  },
+  "fun_text233": {
+    "zh": "触摸条调节音量模式",
+    "en": "Touch bar volume mode"
+  },
+  "fun_text234": {
+    "zh": "触摸条调节背光亮度模式",
+    "en": "Touch bar backlight brightness mode"
+  },
+  "fun_text235": {
+    "zh": "触摸条调节背光速度模式",
+    "en": "Touch bar backlight speed mode"
+  },
+  "fun_text236": {
+    "zh": "进出按键低延时模式",
+    "en": "Enter/exit key low latency mode"
+  },
+  "fun_text237": {
+    "zh": "进入低功耗模式",
+    "en": "Enter low power mode"
+  },
+  "fun_text238": {
+    "zh": "屏幕动图轮询切换",
+    "en": "Cycle screen GIF"
+  },
+  "fun_text239": {
+    "zh": "切换休眠时间",
+    "en": "Switch sleep time"
+  },
+  "fun_text24": {
+    "zh": "灯效方向",
+    "en": "Lighting Direction"
+  },
+  "fun_text240": {
+    "zh": "一键进配对",
+    "en": "One-click pairing"
+  },
+  "fun_text241": {
+    "zh": "点阵屏灯效反向切换",
+    "en": "Reverse matrix light effect switch"
+  },
+  "fun_text242": {
+    "zh": "语言模式切换",
+    "en": "Language mode switch"
+  },
+  "fun_text243": {
+    "zh": "切换上一个灯效",
+    "en": "Switch to previous light effect"
+  },
+  "fun_text244": {
+    "zh": "显示当前通道",
+    "en": "Show current channel"
+  },
+  "fun_text245": {
+    "zh": "复位灯效",
+    "en": "Reset light effect"
+  },
+  "fun_text25": {
+    "zh": "屏幕左切",
+    "en": "Screen Left Swipe"
+  },
+  "fun_text26": {
+    "zh": "屏幕右切",
+    "en": "Screen Right Swipe"
+  },
+  "fun_text27": {
+    "zh": "屏幕确认",
+    "en": "Screen Confirm"
+  },
+  "fun_text28": {
+    "zh": "测试灯光",
+    "en": "Test Lighting"
+  },
+  "fun_text29": {
+    "zh": "关闭屏幕",
+    "en": "Turn Off Screen"
+  },
+  "fun_text3": {
+    "zh": "蓝牙通道2",
+    "en": "Bluetooth Channel 2"
+  },
+  "fun_text30": {
+    "zh": "点阵屏灯效切换",
+    "en": "Matrix Light Effect Switch"
+  },
+  "fun_text31": {
+    "zh": "点阵屏亮度+",
+    "en": "Matrix Brightness +"
+  },
+  "fun_text32": {
+    "zh": "点阵屏亮度-",
+    "en": "Matrix Brightness -"
+  },
+  "fun_text33": {
+    "zh": "点阵屏速度-",
+    "en": "Matrix Speed -"
+  },
+  "fun_text34": {
+    "zh": "点阵屏速度+",
+    "en": "Matrix Speed +"
+  },
+  "fun_text35": {
+    "zh": "单键全键无线唤醒开关",
+    "en": "Single Key / Full Key Wireless Wake-up Switch"
+  },
+  "fun_text36": {
+    "zh": "旋钮模式切换",
+    "en": "Knob Mode Switch"
+  },
+  "fun_text37": {
+    "zh": "CTRL_CAP调换",
+    "en": "Swap CTL/CAP"
+  },
+  "fun_text38": {
+    "zh": "屏蔽/打开驱动设置",
+    "en": "Disable/Enable Driver Settings"
+  },
+  "fun_text39": {
+    "zh": "CTRL+下",
+    "en": "CTRL+Down"
+  },
+  "fun_text4": {
+    "zh": "蓝牙通道3",
+    "en": "Bluetooth Channel 3"
+  },
+  "fun_text40": {
+    "zh": "灯光效果正向切换",
+    "en": "Lighting Effect Forward Switch"
+  },
+  "fun_text41": {
+    "zh": "灯光效果反向切换",
+    "en": "Lighting Effect Reverse Switch"
+  },
+  "fun_text42": {
+    "zh": "拾音灯颜色切换",
+    "en": "Audio Reactive Light Color Switch"
+  },
+  "fun_text43": {
+    "zh": "拾音灯模式切换",
+    "en": "Audio Reactive Light Mode Switch"
+  },
+  "fun_text44": {
+    "zh": "拾音灯开关",
+    "en": "Audio Reactive Light Toggle"
+  },
+  "fun_text45": {
+    "zh": "点阵屏测试模式",
+    "en": "Matrix Screen Test Mode"
+  },
+  "fun_text46": {
+    "zh": "点阵屏测试颜色",
+    "en": "Matrix Screen Test Color"
+  },
+  "fun_text47": {
+    "zh": "正面灯条亮度切换",
+    "en": "Front Light Strip Brightness Switch"
+  },
+  "fun_text48": {
+    "zh": "点阵屏开关",
+    "en": "Matrix Screen Toggle"
+  },
+  "fun_text49": {
+    "zh": "GIF模式",
+    "en": "GIF Mode"
+  },
+  "fun_text5": {
+    "zh": "无线回连",
+    "en": "Wireless Reconnect"
+  },
+  "fun_text50": {
+    "zh": "正面灯条速度+",
+    "en": "Front LED Strip Speed +"
+  },
+  "fun_text51": {
+    "zh": "正面灯条速度-",
+    "en": "Front LED Strip Speed -"
+  },
+  "fun_text52": {
+    "zh": "正面灯条亮度+",
+    "en": "Front LED Strip Brightness +"
+  },
+  "fun_text53": {
+    "zh": "正面灯条亮度-",
+    "en": "Front LED Strip Brightness -"
+  },
+  "fun_text54": {
+    "zh": "屏蔽/开启按键快捷指令",
+    "en": "Block/enable key shortcuts"
+  },
+  "fun_text55": {
+    "zh": "蓝牙通道4",
+    "en": "Bluetooth Channel 4"
+  },
+  "fun_text56": {
+    "zh": "蓝牙通道5",
+    "en": "Bluetooth Channel 5"
+  },
+  "fun_text57": {
+    "zh": "自定义灯光1",
+    "en": "Custom Lights 1"
+  },
+  "fun_text58": {
+    "zh": "自定义灯光2",
+    "en": "Custom Lights 2"
+  },
+  "fun_text59": {
+    "zh": "开启/关闭极致省电",
+    "en": "Turn on/off ultimate power saving"
+  },
+  "fun_text6": {
+    "zh": "F区转换",
+    "en": "F-Key Switch"
+  },
+  "fun_text60": {
+    "zh": "侧灯色块颜色",
+    "en": "Side light color block color"
+  },
+  "fun_text61": {
+    "zh": "打开驱动",
+    "en": "Turn on the driver"
+  },
+  "fun_text62": {
+    "zh": "RT精度切换",
+    "en": "RT precision switch"
+  },
+  "fun_text63": {
+    "zh": "灯效上下灯位开关",
+    "en": "Lamp effect upper and lower light switch"
+  },
+  "fun_text64": {
+    "zh": "切换灯效方向",
+    "en": "Switch the lighting effect direction"
+  },
+  "fun_text65": {
+    "zh": "方向键转换",
+    "en": "Direction key conversion"
+  },
+  "fun_text66": {
+    "zh": "背光亮度循环切换",
+    "en": "Backlight brightness cycle switching"
+  },
+  "fun_text67": {
+    "zh": "背光速度循环切换",
+    "en": "Backlight speed cycle switching"
+  },
+  "fun_text68": {
+    "zh": "切换USB模式",
+    "en": "Switch USB mode"
+  },
+  "fun_text69": {
+    "zh": "关闭侧灯",
+    "en": "Turn off side lights"
+  },
+  "fun_text7": {
+    "zh": "查询电量",
+    "en": "Check Battery"
+  },
+  "fun_text70": {
+    "zh": "显示屏语言切换为汉语",
+    "en": "Switch the display language to Chinese"
+  },
+  "fun_text71": {
+    "zh": "显示屏语言切换为英语",
+    "en": "Switch the display language to English"
+  },
+  "fun_text72": {
+    "zh": "侧灯RT深度灯效",
+    "en": "Side light RT deep light effect"
+  },
+  "fun_text73": {
+    "zh": "切换点阵屏颜色",
+    "en": "Switch dot matrix screen color"
+  },
+  "fun_text74": {
+    "zh": "灯条叠加模式",
+    "en": "Light bar overlay mode"
+  },
+  "fun_text75": {
+    "zh": "一键白光",
+    "en": "One-click white light"
+  },
+  "fun_text76": {
+    "zh": "截屏WIN+SHF+S",
+    "en": "Screenshot of WIN SHF S"
+  },
+  "fun_text77": {
+    "zh": "开启/关闭APM计数",
+    "en": "Turn on/off APM count"
+  },
+  "fun_text78": {
+    "zh": "开启/关闭极致省电",
+    "en": "Turn on/off ultimate power saving"
+  },
+  "fun_text79": {
+    "zh": "一键进入动图",
+    "en": "Enter the animation with one click"
+  },
+  "fun_text8": {
+    "zh": "灯光效果切换",
+    "en": "Light Effect Switch"
+  },
+  "fun_text80": {
+    "zh": "自定义灯光3",
+    "en": "Custom Lights 3"
+  },
+  "fun_text81": {
+    "zh": "自定义灯光录制",
+    "en": "Custom light recording"
+  },
+  "fun_text82": {
+    "zh": "LOGO灯切换",
+    "en": "LOGO light switch"
+  },
+  "fun_text83": {
+    "zh": "8K数据测试",
+    "en": "8K data testing"
+  },
+  "fun_text84": {
+    "zh": "SOCD功能开关",
+    "en": "SOCD function switch"
+  },
+  "fun_text85": {
+    "zh": "灯光效果复位",
+    "en": "Light effect reset"
+  },
+  "fun_text86": {
+    "zh": "主灯效/侧灯效亮度加",
+    "en": "Main lighting effect/side lighting effect brightness plus"
+  },
+  "fun_text87": {
+    "zh": "主灯效/侧灯效亮度减",
+    "en": "Main lighting effect/side lighting effect brightness reduction"
+  },
+  "fun_text88": {
+    "zh": "主灯效/侧灯效速度加",
+    "en": "Main lighting effect/side lighting effect speed plus"
+  },
+  "fun_text89": {
+    "zh": "主灯效/侧灯效速度减",
+    "en": "Main lighting effect/side lighting effect speed reduction"
+  },
+  "fun_text9": {
+    "zh": "灯光颜色切换",
+    "en": "Light Color Switch"
+  },
+  "fun_text90": {
+    "zh": "频点测试",
+    "en": "Frequency test"
+  },
+  "fun_text91": {
+    "zh": "WIN->MAC来回切换",
+    "en": "WIN->MAC switch back and forth"
+  },
+  "fun_text92": {
+    "zh": "侧灯亮度+",
+    "en": "Side light brightness"
+  },
+  "fun_text93": {
+    "zh": "侧灯亮度-",
+    "en": "Side light brightness-"
+  },
+  "fun_text94": {
+    "zh": "进入测试模式",
+    "en": "Enter test mode"
+  },
+  "fun_text95": {
+    "zh": "ALT_转换",
+    "en": "ALT_Convert"
+  },
+  "fun_text96": {
+    "zh": "ENT_方向转换",
+    "en": "ENT_Direction conversion"
+  },
+  "fun_text97": {
+    "zh": "WASD切换为方向键",
+    "en": "Switch to the direction keys"
+  },
+  "fun_text98": {
+    "zh": "游戏模式切换",
+    "en": "Game mode switch"
+  },
+  "fun_text99": {
+    "zh": "灯箱亮度+",
+    "en": "Light box brightness"
+  },
+  "gif_brush_mode": {
+    "zh": "画笔模式",
+    "en": "Brush mode"
+  },
+  "gif_editor_back": {
+    "zh": "返回上一级",
+    "en": "Return to previous level"
+  },
+  "gif_key_text1": {
+    "zh": "心率曲线",
+    "en": "Heart rate curve"
+  },
+  "gif_key_text2": {
+    "zh": "爱心",
+    "en": "love"
+  },
+  "gif_key_text3": {
+    "zh": "冰川",
+    "en": "Glacier"
+  },
+  "gif_key_text4": {
+    "zh": "春日",
+    "en": "Spring Day"
+  },
+  "gif_key_text5": {
+    "zh": "寒玉",
+    "en": "Cold Jade"
+  },
+  "gif_key_text6": {
+    "zh": "橘黄",
+    "en": "Tangerine"
+  },
+  "gif_key_text7": {
+    "zh": "开水白",
+    "en": "Boiling White"
+  },
+  "gif_key_text8": {
+    "zh": "青梅煮酒",
+    "en": "Green Plum Wine"
+  },
+  "gif_text1": {
+    "zh": "点阵屏字体",
+    "en": "Matrix Display Font"
+  },
+  "gif_text10": {
+    "zh": "缺少数据字段或格式错误",
+    "en": "Missing data field or invalid format"
+  },
+  "gif_text11": {
+    "zh": "处理失败: ",
+    "en": "Processing failed: "
+  },
+  "gif_text12": {
+    "zh": "字体颜色",
+    "en": "Font Color"
+  },
+  "gif_text13": {
+    "zh": "背景颜色",
+    "en": "Background Color"
+  },
+  "gif_text14": {
+    "zh": "档",
+    "en": "Level"
+  },
+  "gif_text15": {
+    "zh": "按键响应时间",
+    "en": "Key Response Time"
+  },
+  "gif_text16": {
+    "zh": "注:参数可能会因为不同设备以及周围环境干扰影响产生变化。\n因轴体种类不同，延迟设定过低可能会引起按键连击，如出现连击问题，请调高延迟设定。",
+    "en": "Note: Parameters may vary due to different devices and environmental interference.\nDue to different switch types, setting the delay too low may cause key repeat. If you experience key repeat issues, please increase the delay setting."
+  },
+  "gif_text17": {
+    "zh": "注:切换回报率会重新枚举键盘，需重新连接驱动",
+    "en": "Note: Switching the return rate will re-enumerate the keyboard and need to re-connect the driver"
+  },
+  "gif_text2": {
+    "zh": "GIF灯效",
+    "en": "GIF Lighting Effect"
+  },
+  "gif_text3": {
+    "zh": "GIF内置灯效",
+    "en": "Built-in GIF Effect"
+  },
+  "gif_text4": {
+    "zh": "GIF自定义",
+    "en": "Custom GIF"
+  },
+  "gif_text5": {
+    "zh": "是否删除当前GIF？",
+    "en": "Delete current GIF?"
+  },
+  "gif_text6": {
+    "zh": "同步灯效",
+    "en": "Sync Lighting"
+  },
+  "gif_text7": {
+    "zh": "请选择灯效！！",
+    "en": "Please select a lighting effect!!"
+  },
+  "gif_text8": {
+    "zh": "GIF动图",
+    "en": "GIF Animation"
+  },
+  "gif_text9": {
+    "zh": "正在处理文件...",
+    "en": "Processing file..."
+  },
+  "gif_tft_text1": {
+    "zh": "字符模式",
+    "en": "Character Mode"
+  },
+  "gif_tft_text2": {
+    "zh": "图案模式",
+    "en": "Pattern Mode"
+  },
+  "gif_tft_text3": {
+    "zh": "拾音灯模式",
+    "en": "Sound Pickup Light Mode"
+  },
+  "gif_tft_text4": {
+    "zh": "随曲起舞模式",
+    "en": "Dance with Music Mode"
+  },
+  "gif_tft_text5": {
+    "zh": "行模式",
+    "en": "Row Mode"
+  },
+  "gif_tft_text6": {
+    "zh": "列模式",
+    "en": "Column Mode"
+  },
+  "green": {
+    "zh": "磁绿轴",
+    "en": "Magnetic Green Axis"
+  },
+  "help": {
+    "zh": "帮助",
+    "en": "help"
+  },
+  "home1": {
+    "zh": "欢迎来到",
+    "en": "Welcome to"
+  },
+  "home2": {
+    "zh": "在这里您可以迅速配置您的设备，尝试一些与众不同的设定，并按您的喜好个性化定制您的设备。当完成配置之后，后台都不用留，只需要保存、关闭、享受即可。",
+    "en": "Here you can quickly configure your device, try some unique settings, and personalize your device according to your preferences. After the configuration is complete, you don't need to leave anything in the background; just save, close, and enjoy."
+  },
+  "home3": {
+    "zh": "初始化键盘",
+    "en": "Initialize Keyboard"
+  },
+  "home4": {
+    "zh": "允许浏览器连接到您的设备",
+    "en": "Allow the browser to connect to your device"
+  },
+  "home5": {
+    "zh": "这将在URL栏旁边打开一个设备列表。在列表中选择您的设备，然后单击“连接”。",
+    "en": "This will open a device list next to the URL bar. Select your device from the list, then click 'Connect'."
+  },
+  "home6": {
+    "zh": "允许浏览器访问",
+    "en": "Allow browser access"
+  },
+  "home7": {
+    "zh": "您的设备没有显示出来吗？请重新插拔一下，然后重试。",
+    "en": "Is your device not showing up? Please unplug and replug it, then try again."
+  },
+  "home8": {
+    "zh": "取消并关闭",
+    "en": "Cancel and Close"
+  },
+  "home_connect_device": {
+    "zh": "连接设备",
+    "en": "Connect devices"
+  },
+  "home_nav_feedback": {
+    "zh": "问题反馈",
+    "en": "Problem feedback"
+  },
+  "home_nav_keyboard_test": {
+    "zh": "键盘测试",
+    "en": "keyboard test"
+  },
+  "home_nav_keyboard_test_desc": {
+    "zh": "记录按键操作和检查键盘功能",
+    "en": "Record keystrokes and check keyboard functionality"
+  },
+  "home_nav_preferences": {
+    "zh": "偏好设置",
+    "en": "Preferences"
+  },
+  "home_nav_test_tools": {
+    "zh": "测试工具",
+    "en": "Test tool"
+  },
+  "icon_1": {
+    "zh": "灯效设定",
+    "en": "Lighting Settings"
+  },
+  "icon_2": {
+    "zh": "性能",
+    "en": "Performance"
+  },
+  "icon_3": {
+    "zh": "自定义按键",
+    "en": "Custom Keys"
+  },
+  "icon_4": {
+    "zh": "高级键",
+    "en": "Advanced Keys"
+  },
+  "icon_5": {
+    "zh": "快捷指令",
+    "en": "shortcut command"
+  },
+  "icon_6": {
+    "zh": "音乐律动",
+    "en": "Musical Rhythm"
+  },
+  "icon_7": {
+    "zh": "社区",
+    "en": "Community"
+  },
+  "icon_8": {
+    "zh": "点阵屏编辑",
+    "en": "Matrix Display Editor"
+  },
+  "icon_9": {
+    "zh": "TFT 屏幕",
+    "en": "TFT Screen"
+  },
+  "importFile": {
+    "zh": "导入文件",
+    "en": "Import files"
+  },
+  "import_image": {
+    "zh": "导入图片",
+    "en": "Import pictures"
+  },
+  "import_video": {
+    "zh": "导入视频",
+    "en": "Import video"
+  },
+  "inspect": {
+    "zh": "检查更新",
+    "en": "Check for Updates"
+  },
+  "intro_text1": {
+    "zh": "新增设备",
+    "en": "Add New Device"
+  },
+  "intro_text2": {
+    "zh": "设备",
+    "en": "Device"
+  },
+  "intro_text3": {
+    "zh": "固件",
+    "en": "Firmware"
+  },
+  "invalid_profile_file_format": {
+    "zh": "无效的 profile 文件格式",
+    "en": "Invalid profile file format"
+  },
+  "invert_select_text": {
+    "zh": "反选",
+    "en": "Counter-election"
+  },
+  "isp_text1": {
+    "zh": "固件更新",
+    "en": "Firmware update"
+  },
+  "isp_text2": {
+    "zh": "键盘正在升级请不要插拔键盘数据线",
+    "en": "Please do not plug and unplug the keyboard data cable"
+  },
+  "jade": {
+    "zh": "磁玉Pro",
+    "en": "Magnetic Jade Pro"
+  },
+  "keyFile": {
+    "zh": "键盘配置文件",
+    "en": "Keyboard Config File"
+  },
+  "keyNameSey": {
+    "zh": "键盘设置",
+    "en": "Keyboard Settings"
+  },
+  "keyTime": {
+    "zh": "键盘闲置时间（分钟）",
+    "en": "Keyboard Idle Time (Minutes)"
+  },
+  "key_btn1": {
+    "zh": "按键1",
+    "en": "Key 1"
+  },
+  "key_btn2": {
+    "zh": "按键2",
+    "en": "Key 2"
+  },
+  "key_btn3": {
+    "zh": "按住",
+    "en": "Hold"
+  },
+  "key_btn4": {
+    "zh": "单击",
+    "en": "Click"
+  },
+  "key_string_message": {
+    "zh": "请选择按键!",
+    "en": "Please select a key!"
+  },
+  "key_test_back_home": {
+    "zh": "返回首页",
+    "en": "Return to home page"
+  },
+  "key_test_key_log_title": {
+    "zh": "按键记录",
+    "en": "Keystroke logging"
+  },
+  "key_test_legend_active": {
+    "zh": "激活中",
+    "en": "Activating"
+  },
+  "key_test_legend_unused": {
+    "zh": "未按过",
+    "en": "Not pressed"
+  },
+  "key_test_legend_used": {
+    "zh": "按过后",
+    "en": "After pressing"
+  },
+  "key_test_mouse_backward": {
+    "zh": "后退键",
+    "en": "Back key"
+  },
+  "key_test_mouse_btn_left": {
+    "zh": "左键",
+    "en": "left click"
+  },
+  "key_test_mouse_btn_middle": {
+    "zh": "中键",
+    "en": "middle button"
+  },
+  "key_test_mouse_btn_right": {
+    "zh": "右键",
+    "en": "Right click"
+  },
+  "key_test_mouse_btn_unknown": {
+    "zh": "按钮{n}",
+    "en": "Button{n}"
+  },
+  "key_test_mouse_double": {
+    "zh": "异常双击",
+    "en": "Abnormal double click"
+  },
+  "key_test_mouse_double_sub": {
+    "zh": "阈值: 80ms",
+    "en": "Threshold: 80ms"
+  },
+  "key_test_mouse_forward": {
+    "zh": "前进键",
+    "en": "Forward key"
+  },
+  "key_test_mouse_left": {
+    "zh": "左键点击",
+    "en": "left click"
+  },
+  "key_test_mouse_log_title": {
+    "zh": "点击记录",
+    "en": "Click to record"
+  },
+  "key_test_mouse_middle": {
+    "zh": "中键点击",
+    "en": "middle click"
+  },
+  "key_test_mouse_right": {
+    "zh": "右键点击",
+    "en": "right click"
+  },
+  "key_test_mouse_scroll_down_stat": {
+    "zh": "向下滚动",
+    "en": "scroll down"
+  },
+  "key_test_mouse_scroll_up_stat": {
+    "zh": "向上滚动",
+    "en": "scroll up"
+  },
+  "key_test_mouse_wheel_action_down": {
+    "zh": "↓ 向下",
+    "en": "↓ down"
+  },
+  "key_test_mouse_wheel_action_up": {
+    "zh": "↑ 向上",
+    "en": "↑ up"
+  },
+  "key_test_mouse_wheel_down": {
+    "zh": "滚轮↓",
+    "en": "Roller↓"
+  },
+  "key_test_mouse_wheel_up": {
+    "zh": "滚轮↑",
+    "en": "Roller↑"
+  },
+  "key_test_mouse_zone_hint": {
+    "zh": "在此区域内点击或滚动以测试鼠标按键",
+    "en": "Click or scroll within this area to test the mouse buttons"
+  },
+  "key_test_stat_press_count": {
+    "zh": "按下次数",
+    "en": "Number of presses"
+  },
+  "key_test_stat_release_count": {
+    "zh": "抬起次数",
+    "en": "Lift times"
+  },
+  "key_test_stat_tested_keys": {
+    "zh": "已测试按键数",
+    "en": "Number of keys tested"
+  },
+  "key_test_stat_total_count": {
+    "zh": "总触发次数",
+    "en": "Total number of triggers"
+  },
+  "key_test_tab_keyboard": {
+    "zh": "键盘按键测试",
+    "en": "Keyboard key test"
+  },
+  "key_test_tab_mouse": {
+    "zh": "鼠标按键测试",
+    "en": "Mouse button test"
+  },
+  "key_test_tip_1": {
+    "zh": "在键盘上按下任意按键，虚拟键盘将同步高亮。",
+    "en": "Press any key on the keyboard and the virtual keyboard will be highlighted simultaneously."
+  },
+  "key_test_tip_2": {
+    "zh": "主色高亮表示当前按键正在被按住。",
+    "en": "The main color highlight indicates that the current key is being pressed."
+  },
+  "key_test_tip_3": {
+    "zh": "淡色表示该按键已被按过并释放。",
+    "en": "Light color indicates that the key has been pressed and released."
+  },
+  "key_test_tip_4": {
+    "zh": "右上角小数字代表该按键被按下的次数。",
+    "en": "The small number in the upper right corner represents the number of times the button has been pressed."
+  },
+  "key_test_tip_5": {
+    "zh": "支持同时检测多个按键，可测试连按冲突问题。",
+    "en": "Supports detection of multiple keys at the same time and can test double-click conflicts."
+  },
+  "key_type_name1": {
+    "zh": "按下",
+    "en": "key Dn"
+  },
+  "key_type_name2": {
+    "zh": "松开",
+    "en": "key Up"
+  },
+  "key_v1": {
+    "zh": "电竞版",
+    "en": "Esports Edition"
+  },
+  "key_v10": {
+    "zh": "灰木轴",
+    "en": "Ash wood shaft"
+  },
+  "key_v11": {
+    "zh": "八宝轴",
+    "en": "Babao axis"
+  },
+  "key_v12": {
+    "zh": "泰山轴",
+    "en": "Taishan Axis"
+  },
+  "key_v13": {
+    "zh": "海木北极轴",
+    "en": "sea ​​wood arctic axis"
+  },
+  "key_v2": {
+    "zh": "标准版",
+    "en": "Standard Version"
+  },
+  "key_v3": {
+    "zh": "性能版",
+    "en": "Performance Edition"
+  },
+  "key_v4": {
+    "zh": "旗舰版",
+    "en": "Flagship Edition"
+  },
+  "key_v5": {
+    "zh": "Ultra 版",
+    "en": "Ultra Edition"
+  },
+  "key_v6": {
+    "zh": "无光版",
+    "en": "Non-Glare Edition"
+  },
+  "key_v7": {
+    "zh": "形意轴",
+    "en": "Shape Meaning Switch"
+  },
+  "key_v8": {
+    "zh": "白玉轴",
+    "en": "White Jade Scroll"
+  },
+  "key_v9": {
+    "zh": "梦蓝轴",
+    "en": "Dream Blue Axis"
+  },
+  "keyboard_text1": {
+    "zh": "锁键",
+    "en": "Lock Key"
+  },
+  "king": {
+    "zh": "万磁王轴",
+    "en": "Magneto Shaft"
+  },
+  "lang": {
+    "zh": "语言",
+    "en": "Language"
+  },
+  "led_import_data_length_mismatch": {
+    "zh": "data 长度不匹配，当前 {0} 个颜色值，需为 {1}×{2}={3} 的整数倍",
+    "en": "The data length does not match. The current {0} color values ​​need to be an integer multiple of {1}×{2}={3}"
+  },
+  "led_text1": {
+    "zh": "导入GIF",
+    "en": "Import GIF"
+  },
+  "led_text10": {
+    "zh": "开机动画",
+    "en": "Startup Animation"
+  },
+  "led_text100": {
+    "zh": "愤怒的皮卡丘",
+    "en": "Angry Pikachu"
+  },
+  "led_text101": {
+    "zh": "鬼脸",
+    "en": "Funny face"
+  },
+  "led_text102": {
+    "zh": "四处碰壁",
+    "en": "Bouncing off walls"
+  },
+  "led_text103": {
+    "zh": "天天向上",
+    "en": "Strive upward"
+  },
+  "led_text104": {
+    "zh": "万花筒",
+    "en": "Kaleidoscope"
+  },
+  "led_text11": {
+    "zh": "彩虹",
+    "en": "Rainbow"
+  },
+  "led_text12": {
+    "zh": "极光",
+    "en": "Aurora"
+  },
+  "led_text13": {
+    "zh": "圣诞树",
+    "en": "Christmas Tree"
+  },
+  "led_text14": {
+    "zh": "游戏",
+    "en": "Game"
+  },
+  "led_text15": {
+    "zh": "点阵屏的光效在键盘有线模式连接状态下可任意切换，且只能显示一个光效",
+    "en": "The LED effects on the dot matrix screen can be freely switched in wired mode but only one effect can be displayed at a time."
+  },
+  "led_text16": {
+    "zh": "数据型光效只能在有线模式下显示。",
+    "en": "Data-based light effects can only be displayed in wired mode."
+  },
+  "led_text17": {
+    "zh": "当前帧",
+    "en": "Current Frame"
+  },
+  "led_text18": {
+    "zh": "保存数据",
+    "en": "Save Data"
+  },
+  "led_text19": {
+    "zh": "慢",
+    "en": "Slow"
+  },
+  "led_text2": {
+    "zh": "导出GIF",
+    "en": "Export GIF"
+  },
+  "led_text20": {
+    "zh": "速度",
+    "en": "Speed"
+  },
+  "led_text21": {
+    "zh": "快",
+    "en": "Fast"
+  },
+  "led_text22": {
+    "zh": "灯效预览",
+    "en": "Light Effect Preview"
+  },
+  "led_text23": {
+    "zh": "添加",
+    "en": "Add"
+  },
+  "led_text24": {
+    "zh": "编辑",
+    "en": "Edit"
+  },
+  "led_text25": {
+    "zh": "应用",
+    "en": "Apply"
+  },
+  "led_text26": {
+    "zh": "同步灯效",
+    "en": "Sync Lighting"
+  },
+  "led_text27": {
+    "zh": "正在上传灯效，请耐心等待...",
+    "en": "Uploading lighting effect, please wait..."
+  },
+  "led_text28": {
+    "zh": "确认删除该灯效？",
+    "en": "Confirm to delete this lighting effect?"
+  },
+  "led_text29": {
+    "zh": "开机动画最大支持200帧，是否继续?",
+    "en": "Boot animation supports up to 200 frames. Continue?"
+  },
+  "led_text3": {
+    "zh": "向左",
+    "en": "Left"
+  },
+  "led_text30": {
+    "zh": "自定义动画最大支持帧数：",
+    "en": "Maximum supported custom animation frames:"
+  },
+  "led_text31": {
+    "zh": "自定义动画最大支持260帧，是否继续?",
+    "en": "Custom animation supports up to 260 frames. Continue?"
+  },
+  "led_text32": {
+    "zh": "灯效应用成功",
+    "en": "Lighting effect applied successfully"
+  },
+  "led_text33": {
+    "zh": "应用灯效失败：",
+    "en": "Failed to apply lighting effect: "
+  },
+  "led_text34": {
+    "zh": "设备应答超时",
+    "en": "Device response timeout"
+  },
+  "led_text35": {
+    "zh": "完成",
+    "en": "Done"
+  },
+  "led_text36": {
+    "zh": "没有可导出的帧",
+    "en": "No frame available for export"
+  },
+  "led_text37": {
+    "zh": "复制当前帧",
+    "en": "Copy current frame"
+  },
+  "led_text38": {
+    "zh": "穿越彩虹",
+    "en": "Rainbow Passage"
+  },
+  "led_text39": {
+    "zh": "心之律动",
+    "en": "Heartbeat Rhythm"
+  },
+  "led_text4": {
+    "zh": "向上",
+    "en": "Up"
+  },
+  "led_text40": {
+    "zh": "赛博流光",
+    "en": "Cyber Glow"
+  },
+  "led_text41": {
+    "zh": "太空人",
+    "en": "Astronaut"
+  },
+  "led_text42": {
+    "zh": "绚丽时空",
+    "en": "Vibrant Time-Space"
+  },
+  "led_text43": {
+    "zh": "群星闪耀",
+    "en": "Stellar Sparkle"
+  },
+  "led_text44": {
+    "zh": "无法从GIF中提取有效数据",
+    "en": "Cannot extract valid data from GIF"
+  },
+  "led_text45": {
+    "zh": "GIF处理失败: ",
+    "en": "GIF processing failed: "
+  },
+  "led_text46": {
+    "zh": "请尝试其他文件",
+    "en": "Please try another file"
+  },
+  "led_text47": {
+    "zh": "是否要清空已编辑的所有数据?",
+    "en": "Are you sure to clear all edited data?"
+  },
+  "led_text48": {
+    "zh": "GIF导出失败",
+    "en": "GIF export failed"
+  },
+  "led_text49": {
+    "zh": "未知错误",
+    "en": "Unknown error"
+  },
+  "led_text5": {
+    "zh": "向右",
+    "en": "Right"
+  },
+  "led_text50": {
+    "zh": "无法创建canvas上下文",
+    "en": "Unable to create canvas context"
+  },
+  "led_text51": {
+    "zh": "CPU使用率",
+    "en": "CPU Usage"
+  },
+  "led_text52": {
+    "zh": "GPU使用率",
+    "en": "GPU Usage"
+  },
+  "led_text53": {
+    "zh": "网速",
+    "en": "Network Speed"
+  },
+  "led_text54": {
+    "zh": "久坐提醒",
+    "en": "Sitting Reminder"
+  },
+  "led_text55": {
+    "zh": "自定义灯效",
+    "en": "Custom Lighting Effect"
+  },
+  "led_text59": {
+    "zh": "处理超时，请尝试使用低于 {0} * {0} 的像素文件",
+    "en": "Processing timeout, please try using a pixel file lower than {0} * {0}"
+  },
+  "led_text6": {
+    "zh": "向下",
+    "en": "Down"
+  },
+  "led_text60": {
+    "zh": "RGB流光",
+    "en": "RGB streamer"
+  },
+  "led_text61": {
+    "zh": "吃豆子",
+    "en": "Pacman"
+  },
+  "led_text62": {
+    "zh": "闪烁",
+    "en": "flashing"
+  },
+  "led_text63": {
+    "zh": "流光",
+    "en": "streamer"
+  },
+  "led_text64": {
+    "zh": "俄罗斯方块",
+    "en": "Tetris"
+  },
+  "led_text65": {
+    "zh": "弹跳",
+    "en": "bounce"
+  },
+  "led_text66": {
+    "zh": "爱心1",
+    "en": "Love 1"
+  },
+  "led_text67": {
+    "zh": "爱心2",
+    "en": "Love 2"
+  },
+  "led_text68": {
+    "zh": "滚动",
+    "en": "scroll"
+  },
+  "led_text69": {
+    "zh": "字母",
+    "en": "letter"
+  },
+  "led_text7": {
+    "zh": "预览",
+    "en": "Preview"
+  },
+  "led_text70": {
+    "zh": "忍者",
+    "en": "ninja"
+  },
+  "led_text71": {
+    "zh": "死侍",
+    "en": "deadpool"
+  },
+  "led_text72": {
+    "zh": "吃豆人调时间版",
+    "en": "Pac-Man time adjustment version"
+  },
+  "led_text73": {
+    "zh": "冷雨",
+    "en": "cold rain"
+  },
+  "led_text74": {
+    "zh": "星之卡比",
+    "en": "Kirby"
+  },
+  "led_text75": {
+    "zh": "植物大战僵尸",
+    "en": "plants vs zombies"
+  },
+  "led_text76": {
+    "zh": "老虎机",
+    "en": "slot machine"
+  },
+  "led_text77": {
+    "zh": "流星",
+    "en": "meteor"
+  },
+  "led_text78": {
+    "zh": "猫",
+    "en": "cat"
+  },
+  "led_text79": {
+    "zh": "糖豆人",
+    "en": "jelly beans"
+  },
+  "led_text8": {
+    "zh": "灯效名称",
+    "en": "Light Effect Name"
+  },
+  "led_text80": {
+    "zh": "彩虹爱心",
+    "en": "rainbow hearts"
+  },
+  "led_text81": {
+    "zh": "单色爱心",
+    "en": "Monochrome love heart"
+  },
+  "led_text82": {
+    "zh": "交叉渐驰",
+    "en": "cross gradually"
+  },
+  "led_text83": {
+    "zh": "情绪对话",
+    "en": "Emotional dialogue"
+  },
+  "led_text84": {
+    "zh": "贪吃蛇",
+    "en": "Snake"
+  },
+  "led_text85": {
+    "zh": "下雨",
+    "en": "rain"
+  },
+  "led_text86": {
+    "zh": "音乐波浪",
+    "en": "music wave"
+  },
+  "led_text87": {
+    "zh": "雨天",
+    "en": "rain"
+  },
+  "led_text88": {
+    "zh": "灯效用户动画",
+    "en": "Lighting user animation"
+  },
+  "led_text89": {
+    "zh": "灵动之眼",
+    "en": "Smart Eye"
+  },
+  "led_text9": {
+    "zh": "默认效果",
+    "en": "Default Effect"
+  },
+  "led_text90": {
+    "zh": "敲木鱼",
+    "en": "Knock on wooden fish"
+  },
+  "led_text91": {
+    "zh": "绚丽烟花",
+    "en": "Brilliant fireworks"
+  },
+  "led_text92": {
+    "zh": "运动小球",
+    "en": "sports ball"
+  },
+  "led_text93": {
+    "zh": "跳格子",
+    "en": "Jumping grid"
+  },
+  "led_text94": {
+    "zh": "躲避弹幕",
+    "en": "Avoid barrages"
+  },
+  "led_text95": {
+    "zh": "春天的小雨",
+    "en": "Spring drizzle"
+  },
+  "led_text96": {
+    "zh": "恶魔的眼",
+    "en": "Demon's eye"
+  },
+  "led_text97": {
+    "zh": "闲暇养宠",
+    "en": "Leisure pets"
+  },
+  "led_text98": {
+    "zh": "蜘蛛吐丝",
+    "en": "Spider silk"
+  },
+  "led_text99": {
+    "zh": "奔腾的小马",
+    "en": "Galloping pony"
+  },
+  "led_text_empty": {
+    "zh": "空",
+    "en": "null"
+  },
+  "led_text_hint": {
+    "zh": "提示：按空格键添加空格，按Backspace删除字符",
+    "en": "Tip: Press Spacebar to add spaces and Backspace to delete characters"
+  },
+  "led_text_recording": {
+    "zh": "本次已录制",
+    "en": "This time has been recorded"
+  },
+  "light_box": {
+    "zh": "灯箱灯效",
+    "en": "Light box light effect"
+  },
+  "lighting": {
+    "zh": "灯光效果",
+    "en": "Lighting Effects"
+  },
+  "lighting_brightness": {
+    "zh": "灯光亮度",
+    "en": "Lighting Brightness"
+  },
+  "lighting_color": {
+    "zh": "颜色设置",
+    "en": "Color settings"
+  },
+  "lighting_color_mode": {
+    "zh": "颜色模式",
+    "en": "Color mode"
+  },
+  "lighting_direction": {
+    "zh": "灯光方向",
+    "en": "Lighting Direction"
+  },
+  "lighting_edit": {
+    "zh": "灯光编辑",
+    "en": "Lighting Edit"
+  },
+  "lighting_icon1": {
+    "zh": "静态恒亮",
+    "en": "Static Bright"
+  },
+  "lighting_icon10": {
+    "zh": "多彩纵横",
+    "en": "Colorful Interchange"
+  },
+  "lighting_icon11": {
+    "zh": "随波逐流",
+    "en": "Flowing with the Waves"
+  },
+  "lighting_icon12": {
+    "zh": "峰回路转",
+    "en": "Turning Peaks"
+  },
+  "lighting_icon13": {
+    "zh": "一触即发",
+    "en": "One Touch to Fire"
+  },
+  "lighting_icon14": {
+    "zh": "一石二鸟",
+    "en": "Two Birds with One Stone"
+  },
+  "lighting_icon15": {
+    "zh": "涟漪扩散",
+    "en": "Ripples Spread"
+  },
+  "lighting_icon16": {
+    "zh": "川流不息",
+    "en": "Endless Flow"
+  },
+  "lighting_icon17": {
+    "zh": "重峦叠嶂",
+    "en": "Layered Mountains"
+  },
+  "lighting_icon18": {
+    "zh": "斜风细雨",
+    "en": "Gentle Rain and Wind"
+  },
+  "lighting_icon19": {
+    "zh": "来回穿梭",
+    "en": "Back and Forth"
+  },
+  "lighting_icon2": {
+    "zh": "单点亮",
+    "en": "Single Point On"
+  },
+  "lighting_icon20": {
+    "zh": "自定义",
+    "en": "Custom"
+  },
+  "lighting_icon21": {
+    "zh": "彩虹风车",
+    "en": "Rainbow Windmill"
+  },
+  "lighting_icon22": {
+    "zh": "七彩聚拢",
+    "en": "Colorful gathering"
+  },
+  "lighting_icon23": {
+    "zh": "霓虹叠影",
+    "en": "Neon shadows"
+  },
+  "lighting_icon24": {
+    "zh": "流光",
+    "en": "Stream light"
+  },
+  "lighting_icon25": {
+    "zh": "关闭背光",
+    "en": "Turn off the backlight"
+  },
+  "lighting_icon26": {
+    "zh": "灵动",
+    "en": "Agile"
+  },
+  "lighting_icon27": {
+    "zh": "连锁反应",
+    "en": "chain reaction"
+  },
+  "lighting_icon28": {
+    "zh": "心动时刻",
+    "en": "heartwarming moment"
+  },
+  "lighting_icon29": {
+    "zh": "拾音灯效1",
+    "en": "Sound pickup lighting effect 1"
+  },
+  "lighting_icon3": {
+    "zh": "单熄灭",
+    "en": "Single Point Off"
+  },
+  "lighting_icon30": {
+    "zh": "拾音灯效2",
+    "en": "Sound pickup light effect 2"
+  },
+  "lighting_icon31": {
+    "zh": "拾音灯效3",
+    "en": "Sound pickup light effect 3"
+  },
+  "lighting_icon32": {
+    "zh": "拾音灯效4",
+    "en": "Sound pickup light effect 4"
+  },
+  "lighting_icon33": {
+    "zh": "滚动颜色",
+    "en": "scroll color"
+  },
+  "lighting_icon34": {
+    "zh": "生命潮汐",
+    "en": "tide of life"
+  },
+  "lighting_icon35": {
+    "zh": "硅基呼吸",
+    "en": "silicone breathing"
+  },
+  "lighting_icon36": {
+    "zh": "跑马灯效",
+    "en": "Marquee light effect"
+  },
+  "lighting_icon37": {
+    "zh": "渐变常亮",
+    "en": "Gradient Bright"
+  },
+  "lighting_icon38": {
+    "zh": "单色呼吸",
+    "en": "Monochrome Breathing"
+  },
+  "lighting_icon39": {
+    "zh": "动态常亮",
+    "en": "Dynamic Bright"
+  },
+  "lighting_icon4": {
+    "zh": "繁星点点",
+    "en": "Starry Sky"
+  },
+  "lighting_icon40": {
+    "zh": "多彩纵横1",
+    "en": "Colorful Interchange 1"
+  },
+  "lighting_icon41": {
+    "zh": "RGB 动态呼吸",
+    "en": "RGB Dynamic Breathing"
+  },
+  "lighting_icon42": {
+    "zh": "多彩纵横2",
+    "en": "Colorful Interchange 2"
+  },
+  "lighting_icon5": {
+    "zh": "漫天飞雪",
+    "en": "Snowfall"
+  },
+  "lighting_icon6": {
+    "zh": "百花争艳",
+    "en": "Floral Competition"
+  },
+  "lighting_icon7": {
+    "zh": "动态呼吸",
+    "en": "Dynamic Breathing"
+  },
+  "lighting_icon8": {
+    "zh": "光谱循环",
+    "en": "Spectrum Cycle"
+  },
+  "lighting_icon9": {
+    "zh": "彩泉涌动",
+    "en": "Color Fountain"
+  },
+  "lighting_main_rgb": {
+    "zh": "主RGB",
+    "en": "Main RGB"
+  },
+  "lighting_rgb_select": {
+    "zh": "RGB选择",
+    "en": "RGB selection"
+  },
+  "lighting_secondary_rgb": {
+    "zh": "副RGB",
+    "en": "Vice RGB"
+  },
+  "lighting_single_color": {
+    "zh": "单色",
+    "en": "monochrome"
+  },
+  "lighting_speed": {
+    "zh": "灯光速度",
+    "en": "Lighting Speed"
+  },
+  "link_btn": {
+    "zh": "连接键盘",
+    "en": "Connect Keyboard"
+  },
+  "link_state": {
+    "zh": "断开连接了！！！",
+    "en": "Disconnected!!!"
+  },
+  "loading": {
+    "zh": "正在加载",
+    "en": "Loading"
+  },
+  "login_btn1": {
+    "zh": "登录",
+    "en": "Login"
+  },
+  "login_btn2": {
+    "zh": "注册",
+    "en": "Register"
+  },
+  "login_btn3": {
+    "zh": "忘记密码",
+    "en": "Forgot Password"
+  },
+  "login_btn4": {
+    "zh": "微信登录",
+    "en": "WeChat Login"
+  },
+  "login_input1": {
+    "zh": "请输入邮箱",
+    "en": "Please enter your email"
+  },
+  "login_input2": {
+    "zh": "邮箱",
+    "en": "Email"
+  },
+  "login_input3": {
+    "zh": "验证码",
+    "en": "Verification Code"
+  },
+  "login_input4": {
+    "zh": "秒后重发",
+    "en": "Resend in seconds"
+  },
+  "login_input5": {
+    "zh": "获取验证码",
+    "en": "Get Verification Code"
+  },
+  "login_tips1": {
+    "zh": "登录成功！",
+    "en": "Login successful!"
+  },
+  "login_tips10": {
+    "zh": "微信登录失败，请稍后重试",
+    "en": "WeChat login failed, please try again later"
+  },
+  "login_tips2": {
+    "zh": "注册成功！",
+    "en": "Registration successful!"
+  },
+  "login_tips3": {
+    "zh": "请输入邮箱",
+    "en": "Please enter your email"
+  },
+  "login_tips4": {
+    "zh": "电子邮件格式不正确",
+    "en": "Invalid email format"
+  },
+  "login_tips5": {
+    "zh": "用户名称不能为空",
+    "en": "Username cannot be empty"
+  },
+  "login_tips6": {
+    "zh": "密码限制6-25字符",
+    "en": "Password must be between 6-25 characters"
+  },
+  "login_tips7": {
+    "zh": "两次密码不一致",
+    "en": "Passwords do not match"
+  },
+  "login_tips8": {
+    "zh": "密码不能为空",
+    "en": "Password cannot be empty"
+  },
+  "login_tips9": {
+    "zh": "验证码不能为空",
+    "en": "Verification code cannot be empty"
+  },
+  "loock_screen": {
+    "zh": "锁屏",
+    "en": "lock screen"
+  },
+  "macro_btn1": {
+    "zh": "新建",
+    "en": "New"
+  },
+  "macro_btn2": {
+    "zh": "删除",
+    "en": "Delete"
+  },
+  "macro_btn3": {
+    "zh": "复制",
+    "en": "Copy"
+  },
+  "macro_btn4": {
+    "zh": "导入",
+    "en": "Import"
+  },
+  "macro_btn5": {
+    "zh": "导出",
+    "en": "Export"
+  },
+  "macro_btn6": {
+    "zh": "重命名",
+    "en": "Rename"
+  },
+  "macro_install": {
+    "zh": "插入",
+    "en": "Insert"
+  },
+  "macro_mask_select1": {
+    "zh": "常规",
+    "en": "Routine"
+  },
+  "macro_mask_select2": {
+    "zh": "再次按键结束",
+    "en": "Press the key again to end"
+  },
+  "macro_mask_select3": {
+    "zh": "重复播放",
+    "en": "Repeat Playback"
+  },
+  "macro_mask_select4": {
+    "zh": "持有",
+    "en": "Hold"
+  },
+  "macro_mask_text": {
+    "zh": "快捷指令,需要先录制快捷指令，然后在这里选择指定快捷指令配给键盘",
+    "en": "For shortcuts, you need to record the shortcuts first, and then choose to assign the shortcuts to the keyboard here."
+  },
+  "macro_mask_title": {
+    "zh": "添加快捷指令",
+    "en": "Add shortcut"
+  },
+  "macro_memory": {
+    "zh": "快捷指令内存不足！！！",
+    "en": "Insufficient memory for shortcut commands! ! !"
+  },
+  "macro_msg_del": {
+    "zh": "请选择删除键盘上的快捷指令键",
+    "en": "Please choose to delete the shortcut key on your keyboard"
+  },
+  "macro_msg_select": {
+    "zh": "请选择快捷指令！！！",
+    "en": "Please select a shortcut! ! !"
+  },
+  "macro_repeat": {
+    "zh": "重复次数",
+    "en": "Repeat Count"
+  },
+  "macro_repeat_end": {
+    "zh": "结束录制",
+    "en": "End Recording"
+  },
+  "macro_repeat_select1": {
+    "zh": "记录输入间隔时间",
+    "en": "Record input interval time"
+  },
+  "macro_repeat_select2": {
+    "zh": "不记录输入间隔时间",
+    "en": "Do not record input interval time"
+  },
+  "macro_repeat_select3": {
+    "zh": "默认间隔",
+    "en": "Default Interval"
+  },
+  "macro_repeat_select4": {
+    "zh": "毫秒",
+    "en": "Milliseconds"
+  },
+  "macro_repeat_start": {
+    "zh": "开始录制",
+    "en": "Start Recording"
+  },
+  "macro_repeat_start_text": {
+    "zh": "请首先点击\"新建\"按钮后开始录制键盘鼠标输入动作。",
+    "en": "Please click the \"New\" button first, then start recording keyboard mouse input actions."
+  },
+  "macro_save": {
+    "zh": "保存",
+    "en": "Save"
+  },
+  "macro_select1": {
+    "zh": "在动作列表光标条上方插入",
+    "en": "Insert above the action list cursor bar"
+  },
+  "macro_select2": {
+    "zh": "在动作列表光标条下方插入",
+    "en": "Insert below the action list cursor bar"
+  },
+  "macro_select_radio1": {
+    "zh": "键盘输入动作",
+    "en": "Keyboard Input Action"
+  },
+  "macro_select_radio2": {
+    "zh": "鼠标输入动作",
+    "en": "Mouse Input Action"
+  },
+  "macro_success": {
+    "zh": "操作成功！！！",
+    "en": "Operation successful!!!"
+  },
+  "macro_tables_1": {
+    "zh": "按键",
+    "en": "Key"
+  },
+  "macro_tables_2": {
+    "zh": "动作",
+    "en": "Action"
+  },
+  "macro_tables_3": {
+    "zh": "延时(毫秒)",
+    "en": "Delay (ms)"
+  },
+  "macro_title1": {
+    "zh": "输入记录列表",
+    "en": "Input Record List"
+  },
+  "macro_title2": {
+    "zh": "编辑录制文件指令",
+    "en": "Edit recording file instructions"
+  },
+  "macro_title3": {
+    "zh": "动作记录列表",
+    "en": "Action Record List"
+  },
+  "mask_btn": {
+    "zh": "明白了",
+    "en": "Understood"
+  },
+  "mask_dks_icon1": {
+    "zh": "按键起点",
+    "en": "Key Start"
+  },
+  "mask_dks_icon2": {
+    "zh": "按键触底",
+    "en": "Key Bottom"
+  },
+  "mask_dks_icon3": {
+    "zh": "按压触底时抬起",
+    "en": "Lift When Pressed to Bottom"
+  },
+  "mask_dks_icon4": {
+    "zh": "完成抬起",
+    "en": "Completed Lift"
+  },
+  "mask_tips1": {
+    "zh": "RS监控2个选定的键,并激活按下的键。例如,当A键被按下时,如果D键比A键按得更深,则D键会立即激活。一旦您释放了D键,A键就会激活。",
+    "en": "RS monitors 2 selected keys and activates the pressed key. For example, when the A key is pressed, if the D key is pressed deeper than the A key, the D key will be activated immediately. Once you release the D key, the A key will activate."
+  },
+  "mask_tips2": {
+    "zh": "SOCD指的是一种技术，用于处理同时按下对立方向键时的输入。具体来说，当玩家在操作设备时，如果同时按下两个方向键（如上和下，左和右），SOCD 技术会根据设定的规则或算法来决定如何处理这些输入，以避免冲突或错误。",
+    "en": "SOCD refers to a technique used to handle inputs when opposite direction keys are pressed simultaneously. Specifically, when a player operates the device and presses two direction keys at the same time (such as up and down, left and right), the SOCD technique determines how to process these inputs based on set rules or algorithms to avoid conflicts or errors."
+  },
+  "mask_tips3": {
+    "zh": "单个按键实现 4 种功能：您可以根据4种不同的按压程度绑定 1 至 4 种功能。拖放按键到您想要的键位上即可绑定动态键程键。\n\n您可以选择两种方式：点击 “ + “ 图案实现单次触发（只触发一次），或是拖动黄点跨过数个 ”+“ 图案复现正常的按键触发行为。如果您要重复某个动作，只需回到原本键程位置即可继续，不需要完成整个键程设置。\n\n小技巧：利用此功能，您可以用一个按键同时做出 2 种移动方式：在基本移动键（通常是WASD）的第二个功能格子里绑定游戏中的冲刺键（通常是Shift），然后拖动黄点跨过第二个（按压触底）和第三个（按压触底时抬起）“+”形成黄线，如此即可在基本移动的基础上同时移动与冲刺。",
+    "en": "Single key to achieve 4 functions: You can bind 1 to 4 functions according to 4 different pressing degrees. Drag and drop the key to the key position you want to bind the dynamic keystroke key. \n\nYou can choose two ways: Click on the + pattern to achieve single triggering (trigger only once), or drag the yellow dot across several + patterns to reproduce the normal key triggering behavior. If you want to repeat an action, you only need to return to the original keystroke position to continue, and there is no need to complete the entire keystroke setting. \n\nTip: Using this function, you can use one key to simultaneously perform 2 types of movement methods: Bind the sprint key (usually Shift) in the second function grid of the basic movement key (usually WASD), and then drag the yellow dot across the second (press to the bottom) and the third (lift when pressing to the bottom) + to form a yellow line, so that you can move and sprint simultaneously on the basis of the basic movement."
+  },
+  "mask_tips4": {
+    "zh": "单个按键实现 2 种功能：按住按键为一种，单击按键为另一种。拖放按键到您想要的键位上即可绑定双效点击键。\n\n如果“按住”绑定的是修饰键与另一个键的组合的话，按住会立即触发。除非另一个键也是双效点击键。\n\n小技巧：可以将您键盘右下的四个修饰键改为MT键，这样按住时可以是原本修饰键的功能，单击的时候则是方向键。",
+    "en": "A single button realizes two functions: holding the button is one, and single-clicking the button is another. Drag and drop the button to the key position you want to bind it as the double-click key.\n\nIf the 'holding' is bound to a combination of a modifier key and another key, it will be triggered immediately when held. Unless another key is also a double-click key.\n\nTip: You can change the four modifier keys on the lower right of your keyboard to MT keys, so that when held, it can be the function of the original modifier key, and when clicked, it is the direction key."
+  },
+  "mask_tips5": {
+    "zh": "单击按键可切换开启或关闭持续触发。按住按键则为正常触发行为。拖放按键到您想要的键位上即可绑定切换开关键。\n\n单击按键相当于锁定按键于触发位置。按住后放开按键则为原本正常的按键输入。\n\n提示：游戏中蹲下键（通常是C键）可使用此功能。该绑定键就能同时实现蹲下（按住）以及蹲下（切换）",
+    "en": "Single-click the button to switch between enabling or disabling continuous triggering. Pressing the button holds it in the normal triggering behavior. Drag and drop the button to the key position you want to bind it as the toggle switch key.\n\nSingle-clicking the button is like locking the button at the triggered position. Pressing and then releasing the button is the original normal key input.\n\nTip: The crouch key (usually the C key) in a game can use this function. This bound key can simultaneously achieve crouching (holding) and crouching (switching)."
+  },
+  "mask_tips7": {
+    "zh": "单个按键实现按下和松开两种不同功能：按下时触发一个按键功能，松开时触发另一个按键功能。",
+    "en": "A single button implements two different functions of pressing and releasing: one button function is triggered when pressed, and another button function is triggered when released."
+  },
+  "mask_tips8": {
+    "zh": "MPT功能为按键设置三档不同的行程，并在三个不同的行程分配不同的按键。当按键按压大于一段行程，则按下对应行程的按键；当按键抬起小于一段行程，则抬起对应行程的按键。",
+    "en": "The MPT function sets three different strokes for the keys and assigns different keys to the three different strokes. \nWhen the button is pressed for more than a certain stroke, the button corresponding to the stroke is pressed; when the button is lifted less than a certain stroke, the button corresponding to the stroke is lifted."
+  },
+  "medium_text1": {
+    "zh": "我的电脑",
+    "en": "My Computer"
+  },
+  "medium_text10": {
+    "zh": "音量 -",
+    "en": "Volume -"
+  },
+  "medium_text11": {
+    "zh": "静音",
+    "en": "Mute"
+  },
+  "medium_text12": {
+    "zh": "主页",
+    "en": "Home"
+  },
+  "medium_text13": {
+    "zh": "刷新",
+    "en": "Refresh"
+  },
+  "medium_text14": {
+    "zh": "前进",
+    "en": "Forward"
+  },
+  "medium_text15": {
+    "zh": "后退",
+    "en": "Backward"
+  },
+  "medium_text16": {
+    "zh": "收藏",
+    "en": "Favorites"
+  },
+  "medium_text17": {
+    "zh": "搜索",
+    "en": "Search"
+  },
+  "medium_text18": {
+    "zh": "多窗口切换",
+    "en": "Multi-window Switch"
+  },
+  "medium_text2": {
+    "zh": "计算器",
+    "en": "Calculator"
+  },
+  "medium_text3": {
+    "zh": "邮箱",
+    "en": "Email"
+  },
+  "medium_text4": {
+    "zh": "多媒体",
+    "en": "Multi media"
+  },
+  "medium_text5": {
+    "zh": "播放/暂停",
+    "en": "Play /Pause"
+  },
+  "medium_text6": {
+    "zh": "播放停止",
+    "en": "Stop Playback"
+  },
+  "medium_text7": {
+    "zh": "上一首",
+    "en": "Previous Track"
+  },
+  "medium_text8": {
+    "zh": "下一首",
+    "en": "Next Track"
+  },
+  "medium_text9": {
+    "zh": "音量 +",
+    "en": "Volume +"
+  },
+  "message_driveall_error": {
+    "zh": "不支持该设备！！",
+    "en": "This device is not supported!!"
+  },
+  "message_driveall_error2": {
+    "zh": "不支持该设备或设备休眠了！！",
+    "en": "The device is not supported or the device is sleeping! \n!"
+  },
+  "mirror": {
+    "zh": "磁镜轴",
+    "en": "Magnetic Mirror Shaft"
+  },
+  "model_text1": {
+    "zh": "自定义",
+    "en": "Custom"
+  },
+  "model_text2": {
+    "zh": "办公模式",
+    "en": "Office Mode"
+  },
+  "model_text3": {
+    "zh": "新手模式",
+    "en": "Beginner Mode"
+  },
+  "model_text4": {
+    "zh": "游戏模式",
+    "en": "Game Mode"
+  },
+  "mouse_text1": {
+    "zh": "鼠标左键",
+    "en": "Left mouse button"
+  },
+  "mouse_text2": {
+    "zh": "鼠标中键",
+    "en": "Middle mouse button"
+  },
+  "mouse_text3": {
+    "zh": "鼠标右键",
+    "en": "Right mouse button"
+  },
+  "mouse_text4": {
+    "zh": "鼠标向上滚动",
+    "en": "Mouse scroll up"
+  },
+  "mouse_text5": {
+    "zh": "鼠标向下滚动",
+    "en": "Mouse scroll down"
+  },
+  "mouse_text6": {
+    "zh": "鼠标前进键",
+    "en": "Mouse forward button"
+  },
+  "mouse_text7": {
+    "zh": "鼠标后退键",
+    "en": "Mouse backward button"
+  },
+  "mt_icon1": {
+    "zh": "按住",
+    "en": "hold down"
+  },
+  "mt_icon2": {
+    "zh": "单击",
+    "en": "click"
+  },
+  "mt_mask_defa": {
+    "zh": "手动调整触发\"按住\"键所需的时间（默认为400ms）。",
+    "en": "Manually adjust the time required to trigger the \"Hold\" key (default is 400ms)."
+  },
+  "mt_mask_tips": {
+    "zh": "提示：如果“按住”绑定的是修饰键与另一个键的组合的话，按住会立即触发。除非另一个键也是双效点击键。",
+    "en": "Tip: If the \"Hold\" is bound to a combination of a modifier key and another key, holding will trigger immediately unless the other key is also a dual-function click key."
+  },
+  "mt_mask_title": {
+    "zh": "手动调整按住时间",
+    "en": "Manually Adjust Hold Time"
+  },
+  "mt_reset": {
+    "zh": "重置为默认设置",
+    "en": "Reset to Default Settings"
+  },
+  "mt_title": {
+    "zh": "按住时间",
+    "en": "Hold Time"
+  },
+  "music_bg_text1": {
+    "zh": "无",
+    "en": "None"
+  },
+  "music_bg_text10": {
+    "zh": "色谱",
+    "en": "Color Spectrum"
+  },
+  "music_bg_text11": {
+    "zh": "频谱循环",
+    "en": "Spectrum Loop"
+  },
+  "music_bg_text2": {
+    "zh": "白色",
+    "en": "White"
+  },
+  "music_bg_text3": {
+    "zh": "红色",
+    "en": "Red"
+  },
+  "music_bg_text4": {
+    "zh": "橙色",
+    "en": "Orange"
+  },
+  "music_bg_text5": {
+    "zh": "黄色",
+    "en": "Yellow"
+  },
+  "music_bg_text6": {
+    "zh": "蓝色",
+    "en": "Blue"
+  },
+  "music_bg_text7": {
+    "zh": "绿色",
+    "en": "Green"
+  },
+  "music_bg_text8": {
+    "zh": "绿色/黄色/红色",
+    "en": "Green/Yellow/Red"
+  },
+  "music_bg_text9": {
+    "zh": "彩虹色",
+    "en": "Rainbow"
+  },
+  "music_btn": {
+    "zh": "下载插件",
+    "en": "Download Plugin"
+  },
+  "music_btn2": {
+    "zh": "重新连接",
+    "en": "Reconnect"
+  },
+  "music_diy": {
+    "zh": "音乐律动 DIY",
+    "en": "Musical Groove DIY"
+  },
+  "music_diy_audio": {
+    "zh": "音频",
+    "en": "Audio"
+  },
+  "music_diy_bar": {
+    "zh": "柱状",
+    "en": "columnar"
+  },
+  "music_diy_circle": {
+    "zh": "圆形",
+    "en": "round"
+  },
+  "music_diy_color": {
+    "zh": "颜色",
+    "en": "color"
+  },
+  "music_diy_count": {
+    "zh": "数量",
+    "en": "quantity"
+  },
+  "music_diy_delete_shape": {
+    "zh": "删除形状",
+    "en": "Delete shape"
+  },
+  "music_diy_direction": {
+    "zh": "方向",
+    "en": "direction"
+  },
+  "music_diy_down": {
+    "zh": "下",
+    "en": "Down"
+  },
+  "music_diy_horizontal": {
+    "zh": "水平",
+    "en": "level"
+  },
+  "music_diy_left": {
+    "zh": "左",
+    "en": "Left"
+  },
+  "music_diy_limit": {
+    "zh": "最多可添加{0}个形状",
+    "en": "Up to {0} shapes can be added"
+  },
+  "music_diy_line": {
+    "zh": "线条",
+    "en": "line"
+  },
+  "music_diy_plugin_ready": {
+    "zh": "音乐插件已连接",
+    "en": "Music plug-in is connected"
+  },
+  "music_diy_radial": {
+    "zh": "径向",
+    "en": "Radial"
+  },
+  "music_diy_rect": {
+    "zh": "矩形",
+    "en": "rectangle"
+  },
+  "music_diy_reset_all": {
+    "zh": "全部重置",
+    "en": "reset all"
+  },
+  "music_diy_reset_shape": {
+    "zh": "重置形状",
+    "en": "reset shape"
+  },
+  "music_diy_right": {
+    "zh": "右",
+    "en": "right"
+  },
+  "music_diy_rotate": {
+    "zh": "旋转",
+    "en": "rotate"
+  },
+  "music_diy_shape_config": {
+    "zh": "形状配置",
+    "en": "shape configuration"
+  },
+  "music_diy_shapes": {
+    "zh": "形状",
+    "en": "shape"
+  },
+  "music_diy_spacing": {
+    "zh": "间距",
+    "en": "spacing"
+  },
+  "music_diy_test_mode": {
+    "zh": "测试模式",
+    "en": "test mode"
+  },
+  "music_diy_thickness": {
+    "zh": "粗细",
+    "en": "Thickness"
+  },
+  "music_diy_up": {
+    "zh": "上",
+    "en": "superior"
+  },
+  "music_diy_vertical": {
+    "zh": "垂直",
+    "en": "vertical"
+  },
+  "music_mode_error": {
+    "zh": "请下载插件，如下载请手动执行该插件",
+    "en": "Please download the plugin. If downloaded, please manually execute the plugin."
+  },
+  "music_mode_error2": {
+    "zh": "仅限于win系统运行",
+    "en": "Only running on win system"
+  },
+  "music_mode_text1": {
+    "zh": "绿色/黄色/红色",
+    "en": "Green/Yellow/Red"
+  },
+  "music_mode_text10": {
+    "zh": "绿色",
+    "en": "Green"
+  },
+  "music_mode_text11": {
+    "zh": "蓝色",
+    "en": "Blue"
+  },
+  "music_mode_text12": {
+    "zh": "尘埃光漩",
+    "en": "Dust Glow Spiral"
+  },
+  "music_mode_text13": {
+    "zh": "蛰伏火山",
+    "en": "Dormant Volcano"
+  },
+  "music_mode_text14": {
+    "zh": "光矢穿心",
+    "en": "Light Arrow Piercing"
+  },
+  "music_mode_text15": {
+    "zh": "萤火轨迹",
+    "en": "Firefly Trail"
+  },
+  "music_mode_text16": {
+    "zh": "光茧共振",
+    "en": "Light Cocoon Resonance"
+  },
+  "music_mode_text17": {
+    "zh": "音叉振空",
+    "en": "Tuning Fork Vibration"
+  },
+  "music_mode_text18": {
+    "zh": "曲率遗轨",
+    "en": "Curvature Legacy Track"
+  },
+  "music_mode_text19": {
+    "zh": "行波律动",
+    "en": "Row Wave Rhythm"
+  },
+  "music_mode_text2": {
+    "zh": "彩虹色",
+    "en": "Rainbow"
+  },
+  "music_mode_text20": {
+    "zh": "双心共舞",
+    "en": "Dual Heart Dance"
+  },
+  "music_mode_text21": {
+    "zh": "屏光联动",
+    "en": "Screen light linkage"
+  },
+  "music_mode_text3": {
+    "zh": "随曲起舞",
+    "en": "Dance to the Beat"
+  },
+  "music_mode_text4": {
+    "zh": "曲率频阶",
+    "en": "Curvature Frequency Steps"
+  },
+  "music_mode_text5": {
+    "zh": "频谱循环",
+    "en": "Spectrum Cycle"
+  },
+  "music_mode_text6": {
+    "zh": "白色",
+    "en": "White"
+  },
+  "music_mode_text7": {
+    "zh": "红色",
+    "en": "Red"
+  },
+  "music_mode_text8": {
+    "zh": "橙色",
+    "en": "Orange"
+  },
+  "music_mode_text9": {
+    "zh": "黄色",
+    "en": "Yellow"
+  },
+  "music_text": {
+    "zh": "因为网页限制无法捕捉设备音频。请下载专属插件实现音乐律动",
+    "en": "Due to web restrictions, device audio cannot be captured. Please download the dedicated plugin to enable music rhythm."
+  },
+  "music_text1": {
+    "zh": "显示模式",
+    "en": "Display Mode"
+  },
+  "music_text2": {
+    "zh": "背景灯光显示模式",
+    "en": "Background Lighting Display Mode"
+  },
+  "music_text3": {
+    "zh": "振幅",
+    "en": "Amplitude"
+  },
+  "music_text4": {
+    "zh": "背景亮度",
+    "en": "Background Brightness"
+  },
+  "myDevice": {
+    "zh": "我的设备",
+    "en": "My Device"
+  },
+  "nav_advanced_keys": {
+    "zh": "高级按键",
+    "en": "Advanced keys"
+  },
+  "nav_community": {
+    "zh": "云端共享",
+    "en": "Cloud sharing"
+  },
+  "nav_custom_keys": {
+    "zh": "按键设定",
+    "en": "Button settings"
+  },
+  "nav_led": {
+    "zh": "点阵屏幕",
+    "en": "dot matrix screen"
+  },
+  "nav_lighting": {
+    "zh": "灯效设置",
+    "en": "Lighting effect settings"
+  },
+  "nav_macro": {
+    "zh": "快捷指令",
+    "en": "shortcut command"
+  },
+  "nav_my_profiles": {
+    "zh": "我的配置",
+    "en": "my configuration"
+  },
+  "nav_performance": {
+    "zh": "性能设置",
+    "en": "Performance settings"
+  },
+  "nav_settings": {
+    "zh": "键盘设置",
+    "en": "keyboard settings"
+  },
+  "nav_tft": {
+    "zh": "TFT屏幕",
+    "en": "TFT screen"
+  },
+  "nav_trigger": {
+    "zh": "触发设置",
+    "en": "Trigger settings"
+  },
+  "no_login": {
+    "zh": "未登录",
+    "en": "Not Logged In"
+  },
+  "normal_axis_desc": {
+    "zh": "标准机械轴，只支持单段触发。",
+    "en": "Standard mechanical axis only supports single-stage triggering."
+  },
+  "normal_axis_title": {
+    "zh": "普通机械轴",
+    "en": "Ordinary mechanical shaft"
+  },
+  "notActiveFile": {
+    "zh": "未激活的配置文件",
+    "en": "Inactive Config File"
+  },
+  "number_key": {
+    "zh": "数字键",
+    "en": "Numeric keys"
+  },
+  "open": {
+    "zh": "打开",
+    "en": "open"
+  },
+  "ota_firmware_send_failed": {
+    "zh": "固件传输失败",
+    "en": "Firmware transfer failed"
+  },
+  "ota_firmware_upgrade_failed": {
+    "zh": "固件更新失败",
+    "en": "Firmware update failed"
+  },
+  "ota_firmware_upgrade_success": {
+    "zh": "固件升级完成",
+    "en": "Firmware upgrade completed"
+  },
+  "ota_firmware_verify_failed": {
+    "zh": "固件信息校验未通过，请确认升级文件与当前设备型号匹配",
+    "en": "The firmware information verification failed. Please confirm that the upgrade file matches the current device model."
+  },
+  "panda": {
+    "zh": "熊猫轴",
+    "en": "Panda Axis"
+  },
+  "profile_import_failed": {
+    "zh": "导入失败",
+    "en": "Import failed"
+  },
+  "profile_import_success": {
+    "zh": "导入成功",
+    "en": "Imported successfully"
+  },
+  "profiles_active_badge": {
+    "zh": "默认配置",
+    "en": "Default configuration"
+  },
+  "profiles_btn_create": {
+    "zh": "创建配置",
+    "en": "Create configuration"
+  },
+  "profiles_btn_import": {
+    "zh": "导入配置",
+    "en": "Import configuration"
+  },
+  "profiles_drop_hint": {
+    "zh": "将配置拖放到此处",
+    "en": "Drag and drop configuration here"
+  },
+  "profiles_help_tip": {
+    "zh": "管理保存在本地的键盘配置方案，最多 {count} 套。",
+    "en": "Manage keyboard configuration schemes saved locally, up to {count} sets."
+  },
+  "profiles_limit_modal_title": {
+    "zh": "配置文件已超过上限",
+    "en": "Configuration file has exceeded the limit"
+  },
+  "profiles_local_title": {
+    "zh": "本地",
+    "en": "local"
+  },
+  "profiles_max_reached": {
+    "zh": "已达到配置数量上限（4 套）",
+    "en": "The maximum number of configurations has been reached (4 sets)"
+  },
+  "profiles_new_name": {
+    "zh": "新建配置",
+    "en": "New configuration"
+  },
+  "protocol_text1": {
+    "zh": "在未注册邮箱完成验证后，用户进行注册即表示同意",
+    "en": "By completing the verification for an unregistered email and proceeding with registration, the user agrees to"
+  },
+  "protocol_text2": {
+    "zh": "《用户协议》",
+    "en": "User Agreement"
+  },
+  "protocol_text3": {
+    "zh": "《隐私政策》",
+    "en": "Privacy Policy"
+  },
+  "push_button_mode1": {
+    "zh": "音量模式",
+    "en": "volume mode"
+  },
+  "push_button_mode2": {
+    "zh": "键盘亮度",
+    "en": "keyboard brightness"
+  },
+  "push_button_mode3": {
+    "zh": "屏幕亮度",
+    "en": "screen brightness"
+  },
+  "push_button_title": {
+    "zh": "推钮模式",
+    "en": "pushbutton mode"
+  },
+  "quick_select_title": {
+    "zh": "快捷选中",
+    "en": "Quick selection"
+  },
+  "r7c7_text1": {
+    "zh": "弹跳小球",
+    "en": "Bounce ball"
+  },
+  "r7c7_text10": {
+    "zh": "滚动球",
+    "en": "Rolling ball"
+  },
+  "r7c7_text11": {
+    "zh": "滚动彩条",
+    "en": "Scroll color bars"
+  },
+  "r7c7_text12": {
+    "zh": "滚动红心",
+    "en": "Rolling red heart"
+  },
+  "r7c7_text13": {
+    "zh": "推箱子",
+    "en": "Push the box"
+  },
+  "r7c7_text14": {
+    "zh": "旋转彩球",
+    "en": "Rotating color ball"
+  },
+  "r7c7_text15": {
+    "zh": "春心懵动",
+    "en": "Feelings of spring"
+  },
+  "r7c7_text16": {
+    "zh": "激动澎湃",
+    "en": "Excited"
+  },
+  "r7c7_text2": {
+    "zh": "图形动画",
+    "en": "Graphic animation"
+  },
+  "r7c7_text3": {
+    "zh": "下楼梯",
+    "en": "Go down the stairs"
+  },
+  "r7c7_text4": {
+    "zh": "激动心情",
+    "en": "Excited"
+  },
+  "r7c7_text5": {
+    "zh": "两头碰壁",
+    "en": "Two ends hit the wall"
+  },
+  "r7c7_text6": {
+    "zh": "满江红",
+    "en": "Manjianghong"
+  },
+  "r7c7_text7": {
+    "zh": "天天开心",
+    "en": "Happy every day"
+  },
+  "r7c7_text8": {
+    "zh": "我爱你",
+    "en": "I love you"
+  },
+  "r7c7_text9": {
+    "zh": "流星雨",
+    "en": "Meteor shower"
+  },
+  "recali_brate": {
+    "zh": "轴体校准",
+    "en": "Switch Calibration"
+  },
+  "record": {
+    "zh": "记录",
+    "en": "Record"
+  },
+  "release_point_desc": {
+    "zh": "选择当前按键松开时使用的段落位置。",
+    "en": "Selects the paragraph position used when the current key is released."
+  },
+  "release_point_title": {
+    "zh": "松开点",
+    "en": "loosen up"
+  },
+  "release_point_value_label": {
+    "zh": "松开点位置",
+    "en": "Release point position"
+  },
+  "remap": {
+    "zh": "重新映射按键",
+    "en": "Remap Keys"
+  },
+  "remap_text_1": {
+    "zh": "在此处所作的更改将会影响此配置文件和其他关联的配置文件",
+    "en": "Changes made here will affect this configuration file and other related configuration files."
+  },
+  "remap_text_2": {
+    "zh": "要重新映射任何按键，只需将右边的按键<b>选中并拖放</b>到您的键盘。或者在下方选择一个预设。",
+    "en": "To remap any key, simply select a key on the right and <b>drag and drop</b> it to your keyboard. Or choose a preset below."
+  },
+  "report_rate1": {
+    "zh": "1K 回报率",
+    "en": "1K Return Rate"
+  },
+  "report_rate2": {
+    "zh": "4K 回报率",
+    "en": "4K Return Rate"
+  },
+  "report_rate3": {
+    "zh": "8K 回报率",
+    "en": "8K Return Rate"
+  },
+  "report_rate4": {
+    "zh": "2K 回报率",
+    "en": "2K Polling Rate"
+  },
+  "report_rate_title": {
+    "zh": "回报率",
+    "en": "Return Rate"
+  },
+  "reset": {
+    "zh": "重置",
+    "en": "Reset"
+  },
+  "reset_message": {
+    "zh": "你确定要重置吗？这将重置键盘全部设置。",
+    "en": "Are you sure you want to reset? This will reset all keyboard settings."
+  },
+  "resettingAllBtn": {
+    "zh": "重置键盘所有设置",
+    "en": "Reset all keyboard settings"
+  },
+  "resettingAllText": {
+    "zh": "重置键盘全部设置",
+    "en": "Reset all keyboard settings"
+  },
+  "resettingAllText2": {
+    "zh": "有些时候您会想直接/remake得了",
+    "en": "Sometimes you may want to just /remake it"
+  },
+  "rt_bottom": {
+    "zh": "底部死区",
+    "en": "Bottom Dead Zone"
+  },
+  "rt_close": {
+    "zh": "清除校准",
+    "en": "Clear Calibration"
+  },
+  "rt_error": {
+    "zh": "不建议设置值小于0.04mm，会因手指轻微抖动而判定为按键释放",
+    "en": "It is not recommended to set the value below 0.04mm, as slight finger movements may be interpreted as a key release."
+  },
+  "rt_mode": {
+    "zh": "狂暴模式",
+    "en": "Rampage Mode"
+  },
+  "rt_mode_text": {
+    "zh": "开启狂暴模式下精度更极限，更换更好的轴体会更稳定不断触（轴体性能不达标会有断触风险）配合混轴功能玩法，需要相对应的进行轴体校准页面进行精度校准",
+    "en": "When Rampage Mode is activated, the precision becomes even more extreme. Switching to better switches will ensure more stable contact (switches not meeting performance standards may risk intermittent contact). This mode works in conjunction with the mixed switch functionality, requiring corresponding calibration of switch precision on the appropriate page."
+  },
+  "rt_title": {
+    "zh": "普通模式",
+    "en": "Normal Mode"
+  },
+  "rt_title2": {
+    "zh": "高级设置",
+    "en": "Advanced Settings"
+  },
+  "rt_top": {
+    "zh": "顶部死区",
+    "en": "Top Dead Zone"
+  },
+  "save": {
+    "zh": "保存到键盘",
+    "en": "Save to Keyboard"
+  },
+  "screen_show1": {
+    "zh": "显示屏亮度+",
+    "en": "Display brightness"
+  },
+  "screen_show2": {
+    "zh": "显示屏亮度-",
+    "en": "Display brightness-"
+  },
+  "screen_show3": {
+    "zh": "打开资源管理器",
+    "en": "Open Explorer"
+  },
+  "screen_text1": {
+    "zh": "LED屏幕预览",
+    "en": "LED Screen Preview"
+  },
+  "screen_text10": {
+    "zh": "GIF处理失败：",
+    "en": "GIF processing failed:"
+  },
+  "screen_text11": {
+    "zh": "最大支持",
+    "en": "Maximum supported"
+  },
+  "screen_text12": {
+    "zh": "帧，是否继续?",
+    "en": "frames, continue?"
+  },
+  "screen_text13": {
+    "zh": "未找到可用设备",
+    "en": "No available devices found"
+  },
+  "screen_text14": {
+    "zh": "应用失败",
+    "en": "Application failed"
+  },
+  "screen_text15": {
+    "zh": "是否删除该视频?",
+    "en": "Do you want to delete this video?"
+  },
+  "screen_text16": {
+    "zh": "至少需要保留一帧",
+    "en": "At least one frame needs to be retained"
+  },
+  "screen_text17": {
+    "zh": "确定要删除当前帧吗？",
+    "en": "Are you sure you want to delete the current frame?"
+  },
+  "screen_text18": {
+    "zh": "正在加载默认动画...",
+    "en": "Loading default animations..."
+  },
+  "screen_text19": {
+    "zh": "暂无动画",
+    "en": "No animation yet"
+  },
+  "screen_text2": {
+    "zh": "视频库",
+    "en": "Video Library"
+  },
+  "screen_text20": {
+    "zh": "请导入图片文件",
+    "en": "Please import image files"
+  },
+  "screen_text21": {
+    "zh": "正在转换视频，请稍候...",
+    "en": "Converting video, please wait..."
+  },
+  "screen_text22": {
+    "zh": "这可能需要一些时间，请不要关闭页面",
+    "en": "This may take some time, please do not close the page"
+  },
+  "screen_text23": {
+    "zh": "视频转换失败",
+    "en": "Video conversion failed"
+  },
+  "screen_text3": {
+    "zh": "帧",
+    "en": "Frame"
+  },
+  "screen_text4": {
+    "zh": "上传到键盘",
+    "en": "Upload to Keyboard"
+  },
+  "screen_text5": {
+    "zh": "时间校正",
+    "en": "Time Correction"
+  },
+  "screen_text6": {
+    "zh": "上传中，请耐心等待...",
+    "en": "Uploading, please wait patiently..."
+  },
+  "screen_text7": {
+    "zh": "无效的图片文件：没有找到有效帧",
+    "en": "Invalid image file: no valid frame found"
+  },
+  "screen_text8": {
+    "zh": "成功导入图片，共",
+    "en": "Pictures imported successfully, total"
+  },
+  "screen_text9": {
+    "zh": "图片解析失败：未能提取有效帧",
+    "en": "Image parsing failed: Failed to extract valid frame"
+  },
+  "search": {
+    "zh": "搜索",
+    "en": "search"
+  },
+  "select_axle": {
+    "zh": "可选轴体",
+    "en": "Selectable Axles"
+  },
+  "select_text": {
+    "zh": "全选",
+    "en": "Select All"
+  },
+  "senior_btn1": {
+    "zh": "迅洁",
+    "en": "RS"
+  },
+  "senior_btn2": {
+    "zh": "SOCD",
+    "en": "SOCD"
+  },
+  "senior_btn3": {
+    "zh": "动态键程（DKS）",
+    "en": "Dynamic Key Travel (DKS)"
+  },
+  "senior_btn4": {
+    "zh": "双效点击（MT）",
+    "en": "Dual Effect Click (MT)"
+  },
+  "senior_btn5": {
+    "zh": "切换开关（TGL）",
+    "en": "Toggle Switch (TGL)"
+  },
+  "senior_btn6": {
+    "zh": "组合键（CB）",
+    "en": "Key combination (CB)"
+  },
+  "senior_btn7": {
+    "zh": "按下/松开（END）",
+    "en": "Press/release(END)"
+  },
+  "senior_btn8": {
+    "zh": "多点触控（MPT）",
+    "en": "Multi-touch (MPT)"
+  },
+  "senior_btn_text1": {
+    "zh": "Rappy Snappy 监控所选的两个按键，并激活按下较深的按键。",
+    "en": "Rappy Snappy monitors the 2 selected keys and activates whichever key is pressed down further."
+  },
+  "senior_btn_text2": {
+    "zh": "SOCD 监控所选的两个按键，并根据您选择的设定激活它们。",
+    "en": "SOCD monitors the 2 selected keys and activates them based on your chosen settings."
+  },
+  "senior_btn_text3": {
+    "zh": "单个按键实现 4 种功能：您可以根据4种不同的按压程度绑定 1 至 4 种功能。",
+    "en": "A single key can achieve 4 functions: you can bind 1 to 4 functions based on 4 different pressure levels."
+  },
+  "senior_btn_text4": {
+    "zh": "单个按键实现 2 种功能：按住按键为一种，单击按键为另一种。",
+    "en": "A single key can achieve 2 functions: holding the key is one function, clicking the key is another."
+  },
+  "senior_btn_text5": {
+    "zh": "单击按键可切换开启或关闭持续触发。按住按键则为正常触发行为。",
+    "en": "Clicking the key can toggle continuous triggering on or off. Holding the key will trigger normally."
+  },
+  "senior_btn_text6": {
+    "zh": "一键触发多个修饰键与单个常规按键组合成组合指令",
+    "en": "One-click triggers multiple modifier keys and a single conventional key to combine into a combined command"
+  },
+  "senior_btn_text7": {
+    "zh": "单个按键实现 2 种功能：按下按键为一种，松开按键为另一种。",
+    "en": "A single button performs 2 functions: one when pressed, and the other when released."
+  },
+  "senior_btn_text8": {
+    "zh": "单个按键设置三档不同行程，按压深度达到对应行程时触发对应功能。",
+    "en": "A single button is set with three different strokes, and the corresponding function is triggered when the pressing depth reaches the corresponding stroke."
+  },
+  "senior_mask1": {
+    "zh": "Rappy Snappy monitors the 2 selected keys and activates whichever key is pressed down further.",
+    "en": "Rappy Snappy monitors the 2 selected keys and activates whichever key is pressed down further."
+  },
+  "senior_mask2": {
+    "zh": "SOCD monitors the 2 selected keys and activates them based on your chosen settings.",
+    "en": "SOCD monitors the 2 selected keys and activates them based on your chosen settings."
+  },
+  "senior_mask4": {
+    "zh": "单个按键实现 2 种功能：按住按键为一种，单击按键为另一种。",
+    "en": "A single key can achieve 2 functions: holding the key is one function, clicking the key is another."
+  },
+  "senior_mask5": {
+    "zh": "单击按键可切换开启或关闭持续触发。按住按键则为正常触发行为。",
+    "en": "Clicking the key can toggle continuous triggering on or off. Holding the key will trigger normally."
+  },
+  "senior_text": {
+    "zh": "首先选择任意按键来绑定高级键。每个配置文件最多可使用40个高级键。一个高级键不能在单个按键上的多个层加，但可以在不同的层上绑定",
+    "en": "First, select any key to bind advanced keys. Each configuration file can use up to 40 advanced keys. An advanced key cannot be added to multiple layers on a single key but can be bound on different layers."
+  },
+  "senior_tips": {
+    "zh": "从键盘或上面的预览中选择一个键进行分配",
+    "en": "Select a key from the your keyboard or the preview above to assign to "
+  },
+  "senior_title1": {
+    "zh": "按键测试",
+    "en": "Key Test"
+  },
+  "senior_title2": {
+    "zh": "当前绑定项",
+    "en": "Current Bindings"
+  },
+  "senior_title3": {
+    "zh": "测试您的绑定",
+    "en": "Test Your Bindings"
+  },
+  "sensitive_1": {
+    "zh": "灵敏度",
+    "en": "Sensitivity"
+  },
+  "sensitive_2": {
+    "zh": "松开灵敏度",
+    "en": "Release Sensitivity"
+  },
+  "sensitive_3": {
+    "zh": "按下灵敏度",
+    "en": "Press Sensitivity"
+  },
+  "sensitive_text_1": {
+    "zh": "灵敏度决定了您松开按键重置和再次按下按键触发所需的行程",
+    "en": "Sensitivity determines the distance required for resetting when releasing a key and triggering again when pressing a key."
+  },
+  "sensitive_text_2": {
+    "zh": "处于快速触发模式时，如果按键已触发，只要抬起指定的距离按键就会松开",
+    "en": "In fast trigger mode, if the key has been triggered, it will release as long as you lift it a specified distance."
+  },
+  "sensitive_text_3": {
+    "zh": "处于快速触发模式时，如果按键未触发，只要按下指定的距离按键就会触发。",
+    "en": "In quick trigger mode, if the key is not triggered, it will trigger as long as the specified distance is pressed."
+  },
+  "separate_style": {
+    "zh": "单独设置松开和按下的灵敏度",
+    "en": "Independently set release and press sensitivity"
+  },
+  "set_tips_text": {
+    "zh": "升级完固件后,键盘必须手动重新校准一遍",
+    "en": "After upgrading the firmware, the keyboard must be manually recalibrated"
+  },
+  "set_tips_title": {
+    "zh": "升级提示",
+    "en": "Upgrade Prompt"
+  },
+  "setting": {
+    "zh": "设置",
+    "en": "Settings"
+  },
+  "settingView": {
+    "zh": "界面设置",
+    "en": "Interface Settings"
+  },
+  "settings_language_title": {
+    "zh": "语言设置",
+    "en": "Language settings"
+  },
+  "settings_tab_keys": {
+    "zh": "按键",
+    "en": "button"
+  },
+  "settings_tab_screen": {
+    "zh": "屏幕",
+    "en": "Screen"
+  },
+  "settings_tab_system": {
+    "zh": "系统",
+    "en": "system"
+  },
+  "settings_tab_update": {
+    "zh": "版本更新",
+    "en": "Version update"
+  },
+  "settings_tab_wireless": {
+    "zh": "无线",
+    "en": "wireless"
+  },
+  "settings_theme_title": {
+    "zh": "主题色设置",
+    "en": "Theme color settings"
+  },
+  "share_name": {
+    "zh": "配置名称",
+    "en": "Configuration Name"
+  },
+  "share_success": {
+    "zh": "分享成功！",
+    "en": "Share Successful!"
+  },
+  "share_text": {
+    "zh": "配置描述",
+    "en": "Configuration Description"
+  },
+  "share_title": {
+    "zh": "分享配置",
+    "en": "Share Configuration"
+  },
+  "show_time": {
+    "zh": "显示时间",
+    "en": "Show Time"
+  },
+  "side_light": {
+    "zh": "侧灯灯效",
+    "en": "Side light effect"
+  },
+  "sleepMode": {
+    "zh": "睡眠模式",
+    "en": "Sleep Mode"
+  },
+  "socd_select1": {
+    "zh": "最后输入优先级",
+    "en": "Last Input Priority"
+  },
+  "socd_select2": {
+    "zh": "绝对按键1优先",
+    "en": "Absolute Key 1 Priority"
+  },
+  "socd_select3": {
+    "zh": "绝对按键2优先",
+    "en": "Absolute Key 2 Priority"
+  },
+  "socd_select4": {
+    "zh": "抵消模式",
+    "en": "Anti-Ghosting Mode"
+  },
+  "socd_select_text1": {
+    "zh": "最后激活的按键会覆盖之前的按键",
+    "en": "The last activated key will override the previous key."
+  },
+  "socd_select_text2": {
+    "zh": "按键1始终优先于按键2",
+    "en": "Key 1 always takes precedence over Key 2."
+  },
+  "socd_select_text3": {
+    "zh": "按键2始终优先于按键1",
+    "en": "Key 2 always takes precedence over Key 1."
+  },
+  "socd_select_text4": {
+    "zh": "当两个按键都被激活时，都不会被触发",
+    "en": "When both keys are activated, neither will be triggered."
+  },
+  "socd_title": {
+    "zh": "行为模式",
+    "en": "Behavioral Pattern"
+  },
+  "stabilize": {
+    "zh": "稳定模式",
+    "en": "Stability Mode"
+  },
+  "stabilize_text": {
+    "zh": "极限参数下，打开稳定性模式后，优化按键算法，提升键盘整体稳定性",
+    "en": "Under extreme parameters, enabling stability mode optimizes the key algorithm, enhancing overall keyboard stability."
+  },
+  "stage_axis_desc": {
+    "zh": "支持段落触发和松开自定义。",
+    "en": "Supports paragraph trigger and release customization."
+  },
+  "stage_axis_title": {
+    "zh": "段落触发轴",
+    "en": "paragraph trigger axis"
+  },
+  "state_link": {
+    "zh": "已连接",
+    "en": "Connected"
+  },
+  "string_1": {
+    "zh": "基本字符",
+    "en": "Basic Characters"
+  },
+  "string_2": {
+    "zh": "扩展字符",
+    "en": "Extended Characters"
+  },
+  "string_3": {
+    "zh": "特殊字符",
+    "en": "Special Characters"
+  },
+  "string_4": {
+    "zh": "功能按键",
+    "en": "Function Keys"
+  },
+  "sty_name1": {
+    "zh": "重命名",
+    "en": "Rename"
+  },
+  "sty_name2": {
+    "zh": "复制",
+    "en": "Copy"
+  },
+  "sty_name3": {
+    "zh": "导出",
+    "en": "Export"
+  },
+  "sty_name4": {
+    "zh": "删除",
+    "en": "Delete"
+  },
+  "sty_name5": {
+    "zh": "分享",
+    "en": "Share"
+  },
+  "switch_axis_card_title": {
+    "zh": "换轴",
+    "en": "Change axis"
+  },
+  "switch_axis_desc": {
+    "zh": "先选择键盘上的按键，再批量设置这些按键的轴体类型。",
+    "en": "First select the keys on the keyboard, and then set the shaft types of these keys in batches."
+  },
+  "switch_axle": {
+    "zh": "是否需要切换轴体?",
+    "en": "Do you need to switch the switch type?"
+  },
+  "tables_title1": {
+    "zh": "产品图片",
+    "en": "Product Image"
+  },
+  "tables_title10": {
+    "zh": "暂无数据",
+    "en": "No Data Available"
+  },
+  "tables_title11": {
+    "zh": "写入",
+    "en": "Write"
+  },
+  "tables_title2": {
+    "zh": "设备型号",
+    "en": "Device Model"
+  },
+  "tables_title3": {
+    "zh": "文件名称",
+    "en": "File Name"
+  },
+  "tables_title4": {
+    "zh": "文件描述",
+    "en": "File Description"
+  },
+  "tables_title5": {
+    "zh": "用户名称",
+    "en": "User Name"
+  },
+  "tables_title6": {
+    "zh": "时间",
+    "en": "Time"
+  },
+  "tables_title7": {
+    "zh": "赞",
+    "en": "Likes"
+  },
+  "tables_title8": {
+    "zh": "下载量",
+    "en": "Download Count"
+  },
+  "tables_title9": {
+    "zh": "下载",
+    "en": "Download"
+  },
+  "task_key_name1": {
+    "zh": "清空",
+    "en": "Clear"
+  },
+  "task_key_name2": {
+    "zh": "删除",
+    "en": "Delete"
+  },
+  "task_key_name3": {
+    "zh": "向上移动",
+    "en": "Move Up"
+  },
+  "task_key_name4": {
+    "zh": "向下移动",
+    "en": "Move Down"
+  },
+  "task_key_name5": {
+    "zh": "移到最上",
+    "en": "Move to the top"
+  },
+  "task_key_name6": {
+    "zh": "移到最下",
+    "en": "Move to the bottom"
+  },
+  "themeBright": {
+    "zh": "亮色主题",
+    "en": "Light Theme"
+  },
+  "themeDark": {
+    "zh": "暗色主题",
+    "en": "Dark Theme"
+  },
+  "themeView": {
+    "zh": "界面主题",
+    "en": "Interface Theme"
+  },
+  "themeWin": {
+    "zh": "将主题与电脑同步",
+    "en": "Sync theme with computer"
+  },
+  "time_1": {
+    "zh": "24小时",
+    "en": "24 Hour"
+  },
+  "time_2": {
+    "zh": "12小时",
+    "en": "12 Hour"
+  },
+  "tips_login": {
+    "zh": "请先登录",
+    "en": "Please Log In First"
+  },
+  "title": {
+    "zh": "数字配置文件",
+    "en": "Numeric Configuration File"
+  },
+  "total": {
+    "zh": "合计",
+    "en": "total"
+  },
+  "tray_quit": {
+    "zh": "退出",
+    "en": "Log Out"
+  },
+  "tray_show_window": {
+    "zh": "显示窗口",
+    "en": "Display Window"
+  },
+  "trigger": {
+    "zh": "触发行程",
+    "en": "Trigger Distance"
+  },
+  "trigger_current_selection_desc": {
+    "zh": "选中一个或多个按键后，可以设置触发点和快速触发。",
+    "en": "After selecting one or more keys, you can set trigger points and quick triggers."
+  },
+  "trigger_current_selection_title": {
+    "zh": "当前选择",
+    "en": "Current selection"
+  },
+  "trigger_current_status": {
+    "zh": "当前状态",
+    "en": "Current status"
+  },
+  "trigger_point_desc": {
+    "zh": "选择当前按键触发时使用的段落位置。",
+    "en": "Select the paragraph position used when the current key is triggered."
+  },
+  "trigger_point_title": {
+    "zh": "触发点",
+    "en": "trigger point"
+  },
+  "trigger_point_value_label": {
+    "zh": "触发点位置",
+    "en": "trigger point location"
+  },
+  "trigger_select_key_placeholder": {
+    "zh": "请先选择按键",
+    "en": "Please select a button first"
+  },
+  "trigger_selected_count": {
+    "zh": "已选择 {0} 个按键",
+    "en": "{0} keys selected"
+  },
+  "trigger_settings_desc": {
+    "zh": "为段落触发轴设置触发点，并按需开启快速触发。",
+    "en": "Set the trigger point for the paragraph trigger axis and enable quick triggering as needed."
+  },
+  "trigger_settings_desc2": {
+    "zh": "设置前，请先选择一些按键。",
+    "en": "Before setting, please select some keys."
+  },
+  "trigger_settings_normal_axis_tip": {
+    "zh": "当前为常规轴体，不支持自定义触发设置，请先切换为段落轴体。",
+    "en": "It is currently a regular axis and does not support custom trigger settings. Please switch to a paragraph axis first."
+  },
+  "trigger_settings_title": {
+    "zh": "触发设置",
+    "en": "Trigger settings"
+  },
+  "tuning": {
+    "zh": "微调",
+    "en": "Tuning"
+  },
+  "tutorial": {
+    "zh": "升级固件教程",
+    "en": "Firmware Upgrade Tutorial"
+  },
+  "unable_profile_file_format": {
+    "zh": "无法获取当前 profile 配置",
+    "en": "Unable to get the current profile configuration"
+  },
+  "upadte_tips": {
+    "zh": "升级包仅限于win系统运行",
+    "en": "The upgrade package is only for Windows systems."
+  },
+  "updateName": {
+    "zh": "更新",
+    "en": "Update"
+  },
+  "update_btn": {
+    "zh": "下载固件",
+    "en": "Download Firmware"
+  },
+  "update_error": {
+    "zh": "暂无升级版本",
+    "en": "No upgrade version available"
+  },
+  "update_text1": {
+    "zh": "更新至",
+    "en": "Update to"
+  },
+  "update_text2": {
+    "zh": "当前版本",
+    "en": "Current Version"
+  },
+  "update_title": {
+    "zh": "提示",
+    "en": "Prompt"
+  },
+  "user_info": {
+    "zh": "个人中心",
+    "en": "User Center"
+  },
+  "versionName": {
+    "zh": "已是最新版本",
+    "en": "Already the latest version"
+  },
+  "versionUpgrade": {
+    "zh": "发现新版本",
+    "en": "New version found"
+  },
+  "whole": {
+    "zh": "全行程快速触发",
+    "en": "Full Distance Fast Trigger"
+  },
+  "whole_text": {
+    "zh": "启用时,快速触发功能将一直生效,禁用时,快速触发需要按键到达触发键程后再生效。",
+    "en": "When enabled, the quick trigger function will remain active; when disabled, the quick trigger will only take effect after the key reaches the trigger travel."
+  },
+  "window_too_small_message": {
+    "zh": "请调整窗口大小或使用浏览器缩放（Ctrl + -），以获得更佳体验。",
+    "en": "Please resize the window or use browser zoom (Ctrl -) for a better experience."
+  },
+  "window_too_small_title": {
+    "zh": "窗口尺寸过小",
+    "en": "Window size is too small"
+  },
+  "write_error": {
+    "zh": "写入失败，没有文件",
+    "en": "Write failed, no file"
+  },
+  "write_success": {
+    "zh": "写入成功，在profile列表查看",
+    "en": "Write successful, check in profile list"
+  },
+  "zone_title": {
+    "zh": "死区设置",
+    "en": "Dead Zone Settings"
+  }
+}

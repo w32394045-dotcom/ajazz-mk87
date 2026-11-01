@@ -1,0 +1,766 @@
+{
+  "ts": "2026-11-01 06:44:15",
+  "tests": [
+    {
+      "name": "基线(当前模式11)",
+      "sample": {
+        "n_led": 128,
+        "n_lit": 86,
+        "mean": [
+          121,
+          71,
+          151
+        ],
+        "mean_hex": "#794797",
+        "dominance": {
+          "r": 33,
+          "g": 10,
+          "b": 37,
+          "tie": 6
+        },
+        "max_ch": 255,
+        "flicker": 255,
+        "n_changed": 85,
+        "animated": true
+      }
+    },
+    {
+      "name": "1.3 关灯 mode=0",
+      "sample": {
+        "n_led": 128,
+        "n_lit": 1,
+        "mean": [
+          255,
+          0,
+          0
+        ],
+        "mean_hex": "#FF0000",
+        "dominance": {
+          "r": 1,
+          "g": 0,
+          "b": 0,
+          "tie": 0
+        },
+        "max_ch": 255,
+        "flicker": 0,
+        "n_changed": 0,
+        "animated": false
+      },
+      "pass": false,
+      "note": "采样全 0 即通过"
+    },
+    {
+      "name": "1.4 brightness=0",
+      "sample": {
+        "n_led": 128,
+        "n_lit": 86,
+        "mean": [
+          13,
+          22,
+          19
+        ],
+        "mean_hex": "#0D1613",
+        "dominance": {
+          "r": 8,
+          "g": 37,
+          "b": 38,
+          "tie": 3
+        },
+        "max_ch": 255,
+        "flicker": 37,
+        "n_changed": 85,
+        "animated": true
+      },
+      "readback": "0B FF FF FF FF 00 00 00 01 FF 03 00 00 00 AA 55",
+      "readback_ok": false,
+      "brightness_stored": 255,
+      "pass": false
+    },
+    {
+      "name": "1.2 模式全表",
+      "sweep": [
+        {
+          "n_led": 128,
+          "n_lit": 85,
+          "mean": [
+            89,
+            118,
+            45
+          ],
+          "mean_hex": "#59762D",
+          "dominance": {
+            "r": 26,
+            "g": 40,
+            "b": 19,
+            "tie": 0
+          },
+          "max_ch": 255,
+          "flicker": 0,
+          "n_changed": 0,
+          "animated": false,
+          "mode": 1,
+          "name": "静态恒亮",
+          "lit": true
+        },
+        {
+          "n_led": 128,
+          "n_lit": 1,
+          "mean": [
+            255,
+            0,
+            0
+          ],
+          "mean_hex": "#FF0000",
+          "dominance": {
+            "r": 1,
+            "g": 0,
+            "b": 0,
+            "tie": 0
+          },
+          "max_ch": 255,
+          "flicker": 0,
+          "n_changed": 0,
+          "animated": false,
+          "mode": 2,
+          "name": "单点亮",
+          "lit": true
+        },
+        {
+          "n_led": 128,
+          "n_lit": 86,
+          "mean": [
+            182,
+            160,
+            131
+          ],
+          "mean_hex": "#B6A083",
+          "dominance": {
+            "r": 46,
+            "g": 14,
+            "b": 7,
+            "tie": 19
+          },
+          "max_ch": 255,
+          "flicker": 0,
+          "n_changed": 0,
+          "animated": false,
+          "mode": 3,
+          "name": "单熄灭",
+          "lit": true
+        },
+        {
+          "n_led": 128,
+          "n_lit": 86,
+          "mean": [
+            87,
+            72,
+            59
+          ],
+          "mean_hex": "#57483B",
+          "dominance": {
+            "r": 45,
+            "g": 18,
+            "b": 15,
+            "tie": 8
+          },
+          "max_ch": 255,
+          "flicker": 15,
+          "n_changed": 85,
+          "animated": true,
+          "mode": 4,
+          "name": "繁星点点",
+          "lit": true
+        },
+        {
+          "n_led": 128,
+          "n_lit": 24,
+          "mean": [
+            103,
+            94,
+            68
+          ],
+          "mean_hex": "#675E44",
+          "dominance": {
+            "r": 11,
+            "g": 5,
+            "b": 1,
+            "tie": 7
+          },
+          "max_ch": 255,
+          "flicker": 513,
+          "n_changed": 53,
+          "animated": true,
+          "mode": 5,
+          "name": "漫天飞雪",
+          "lit": true
+        },
+        {
+          "n_led": 128,
+          "n_lit": 86,
+          "mean": [
+            110,
+            111,
+            118
+          ],
+          "mean_hex": "#6E6F76",
+          "dominance": {
+            "r": 27,
+            "g": 27,
+            "b": 32,
+            "tie": 0
+          },
+          "max_ch": 255,
+          "flicker": 150,
+          "n_changed": 85,
+          "animated": true,
+          "mode": 6,
+          "name": "百花争艳",
+          "lit": true
+        },
+        {
+          "n_led": 128,
+          "n_lit": 86,
+          "mean": [
+            24,
+            0,
+            0
+          ],
+          "mean_hex": "#180000",
+          "dominance": {
+            "r": 86,
+            "g": 0,
+            "b": 0,
+            "tie": 0
+          },
+          "max_ch": 255,
+          "flicker": 19,
+          "n_changed": 85,
+          "animated": true,
+          "mode": 7,
+          "name": "动态呼吸",
+          "lit": true
+        },
+        {
+          "n_led": 128,
+          "n_lit": 86,
+          "mean": [
+            3,
+            106,
+            250
+          ],
+          "mean_hex": "#036AFA",
+          "dominance": {
+            "r": 1,
+            "g": 0,
+            "b": 85,
+            "tie": 0
+          },
+          "max_ch": 255,
+          "flicker": 105,
+          "n_changed": 85,
+          "animated": true,
+          "mode": 8,
+          "name": "光谱循环",
+          "lit": true
+        },
+        {
+          "n_led": 128,
+          "n_lit": 86,
+          "mean": [
+            57,
+            144,
+            152
+          ],
+          "mean_hex": "#399098",
+          "dominance": {
+            "r": 2,
+            "g": 33,
+            "b": 33,
+            "tie": 18
+          },
+          "max_ch": 255,
+          "flicker": 245,
+          "n_changed": 84,
+          "animated": true,
+          "mode": 9,
+          "name": "彩泉涌动",
+          "lit": true
+        },
+        {
+          "n_led": 128,
+          "n_lit": 86,
+          "mean": [
+            99,
+            116,
+            127
+          ],
+          "mean_hex": "#63747F",
+          "dominance": {
+            "r": 24,
+            "g": 28,
+            "b": 34,
+            "tie": 0
+          },
+          "max_ch": 255,
+          "flicker": 142,
+          "n_changed": 85,
+          "animated": true,
+          "mode": 10,
+          "name": "多彩纵横",
+          "lit": true
+        },
+        {
+          "n_led": 128,
+          "n_lit": 86,
+          "mean": [
+            75,
+            123,
+            148
+          ],
+          "mean_hex": "#4B7B94",
+          "dominance": {
+            "r": 12,
+            "g": 37,
+            "b": 37,
+            "tie": 0
+          },
+          "max_ch": 255,
+          "flicker": 256,
+          "n_changed": 85,
+          "animated": true,
+          "mode": 11,
+          "name": "随波逐流",
+          "lit": true
+        },
+        {
+          "n_led": 128,
+          "n_lit": 86,
+          "mean": [
+            112,
+            126,
+            125
+          ],
+          "mean_hex": "#707E7D",
+          "dominance": {
+            "r": 24,
+            "g": 29,
+            "b": 29,
+            "tie": 4
+          },
+          "max_ch": 255,
+          "flicker": 255,
+          "n_changed": 85,
+          "animated": true,
+          "mode": 12,
+          "name": "峰回路转",
+          "lit": true
+        },
+        {
+          "n_led": 128,
+          "n_lit": 1,
+          "mean": [
+            255,
+            0,
+            0
+          ],
+          "mean_hex": "#FF0000",
+          "dominance": {
+            "r": 1,
+            "g": 0,
+            "b": 0,
+            "tie": 0
+          },
+          "max_ch": 255,
+          "flicker": 0,
+          "n_changed": 0,
+          "animated": false,
+          "mode": 13,
+          "name": "一触即发",
+          "lit": true
+        },
+        {
+          "n_led": 128,
+          "n_lit": 1,
+          "mean": [
+            255,
+            0,
+            0
+          ],
+          "mean_hex": "#FF0000",
+          "dominance": {
+            "r": 1,
+            "g": 0,
+            "b": 0,
+            "tie": 0
+          },
+          "max_ch": 255,
+          "flicker": 0,
+          "n_changed": 0,
+          "animated": false,
+          "mode": 14,
+          "name": "一石二鸟",
+          "lit": true
+        },
+        {
+          "n_led": 128,
+          "n_lit": 1,
+          "mean": [
+            255,
+            0,
+            0
+          ],
+          "mean_hex": "#FF0000",
+          "dominance": {
+            "r": 1,
+            "g": 0,
+            "b": 0,
+            "tie": 0
+          },
+          "max_ch": 255,
+          "flicker": 0,
+          "n_changed": 0,
+          "animated": false,
+          "mode": 15,
+          "name": "涟漪扩散",
+          "lit": true
+        },
+        {
+          "n_led": 128,
+          "n_lit": 6,
+          "mean": [
+            86,
+            46,
+            90
+          ],
+          "mean_hex": "#562E5A",
+          "dominance": {
+            "r": 2,
+            "g": 0,
+            "b": 3,
+            "tie": 1
+          },
+          "max_ch": 255,
+          "flicker": 388,
+          "n_changed": 13,
+          "animated": true,
+          "mode": 16,
+          "name": "川流不息",
+          "lit": true
+        },
+        {
+          "n_led": 128,
+          "n_lit": 43,
+          "mean": [
+            68,
+            64,
+            72
+          ],
+          "mean_hex": "#444048",
+          "dominance": {
+            "r": 15,
+            "g": 8,
+            "b": 9,
+            "tie": 11
+          },
+          "max_ch": 255,
+          "flicker": 570,
+          "n_changed": 74,
+          "animated": true,
+          "mode": 17,
+          "name": "重峦叠嶂",
+          "lit": true
+        },
+        {
+          "n_led": 128,
+          "n_lit": 42,
+          "mean": [
+            78,
+            67,
+            68
+          ],
+          "mean_hex": "#4E4344",
+          "dominance": {
+            "r": 15,
+            "g": 9,
+            "b": 8,
+            "tie": 10
+          },
+          "max_ch": 255,
+          "flicker": 632,
+          "n_changed": 85,
+          "animated": true,
+          "mode": 18,
+          "name": "斜风细雨",
+          "lit": true
+        },
+        {
+          "n_led": 128,
+          "n_lit": 86,
+          "mean": [
+            106,
+            112,
+            123
+          ],
+          "mean_hex": "#6A707B",
+          "dominance": {
+            "r": 23,
+            "g": 33,
+            "b": 30,
+            "tie": 0
+          },
+          "max_ch": 255,
+          "flicker": 256,
+          "n_changed": 85,
+          "animated": true,
+          "mode": 19,
+          "name": "来回穿梭",
+          "lit": true
+        },
+        {
+          "n_led": 128,
+          "n_lit": 6,
+          "mean": [
+            101,
+            190,
+            37
+          ],
+          "mean_hex": "#65BE25",
+          "dominance": {
+            "r": 2,
+            "g": 4,
+            "b": 0,
+            "tie": 0
+          },
+          "max_ch": 255,
+          "flicker": 0,
+          "n_changed": 0,
+          "animated": false,
+          "mode": 20,
+          "name": "(自定义族20)",
+          "lit": true
+        },
+        {
+          "n_led": 128,
+          "n_lit": 6,
+          "mean": [
+            101,
+            190,
+            37
+          ],
+          "mean_hex": "#65BE25",
+          "dominance": {
+            "r": 2,
+            "g": 4,
+            "b": 0,
+            "tie": 0
+          },
+          "max_ch": 255,
+          "flicker": 0,
+          "n_changed": 0,
+          "animated": false,
+          "mode": 21,
+          "name": "(自定义族21)",
+          "lit": true
+        },
+        {
+          "n_led": 128,
+          "n_lit": 6,
+          "mean": [
+            101,
+            190,
+            37
+          ],
+          "mean_hex": "#65BE25",
+          "dominance": {
+            "r": 2,
+            "g": 4,
+            "b": 0,
+            "tie": 0
+          },
+          "max_ch": 255,
+          "flicker": 0,
+          "n_changed": 0,
+          "animated": false,
+          "mode": 128,
+          "name": "自定义",
+          "lit": true
+        }
+      ],
+      "all_lit": true
+    },
+    {
+      "name": "1.5 自定义灯",
+      "readback_ok": true,
+      "first8_readback": [
+        {
+          "led": 0,
+          "r": 255,
+          "g": 0,
+          "b": 0
+        },
+        {
+          "led": 1,
+          "r": 0,
+          "g": 255,
+          "b": 0
+        },
+        {
+          "led": 2,
+          "r": 0,
+          "g": 0,
+          "b": 255
+        },
+        {
+          "led": 3,
+          "r": 255,
+          "g": 255,
+          "b": 0
+        },
+        {
+          "led": 4,
+          "r": 255,
+          "g": 0,
+          "b": 255
+        },
+        {
+          "led": 5,
+          "r": 0,
+          "g": 255,
+          "b": 255
+        },
+        {
+          "led": 6,
+          "r": 255,
+          "g": 255,
+          "b": 255
+        },
+        {
+          "led": 7,
+          "r": 0,
+          "g": 0,
+          "b": 0
+        }
+      ],
+      "first8_samples": [
+        {
+          "led": 0,
+          "r": 253,
+          "g": 0,
+          "b": 0
+        },
+        {
+          "led": 1,
+          "r": 0,
+          "g": 253,
+          "b": 0
+        },
+        {
+          "led": 2,
+          "r": 0,
+          "g": 0,
+          "b": 253
+        },
+        {
+          "led": 3,
+          "r": 253,
+          "g": 253,
+          "b": 0
+        },
+        {
+          "led": 4,
+          "r": 253,
+          "g": 0,
+          "b": 253
+        },
+        {
+          "led": 5,
+          "r": 0,
+          "g": 253,
+          "b": 253
+        },
+        {
+          "led": 6,
+          "r": 253,
+          "g": 253,
+          "b": 253
+        },
+        {
+          "led": 7,
+          "r": 0,
+          "g": 0,
+          "b": 0
+        }
+      ],
+      "sample": {
+        "n_led": 128,
+        "n_lit": 8,
+        "mean": [
+          158,
+          126,
+          126
+        ],
+        "mean_hex": "#9E7E7E",
+        "dominance": {
+          "r": 2,
+          "g": 1,
+          "b": 1,
+          "tie": 4
+        },
+        "max_ch": 255,
+        "flicker": 0,
+        "n_changed": 0,
+        "animated": false
+      },
+      "pass": true
+    },
+    {
+      "name": "1.7 屏幕时间",
+      "resp_hex": "5A 01 5A 1A 0B 01 06 2C 30 00",
+      "pass": true
+    },
+    {
+      "name": "1.6 游戏模式位写入",
+      "wrote": "00 00 00 05 02 00 00 01 FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF",
+      "readback": "00 00 00 05 02 00 00 01 FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF",
+      "match": true,
+      "others_unchanged": true,
+      "pass": true
+    }
+  ],
+  "device": {
+    "romSize": 64,
+    "macroSpaceSize": 3072,
+    "vid": 3141,
+    "pid": 32839,
+    "version": 1.19,
+    "sensor": 65535,
+    "manufacturer": 1,
+    "product": 18,
+    "workMode": 0,
+    "batteryLevel": 63,
+    "chargeStatus": 1,
+    "currentProfile": 0,
+    "axisInfo": 0,
+    "tftMaxFrames": 140,
+    "gifMaxFrames": 0,
+    "ledMaxFrames": 0,
+    "tftDirection": 0,
+    "rtPrecision": 0,
+    "frameVersion": 0,
+    "lightingVersion": 0,
+    "firmwareStatus": 0,
+    "maxProfile": 0,
+    "tftColorByteOrder": 0
+  },
+  "orig": {
+    "led": "0B FF FF FF FF 00 00 00 01 06 03 00 00 00 AA 55",
+    "custom_sha": "e63226a810039f0be13d1c27c2b0c8b296813f95d36feb0563c38a303ab1dfbd",
+    "game_mode": "00 00 00 05 02 00 00 00 FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF"
+  },
+  "restore": {
+    "led": "0B FF FF FF FF 00 00 00 01 06 03 00 00 00 AA 55",
+    "led_ok": true,
+    "custom_ok": true,
+    "game_mode_ok": true
+  }
+}

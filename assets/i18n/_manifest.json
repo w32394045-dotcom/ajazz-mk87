@@ -1,0 +1,42 @@
+{
+  "base": "https://ajazz.driveall.cn",
+  "generatedAt": "2026-10-31T22:11:33.248Z",
+  "locales": {
+    "zh": {
+      "url": "https://ajazz.driveall.cn/assets/zh-BkYJTITw.js",
+      "chunk": "zh-BkYJTITw.js",
+      "ok": true,
+      "bytes": 77755,
+      "keys": 1196,
+      "serverOverlay": {
+        "url": "https://ajazz.driveall.cn/langs/zh.json",
+        "status": 200,
+        "ctype": "text/html",
+        "hit": false,
+        "note": "非 JSON（SPA fallback index.html），覆盖层不存在"
+      }
+    },
+    "en": {
+      "url": "https://ajazz.driveall.cn/assets/en-DU86yCXE.js",
+      "chunk": "en-DU86yCXE.js",
+      "ok": true,
+      "bytes": 84817,
+      "keys": 1196,
+      "serverOverlay": {
+        "url": "https://ajazz.driveall.cn/langs/en.json",
+        "status": 200,
+        "ctype": "text/html",
+        "hit": false,
+        "note": "非 JSON（SPA fallback index.html），覆盖层不存在"
+      }
+    }
+  },
+  "output": {
+    "file": "docs\\i18n-keys.json",
+    "keys": 1196,
+    "locales": [
+      "zh",
+      "en"
+    ]
+  }
+}

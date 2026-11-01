@@ -1,0 +1,11 @@
+# token=ledMaxFrames hits=10 uniq=10
+@1917703	ledMaxFrames:i[26]|i[27]<<8,tftDirection:i[28],rtPrecision:i[29],frameVersion:i[30],lightingVersion:i[31],firmwareStatus:i[32],maxProfile:i[33],tftColorByteOrde
+@2200278	ledMaxFrames),h=K(()=>{let t=e.ledConfig.rows*e.ledConfig.cols,n=(a.value-1)*t;return e.editLed.data.slice(n,n+t)}),g=R(null),_=()=>{g.value!==null&&(clearInter
+@2208951	ledMaxFrames:m,currentFrameColors:h,handleBack:y,handleMoveLeft:b,handleMoveUp:x,handleMoveRight:S,handleMoveDown:C,handleClearData:w,handlePreview:T,handleUplo
+@2240262	ledMaxFrames])),m=R(``),h=R(!1),g=R(``),_=K(()=>o.value.filter(e=>e.type)),v=K(()=>t?o.value.filter(e=>!e.type):o.value.filter(e=>!e.type&&!i7(e.ledId))),y=asyn
+@2240849	ledMaxFrames!=0&&n>e.deviceInfo.ledMaxFrames?new Promise(t=>{$dialog.warning({title:$(`update_title`),content:$(`led_text30`)+e.deviceInfo.ledMaxFrames,positive
+@2240881	ledMaxFrames?new Promise(t=>{$dialog.warning({title:$(`update_title`),content:$(`led_text30`)+e.deviceInfo.ledMaxFrames,positiveText:$(`confirm`),negativeText:$
+@2240988	ledMaxFrames,positiveText:$(`confirm`),negativeText:$(`cancel`),onPositiveClick:()=>{t(!0)},onNegativeClick:()=>{t(!1)}})}):e.deviceInfo.ledMaxFrames==0&&n>260?
+@2241125	ledMaxFrames==0&&n>260?new Promise(e=>{$dialog.warning({title:$(`update_title`),content:$(`led_text31`),positiveText:$(`confirm`),negativeText:$(`cancel`),onPos
+@2242442	ledMaxFrames,a=t.data;(t.ledId===`startup`||t.ledId===`LEOBOG_AMG65`)&&r>200?a=t.data.slice(0,200*n):i!=0&&r>i?a=t.data.slice(0,i*n):i==0&&r>260&&(a=t.data.slic
+@2243705	ledMaxFrames),i=zie(n,e.ledConfig.cols,e.ledConfig.rows,r);if(!i.ok){switch(i.error){case`data_length_mismatch`:$message.error($(`led_import_data_length_mismatc

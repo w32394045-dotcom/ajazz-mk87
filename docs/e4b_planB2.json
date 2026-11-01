@@ -1,0 +1,227 @@
+﻿{
+    "startTime":  "2026-11-01T08:38:27",
+    "mode":  "auto",
+    "steps":  [
+                  {
+                      "time":  "08:38:29.033",
+                      "name":  "targets",
+                      "data":  {
+                                   "target":  "USB\\VID_0C45\u0026PID_8047\\6\u002654CA98\u00260\u00261",
+                                   "other":  "USB\\VID_0C45\u0026PID_FEFE\\6\u002654CA98\u00260\u00262"
+                               }
+                  },
+                  {
+                      "time":  "08:38:29.058",
+                      "name":  "locate",
+                      "data":  {
+                                   "result":  0,
+                                   "instanceId":  "USB\\VID_0C45\u0026PID_FEFE\\6\u002654CA98\u00260\u00262"
+                               }
+                  },
+                  {
+                      "time":  "08:38:29.074",
+                      "name":  "cm-disable",
+                      "data":  {
+                                   "result":  40,
+                                   "instanceId":  "USB\\VID_0C45\u0026PID_FEFE\\6\u002654CA98\u00260\u00262"
+                               }
+                  },
+                  {
+                      "time":  "08:38:31.632",
+                      "name":  "check-target",
+                      "data":  {
+                                   "status":  "Error",
+                                   "instanceId":  "USB\\VID_0C45\u0026PID_8047\\6\u002654CA98\u00260\u00261",
+                                   "problem":  "CM_PROB_FAILED_START"
+                               }
+                  },
+                  {
+                      "time":  "08:38:31.668",
+                      "name":  "locate",
+                      "data":  {
+                                   "result":  0,
+                                   "instanceId":  "USB\\VID_0C45\u0026PID_FEFE\u0026MI_04\\7\u0026883A9E9\u00260\u00260004"
+                               }
+                  },
+                  {
+                      "time":  "08:38:31.775",
+                      "name":  "cm-disable",
+                      "data":  {
+                                   "result":  0,
+                                   "instanceId":  "USB\\VID_0C45\u0026PID_FEFE\u0026MI_04\\7\u0026883A9E9\u00260\u00260004"
+                               }
+                  },
+                  {
+                      "time":  "08:38:31.778",
+                      "name":  "locate",
+                      "data":  {
+                                   "result":  0,
+                                   "instanceId":  "USB\\VID_0C45\u0026PID_FEFE\u0026MI_03\\7\u0026883A9E9\u00260\u00260003"
+                               }
+                  },
+                  {
+                      "time":  "08:38:36.745",
+                      "name":  "cm-disable",
+                      "data":  {
+                                   "result":  23,
+                                   "instanceId":  "USB\\VID_0C45\u0026PID_FEFE\u0026MI_03\\7\u0026883A9E9\u00260\u00260003"
+                               }
+                  },
+                  {
+                      "time":  "08:38:36.748",
+                      "name":  "locate",
+                      "data":  {
+                                   "result":  0,
+                                   "instanceId":  "USB\\VID_0C45\u0026PID_FEFE\u0026MI_02\\7\u0026883A9E9\u00260\u00260002"
+                               }
+                  },
+                  {
+                      "time":  "08:38:36.749",
+                      "name":  "cm-disable",
+                      "data":  {
+                                   "result":  40,
+                                   "instanceId":  "USB\\VID_0C45\u0026PID_FEFE\u0026MI_02\\7\u0026883A9E9\u00260\u00260002"
+                               }
+                  },
+                  {
+                      "time":  "08:38:36.751",
+                      "name":  "locate",
+                      "data":  {
+                                   "result":  0,
+                                   "instanceId":  "USB\\VID_0C45\u0026PID_FEFE\u0026MI_01\\7\u0026883A9E9\u00260\u00260001"
+                               }
+                  },
+                  {
+                      "time":  "08:38:36.757",
+                      "name":  "cm-disable",
+                      "data":  {
+                                   "result":  0,
+                                   "instanceId":  "USB\\VID_0C45\u0026PID_FEFE\u0026MI_01\\7\u0026883A9E9\u00260\u00260001"
+                               }
+                  },
+                  {
+                      "time":  "08:38:36.762",
+                      "name":  "locate",
+                      "data":  {
+                                   "result":  0,
+                                   "instanceId":  "USB\\VID_0C45\u0026PID_FEFE\u0026MI_00\\7\u0026883A9E9\u00260\u00260000"
+                               }
+                  },
+                  {
+                      "time":  "08:38:36.763",
+                      "name":  "cm-disable",
+                      "data":  {
+                                   "result":  40,
+                                   "instanceId":  "USB\\VID_0C45\u0026PID_FEFE\u0026MI_00\\7\u0026883A9E9\u00260\u00260000"
+                               }
+                  },
+                  {
+                      "time":  "08:38:38.786",
+                      "name":  "cm-reenumerate",
+                      "data":  {
+                                   "flags":  0,
+                                   "result":  0,
+                                   "instanceId":  "USB\\VID_0C45\u0026PID_8047\\6\u002654CA98\u00260\u00261"
+                               }
+                  },
+                  {
+                      "time":  "08:38:41.397",
+                      "name":  "check-target",
+                      "data":  {
+                                   "status":  "Error",
+                                   "instanceId":  "USB\\VID_0C45\u0026PID_8047\\6\u002654CA98\u00260\u00261",
+                                   "problem":  "CM_PROB_FAILED_START"
+                               }
+                  },
+                  {
+                      "time":  "08:38:41.429",
+                      "name":  "target-parent",
+                      "data":  {
+                                   "result":  0,
+                                   "parentId":  "USB\\VID_1A40\u0026PID_0101\\5\u00262C705BFE\u00260\u00261"
+                               }
+                  },
+                  {
+                      "time":  "08:38:41.507",
+                      "name":  "remove-setparams-fail",
+                      "data":  {
+                                   "err":  1784,
+                                   "instanceId":  "USB\\VID_0C45\u0026PID_8047\\6\u002654CA98\u00260\u00261"
+                               }
+                  },
+                  {
+                      "time":  "08:38:41.544",
+                      "name":  "dif-remove",
+                      "data":  {
+                                   "ok":  true,
+                                   "err":  0,
+                                   "instanceId":  "USB\\VID_0C45\u0026PID_8047\\6\u002654CA98\u00260\u00261"
+                               }
+                  },
+                  {
+                      "time":  "08:38:43.048",
+                      "name":  "cm-reenumerate",
+                      "data":  {
+                                   "flags":  0,
+                                   "result":  0,
+                                   "instanceId":  "USB\\VID_1A40\u0026PID_0101\\5\u00262C705BFE\u00260\u00261"
+                               }
+                  },
+                  {
+                      "time":  "08:38:46.366",
+                      "name":  "tier3-wait",
+                      "data":  {
+                                   "status":  "Error",
+                                   "i":  0
+                               }
+                  },
+                  {
+                      "time":  "08:38:46.863",
+                      "name":  "check-target",
+                      "data":  {
+                                   "status":  "Error",
+                                   "instanceId":  "USB\\VID_0C45\u0026PID_8047\\6\u002654CA98\u00260\u00261",
+                                   "problem":  "CM_PROB_FAILED_START"
+                               }
+                  },
+                  {
+                      "time":  "08:38:47.427",
+                      "name":  "final",
+                      "data":  [
+                                   {
+                                       "id":  "USB\\VID_0C45\u0026PID_FEFE\u0026MI_04\\7\u0026883A9E9\u00260\u00260004",
+                                       "status":  "Error"
+                                   },
+                                   {
+                                       "id":  "USB\\VID_0C45\u0026PID_FEFE\u0026MI_03\\7\u0026883A9E9\u00260\u00260003",
+                                       "status":  "OK"
+                                   },
+                                   {
+                                       "id":  "USB\\VID_0C45\u0026PID_FEFE\u0026MI_02\\7\u0026883A9E9\u00260\u00260002",
+                                       "status":  "OK"
+                                   },
+                                   {
+                                       "id":  "USB\\VID_0C45\u0026PID_FEFE\u0026MI_01\\7\u0026883A9E9\u00260\u00260001",
+                                       "status":  "Error"
+                                   },
+                                   {
+                                       "id":  "USB\\VID_0C45\u0026PID_FEFE\u0026MI_00\\7\u0026883A9E9\u00260\u00260000",
+                                       "status":  "OK"
+                                   },
+                                   {
+                                       "id":  "USB\\VID_0C45\u0026PID_FEFE\\6\u002654CA98\u00260\u00262",
+                                       "status":  "OK"
+                                   },
+                                   {
+                                       "id":  "USB\\VID_0C45\u0026PID_8047\\6\u002654CA98\u00260\u00261",
+                                       "status":  "Error"
+                                   }
+                               ]
+                  }
+              ],
+    "notes":  [
+                  "tier1=False",
+                  "tier2=False",
+                  "tier3=False parent=USB\\VID_1A40\u0026PID_0101\\5\u00262C705BFE\u00260\u00261"
+              ]
+}

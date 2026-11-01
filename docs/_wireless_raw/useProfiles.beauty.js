@@ -1,0 +1,144 @@
+import {
+  Bt as e,Ct as t,Ea as n,Et as r,Oa as i,Qi as a,St as o,Wt as s,_t as c,bt as l,dt as u,ft as d,gt as f,ht as p,jt as m,mt as h,pt as g,ut as _,vt as v,xt as y,yt as b
+}from"./layout-classic-CMxiG14P.js";
+function x() {
+  let {
+    currentDevice:x,currentDeviceId:S
+  }=r(),C=s(S, {
+
+  }),w=a(()=>x?.keyboardConfig?.routesName),T=a(()=>h(C.value?.deviceInfo)),E=a(()=>T.value>0),D=a(()=>T.value||4),O=n([]),k=a(()=>!E.value&&O.value.length>=D.value),A=n(0),j=n(!1),M=n(!1),N=n(!1),P=n(null),F=n(``),I=async()=> {
+    try {
+      let e=await p(S);
+      e&&(O.value=e.profileList,A.value=e.currentProfileIndex)
+    }catch(e) {
+      console.error(`初始化 Profile 配置失败:`,e)
+    }
+  },L=e=> {
+    P.value=e,F.value=O.value[e].profileName,M.value=!0
+  },R=()=> {
+    M.value=!1,P.value=null,F.value=``
+  },z=async()=> {
+    if(P.value===null)return;
+    let e=F.value.trim();
+    await v(S,P.value,e),await I(),R()
+  },B=e=> {
+    if(E.value)return[ {
+      label:m(`sty_name1`),key:`rename`
+    }, {
+      label:m(`sty_name3`),key:`export`
+    }];
+    let t=[ {
+      label:m(`sty_name1`),key:`rename`
+    }, {
+      label:m(`sty_name2`),key:`copy`
+    }, {
+      label:m(`sty_name3`),key:`export`
+    }];
+    return e!==A.value&&t.push( {
+      label:m(`sty_name4`),key:`delete`
+    }),t
+  },V=async t=> {
+    if(!(t===A.value||j.value))try {
+      j.value=!0,await y(S,i(C.value)),A.value=t,c.emit( {
+        type:`start`,index:t
+      });
+      let n=E.value?await l(S,t):await b(S,t);
+      await I(),await e(100),c.emit( {
+        type:`finish`,index:t,success:n
+      })
+    }catch(n) {
+      console.error(`切换 Profile 失败:`,n),await e(100),c.emit( {
+        type:`finish`,index:t,success:!1
+      })
+    }finally {
+      j.value=!1
+    }
+  },H=()=> {
+    let e=JSON.parse(JSON.stringify(C.value)),n= {
+      ...i(e),keyList:e.keyList?.map(e=>e.map(e=> {
+        let {
+          userKey:t,...n
+        }=e;
+        return n
+      }))
+    };
+    if(w.value?.includes(`lighting`)&&e.ledEffect&&(n.ledEffect= {
+      ...e.ledEffect,brightness:5,colorMode:1,direction:0,mode:11,speed:3
+    },n.customLedData=Array.from( {
+      length:128
+    },(e,t)=>( {
+      ledId:t,red:0,green:0,blue:0
+    }))),x?.keyboardConfig?.customKeysConfig?.isShowFn) {
+      let {
+        defaultFnKeyMatrix:e
+      }=t().tempData;
+      n.fnKeyList=o(e,x.keyboardConfig)
+    }if(x?.keyboardConfig?.wheelKeys&&e.wheelKeys&&(n.wheelKeys=e.wheelKeys.map(e=> {
+      let {
+        userKey:t,...n
+      }=e;
+      return n
+    })),w.value?.includes(`macro`)&&e.macroDataList&&(n.macroDataList=[]),x?.keyboardConfig?.performanceConfig&&e.magneticAxisRT) {
+      n.magneticAxisRT=Array.from( {
+        length:128
+      },()=>( {
+        axisType:0,isWholeFast:!1,isRampageMode:!1,triggerKeyStroke:0,pressRT:0,releaseRT:0
+      }));
+      let e=`custom`;
+      x?.keyboardConfig?.performanceConfig?.modeList!=="default"&&(e=x?.keyboardConfig?.performanceConfig?.modeList?.[0]?.name||`custom`),n.magneticAxisRTConfig= {
+        currentModeName:e,customModeRT:n.magneticAxisRT
+      }
+    }return x?.keyboardConfig?.advancedKeysConfig?.advancedKeysList.includes(`DKS`)&&e.magneticAxisDKS&&(n.magneticAxisDKS=[]),n
+  },U=async()=> {
+    if(E.value)return;
+    if(O.value.length>=D.value) {
+      N.value=!0;
+      return
+    }let e=H();
+    await u(S,e),await I()
+  },W=async e=> {
+    if(!E.value) {
+      if(O.value.length>=D.value) {
+        N.value=!0;
+        return
+      }e===A.value&&await y(S,i(C.value)),await _(S,e),await I()
+    }
+  },G=async e=> {
+    E.value||(await d(S,e),await I())
+  },K=async(e,t)=> {
+    await v(S,e,t||`profile`),await I()
+  },q=async t=> {
+    let n=A.value,r;
+    try {
+      return j.value=!0,c.emit( {
+        type:`start`,index:n
+      }),r=await f(S,t, {
+        replaceIndex:n
+      }),r
+    }finally {
+      await e(100),c.emit( {
+        type:`finish`,index:n,success:!!r?.success
+      }),j.value=!1
+    }
+  };
+  return {
+    MAX_PROFILES:D,isHardwareProfile:E,isImportLimitReached:k,profileList:O,activeProfile:A,isProfileSwitching:j,showRenameModal:M,showLimitModal:N,currentRenameIndex:P,modalRenameValue:F,initProfileConfig:I,openRenameModal:L,closeRenameModal:R,confirmModalRename:z,getProfileOptions:B,handleSwitchProfile:V,handleCreateProfile:U,handleCopyProfile:W,handleDeleteProfile:G,handleRenameProfile:K,handleImportFile:async e=> {
+      if(k.value) {
+        N.value=!0;
+        return
+      }try {
+        (E.value?await q(e):await f(S,e))?.success?($message.success(m(`profile_import_success`)),await I()):$message.error(m(`profile_import_failed`))
+      }catch {
+        $message.error(m(`profile_import_failed`))
+      }
+    },handleExportProfile:async e=> {
+      try {
+        e===A.value&&await y(S,i(C.value)),await g(S,e)
+      }catch(e) {
+        console.error(`导出 Profile 失败:`,e)
+      }
+    }
+  }
+}export {
+  x as t
+};

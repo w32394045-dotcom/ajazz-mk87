@@ -1,0 +1,3 @@
+# token=setLedSyncAnimation hits=2 uniq=2
+@1913719	setLedSyncAnimation:()=>HZ,setLedUserAnimation:()=>UZ,setLightBox:()=>SZ,setMacroData:()=>PZ,setMagneticAxisDK
+@2231013	setLedSyncAnimation`,i,e,t)}finally{if(h.value=!1,g.value&&_.value){let e=g.value;g.value=null,b(e.rgbData,e.i

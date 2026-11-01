@@ -1,0 +1,1381 @@
+{
+  "_meta": {
+    "note": "MK87 (VID 0x0C45/PID 0x8047) 官方键盘配置（无损合并版）",
+    "sources": [
+      "docs/_lighting_raw/mk87-config.json（lightingConfig/musicConfig 权威）",
+      "docs/keymap-tables.json#mk87KeyboardConfig（keyList/keyListRaw 权威）",
+      "bundle @1194716 TU（routesName/settingsConfig/keyboardImg/supplierName）"
+    ],
+    "supersedes": "旧版 device_config_32839.json 为有损提取（lightingConfig 字符串化、musicConfig 丢失），已废弃"
+  },
+  "vendorId": 3141,
+  "productId": 32839,
+  "supplierName": "ajazz",
+  "name": "AJAZZ KEYBOARD",
+  "connectType": "USB",
+  "routesName": [
+    "customKeys",
+    "lighting",
+    "macro",
+    "tft",
+    "settings"
+  ],
+  "keyboardImg": "kb_bg.png",
+  "customKeysConfig": {
+    "isShowFn": true,
+    "isShowNormalFuncKeys": true,
+    "fnFuncIds": [],
+    "fnDisabledKeyIds": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12
+    ]
+  },
+  "lightingConfig": {
+    "minBrightness": 1,
+    "maxBrightness": 6,
+    "minSpeed": 1,
+    "maxSpeed": 6,
+    "isShowLightBox": false,
+    "lightBoxList": [
+      1,
+      2,
+      3,
+      5
+    ],
+    "isShowLightBoxEdit": true
+  },
+  "musicConfig": {
+    "version": 1,
+    "maxColOffset": 0,
+    "keyOffset": [
+      {
+        "name": "F1",
+        "value": 1,
+        "offsetX": 1
+      },
+      {
+        "name": "Z",
+        "value": 65,
+        "offsetX": 1
+      },
+      {
+        "name": "↑",
+        "value": 90,
+        "offsetX": 2
+      },
+      {
+        "name": "Spacebar",
+        "value": 83,
+        "offsetX": 3
+      },
+      {
+        "name": "R-Alt",
+        "value": 84,
+        "offsetX": 3
+      }
+    ]
+  },
+  "macroConfig": {
+    "isShowFn": true
+  },
+  "tftConfig": {
+    "name": "AK980_PRO",
+    "localforageKey": "w240h135",
+    "width": 240,
+    "height": 135
+  },
+  "settingsConfig": {
+    "isShowSingleKeyWakeup": false,
+    "isShowStabilityMode": false,
+    "isShowAutoCalibration": false,
+    "isShowReportRate": false
+  },
+  "keyCount": 87,
+  "keyListRaw": [
+    [
+      {
+        "className": "",
+        "value": 0,
+        "name": "Esc",
+        "keyCode": 41,
+        "key": "Escape"
+      },
+      {
+        "className": "ml-15",
+        "value": 1,
+        "name": "F1",
+        "keyCode": 58,
+        "key": "F1"
+      },
+      {
+        "className": "",
+        "value": 2,
+        "name": "F2",
+        "keyCode": 59,
+        "key": "F2"
+      },
+      {
+        "className": "",
+        "value": 3,
+        "name": "F3",
+        "keyCode": 60,
+        "key": "F3"
+      },
+      {
+        "className": "",
+        "value": 4,
+        "name": "F4",
+        "keyCode": 61,
+        "key": "F4"
+      },
+      {
+        "className": "ml-auto",
+        "value": 5,
+        "name": "F5",
+        "keyCode": 62,
+        "key": "F5"
+      },
+      {
+        "className": "",
+        "value": 6,
+        "name": "F6",
+        "keyCode": 63,
+        "key": "F6"
+      },
+      {
+        "className": "",
+        "value": 7,
+        "name": "F7",
+        "keyCode": 64,
+        "key": "F7"
+      },
+      {
+        "className": "",
+        "value": 8,
+        "name": "F8",
+        "keyCode": 65,
+        "key": "F8"
+      },
+      {
+        "className": "ml-auto",
+        "value": 9,
+        "name": "F9",
+        "keyCode": 66,
+        "key": "F9"
+      },
+      {
+        "className": "",
+        "value": 10,
+        "name": "F10",
+        "keyCode": 67,
+        "key": "F10"
+      },
+      {
+        "className": "",
+        "value": 11,
+        "name": "F11",
+        "keyCode": 68,
+        "key": "F11"
+      },
+      {
+        "className": "",
+        "value": 12,
+        "name": "F12",
+        "keyCode": 69,
+        "key": "F12"
+      },
+      {
+        "className": "ml-5",
+        "value": 99,
+        "name": "Print",
+        "keyCode": 70,
+        "key": "PrintScreen"
+      },
+      {
+        "className": "",
+        "value": 100,
+        "name": "Scroll",
+        "keyCode": 71,
+        "key": "ScrollLock"
+      },
+      {
+        "className": "",
+        "value": 102,
+        "name": "Pause",
+        "keyCode": 72,
+        "key": "Pause"
+      }
+    ],
+    [
+      {
+        "className": "",
+        "value": 16,
+        "name": "` ~",
+        "keyCode": 53,
+        "key": "Backquote"
+      },
+      {
+        "className": "",
+        "value": 17,
+        "name": "1 !",
+        "keyCode": 30,
+        "key": "Digit1"
+      },
+      {
+        "className": "",
+        "value": 18,
+        "name": "2 @",
+        "keyCode": 31,
+        "key": "Digit2"
+      },
+      {
+        "className": "",
+        "value": 19,
+        "name": "3 #",
+        "keyCode": 32,
+        "key": "Digit3"
+      },
+      {
+        "className": "",
+        "value": 20,
+        "name": "4 $",
+        "keyCode": 33,
+        "key": "Digit4"
+      },
+      {
+        "className": "",
+        "value": 21,
+        "name": "5 %",
+        "keyCode": 34,
+        "key": "Digit5"
+      },
+      {
+        "className": "",
+        "value": 22,
+        "name": "6 ^",
+        "keyCode": 35,
+        "key": "Digit6"
+      },
+      {
+        "className": "",
+        "value": 23,
+        "name": "7 &",
+        "keyCode": 36,
+        "key": "Digit7"
+      },
+      {
+        "className": "",
+        "value": 24,
+        "name": "8 *",
+        "keyCode": 37,
+        "key": "Digit8"
+      },
+      {
+        "className": "",
+        "value": 25,
+        "name": "9 (",
+        "keyCode": 38,
+        "key": "Digit9"
+      },
+      {
+        "className": "",
+        "value": 26,
+        "name": "0 )",
+        "keyCode": 39,
+        "key": "Digit0"
+      },
+      {
+        "className": "",
+        "value": 27,
+        "name": "ˉ -",
+        "keyCode": 45,
+        "key": "Minus"
+      },
+      {
+        "className": "",
+        "value": 28,
+        "name": "= +",
+        "keyCode": 46,
+        "key": "Equal"
+      },
+      {
+        "className": "flex-1",
+        "value": 92,
+        "name": "Back",
+        "keyCode": 42,
+        "key": "Backspace"
+      },
+      {
+        "className": "ml-5",
+        "value": 103,
+        "name": "Insert",
+        "keyCode": 73,
+        "key": "Insert"
+      },
+      {
+        "className": "",
+        "value": 104,
+        "name": "Home",
+        "keyCode": 74,
+        "key": "Home"
+      },
+      {
+        "className": "",
+        "value": 105,
+        "name": "PgUp",
+        "keyCode": 75,
+        "key": "PageUp"
+      }
+    ],
+    [
+      {
+        "className": "w-22",
+        "value": 32,
+        "name": "Tab",
+        "keyCode": 43,
+        "key": "Tab"
+      },
+      {
+        "className": "",
+        "value": 33,
+        "name": "Q",
+        "keyCode": 20,
+        "key": "KeyQ"
+      },
+      {
+        "className": "",
+        "value": 34,
+        "name": "W",
+        "keyCode": 26,
+        "key": "KeyW"
+      },
+      {
+        "className": "",
+        "value": 35,
+        "name": "E",
+        "keyCode": 8,
+        "key": "KeyE"
+      },
+      {
+        "className": "",
+        "value": 36,
+        "name": "R",
+        "keyCode": 21,
+        "key": "KeyR"
+      },
+      {
+        "className": "",
+        "value": 37,
+        "name": "T",
+        "keyCode": 23,
+        "key": "KeyT"
+      },
+      {
+        "className": "",
+        "value": 38,
+        "name": "Y",
+        "keyCode": 28,
+        "key": "KeyY"
+      },
+      {
+        "className": "",
+        "value": 39,
+        "name": "U",
+        "keyCode": 24,
+        "key": "KeyU"
+      },
+      {
+        "className": "",
+        "value": 40,
+        "name": "I",
+        "keyCode": 12,
+        "key": "KeyI"
+      },
+      {
+        "className": "",
+        "value": 41,
+        "name": "O",
+        "keyCode": 18,
+        "key": "KeyO"
+      },
+      {
+        "className": "",
+        "value": 42,
+        "name": "P",
+        "keyCode": 19,
+        "key": "KeyP"
+      },
+      {
+        "className": "",
+        "value": 43,
+        "name": "[ {",
+        "keyCode": 47,
+        "key": "BracketLeft"
+      },
+      {
+        "className": "",
+        "value": 44,
+        "name": "] }",
+        "keyCode": 48,
+        "key": "BracketRight"
+      },
+      {
+        "className": "w-23",
+        "value": 60,
+        "name": "\\ | ",
+        "keyCode": 49,
+        "key": "Backslash"
+      },
+      {
+        "className": "ml-5",
+        "value": 106,
+        "name": "Del",
+        "keyCode": 76,
+        "key": "Delete"
+      },
+      {
+        "className": "",
+        "value": 107,
+        "name": "End",
+        "keyCode": 77,
+        "key": "End"
+      },
+      {
+        "className": "",
+        "value": 108,
+        "name": "PgDn",
+        "keyCode": 78,
+        "key": "PageDown"
+      }
+    ],
+    [
+      {
+        "className": "w-27",
+        "value": 48,
+        "name": "Caps",
+        "keyCode": 57,
+        "key": "CapsLock"
+      },
+      {
+        "className": "",
+        "value": 49,
+        "name": "A",
+        "keyCode": 4,
+        "key": "KeyA"
+      },
+      {
+        "className": "",
+        "value": 50,
+        "name": "S",
+        "keyCode": 22,
+        "key": "KeyS"
+      },
+      {
+        "className": "",
+        "value": 51,
+        "name": "D",
+        "keyCode": 7,
+        "key": "KeyD"
+      },
+      {
+        "className": "",
+        "value": 52,
+        "name": "F",
+        "keyCode": 9,
+        "key": "KeyF"
+      },
+      {
+        "className": "",
+        "value": 53,
+        "name": "G",
+        "keyCode": 10,
+        "key": "KeyG"
+      },
+      {
+        "className": "",
+        "value": 54,
+        "name": "H",
+        "keyCode": 11,
+        "key": "KeyH"
+      },
+      {
+        "className": "",
+        "value": 55,
+        "name": "J",
+        "keyCode": 13,
+        "key": "KeyJ"
+      },
+      {
+        "className": "",
+        "value": 56,
+        "name": "K",
+        "keyCode": 14,
+        "key": "KeyK"
+      },
+      {
+        "className": "",
+        "value": 57,
+        "name": "L",
+        "keyCode": 15,
+        "key": "KeyL"
+      },
+      {
+        "className": "",
+        "value": 58,
+        "name": "; :",
+        "keyCode": 51,
+        "key": "Semicolon"
+      },
+      {
+        "className": "",
+        "value": 59,
+        "name": "' \"",
+        "keyCode": 52,
+        "key": "Quote"
+      },
+      {
+        "className": "w-33 mr-auto",
+        "value": 76,
+        "name": "Enter",
+        "keyCode": 40,
+        "key": "Enter"
+      }
+    ],
+    [
+      {
+        "className": "w-34",
+        "value": 64,
+        "name": "L-Shift",
+        "keyCode": 225,
+        "key": "ShiftLeft"
+      },
+      {
+        "className": "",
+        "value": 65,
+        "name": "Z",
+        "keyCode": 29,
+        "key": "KeyZ"
+      },
+      {
+        "className": "",
+        "value": 66,
+        "name": "X",
+        "keyCode": 27,
+        "key": "KeyX"
+      },
+      {
+        "className": "",
+        "value": 67,
+        "name": "C",
+        "keyCode": 6,
+        "key": "KeyC"
+      },
+      {
+        "className": "",
+        "value": 68,
+        "name": "V",
+        "keyCode": 25,
+        "key": "KeyV"
+      },
+      {
+        "className": "",
+        "value": 69,
+        "name": "B",
+        "keyCode": 5,
+        "key": "KeyB"
+      },
+      {
+        "className": "",
+        "value": 70,
+        "name": "N",
+        "keyCode": 17,
+        "key": "KeyN"
+      },
+      {
+        "className": "",
+        "value": 71,
+        "name": "M",
+        "keyCode": 16,
+        "key": "KeyM"
+      },
+      {
+        "className": "",
+        "value": 72,
+        "name": ", <",
+        "keyCode": 54,
+        "key": "Comma"
+      },
+      {
+        "className": "",
+        "value": 73,
+        "name": ". >",
+        "keyCode": 55,
+        "key": "Period"
+      },
+      {
+        "className": "",
+        "value": 74,
+        "name": "/ ?",
+        "keyCode": 56,
+        "key": "Slash"
+      },
+      {
+        "className": "w-41 mr-auto",
+        "value": 75,
+        "name": "R-Shift",
+        "keyCode": 229,
+        "key": "ShiftRight"
+      },
+      {
+        "className": "ml-5 mr-15",
+        "value": 90,
+        "name": "↑",
+        "keyCode": 82,
+        "key": "ArrowUp"
+      }
+    ],
+    [
+      {
+        "className": "w-18",
+        "value": 80,
+        "name": "L-Ctrl",
+        "keyCode": 224,
+        "key": "ControlLeft"
+      },
+      {
+        "className": "w-18",
+        "value": 81,
+        "name": "L-Win",
+        "keyCode": 227,
+        "key": "MetaLeft"
+      },
+      {
+        "className": "w-18",
+        "value": 82,
+        "name": "L-Alt",
+        "keyCode": 226,
+        "key": "AltLeft"
+      },
+      {
+        "className": "flex-1",
+        "value": 83,
+        "name": "Spacebar",
+        "keyCode": 44,
+        "key": "Space"
+      },
+      {
+        "className": "w-18",
+        "value": 84,
+        "name": "R-Alt",
+        "keyCode": 230,
+        "key": "AltRight"
+      },
+      {
+        "className": "w-18",
+        "value": 85,
+        "name": "Fn",
+        "keyCode": 175,
+        "key": "-1"
+      },
+      {
+        "className": "w-18",
+        "value": 86,
+        "name": "Super",
+        "keyCode": 101,
+        "key": "ContextMenu"
+      },
+      {
+        "className": "w-18",
+        "value": 87,
+        "name": "R-Ctrl",
+        "keyCode": 228,
+        "key": "ControlRight"
+      },
+      {
+        "className": "ml-5",
+        "value": 88,
+        "name": "←",
+        "keyCode": 80,
+        "key": "ArrowLeft"
+      },
+      {
+        "className": "",
+        "value": 89,
+        "name": "↓",
+        "keyCode": 81,
+        "key": "ArrowDown"
+      },
+      {
+        "className": "",
+        "value": 91,
+        "name": "→",
+        "keyCode": 79,
+        "key": "ArrowRight"
+      }
+    ]
+  ],
+  "keyListBySlot": [
+    {
+      "slot": 0,
+      "row": 0,
+      "name": "Esc",
+      "keyCode": 41,
+      "key": "Escape"
+    },
+    {
+      "slot": 1,
+      "row": 0,
+      "name": "F1",
+      "keyCode": 58,
+      "key": "F1"
+    },
+    {
+      "slot": 2,
+      "row": 0,
+      "name": "F2",
+      "keyCode": 59,
+      "key": "F2"
+    },
+    {
+      "slot": 3,
+      "row": 0,
+      "name": "F3",
+      "keyCode": 60,
+      "key": "F3"
+    },
+    {
+      "slot": 4,
+      "row": 0,
+      "name": "F4",
+      "keyCode": 61,
+      "key": "F4"
+    },
+    {
+      "slot": 5,
+      "row": 0,
+      "name": "F5",
+      "keyCode": 62,
+      "key": "F5"
+    },
+    {
+      "slot": 6,
+      "row": 0,
+      "name": "F6",
+      "keyCode": 63,
+      "key": "F6"
+    },
+    {
+      "slot": 7,
+      "row": 0,
+      "name": "F7",
+      "keyCode": 64,
+      "key": "F7"
+    },
+    {
+      "slot": 8,
+      "row": 0,
+      "name": "F8",
+      "keyCode": 65,
+      "key": "F8"
+    },
+    {
+      "slot": 9,
+      "row": 0,
+      "name": "F9",
+      "keyCode": 66,
+      "key": "F9"
+    },
+    {
+      "slot": 10,
+      "row": 0,
+      "name": "F10",
+      "keyCode": 67,
+      "key": "F10"
+    },
+    {
+      "slot": 11,
+      "row": 0,
+      "name": "F11",
+      "keyCode": 68,
+      "key": "F11"
+    },
+    {
+      "slot": 12,
+      "row": 0,
+      "name": "F12",
+      "keyCode": 69,
+      "key": "F12"
+    },
+    {
+      "slot": 16,
+      "row": 1,
+      "name": "` ~",
+      "keyCode": 53,
+      "key": "Backquote"
+    },
+    {
+      "slot": 17,
+      "row": 1,
+      "name": "1 !",
+      "keyCode": 30,
+      "key": "Digit1"
+    },
+    {
+      "slot": 18,
+      "row": 1,
+      "name": "2 @",
+      "keyCode": 31,
+      "key": "Digit2"
+    },
+    {
+      "slot": 19,
+      "row": 1,
+      "name": "3 #",
+      "keyCode": 32,
+      "key": "Digit3"
+    },
+    {
+      "slot": 20,
+      "row": 1,
+      "name": "4 $",
+      "keyCode": 33,
+      "key": "Digit4"
+    },
+    {
+      "slot": 21,
+      "row": 1,
+      "name": "5 %",
+      "keyCode": 34,
+      "key": "Digit5"
+    },
+    {
+      "slot": 22,
+      "row": 1,
+      "name": "6 ^",
+      "keyCode": 35,
+      "key": "Digit6"
+    },
+    {
+      "slot": 23,
+      "row": 1,
+      "name": "7 &",
+      "keyCode": 36,
+      "key": "Digit7"
+    },
+    {
+      "slot": 24,
+      "row": 1,
+      "name": "8 *",
+      "keyCode": 37,
+      "key": "Digit8"
+    },
+    {
+      "slot": 25,
+      "row": 1,
+      "name": "9 (",
+      "keyCode": 38,
+      "key": "Digit9"
+    },
+    {
+      "slot": 26,
+      "row": 1,
+      "name": "0 )",
+      "keyCode": 39,
+      "key": "Digit0"
+    },
+    {
+      "slot": 27,
+      "row": 1,
+      "name": "ˉ -",
+      "keyCode": 45,
+      "key": "Minus"
+    },
+    {
+      "slot": 28,
+      "row": 1,
+      "name": "= +",
+      "keyCode": 46,
+      "key": "Equal"
+    },
+    {
+      "slot": 32,
+      "row": 2,
+      "name": "Tab",
+      "keyCode": 43,
+      "key": "Tab"
+    },
+    {
+      "slot": 33,
+      "row": 2,
+      "name": "Q",
+      "keyCode": 20,
+      "key": "KeyQ"
+    },
+    {
+      "slot": 34,
+      "row": 2,
+      "name": "W",
+      "keyCode": 26,
+      "key": "KeyW"
+    },
+    {
+      "slot": 35,
+      "row": 2,
+      "name": "E",
+      "keyCode": 8,
+      "key": "KeyE"
+    },
+    {
+      "slot": 36,
+      "row": 2,
+      "name": "R",
+      "keyCode": 21,
+      "key": "KeyR"
+    },
+    {
+      "slot": 37,
+      "row": 2,
+      "name": "T",
+      "keyCode": 23,
+      "key": "KeyT"
+    },
+    {
+      "slot": 38,
+      "row": 2,
+      "name": "Y",
+      "keyCode": 28,
+      "key": "KeyY"
+    },
+    {
+      "slot": 39,
+      "row": 2,
+      "name": "U",
+      "keyCode": 24,
+      "key": "KeyU"
+    },
+    {
+      "slot": 40,
+      "row": 2,
+      "name": "I",
+      "keyCode": 12,
+      "key": "KeyI"
+    },
+    {
+      "slot": 41,
+      "row": 2,
+      "name": "O",
+      "keyCode": 18,
+      "key": "KeyO"
+    },
+    {
+      "slot": 42,
+      "row": 2,
+      "name": "P",
+      "keyCode": 19,
+      "key": "KeyP"
+    },
+    {
+      "slot": 43,
+      "row": 2,
+      "name": "[ {",
+      "keyCode": 47,
+      "key": "BracketLeft"
+    },
+    {
+      "slot": 44,
+      "row": 2,
+      "name": "] }",
+      "keyCode": 48,
+      "key": "BracketRight"
+    },
+    {
+      "slot": 48,
+      "row": 3,
+      "name": "Caps",
+      "keyCode": 57,
+      "key": "CapsLock"
+    },
+    {
+      "slot": 49,
+      "row": 3,
+      "name": "A",
+      "keyCode": 4,
+      "key": "KeyA"
+    },
+    {
+      "slot": 50,
+      "row": 3,
+      "name": "S",
+      "keyCode": 22,
+      "key": "KeyS"
+    },
+    {
+      "slot": 51,
+      "row": 3,
+      "name": "D",
+      "keyCode": 7,
+      "key": "KeyD"
+    },
+    {
+      "slot": 52,
+      "row": 3,
+      "name": "F",
+      "keyCode": 9,
+      "key": "KeyF"
+    },
+    {
+      "slot": 53,
+      "row": 3,
+      "name": "G",
+      "keyCode": 10,
+      "key": "KeyG"
+    },
+    {
+      "slot": 54,
+      "row": 3,
+      "name": "H",
+      "keyCode": 11,
+      "key": "KeyH"
+    },
+    {
+      "slot": 55,
+      "row": 3,
+      "name": "J",
+      "keyCode": 13,
+      "key": "KeyJ"
+    },
+    {
+      "slot": 56,
+      "row": 3,
+      "name": "K",
+      "keyCode": 14,
+      "key": "KeyK"
+    },
+    {
+      "slot": 57,
+      "row": 3,
+      "name": "L",
+      "keyCode": 15,
+      "key": "KeyL"
+    },
+    {
+      "slot": 58,
+      "row": 3,
+      "name": "; :",
+      "keyCode": 51,
+      "key": "Semicolon"
+    },
+    {
+      "slot": 59,
+      "row": 3,
+      "name": "' \"",
+      "keyCode": 52,
+      "key": "Quote"
+    },
+    {
+      "slot": 60,
+      "row": 2,
+      "name": "\\ | ",
+      "keyCode": 49,
+      "key": "Backslash"
+    },
+    {
+      "slot": 64,
+      "row": 4,
+      "name": "L-Shift",
+      "keyCode": 225,
+      "key": "ShiftLeft"
+    },
+    {
+      "slot": 65,
+      "row": 4,
+      "name": "Z",
+      "keyCode": 29,
+      "key": "KeyZ"
+    },
+    {
+      "slot": 66,
+      "row": 4,
+      "name": "X",
+      "keyCode": 27,
+      "key": "KeyX"
+    },
+    {
+      "slot": 67,
+      "row": 4,
+      "name": "C",
+      "keyCode": 6,
+      "key": "KeyC"
+    },
+    {
+      "slot": 68,
+      "row": 4,
+      "name": "V",
+      "keyCode": 25,
+      "key": "KeyV"
+    },
+    {
+      "slot": 69,
+      "row": 4,
+      "name": "B",
+      "keyCode": 5,
+      "key": "KeyB"
+    },
+    {
+      "slot": 70,
+      "row": 4,
+      "name": "N",
+      "keyCode": 17,
+      "key": "KeyN"
+    },
+    {
+      "slot": 71,
+      "row": 4,
+      "name": "M",
+      "keyCode": 16,
+      "key": "KeyM"
+    },
+    {
+      "slot": 72,
+      "row": 4,
+      "name": ", <",
+      "keyCode": 54,
+      "key": "Comma"
+    },
+    {
+      "slot": 73,
+      "row": 4,
+      "name": ". >",
+      "keyCode": 55,
+      "key": "Period"
+    },
+    {
+      "slot": 74,
+      "row": 4,
+      "name": "/ ?",
+      "keyCode": 56,
+      "key": "Slash"
+    },
+    {
+      "slot": 75,
+      "row": 4,
+      "name": "R-Shift",
+      "keyCode": 229,
+      "key": "ShiftRight"
+    },
+    {
+      "slot": 76,
+      "row": 3,
+      "name": "Enter",
+      "keyCode": 40,
+      "key": "Enter"
+    },
+    {
+      "slot": 80,
+      "row": 5,
+      "name": "L-Ctrl",
+      "keyCode": 224,
+      "key": "ControlLeft"
+    },
+    {
+      "slot": 81,
+      "row": 5,
+      "name": "L-Win",
+      "keyCode": 227,
+      "key": "MetaLeft"
+    },
+    {
+      "slot": 82,
+      "row": 5,
+      "name": "L-Alt",
+      "keyCode": 226,
+      "key": "AltLeft"
+    },
+    {
+      "slot": 83,
+      "row": 5,
+      "name": "Spacebar",
+      "keyCode": 44,
+      "key": "Space"
+    },
+    {
+      "slot": 84,
+      "row": 5,
+      "name": "R-Alt",
+      "keyCode": 230,
+      "key": "AltRight"
+    },
+    {
+      "slot": 85,
+      "row": 5,
+      "name": "Fn",
+      "keyCode": 175,
+      "key": "-1"
+    },
+    {
+      "slot": 86,
+      "row": 5,
+      "name": "Super",
+      "keyCode": 101,
+      "key": "ContextMenu"
+    },
+    {
+      "slot": 87,
+      "row": 5,
+      "name": "R-Ctrl",
+      "keyCode": 228,
+      "key": "ControlRight"
+    },
+    {
+      "slot": 88,
+      "row": 5,
+      "name": "←",
+      "keyCode": 80,
+      "key": "ArrowLeft"
+    },
+    {
+      "slot": 89,
+      "row": 5,
+      "name": "↓",
+      "keyCode": 81,
+      "key": "ArrowDown"
+    },
+    {
+      "slot": 90,
+      "row": 4,
+      "name": "↑",
+      "keyCode": 82,
+      "key": "ArrowUp"
+    },
+    {
+      "slot": 91,
+      "row": 5,
+      "name": "→",
+      "keyCode": 79,
+      "key": "ArrowRight"
+    },
+    {
+      "slot": 92,
+      "row": 1,
+      "name": "Back",
+      "keyCode": 42,
+      "key": "Backspace"
+    },
+    {
+      "slot": 99,
+      "row": 0,
+      "name": "Print",
+      "keyCode": 70,
+      "key": "PrintScreen"
+    },
+    {
+      "slot": 100,
+      "row": 0,
+      "name": "Scroll",
+      "keyCode": 71,
+      "key": "ScrollLock"
+    },
+    {
+      "slot": 102,
+      "row": 0,
+      "name": "Pause",
+      "keyCode": 72,
+      "key": "Pause"
+    },
+    {
+      "slot": 103,
+      "row": 1,
+      "name": "Insert",
+      "keyCode": 73,
+      "key": "Insert"
+    },
+    {
+      "slot": 104,
+      "row": 1,
+      "name": "Home",
+      "keyCode": 74,
+      "key": "Home"
+    },
+    {
+      "slot": 105,
+      "row": 1,
+      "name": "PgUp",
+      "keyCode": 75,
+      "key": "PageUp"
+    },
+    {
+      "slot": 106,
+      "row": 2,
+      "name": "Del",
+      "keyCode": 76,
+      "key": "Delete"
+    },
+    {
+      "slot": 107,
+      "row": 2,
+      "name": "End",
+      "keyCode": 77,
+      "key": "End"
+    },
+    {
+      "slot": 108,
+      "row": 2,
+      "name": "PgDn",
+      "keyCode": 78,
+      "key": "PageDown"
+    }
+  ],
+  "isEmptySlot": [
+    13,
+    14,
+    15,
+    29,
+    30,
+    31,
+    45,
+    46,
+    47,
+    61,
+    62,
+    63,
+    77,
+    78,
+    79,
+    93,
+    94,
+    95,
+    96,
+    97,
+    98,
+    101,
+    109,
+    110,
+    111,
+    112,
+    113,
+    114,
+    115,
+    116,
+    117,
+    118,
+    119,
+    120,
+    121,
+    122,
+    123,
+    124,
+    125,
+    126,
+    127
+  ]
+}
