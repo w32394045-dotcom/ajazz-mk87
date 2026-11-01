@@ -32,7 +32,7 @@
 | 12 | 宏读取 | `GET_MACRO` 0x15 | ✅ | 🧪 空表、空间 3072B | [protocol_commands.js](protocol_commands.js) |
 | 13 | 宏写入 | `SET_MACRO` 0x25 | ✅ | 🧪 写宏 "abc"→回读逐字节一致；Insert 打出 abc；mask 0/1/2 语义实测确认 | [keymap.md](keymap.md) §16 |
 | 14 | TFT 壁纸（单帧） | `SET_TFT_MATERIAL` 0x4D | ✅ | 🧪 可写入（16 包 ACK=0x41），但 MK87 **无壁纸页 → 不可见** | [tft-page.md](tft-page.md) |
-| 15 | TFT 动画（≤140 帧 240×135） | `SET_TFT_USER_ANIMATION` 0x50 | ✅ | 🧪 3 帧测试动画 + 官方 135 帧默认动画均正常播放 | [tft-constants.json](tft-constants.json) |
+| 15 | TFT 动画（≤140 帧 240×135） | `SET_TFT_USER_ANIMATION` 0x50 | ✅ | 🧪 3 帧/135 帧默认动画正常播放；**18.9MB GIF 73 帧 → 1155 包全 ACK 164.2s**（逐包等 ACK，官方网驱抓包对齐） | [tft-logic.md](tft-logic.md)、[tft-constants.json](tft-constants.json) |
 | 16 | TFT 内置页索引 | `SET_TFT_BUILT_IN_INDEX` 0x51 | ✅ | 🧪 发 0..5 设备回 ACK 但**屏幕不切页**（确认不支持） | [tft-page.md](tft-page.md) |
 | 17 | TFT 屏幕时间 | `SET_TEMPORARY_COMMAND_DATA` 0x34 | ✅ | 🧪 10B 时间帧 ACK 回显一致 | [deepdive-mk87.md](deepdive-mk87.md) |
 | 18 | TFT 系统信息（CPU/GPU/天气） | 0x34（24B）+ 0xFA type6 门控 | ✅ | ⛔ MK87 屏幕无系统信息页（真机确认） | [tft-page.md](tft-page.md) |

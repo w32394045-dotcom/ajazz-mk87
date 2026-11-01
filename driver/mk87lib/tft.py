@@ -161,8 +161,12 @@ def _check_tft(device):
 
 
 def build_animation_blob(delays: List[int], rgb565_data: bytes) -> bytes:
-    """256 字节帧延时表 + RGB565 数据（官方 setTftUserAnimation 的载荷）。"""
-    mv = bytearray(256)
+    """256 字节帧延时表 + RGB565 数据（官方 setTftUserAnimation 的载荷，docs/tft-logic.md §3.1）。
+
+    MV = 256 字节，初始全 0xFF；MV[0]=帧数；MV[i+1]=min(cs_i*5,255)（i=0..n-2）；
+    MV[n]=0 终止标记；其余保持 0xFF。逐字节与官方抓包一致（探针 tft_upload_gif2.py 验证通过）。
+    """
+    mv = bytearray([0xFF] * 256)
     n = len(delays)
     mv[0] = n & 0xFF
     for i in range(max(0, n - 1)):
@@ -218,12 +222,13 @@ _ACK_MATERIAL = (const.CMD["SET_LED_USER_ANIMATION"], const.CMD["SET_TFT_MATERIA
 def _upload(device, cmd: int, data: bytes, header_tail: bytes,
             progress: Optional[ProgressFn] = None,
             cancel_check: Optional[Callable[[], bool]] = None,
-            first_timeout: float = 2.0, ack_timeout: float = 0.6,
+            first_timeout: float = 2.0, ack_timeout: float = 2.0,
             retries: int = 3) -> dict:
-    """逐包写 + 逐包等 ACK（真机流程，见 probe/phase2_tft.py 与 docs/tft-page.md）。
+    """逐包写 + 逐包等 ACK（官方/探针流程，见 docs/tft-logic.md §4 与 probe/tft_upload_gif2.py）。
 
-    官方实现每包都等响应（首包 2s、其余 600ms，失败重发 3 次），本函数照此实现：
-    没有 ACK 的包会被重发，仍失败则报错，绝不"写成功但屏幕没变化"。
+    已验证流程：每包 write → 等 ACK(0x41)（超时 2000ms）→ 下一包；
+    失败重发最多 3 次（每次间隔 200ms），仍失败**中止上传**（绝不静默硬发）。
+    首包 ACK 约 326ms（设备擦写准备），后续约 140ms。
     """
     _check_tft(device)
     iface = device.tft_protocol.iface
@@ -266,10 +271,9 @@ def _upload(device, cmd: int, data: bytes, header_tail: bytes,
                     raise MK87Error(
                         f"TFT 写入不完整：第 {k + 1}/{total} 包写入 {n}/{len(pkt)} 字节"
                     )
-                # 等 ACK 从写入完成开始计时（USB 满帧写入本身约 65ms）
-                deadline = time.time() + timeout
+                deadline = tw + timeout
                 while time.time() < deadline:
-                    r = channel.read_normalized(timeout=max(0.005, deadline - time.time()))
+                    r = channel.read_normalized(timeout=max(0.01, deadline - time.time()))
                     if r is None:
                         break
                     if len(r) >= 2 and r[0] == 0x55 and r[1] in ack_cmds:
@@ -280,10 +284,13 @@ def _upload(device, cmd: int, data: bytes, header_tail: bytes,
                     acks += 1
                     break
                 retried += 1
+                if attempt < retries:
+                    time.sleep(0.2)  # 与探针一致：重发前等 200ms
             if not got:
-                # 真机实测：ACK 偶发丢失（phase2_tft 里 48 包里丢了 3 个）但上传依然成功，
-                # 固件按 seq 幂等处理重发，因此单包丢 ACK 不能直接判失败；连续大量丢才报错。
-                unacked += 1
+                raise MK87Error(
+                    f"TFT 第 {k + 1}/{total} 包重试 {retries} 次仍无 ACK，已中止上传"
+                    f"（已发 {k + 1}/{total} 包）；请拔插 USB 线复位屏幕后重试"
+                )
             if progress:
                 progress(int((k + 1) * 100 / total), k + 1, total)
     finally:
@@ -292,11 +299,6 @@ def _upload(device, cmd: int, data: bytes, header_tail: bytes,
         except Exception:
             pass
     dt = time.time() - t0
-    if total and unacked / total > 0.25:
-        raise MK87Error(
-            f"TFT 链路异常：{unacked}/{total} 包没有 ACK（超过 25%=链路已断/接收端卡死）；"
-            "请拔插 USB 线复位屏幕后重试"
-        )
     return {
         "ok": True,
         "packets": total,
@@ -304,7 +306,6 @@ def _upload(device, cmd: int, data: bytes, header_tail: bytes,
         "seconds": round(dt, 2),
         "kbps": round(len(data) / dt / 1024, 1) if dt > 0 else None,
         "acks": acks,
-        "unacked": unacked,
         "retries": retried,
         "ackAvgMs": round(sum(ack_times) / len(ack_times), 1) if ack_times else None,
         "ackMaxMs": round(max(ack_times), 1) if ack_times else None,
@@ -468,11 +469,11 @@ def _load_source_frames(raw: bytes):
     frames = []
     try:
         for frame in ImageSequence.Iterator(im):
-            dur = frame.info.get("duration", 100)
+            dur = frame.info.get("duration", 50)
             try:
-                dur = int(dur or 100)
+                dur = int(dur or 50)
             except Exception:
-                dur = 100
+                dur = 50
             frames.append((frame.convert("RGB"), max(10, dur)))
     except Exception as exc:  # noqa: BLE001
         raise MK87Error(f"动画解码失败: {exc}") from exc
@@ -652,6 +653,13 @@ def convert_animation(
     if dedupe:
         frames565, delays_ms = _dedupe(frames565, delays_ms)
 
+    # 兜底：固件不接受 1 帧动画（MV[0]=1、终止符紧跟其后，屏幕不播）。
+    # 源动画 >=2 帧时若被抽帧/去重压成 1 帧，复制一帧凑成 2 帧。
+    if len(frames565) == 1 and src_frames >= 2:
+        frames565 = frames565 * 2
+        delays_ms = delays_ms * 2
+        warnings.append("输出只有 1 帧（固件无法播放单帧动画），已复制成 2 帧")
+
     # 帧时长 → 协议延时表单位（10ms 厘秒；表内 1 = 2ms，故 *5；上限 255）
     delays_cs = []
     clamped = 0
@@ -724,7 +732,7 @@ def convert_and_upload(
     fps: Optional[float] = None,
     fit: str = "cover",
     dither: bool = False,
-    dedupe: bool = True,
+    dedupe: bool = False,
     temporal: str = "uniform",
     resample: str = "lanczos",
     trim_start_frame: Optional[int] = None,
@@ -732,7 +740,11 @@ def convert_and_upload(
     progress: Optional[ProgressFn] = None,
     cancel_check: Optional[Callable[[], bool]] = None,
 ) -> dict:
-    """一步完成：高分辨率文件 → 压缩 → 上传（转换耗时 <2s，进度只报上传）。"""
+    """一步完成：高分辨率文件 → 压缩 → 上传（转换耗时 <2s，进度只报上传）。
+
+    默认参数与已验证探针 probe/tft_upload_gif2.py 完全一致：
+    取前 ≤tftMaxFrames 帧、cover 裁剪、不抽帧、不去重、延时表见 build_animation_blob。
+    """
     _check_tft(device)
     if cancel_check and cancel_check():
         raise MK87Error("上传已取消")

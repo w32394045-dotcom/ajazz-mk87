@@ -46,3 +46,9 @@ driver/_t_*.err.txt
 _t_*.py
 _t_*.txt
 _native_speed*.txt
+
+# 抓包原始数据（体积大，不入库）
+capture/*.jsonl
+capture/profile-ajazz/
+capture/screens/
+

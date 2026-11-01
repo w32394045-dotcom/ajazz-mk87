@@ -74,10 +74,10 @@ export default {
       timingMode: 'fps',
       fps: 10,
       durationSec: 6,
-      fit: fitModes.includes('contain') ? 'contain' : fitModes[0],
+      fit: fitModes.includes('cover') ? 'cover' : fitModes[0],
       temporal: temporalModes.includes('uniform') ? 'uniform' : temporalModes[0],
       dither: false,
-      dedupe: true,
+      dedupe: false,
       resample: 'lanczos',
       trimStart: 1,
       trimEnd: null,
@@ -184,7 +184,7 @@ export default {
       onChange: (v) => { state.temporal = v; scheduleConvert(); },
     });
     const ditherCheck = h('input', { type: 'checkbox' });
-    const dedupeCheck = h('input', { type: 'checkbox', checked: true });
+    const dedupeCheck = h('input', { type: 'checkbox', checked: false });
     ditherCheck.addEventListener('change', () => { state.dither = ditherCheck.checked; scheduleConvert(); });
     dedupeCheck.addEventListener('change', () => { state.dedupe = dedupeCheck.checked; scheduleConvert(); });
     const resampleSelect = h('select', { class: 'select' },
@@ -638,7 +638,7 @@ export default {
       state.fit = fitModes.includes('contain') ? 'contain' : fitModes[0]; fitSeg.set(state.fit);
       state.temporal = temporalModes[0]; temporalSeg.set(state.temporal);
       state.dither = false; ditherCheck.checked = false;
-      state.dedupe = true; dedupeCheck.checked = true;
+      state.dedupe = false; dedupeCheck.checked = false;
       state.resample = 'lanczos'; resampleSelect.value = 'lanczos';
       state.trimStart = 1; state.trimEnd = state.rawSourceFrames || null;
       trimStartInput.value = '1'; trimEndInput.value = state.rawSourceFrames ? String(state.rawSourceFrames) : '';

@@ -1,0 +1,187 @@
+﻿recs=2813 sends=1343 big=1181 small=162 in=1400
+
+=== 上传会话（按 >1s 间隔切分）===
+#01 n=   8 seq=0..7 total=1155 ts=139807->141004 span=1.2s gap_avg=171.0ms dup=0
+#02 n=   1 seq=7..7 total=1155 ts=143010->143010 span=0.0s gap_avg=0.0ms dup=0
+#03 n=  11 seq=0..10 total=1155 ts=151756->153354 span=1.6s gap_avg=159.8ms dup=0
+#04 n=   1 seq=10..10 total=1155 ts=155358->155358 span=0.0s gap_avg=0.0ms dup=0
+#05 n=   4 seq=10..13 total=1155 ts=157359->157796 span=0.4s gap_avg=145.4ms dup=0
+#06 n=   1 seq=13..13 total=1155 ts=159797->159797 span=0.0s gap_avg=0.0ms dup=0
+#07 n=1155 seq=0..1154 total=1155 ts=189503->358010 span=168.5s gap_avg=146.0ms dup=0
+
+=== in 帧 0x55 xx 统计 ===
+    1175  55 41
+      40  55 10
+      30  55 12
+      30  55 16
+      30  55 1C
+      30  55 14
+      24  55 15
+      10  55 22
+      10  55 26
+       8  55 25
+       5  55 11
+       3  55 13
+
+=== 上传窗口内 in 帧 1287 条，cmd 分布 top ===
+    1175  55 41
+      20  55 12
+      20  55 16
+      20  55 1C
+      20  55 14
+      16  55 15
+      10  55 10
+       2  55 11
+       2  55 13
+       2  55 34
+
+=== 前 6 个大包的发送间隔与紧随其后的 in 帧 ===
+  send#0 ts=139806.9 hdr=(80, 0, 1155, 80, 6)
+      in ts=140135.8 +328.9ms len=64 55 41 00 01 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+  send#1 ts=140136.9 hdr=(80, 1, 1155, 80, 6)
+      in ts=140276.8 +139.9ms len=64 55 41 00 01 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+      in ts=140419.1 +282.2ms len=64 55 41 00 01 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+  send#2 ts=140277.9 hdr=(80, 2, 1155, 80, 6)
+      in ts=140419.1 +141.2ms len=64 55 41 00 01 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+      in ts=140574.0 +296.1ms len=64 55 41 00 01 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+  send#3 ts=140419.9 hdr=(80, 3, 1155, 80, 6)
+      in ts=140574.0 +154.1ms len=64 55 41 00 01 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+      in ts=140719.1 +299.2ms len=64 55 41 00 01 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+  send#4 ts=140577.8 hdr=(80, 4, 1155, 80, 6)
+      in ts=140719.1 +141.3ms len=64 55 41 00 01 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+      in ts=140860.9 +283.1ms len=64 55 41 00 01 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+  send#5 ts=140720.2 hdr=(80, 5, 1155, 80, 6)
+      in ts=140860.9 +140.7ms len=64 55 41 00 01 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+      in ts=141002.9 +282.7ms len=64 55 41 00 01 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+      in ts=141041.8 +321.6ms len=64 55 10 30 00 00 00 01 00 40 00 00 0c 45 0c 47 80 19 01 ff ff
+
+=== 小命令 out 162 条 ===
+  [  0] ts=    7450.6 rid=0 len=64 aa 10 30 00 00 00 01 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+  [  1] ts=   36550.7 rid=0 len=64 aa 10 30 00 00 00 01 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+  [  2] ts=   44993.4 rid=0 len=64 aa 10 30 00 00 00 01 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+  [  3] ts=   52394.4 rid=0 len=64 aa 10 30 00 00 00 01 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+  [  4] ts=   52395.6 rid=0 len=64 aa 10 30 00 00 00 01 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+  [  5] ts=   52396.5 rid=0 len=64 aa 10 30 00 00 00 01 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+  [  6] ts=   84059.5 rid=0 len=64 aa 10 30 00 00 00 01 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+  [  7] ts=   84065.9 rid=0 len=64 aa 11 38 00 00 00 01 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+  [  8] ts=   84073.4 rid=0 len=64 aa 12 38 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+  [  9] ts=   84078.4 rid=0 len=64 aa 12 38 38 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+  [ 10] ts=   84083.0 rid=0 len=64 aa 12 38 70 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+  [ 11] ts=   84088.7 rid=0 len=64 aa 12 38 a8 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+  [ 12] ts=   84093.2 rid=0 len=64 aa 12 38 e0 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+  [ 13] ts=   84095.8 rid=0 len=64 aa 12 38 18 01 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+  [ 14] ts=   84098.8 rid=0 len=64 aa 12 38 50 01 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+  [ 15] ts=   84103.9 rid=0 len=64 aa 12 38 88 01 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+  [ 16] ts=   84107.6 rid=0 len=64 aa 12 38 c0 01 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+  [ 17] ts=   84111.1 rid=0 len=64 aa 12 08 f8 01 00 01 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+  [ 18] ts=   84134.6 rid=0 len=64 aa 16 38 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+  [ 19] ts=   84142.4 rid=0 len=64 aa 16 38 38 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+  [ 20] ts=   84146.6 rid=0 len=64 aa 16 38 70 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+  [ 21] ts=   84150.9 rid=0 len=64 aa 16 38 a8 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+  [ 22] ts=   84157.6 rid=0 len=64 aa 16 38 e0 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+  [ 23] ts=   84161.8 rid=0 len=64 aa 16 38 18 01 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+  [ 24] ts=   84164.9 rid=0 len=64 aa 16 38 50 01 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+  [ 25] ts=   84168.0 rid=0 len=64 aa 16 38 88 01 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+  [ 26] ts=   84174.3 rid=0 len=64 aa 16 38 c0 01 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+  [ 27] ts=   84177.8 rid=0 len=64 aa 16 08 f8 01 00 01 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+  [ 28] ts=   84275.8 rid=0 len=64 aa 1c 38 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+  [ 29] ts=   84289.7 rid=0 len=64 aa 1c 38 38 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+  [ 30] ts=   84293.7 rid=0 len=64 aa 1c 38 70 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+  [ 31] ts=   84298.9 rid=0 len=64 aa 1c 38 a8 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+  [ 32] ts=   84307.2 rid=0 len=64 aa 1c 38 e0 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+  [ 33] ts=   84313.5 rid=0 len=64 aa 1c 38 18 01 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+  [ 34] ts=   84317.0 rid=0 len=64 aa 1c 38 50 01 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+  [ 35] ts=   84324.6 rid=0 len=64 aa 1c 38 88 01 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+  [ 36] ts=   84327.9 rid=0 len=64 aa 1c 38 c0 01 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+  [ 37] ts=   84330.8 rid=0 len=64 aa 1c 08 f8 01 00 01 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+  [ 38] ts=   84335.8 rid=0 len=64 aa 13 10 00 00 00 01 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+  [ 39] ts=   84383.1 rid=0 len=64 aa 14 38 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+  ...
+  [142] ts=  185140.7 rid=0 len=64 aa 13 10 00 00 00 01 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+  [143] ts=  185160.3 rid=0 len=64 aa 14 38 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+  [144] ts=  185163.2 rid=0 len=64 aa 14 38 38 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+  [145] ts=  185165.9 rid=0 len=64 aa 14 38 70 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+  [146] ts=  185170.7 rid=0 len=64 aa 14 38 a8 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+  [147] ts=  185174.5 rid=0 len=64 aa 14 38 e0 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+  [148] ts=  185178.0 rid=0 len=64 aa 14 38 18 01 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+  [149] ts=  185180.8 rid=0 len=64 aa 14 38 50 01 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+  [150] ts=  185186.8 rid=0 len=64 aa 14 38 88 01 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+  [151] ts=  185190.8 rid=0 len=64 aa 14 38 c0 01 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+  [152] ts=  185194.0 rid=0 len=64 aa 14 08 f8 01 00 01 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+  [153] ts=  185206.7 rid=0 len=64 aa 15 38 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+  [154] ts=  185209.9 rid=0 len=64 aa 15 38 38 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+  [155] ts=  185213.0 rid=0 len=64 aa 15 38 70 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+  [156] ts=  185215.9 rid=0 len=64 aa 15 38 a8 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+  [157] ts=  185220.1 rid=0 len=64 aa 15 38 e0 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+  [158] ts=  185224.2 rid=0 len=64 aa 15 38 18 01 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+  [159] ts=  185226.8 rid=0 len=64 aa 15 38 50 01 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+  [160] ts=  185229.9 rid=0 len=64 aa 15 08 88 01 00 01 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+  [161] ts=  185256.2 rid=0 len=64 aa 34 18 00 00 00 01 00 5a 01 5a 1a 0b 01 14 2c 09 00 00 00 00 00 00 00
+
+=== sendReport error 记录 ===
+  ts=52393.6 rid=0 len=None err=NotAllowedError: Failed to write the report.
+  ts=52395.0 rid=0 len=None err=NotAllowedError: Failed to write the report.
+  ts=52396.0 rid=0 len=None err=NotAllowedError: Failed to write the report.
+  ts=52397.1 rid=0 len=None err=NotAllowedError: Failed to write the report.
+
+=== 设备控制时间线 ===
+  ts=    1994.8 dir=hid phase=call method=getDevices rid=None dev= err=
+  ts=    1997.3 dir=hid phase=ok method=getDevices rid=None dev= err=
+  ts=    2141.5 dir=hid phase=call method=getDevices rid=None dev= err=
+  ts=    2146.0 dir=hid phase=ok method=getDevices rid=None dev= err=
+  ts=    4550.6 dir=hid phase=call method=requestDevice rid=None dev= err=
+  ts=    7350.4 dir=hid phase=ok method=requestDevice rid=None dev=[{"vendorId": 3141, "productId": 32839, "productName": "AJAZZ KEYBOARD", "opened": false, "usagePage": 12, "usage": 1, "collections": [{"usagePage": 12, "usage": 1, "type": 1, "chi err=
+  ts=    7352.3 dir=open phase=call method=open rid=None dev= err=
+  ts=    7383.2 dir=open phase=ok method=open rid=None dev= err=
+  ts=   35570.3 dir=close phase=call method=close rid=None dev= err=
+  ts=   35570.7 dir=close phase=ok method=close rid=None dev= err=
+  ts=   36543.6 dir=open phase=call method=open rid=None dev= err=
+  ts=   36544.9 dir=open phase=ok method=open rid=None dev= err=
+  ts=   41822.5 dir=close phase=call method=close rid=None dev= err=
+  ts=   41822.7 dir=close phase=ok method=close rid=None dev= err=
+  ts=   42434.5 dir=hid phase=call method=requestDevice rid=None dev= err=
+  ts=   44978.4 dir=hid phase=ok method=requestDevice rid=None dev=[{"vendorId": 3141, "productId": 32839, "productName": "AJAZZ KEYBOARD", "opened": false, "usagePage": 12, "usage": 1, "collections": [{"usagePage": 12, "usage": 1, "type": 1, "chi err=
+  ts=   44978.9 dir=open phase=call method=open rid=None dev= err=
+  ts=   44983.8 dir=open phase=ok method=open rid=None dev= err=
+  ts=   52397.8 dir=close phase=call method=close rid=None dev= err=
+  ts=   52398.0 dir=close phase=ok method=close rid=None dev= err=
+  ts=   52398.4 dir=forget phase=call method=forget rid=None dev= err=
+  ts=   52401.1 dir=forget phase=ok method=forget rid=None dev= err=
+  ts=   61324.0 dir=hid phase=call method=requestDevice rid=None dev= err=
+  ts=   63495.9 dir=hid phase=ok method=requestDevice rid=None dev= err=
+  ts=   63809.8 dir=hid phase=call method=requestDevice rid=None dev= err=
+  ts=   65930.8 dir=hid phase=ok method=requestDevice rid=None dev= err=
+  ts=   66624.2 dir=hid phase=call method=requestDevice rid=None dev= err=
+  ts=   67997.5 dir=hid phase=ok method=requestDevice rid=None dev= err=
+  ts=   69093.6 dir=hid phase=call method=requestDevice rid=None dev= err=
+  ts=   71698.2 dir=hid phase=ok method=requestDevice rid=None dev= err=
+  ts=   82202.6 dir=hid phase=call method=requestDevice rid=None dev= err=
+  ts=   84038.3 dir=hid phase=ok method=requestDevice rid=None dev=[{"vendorId": 3141, "productId": 32839, "productName": "AJAZZ KEYBOARD", "opened": false, "usagePage": 65384, "usage": 97, "collections": [{"usagePage": 65384, "usage": 97, "type": err=
+  ts=   84038.6 dir=open phase=call method=open rid=None dev= err=
+  ts=   84046.7 dir=open phase=ok method=open rid=None dev= err=
+  ts=  139801.9 dir=hid phase=call method=getDevices rid=None dev= err=
+  ts=  139803.7 dir=hid phase=ok method=getDevices rid=None dev=[{"vendorId": 3141, "productId": 32839, "productName": "AJAZZ KEYBOARD", "opened": true, "usagePage": 65384, "usage": 97, "collections": [{"usagePage": 65384, "usage": 97, "type":  err=
+  ts=  139804.0 dir=open phase=call method=open rid=None dev= err=
+  ts=  139805.6 dir=open phase=ok method=open rid=None dev= err=
+  ts=  141331.7 dir=event phase=call method=disconnect rid=None dev= err=
+  ts=  141339.5 dir=event phase=call method=disconnect rid=None dev= err=
+  ts=  141343.5 dir=event phase=call method=disconnect rid=None dev= err=
+  ts=  144192.3 dir=hid phase=call method=requestDevice rid=None dev= err=
+  ts=  146606.2 dir=hid phase=ok method=requestDevice rid=None dev=[{"vendorId": 3141, "productId": 32839, "productName": "AJAZZ KEYBOARD", "opened": false, "usagePage": 65384, "usage": 97, "collections": [{"usagePage": 65384, "usage": 97, "type": err=
+  ts=  146606.6 dir=open phase=call method=open rid=None dev= err=
+  ts=  146615.4 dir=open phase=ok method=open rid=None dev= err=
+  ts=  151750.0 dir=hid phase=call method=getDevices rid=None dev= err=
+  ts=  151753.6 dir=hid phase=ok method=getDevices rid=None dev=[{"vendorId": 3141, "productId": 32839, "productName": "AJAZZ KEYBOARD", "opened": true, "usagePage": 65384, "usage": 97, "collections": [{"usagePage": 65384, "usage": 97, "type":  err=
+  ts=  151753.9 dir=open phase=call method=open rid=None dev= err=
+  ts=  151754.5 dir=open phase=ok method=open rid=None dev= err=
+  ts=  158131.2 dir=event phase=call method=disconnect rid=None dev= err=
+  ts=  158152.1 dir=event phase=call method=disconnect rid=None dev= err=
+  ts=  158152.8 dir=event phase=call method=disconnect rid=None dev= err=
+  ts=  183080.7 dir=hid phase=call method=requestDevice rid=None dev= err=
+  ts=  184903.4 dir=hid phase=ok method=requestDevice rid=None dev=[{"vendorId": 3141, "productId": 32839, "productName": "AJAZZ KEYBOARD", "opened": false, "usagePage": 65383, "usage": 97, "collections": [{"usagePage": 65383, "usage": 97, "type": err=
+  ts=  184903.8 dir=open phase=call method=open rid=None dev= err=
+  ts=  184913.3 dir=open phase=ok method=open rid=None dev= err=
+  ts=  189497.1 dir=hid phase=call method=getDevices rid=None dev= err=
+  ts=  189499.7 dir=hid phase=ok method=getDevices rid=None dev=[{"vendorId": 3141, "productId": 32839, "productName": "AJAZZ KEYBOARD", "opened": false, "usagePage": 65383, "usage": 97, "collections": [{"usagePage": 65383, "usage": 97, "type": err=
+  ts=  189499.8 dir=open phase=call method=open rid=None dev= err=
+  ts=  189502.1 dir=open phase=ok method=open rid=None dev= err=
