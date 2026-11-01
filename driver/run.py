@@ -22,6 +22,10 @@ if HERE not in sys.path:
 
 import uvicorn  # noqa: E402
 
+from mk87lib import logsetup  # noqa: E402
+
+logsetup.setup_logging(console=True, role="run")
+
 from server.app import app  # noqa: E402
 
 

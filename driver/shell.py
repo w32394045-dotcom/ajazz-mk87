@@ -328,10 +328,13 @@ def setup_logging() -> None:
         sys.stdout = open(os.devnull, "w", encoding="utf-8")
     if sys.stderr is None:
         sys.stderr = open(os.devnull, "w", encoding="utf-8")
-    logging.basicConfig(
-        level=logging.INFO,
-        format="%(asctime)s %(levelname)s %(name)s: %(message)s",
-        handlers=[logging.FileHandler(LOG_PATH, encoding="utf-8")],
+    # 完整日志（滚动 mk87.log + 本次运行 session-*.log + errors.log），
+    # 设置页可一键导出诊断包。同时把启动/退出等外壳日志写到同一套日志里。
+    from mk87lib import logsetup
+
+    logsetup.setup_logging(console=False, role="shell")
+    logging.getLogger("mk87.shell").info(
+        "外壳启动（tray=%s）; 日志目录=%s", "--tray" in sys.argv, logsetup.log_dir()
     )
 
 

@@ -342,12 +342,117 @@ export default {
       ),
     );
 
+    /* ---------------- 日志与诊断 ---------------- */
+    const logBadge = badge('读取中…', '');
+    const logDirEl = h('div', { class: 'tiny muted mono', style: { wordBreak: 'break-all' } }, '—');
+    const logSessionEl = h('div', { class: 'tiny muted mono', style: { wordBreak: 'break-all' } }, '—');
+    const logFilesEl = h('div', { class: 'stack', style: { gap: '2px', marginTop: '8px' } });
+    const logExportsEl = h('div', { class: 'stack', style: { gap: '2px', marginTop: '8px' } });
+    const exportLogBtn = h('button', {
+      class: 'btn primary sm', html: `${icon('download', { size: 14 })}<span>导出日志</span>`,
+    });
+    const openLogBtn = h('button', {
+      class: 'btn sm', html: `${icon('archive', { size: 14 })}<span>打开日志目录</span>`,
+    });
+    const refreshLogBtn = h('button', {
+      class: 'btn sm ghost', html: `${icon('refresh', { size: 14 })}<span>刷新</span>`,
+    });
+    function fmtKB(n) { return `${(Number(n || 0) / 1024).toFixed(1)} KB`; }
+    function fmtTime(s) { return String(s || '').replace('T', ' '); }
+
+    async function loadLogs() {
+      try {
+        const st = await api.get('/api/logs');
+        logBadge.className = 'badge ok';
+        logBadge.textContent = st.installed ? '记录中' : '未初始化';
+        logDirEl.textContent = st.dir || '—';
+        const cur = (st.files || []).find((f) => f.current);
+        logSessionEl.textContent = cur ? `${cur.name} · ${fmtKB(cur.size)}` : '—';
+        logFilesEl.innerHTML = '';
+        const files = (st.files || []).slice(-6).reverse();
+        if (!files.length) logFilesEl.append(h('div', { class: 'tiny muted' }, '暂无日志文件'));
+        for (const f of files) {
+          logFilesEl.append(h('div', { class: 'row between tiny' },
+            h('span', { class: 'mono', style: { wordBreak: 'break-all' } }, f.name),
+            h('span', { class: 'muted mono' }, `${fmtKB(f.size)} · ${fmtTime(f.modified)}`),
+          ));
+        }
+        logExportsEl.innerHTML = '';
+        const exps = (st.exports || []).slice(-4).reverse();
+        if (!exps.length) {
+          logExportsEl.append(h('div', { class: 'tiny muted' }, '还没有导出过诊断包'));
+        } else {
+          for (const e of exps) {
+            logExportsEl.append(h('div', { class: 'row between tiny' },
+              h('a', { class: 'mono', href: `/api/logs/download?name=${encodeURIComponent(e.name)}`, style: { wordBreak: 'break-all' } }, e.name),
+              h('span', { class: 'muted mono' }, fmtKB(e.size)),
+            ));
+          }
+        }
+      } catch (err) {
+        logBadge.className = 'badge danger';
+        logBadge.textContent = '不可用';
+        logDirEl.textContent = String(err.message || err);
+      }
+    }
+    exportLogBtn.addEventListener('click', async () => {
+      exportLogBtn.disabled = true;
+      try {
+        const res = await api.post('/api/logs/export', {
+          context: '设置页手动导出',
+        });
+        if (!res || !res.ok) throw new Error(res?.message || '导出失败');
+        ctx.toastSuccess(`日志已导出：${res.name}（${fmtKB(res.size)}）`);
+        window.open(res.downloadUrl || `/api/logs/download?name=${encodeURIComponent(res.name)}`, '_blank');
+        await loadLogs();
+      } catch (err) {
+        ctx.toastError(`导出失败：${err.message || err}`);
+      } finally {
+        exportLogBtn.disabled = false;
+      }
+    });
+    openLogBtn.addEventListener('click', async () => {
+      try {
+        const res = await api.post('/api/logs/open', {});
+        if (!res?.ok) ctx.toastWarn('当前环境无法自动打开文件管理器，可复制上方日志目录路径');
+      } catch (err) {
+        ctx.toastError(err.message || String(err));
+      }
+    });
+    refreshLogBtn.addEventListener('click', () => loadLogs());
+
+    const logsCard = h('section', { class: 'card' },
+      h('div', { class: 'card-head' },
+        h('div', {}, h('div', { class: 'card-title' }, '日志与诊断'),
+          h('div', { class: 'card-desc' }, '完整记录运行/设备/API/TFT 通信；出问题一键导出诊断包发给开发者')),
+        h('div', { class: 'spacer' }),
+        logBadge,
+      ),
+      h('div', { class: 'card-body' },
+        kvList([
+          ['日志目录', logDirEl],
+          ['当前会话', logSessionEl],
+        ]),
+        h('div', { class: 'tiny muted', style: { marginTop: '10px', lineHeight: '1.8' } },
+          h('p', {}, '日志级别 DEBUG：mk87.log（滚动总日志）· session-*.log（本次运行完整日志）· errors.log（仅错误）。导出包含系统信息与设备状态快照，不含键盘输入内容。'),
+        ),
+        h('div', { class: 'row mt-12', style: { gap: '8px', flexWrap: 'wrap' } },
+          exportLogBtn, openLogBtn, refreshLogBtn),
+        h('div', { class: 'section-title', style: { marginTop: '16px' } }, h('h2', {}, '日志文件')),
+        logFilesEl,
+        h('div', { class: 'section-title', style: { marginTop: '14px' } }, h('h2', {}, '最近导出')),
+        logExportsEl,
+      ),
+    );
+
     /* ---------------- 布局 ---------------- */
     root.append(prefCard);
     root.append(h('div', { class: 'grid grid-2 mt-16' }, autostartCard, mockCard));
+    root.append(h('div', { class: 'mt-16' }, logsCard));
     root.append(h('div', { class: 'mt-16' }, aboutCard));
     updateQuitVisibility();
     ctx.onStatus?.(() => updateQuitVisibility());
     loadAutostart();
+    loadLogs();
   },
 };

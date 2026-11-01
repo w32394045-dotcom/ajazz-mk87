@@ -6,6 +6,23 @@
    4) 新增页面文案时，把中文原文加进 EN_TEXT 即可，无需改页面代码。
    注意：键必须与渲染后的中文完全一致（包括空格与标点）。 */
 export const EN_TEXT = {
+  "日志与诊断": "Logs & Diagnostics",
+  "完整记录运行/设备/API/TFT 通信；出问题一键导出诊断包发给开发者": "Full runtime/device/API/TFT logs; export a diagnostics bundle in one click",
+  "日志目录": "Log directory",
+  "当前会话": "Current session",
+  "导出日志": "Export logs",
+  "打开日志目录": "Open log folder",
+  "日志文件": "Log files",
+  "最近导出": "Recent exports",
+  "暂无日志文件": "No log files yet",
+  "还没有导出过诊断包": "No diagnostics bundle exported yet",
+  "记录中": "Recording",
+  "未初始化": "Not initialized",
+  "不可用": "Unavailable",
+  "导出失败": "Export failed",
+  "日志已导出": "Logs exported",
+  "当前环境无法自动打开文件管理器，可复制上方日志目录路径": "Cannot open the file manager here; copy the log directory path above",
+  "完整记录运行/设备/API/TFT 通信；出问题一键导出诊断包发给开发者": "Full runtime/device/API/TFT logs; export a diagnostics bundle in one click",
   "关闭": "Close",
   "取消": "Cancel",
   "确定": "OK",

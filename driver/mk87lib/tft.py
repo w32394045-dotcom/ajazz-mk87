@@ -14,6 +14,7 @@ from __future__ import annotations
 import base64
 import io
 import json
+import logging
 import math
 import os
 import sys
@@ -24,6 +25,8 @@ import numpy as np
 
 from . import const
 from .errors import MK87Error, UnsupportedFeature
+
+log = logging.getLogger("mk87.tft")
 
 DATA_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "data")
 
@@ -282,8 +285,11 @@ def _upload(device, cmd: int, data: bytes, header_tail: bytes,
                 if got:
                     ack_times.append(round((time.time() - tw) * 1000, 1))
                     acks += 1
+                    log.debug("TFT 包 %d/%d ACK %.1fms (%.1fKB 数据已发)",
+                              k + 1, total, ack_times[-1], len(part) / 1024.0)
                     break
                 retried += 1
+                log.warning("TFT 包 %d/%d 无 ACK，第 %d 次重发", k + 1, total, attempt + 1)
                 if attempt < retries:
                     time.sleep(0.2)  # 与探针一致：重发前等 200ms
             if not got:
@@ -299,6 +305,8 @@ def _upload(device, cmd: int, data: bytes, header_tail: bytes,
         except Exception:
             pass
     dt = time.time() - t0
+    log.info("TFT 上传完成 cmd=0x%02X: %d 包 / %d 字节 / %.1fs / %.1fKB/s / ACK %d / 重试 %d",
+             raw_cmd, total, len(data), dt, (len(data) / dt / 1024) if dt else 0, acks, retried)
     return {
         "ok": True,
         "packets": total,
@@ -338,6 +346,8 @@ def upload_animation(device, delays: List[int], rgb565_data: bytes,
     if len(rgb565_data) != frame_count * FRAME_BYTES:
         raise MK87Error("动画数据长度必须是整帧")
     blob = build_animation_blob(delays, rgb565_data)
+    log.info("TFT 动画上传: %d 帧, 延时表(cs)=%s…, 载荷 %d 字节",
+             frame_count, delays[:8], len(blob))
     res = _upload(device, const.CMD["SET_TFT_USER_ANIMATION"], blob, bytes([80, 6]),
                   progress=progress, cancel_check=cancel_check)
     res["frames"] = frame_count

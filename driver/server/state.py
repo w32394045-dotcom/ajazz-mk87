@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import asyncio
 import json
+import logging
 import os
 import platform
 import threading
@@ -13,6 +14,8 @@ from mk87lib import backup, keymap, lighting, macro, music, tft, wireless
 from mk87lib import keyscan as keyscan_mod
 from mk87lib.device import MK87Device
 from mk87lib.errors import DeviceNotFound, MK87Error, UnsupportedFeature
+
+log = logging.getLogger("mk87.state")
 
 
 # ----------------------------------------------------------------------
@@ -135,12 +138,16 @@ class TftJob:
         })
 
     def _run(self, runner) -> None:
+        log.info("TFT 任务开始 kind=%s frames=%s", self.kind, self.frames)
         try:
             res = runner(self._progress, self._cancel.is_set)
             with self.lock:
                 self.phase = "done"
                 self.pct = 100
                 self.elapsed = time.time() - self.started_at
+            log.info("TFT 任务完成 kind=%s frames=%s 用时 %.1fs result=%s",
+                     self.kind, self.frames, self.elapsed, {k: res.get(k) for k in
+                     ("packets", "bytes", "seconds", "acks", "frames") if k in res})
             self.manager.emit({"type": "job", "data": {"job": "tft", "state": "done", "result": res}})
         except Exception as exc:  # noqa: BLE001
             cancelled = self._cancel.is_set()
@@ -148,6 +155,11 @@ class TftJob:
                 self.phase = "cancelled" if cancelled else "error"
                 self.error = "" if cancelled else str(exc)
                 self.elapsed = time.time() - self.started_at
+            if cancelled:
+                log.info("TFT 任务取消 kind=%s frames=%s", self.kind, self.frames)
+            else:
+                log.error("TFT 任务失败 kind=%s frames=%s: %s", self.kind, self.frames, exc,
+                          exc_info=True)
             self.manager.emit({
                 "type": "job",
                 "data": {"job": "tft", "state": "cancelled" if cancelled else "error",
@@ -255,6 +267,7 @@ class DeviceManager:
             time.sleep(0.25)
 
     def stop(self) -> None:
+        log.info("设备管理停止")
         self._stop.set()
         try:
             self.music.stop()
@@ -284,22 +297,29 @@ class DeviceManager:
         with self.lock:
             try:
                 status = self.device.connect()
+                log.info("设备已连接: %s %s fw=%s transport=%s vid=0x%04X pid=0x%04X",
+                         status.product, status.manufacturer, status.firmware,
+                         status.transport, status.vid, status.pid)
                 self._was_connected = True
                 self._last_battery = status.battery
                 # 与官方一致：每次连接自动对时一次（MK87 屏幕时间）
                 try:
                     self.device.sync_time()
-                except Exception:
-                    pass
+                except Exception as exc:  # noqa: BLE001
+                    log.debug("连接后屏幕对时失败: %s", exc)
                 self.emit({"type": "status", "data": self.status()})
                 return True
             except Exception as exc:  # noqa: BLE001
                 if not quiet:
+                    log.error("设备连接失败: %s", exc, exc_info=True)
                     raise
                 if self._was_connected:
                     self._was_connected = False
+                    log.warning("设备已断开: %s", exc)
                     self.emit({"type": "toast",
                                "data": {"level": "warn", "message": f"设备已断开：{exc}"}})
+                else:
+                    log.debug("扫描未发现设备: %s", exc)
                 return False
 
     def _refresh_battery(self) -> None:

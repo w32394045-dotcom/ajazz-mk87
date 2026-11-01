@@ -16,11 +16,15 @@
 """
 from __future__ import annotations
 
+import logging
 import time
 from typing import List, Optional
 
+from . import logsetup
 from .errors import ProtocolTimeout
 from .transport import HidInterface, normalize_report
+
+log = logging.getLogger("mk87.protocol")
 
 
 class Protocol:
@@ -129,6 +133,7 @@ class Protocol:
         self, pkt: bytes, cmd: int, timeout: float, retries: int, expect_addr: Optional[int]
     ) -> Optional[bytes]:
         for _attempt in range(retries + 1):
+            log.debug("HID TX cmd=0x%02X len=%d %s", cmd, len(pkt), logsetup.redact(pkt, 96))
             self.iface.write_report(pkt)
             deadline = time.time() + timeout
             while time.time() < deadline:
@@ -136,16 +141,24 @@ class Protocol:
                 if r is None:
                     break
                 if len(r) < 9 or r[0] != 0x55:
+                    log.debug("HID RX 非协议帧 len=%d %s", len(r), logsetup.redact(r, 96))
                     continue
                 if r[1] != (cmd & 0xFF):
+                    log.debug("HID RX 其它命令 cmd=0x%02X len=%d", r[1], len(r))
                     continue
                 if expect_addr is not None:
                     addr = r[3] | (r[4] << 8)
                     if addr != expect_addr:
+                        log.debug("HID RX 地址不匹配 got=%d want=%d", addr, expect_addr)
                         continue
+                log.debug("HID RX cmd=0x%02X len=%d", cmd, len(r))
                 return r
+        log.warning("HID 超时 cmd=0x%02X timeout=%.3fs retries=%d", cmd, timeout, retries)
         return None
 
     def read_event(self, timeout: float = 0.05) -> Optional[bytes]:
         """读取一条非请求响应（通知帧 / 异步 ACK），原样返回 payload。"""
-        return self.iface.read_normalized(timeout)
+        r = self.iface.read_normalized(timeout)
+        if r is not None:
+            log.debug("HID 通知帧 len=%d %s", len(r), logsetup.redact(r, 96))
+        return r

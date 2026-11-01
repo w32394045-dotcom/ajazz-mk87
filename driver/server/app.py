@@ -9,6 +9,7 @@ from __future__ import annotations
 import asyncio
 import base64
 import binascii
+import logging
 import os
 import threading
 import time
@@ -21,7 +22,7 @@ from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 
 from mk87lib import backup as backup_mod
-from mk87lib import keymap, lighting, macro, music, tft, wireless
+from mk87lib import keymap, lighting, logsetup, macro, music, tft, wireless
 from mk87lib import const
 from mk87lib.errors import (
     DeviceDisconnected,
@@ -36,15 +37,19 @@ WEB_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__)
 VERSION = "0.1.0"
 
 manager = state.manager
+log = logging.getLogger("mk87.http")
 
 
 @asynccontextmanager
 async def _lifespan(_app: FastAPI):
+    info = logsetup.ensure_logging(console=False)
+    log.info("服务启动 v%s; 日志目录=%s", VERSION, info.get("dir"))
     manager.attach_loop(asyncio.get_running_loop())
     manager.start()
     try:
         yield
     finally:
+        log.info("服务关闭")
         manager.stop()
 
 
@@ -61,6 +66,29 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+@app.middleware("http")
+async def _log_http(request: Request, call_next):
+    """完整记录每个 API 调用（成功 DEBUG、写操作 INFO、失败 WARNING/ERROR）。"""
+    t0 = time.perf_counter()
+    try:
+        resp = await call_next(request)
+    except Exception:
+        log.exception("HTTP %s %s 处理异常", request.method, request.url.path)
+        raise
+    dt = (time.perf_counter() - t0) * 1000.0
+    path = request.url.path
+    if resp.status_code >= 500:
+        level = logging.ERROR
+    elif resp.status_code >= 400:
+        level = logging.WARNING
+    elif request.method == "GET":
+        level = logging.DEBUG
+    else:
+        level = logging.INFO
+    log.log(level, "%s %s -> %d (%.1f ms)", request.method, path, resp.status_code, dt)
+    return resp
 
 
 # ----------------------------------------------------------------------
@@ -157,6 +185,40 @@ def api_autostart_set(payload: dict = Body(...)):
 @app.get("/api/status")
 def api_status():
     return manager.status()
+
+
+# ----------------------------------------------------------------------
+# 日志 / 诊断包
+# ----------------------------------------------------------------------
+@app.get("/api/logs")
+def api_logs():
+    """日志状态：目录、当前会话文件、各文件大小、最近导出包。"""
+    return logsetup.logging_status()
+
+
+@app.post("/api/logs/export")
+def api_logs_export(payload: dict = Body(default={})):
+    """把完整日志 + 系统/设备信息打包成 zip，返回下载地址。"""
+    extra = {
+        "note": payload.get("note") or "",
+        "context": payload.get("context") or "",
+        "status": manager.status(),
+    }
+    return logsetup.export_logs(extra=extra)
+
+
+@app.get("/api/logs/download")
+def api_logs_download(name: str):
+    p = logsetup.find_export(name)
+    if not p:
+        raise HTTPException(status_code=404, detail="日志包不存在或已过期")
+    return FileResponse(p, filename=os.path.basename(p), media_type="application/zip")
+
+
+@app.post("/api/logs/open")
+def api_logs_open():
+    """在文件管理器里打开日志目录。"""
+    return {"ok": logsetup.open_log_dir(), "dir": logsetup.log_dir()}
 
 
 @app.post("/api/device/scan")
@@ -696,7 +758,9 @@ def api_settings_set(payload: dict = Body(...)):
 @app.websocket("/ws")
 async def ws_endpoint(websocket: WebSocket):
     await websocket.accept()
+    client = f"{websocket.client.host}:{websocket.client.port}" if websocket.client else "?"
     q = manager.subscribe()
+    log.info("WS 连接建立 client=%s", client)
     try:
         await websocket.send_json({"type": "status", "data": manager.status()})
         while True:
@@ -706,9 +770,9 @@ async def ws_endpoint(websocket: WebSocket):
             except asyncio.TimeoutError:
                 await websocket.send_json({"type": "ping", "ts": time.time()})
     except WebSocketDisconnect:
-        pass
+        log.info("WS 连接断开 client=%s", client)
     except Exception:
-        pass
+        log.exception("WS 连接异常 client=%s", client)
     finally:
         manager.unsubscribe(q)
 

@@ -19,6 +19,7 @@
 """
 from __future__ import annotations
 
+import logging
 import math
 import platform
 import subprocess
@@ -30,6 +31,8 @@ import numpy as np
 
 from . import keymap, lighting
 from .errors import MK87Error
+
+log = logging.getLogger("mk87.music")
 
 RGB = Tuple[int, int, int]
 
@@ -825,6 +828,8 @@ class MusicPlayer:
         self.timing = {"read": 0.0, "analyze": 0.0, "send": 0.0, "frames": 0}
         self._thread = threading.Thread(target=self._loop, name="mk87-music", daemon=True)
         self._thread.start()
+        log.info("音乐律动启动: mode=%s amplitude=%s fps=%s device=%s",
+                 self.mode, self.amplitude_ui, self.fps, device_id or "默认输出")
         # 等音频引擎真正打开再返回：失败要立刻报错，不能"假装成功"
         if not self._ready.wait(timeout=5.0):
             self._stop.set()
@@ -891,11 +896,17 @@ class MusicPlayer:
                     tm["frames"] += 1
                     self.last_payload = payload
                     self.frames += 1
+                    if self.frames % 200 == 0:
+                        n = max(1, self.timing.get("frames", 1))
+                        log.debug("音乐帧流: %d 帧, 平均 send=%.1fms analyze=%.1fms, amp=%.2f",
+                                  self.frames, self.timing["send"] / n * 1000,
+                                  self.timing["analyze"] / n * 1000, self.level)
                 except MK87Error:
                     raise
                 except Exception as exc:  # noqa: BLE001
                     self.errors += 1
                     self.last_error = str(exc)
+                    log.warning("音乐帧发送异常 #%d: %s", self.errors, exc)
                     if self.errors > 50:
                         break
                 next_t += period
@@ -923,6 +934,8 @@ class MusicPlayer:
                 self._snapshot = None
 
     def stop(self) -> dict:
+        if self.running:
+            log.info("音乐律动停止: 共 %d 帧, %d 错误", self.frames, self.errors)
         self._stop.set()
         if self._thread is not None:
             self._thread.join(timeout=2.0)
