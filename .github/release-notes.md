@@ -11,13 +11,18 @@ Screenshots and the full feature list live in the repository README:
 **[README.md (English)](https://github.com/w32394045-dotcom/ajazz-mk87/blob/main/README.md)** ·
 **[README.zh-CN.md (简体中文)](https://github.com/w32394045-dotcom/ajazz-mk87/blob/main/README.zh-CN.md)**
 
-## What's new in v0.1.1
+## What's new in v0.1.2
 
-- **Music rhythm** page keyboard preview now has two tabs — **Current** (the local spectrum animation) and
-  **Official** (replays the exact per-key frames the backend sends to the keyboard, frame-accurate).
-- Fixed the English UI: `<html lang>` was not set on first paint, so dynamic mode names stayed in Chinese.
-- Added offline regression tests for the music preview and a headless-Chrome UI self-check script.
-- Docs: WebSocket `music_frame` contract and music page notes updated.
+- **Music rhythm · Official scheme**: the music page now has two schemes. **Official** (default) uses the exact
+  same settings as the official v1 plugin — 12 display modes, 11 background modes, background brightness and
+  amplitude — and renders the keyboard with the official renderer code.
+- **Hot switching**: switch schemes, display/background modes or move the sliders while music is playing —
+  no stop/restart needed (`POST /api/music/update` applies all changes live).
+- **11 of the 12 official renderers are now direct ports** of the official code (modes 1, 4, 13–22), including
+  the built-in dual-heart coordinate tables for mode 22. Mode 100 (screen-light linkage) is computed by the
+  official Music.exe, so it falls back to Dance to the Beat.
+- Bilingual README (English default + Simplified Chinese) with embedded screenshots; MIT license.
+- English UI fix: `<html lang>` was not set on first paint, so dynamic mode names stayed Chinese.
 
 ## Download
 

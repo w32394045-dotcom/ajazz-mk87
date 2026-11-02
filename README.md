@@ -8,7 +8,7 @@
 - **Device**: USB `VID 0x0C45 / PID 0x8047`; 2.4G receiver `VID 0x0C45 / PID 0xFEFE`
 - **Official web driver** (reverse-engineered): `https://ajazz.driveall.cn`
 - **Everything local**: no network access, no telemetry, no vendor driver required
-- **Latest release**: [v0.1.1](https://github.com/w32394045-dotcom/ajazz-mk87/releases/latest)
+- **Latest release**: [v0.1.2](https://github.com/w32394045-dotcom/ajazz-mk87/releases/latest)
 
 ## Screenshots
 
@@ -40,12 +40,17 @@
 Linux packages ship the udev rules (root-free HID access); replug the keyboard after install.
 Releases are built by GitHub Actions and come with a `SHA256SUMS.txt`.
 
-## What's new in v0.1.1
+## What's new in v0.1.2
 
-- **Music rhythm** keyboard preview now has two tabs — **Current** (local spectrum animation) and **Official**
-  (replays the exact per-key frames the backend sends to the keyboard, frame-accurate).
-- Fixed the English UI: `<html lang>` was not set on first paint, so dynamic mode names stayed Chinese.
-- Added offline regression tests for the music preview and a headless-Chrome UI self-check script.
+- **Music rhythm · Official scheme** — the music page now has two schemes. **Official** (default) uses the exact
+  settings of the official v1 plugin (12 display modes, 11 background modes, background brightness, amplitude)
+  and renders with the official renderer code; **Current** keeps this tool's own parameters and local preview.
+- **Hot switching** — switch scheme, display/background mode or move the sliders while music is playing; no
+  stop/restart needed.
+- **11 of the 12 official renderers are now direct ports** (modes 1, 4, 13–22), including the built-in
+  dual-heart coordinate tables for mode 22. Mode 100 (screen-light linkage) is computed by the official
+  Music.exe and falls back to Dance to the Beat.
+- Bilingual README with embedded screenshots; MIT license; English UI `<html lang>` fix.
 
 ## Features
 
