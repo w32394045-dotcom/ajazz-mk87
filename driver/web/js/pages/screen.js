@@ -360,7 +360,7 @@ export default {
         ['源帧数（截取后）', sourceLabel, ''],
         ['输出帧数', r.framesCount ?? '—', '帧'],
         ['压缩比', stats.frameReduction !== undefined ? `${Math.round(stats.frameReduction * 100)}` : '—', '%'],
-        ['输出大小', fmtBytes(stats.outputBytes ?? r.framesCount * FRAME_BYTES), ''],
+        ['压缩后大小（实际上传）', fmtBytes(stats.outputBytes ?? r.framesCount * FRAME_BYTES), ''],
         ['预计上传', fmtSeconds(stats.estimatedSeconds ?? (stats.packets || 0) * secPerPacket), ''],
         ['上传包数', stats.packets ?? '—', '包'],
       ];
@@ -452,7 +452,15 @@ export default {
     /* ---------------- 选文件 ---------------- */
     async function chooseFile(file) {
       if (!file) return;
-      if (file.size > 30 * 1024 * 1024) { ctx.toastError('文件超过 30 MB，请先压缩'); return; }
+      // 源文件大小不是设备限制：上传到键盘的永远只有压缩后的 240×135 × ≤140 帧（≈9.07MB）。
+      // 这里只保留「网页接口传输」的现实上限；真正的大小/耗时检查放在点击上传时（压缩后）。
+      if (file.size > 200 * 1024 * 1024) {
+        ctx.toastError('文件超过 200 MB，网页接口无法传输；请先缩小/裁剪源文件（设备只接收压缩后的 ≤140 帧）');
+        return;
+      }
+      if (file.size > 30 * 1024 * 1024) {
+        ctx.toast('源文件较大，将自动压缩到 240×135（最终上传大小只取决于压缩后的帧数）', { timeout: 3600 });
+      }
       const dataUrl = await readFileAsDataURL(file);
       state.file = { name: file.name, size: file.size, type: file.type, data: dataUrl.split(',')[1] };
       state.result = null;
@@ -514,6 +522,20 @@ export default {
       if (!state.file) { ctx.toastWarn('请先选择素材'); return; }
       if (!state.result) { ctx.toastWarn('请等待转换完成'); return; }
       if (!tftSupported) { ctx.toastError('当前连接不支持 TFT 上传（2.4G 无线），请使用 USB 有线连接'); return; }
+      // 上传前按「压缩后」的实际载荷检查：帧数、字节数、预计耗时（源文件多大都无所谓）
+      const stats = state.result.stats || {};
+      const frames = Number(state.result.framesCount || 0);
+      const outBytes = Number(stats.outputBytes || frames * FRAME_BYTES);
+      const estSec = Number(stats.estimatedSeconds || (stats.packets || 0) * secPerPacket);
+      if (estSec > 90) {
+        const ok = await ctx.confirmDialog({
+          title: '上传耗时较长',
+          message: `压缩后：${frames} 帧 · ${fmtBytes(outBytes)} · 预计 ${fmtSeconds(estSec)}（约 ${Math.ceil(estSec / 60)} 分钟）。`,
+          extra: '上传期间键盘被独占（后台电量轮询已暂停），请勿关闭页面；可随时点「取消上传」。',
+          confirmText: '开始上传',
+        });
+        if (!ok) return;
+      }
       setUploading(true);
       state.uploadStartedAt = Date.now();
       uploadProgress.reset('提交压缩上传任务…');
@@ -723,7 +745,7 @@ export default {
           },
         }),
       ),
-      h('div', { class: 'card-body' }, resultStats, h('div', { class: 'tiny muted mt-12' }, 'stats 来自后端 /api/tft/convert（estimatedSeconds 按实测 ≈146ms/包估算，实际进度以 WS 为准）。')),
+      h('div', { class: 'card-body' }, resultStats, h('div', { class: 'tiny muted mt-12' }, 'stats 来自后端 /api/tft/convert（estimatedSeconds 按实测 ≈146ms/包估算）。点击上传时会按压缩后的帧数/大小/耗时再做一次检查；源文件大小不是限制。')),
     );
 
     const uploadCard = h('section', { class: 'card' },

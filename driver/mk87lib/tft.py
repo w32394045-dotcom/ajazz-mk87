@@ -430,7 +430,15 @@ TEMPORAL_MODES = ("uniform", "adaptive")
 RESAMPLE_MODES = ("lanczos", "bicubic", "bilinear", "area")
 #: 端到端上传速度实测估算（秒/包，见 spec-tft-wireless.md §1）
 SECONDS_PER_PACKET = 0.146
-MAX_INPUT_BYTES = 48 * 1024 * 1024
+
+#: 源文件「传输」上限（不是设备限制！）：经浏览器 base64 + HTTP JSON 传进来的字节数上限。
+#: 设备真正能接收的永远只有压缩后的 240×135×≤140 帧（约 9.07MB），与源文件大小无关。
+MAX_TRANSPORT_BYTES = 200 * 1024 * 1024
+
+#: 解码安全预算（防内存爆/解压炸弹；真正限制内存的是像素数，不是文件字节数）
+MAX_FRAME_PIXELS = 64_000_000       # 单帧像素上限（约 8000×8000）
+MAX_TOTAL_PIXELS = 2_500_000_000    # 全部源帧解码总像素预算
+MAX_SOURCE_FRAMES = 5000            # 源动画帧数上限（超出请先裁剪区间）
 
 _RESAMPLE_MAP = {
     "lanczos": "LANCZOS",
@@ -517,14 +525,33 @@ def _load_source_frames(raw: bytes):
     except Exception as exc:  # noqa: BLE001
         raise MK87Error(f"无法解析图片/动画文件: {exc}") from exc
     frames = []
+    total_pixels = 0
     try:
         for frame in ImageSequence.Iterator(im):
+            px = int(frame.width) * int(frame.height)
+            if px > MAX_FRAME_PIXELS:
+                raise MK87Error(
+                    f"源图单帧尺寸过大（{frame.width}×{frame.height} = {px / 1e6:.0f} 百万像素）；"
+                    "请先缩小到 8000×8000 以内再上传"
+                )
+            total_pixels += px
+            if total_pixels > MAX_TOTAL_PIXELS:
+                raise MK87Error(
+                    f"源动画解码总像素超过预算（>{MAX_TOTAL_PIXELS / 1e9:.1f}G 像素）；"
+                    "请先裁剪帧区间或降低分辨率"
+                )
+            if len(frames) >= MAX_SOURCE_FRAMES:
+                raise MK87Error(
+                    f"源动画超过 {MAX_SOURCE_FRAMES} 帧；请先裁剪区间（设备上限 140 帧）"
+                )
             dur = frame.info.get("duration", 50)
             try:
                 dur = int(dur or 50)
             except Exception:
                 dur = 50
             frames.append((frame.convert("RGB"), max(10, dur)))
+    except MK87Error:
+        raise
     except Exception as exc:  # noqa: BLE001
         raise MK87Error(f"动画解码失败: {exc}") from exc
     if not frames:
@@ -651,8 +678,12 @@ def convert_animation(
     temporal:    uniform=等时抽帧；adaptive=动作优先抽帧（静止段少、运动段多）。
     preview:     是否返回每帧 PNG dataURL（前端预览用；上传时可关掉省内存）。
     """
-    if len(raw) > MAX_INPUT_BYTES:
-        raise MK87Error(f"文件过大（>{MAX_INPUT_BYTES // 1024 // 1024}MB）")
+    if len(raw) > MAX_TRANSPORT_BYTES:
+        raise MK87Error(
+            f"文件无法经网页接口传输（>{MAX_TRANSPORT_BYTES // 1024 // 1024}MB）；"
+            "上传到键盘的数据只取决于压缩后的帧数（≤140 帧 ≈ 9.07MB），"
+            "请先缩小/裁剪源文件再试"
+        )
     if fit not in FIT_MODES:
         raise MK87Error(f"fit 只支持 {FIT_MODES}")
     if temporal not in TEMPORAL_MODES:

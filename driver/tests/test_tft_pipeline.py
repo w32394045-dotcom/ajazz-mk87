@@ -129,5 +129,69 @@ class TestTftPipeline(unittest.TestCase):
                                   trim_end_frame=5, preview=False)
 
 
+class TestTftSourceLimits(unittest.TestCase):
+    """源文件限制只按「传输/解码预算」，不按源文件字节数——压缩后才是设备载荷。"""
+
+    def test_limits_are_pixel_based_not_bytes(self):
+        # 设备载荷上限 ≈ 9.07MB；源文件传输上限应远大于此（不按源文件大小拦设备上传）
+        self.assertGreaterEqual(tft.MAX_TRANSPORT_BYTES, 200 * 1024 * 1024)
+        self.assertGreater(tft.MAX_FRAME_PIXELS, 0)
+        self.assertGreater(tft.MAX_TOTAL_PIXELS, tft.MAX_FRAME_PIXELS)
+        self.assertGreaterEqual(tft.MAX_SOURCE_FRAMES, 1000)
+        self.assertFalse(hasattr(tft, "MAX_INPUT_BYTES"))
+
+    def test_frame_pixel_budget(self):
+        raw = make_gif(frames=3)
+        old = tft.MAX_FRAME_PIXELS
+        tft.MAX_FRAME_PIXELS = 10  # 任何一帧都超
+        try:
+            with self.assertRaises(Exception) as ctx:
+                tft.convert_animation(raw, max_frames=140, preview=False)
+            self.assertIn("单帧尺寸过大", str(ctx.exception))
+        finally:
+            tft.MAX_FRAME_PIXELS = old
+
+    def test_total_pixel_budget(self):
+        raw = make_gif(frames=4)
+        old = tft.MAX_TOTAL_PIXELS
+        tft.MAX_TOTAL_PIXELS = 1000  # 两帧就超
+        try:
+            with self.assertRaises(Exception) as ctx:
+                tft.convert_animation(raw, max_frames=140, preview=False)
+            self.assertIn("解码总像素", str(ctx.exception))
+        finally:
+            tft.MAX_TOTAL_PIXELS = old
+
+    def test_source_frame_budget(self):
+        raw = make_gif(frames=5)
+        old = tft.MAX_SOURCE_FRAMES
+        tft.MAX_SOURCE_FRAMES = 3
+        try:
+            with self.assertRaises(Exception) as ctx:
+                tft.convert_animation(raw, max_frames=140, preview=False)
+            self.assertIn("帧", str(ctx.exception))
+        finally:
+            tft.MAX_SOURCE_FRAMES = old
+
+    def test_transport_limit_is_generous(self):
+        raw = make_gif(frames=3)
+        old = tft.MAX_TRANSPORT_BYTES
+        tft.MAX_TRANSPORT_BYTES = 10
+        try:
+            with self.assertRaises(Exception) as ctx:
+                tft.convert_animation(raw, max_frames=140, preview=False)
+            self.assertIn("网页接口传输", str(ctx.exception))
+        finally:
+            tft.MAX_TRANSPORT_BYTES = old
+
+    def test_compressed_size_is_the_real_limit(self):
+        # 源 GIF 帧多，但压到上限内后载荷有确定大小（这才是"上传大小"）
+        raw = make_gif(frames=12)
+        res = tft.convert_animation(raw, max_frames=140, preview=False)
+        expected = 256 + res["framesCount"] * tft.FRAME_BYTES
+        self.assertEqual(res["stats"]["outputBytes"], expected)
+        self.assertLessEqual(res["framesCount"], 140)
+
+
 if __name__ == "__main__":
     unittest.main(verbosity=2)
