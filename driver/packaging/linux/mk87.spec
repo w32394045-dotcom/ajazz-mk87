@@ -4,7 +4,7 @@ Version:        %{?version_override}%{!?version_override:0.1.1}
 Release:        1%{?dist}
 Summary:        AJAZZ MK87 keyboard configuration tool (unofficial)
 
-License:        Freeware
+License:        MIT
 URL:            https://github.com/w32394045-dotcom/ajazz-mk87
 Source0:        %{name}-%{version}.tar.gz
 BuildArch:      x86_64

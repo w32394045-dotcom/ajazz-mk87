@@ -90,6 +90,16 @@ assets/    网驱 bundle 提取物（分析原料）
 driver/    跨平台配置工具（开发中）
 ```
 
+## 许可证 / License
+
+本项目代码采用 **MIT License**，见 [LICENSE](LICENSE)。
+
+> 注意：`assets/`、`tools/Music.exe` 等原厂网页驱动 / 工具提取物版权归原厂所有，仅作研究留存，**不在 MIT 授权范围内**。
+
+This project is released under the **MIT License** — see [LICENSE](LICENSE).
+Extracted vendor assets（`assets/`, `tools/Music.exe`, and official bundle snippets under `docs/`）remain
+copyright of their respective owners and are **not covered** by the MIT license.
+
 ## 免责声明
 
 本项目为非官方逆向工程，仅用于研究与个人使用。设备厂商固件/协议可能随版本变化；

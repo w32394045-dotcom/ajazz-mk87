@@ -158,6 +158,10 @@ python tests/smoke_device.py
 协议细节见 [`docs/spec-protocol.md`](docs/spec-protocol.md)、[`docs/spec-keymap.md`](docs/spec-keymap.md)、
 [`docs/spec-lighting.md`](docs/spec-lighting.md)、[`docs/spec-tft-wireless.md`](docs/spec-tft-wireless.md)。
 
+## 许可证
+
+MIT License（见仓库根目录 [LICENSE](../LICENSE)）。
+
 ## 免责声明
 
 非官方工具，仅供个人研究使用。写配置有风险（可能导致键位/灯效异常），请先备份；

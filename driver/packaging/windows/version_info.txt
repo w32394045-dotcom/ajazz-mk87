@@ -19,7 +19,7 @@ VSVersionInfo(
          StringStruct(u'FileDescription', u'AJAZZ MK87 键盘配置工具'),
          StringStruct(u'FileVersion', u'0.1.1.0'),
          StringStruct(u'InternalName', u'MK87Config'),
-         StringStruct(u'LegalCopyright', u'非官方工具，仅供个人研究使用'),
+         StringStruct(u'LegalCopyright', u'MIT License (unofficial) · Copyright (c) 2026 w32394045-dotcom'),
          StringStruct(u'OriginalFilename', u'MK87Config.exe'),
          StringStruct(u'ProductName', u'MK87 Studio'),
          StringStruct(u'ProductVersion', u'0.1.1.0')])
