@@ -60,6 +60,8 @@ Releases are built by GitHub Actions and come with a `SHA256SUMS.txt`.
 - **Music rhythm (USB only)** — two schemes: **Official** (identical settings to the official v1 plugin:
   12 display modes / 11 background modes / background brightness / amplitude — hot-switchable while playing)
   and **Current** (this tool's own mode / frame rate / sensitivity) → 20 fps per-key frame stream.
+  11 of the 12 official renderers (1/4/13–22) are direct ports of the official code; mode 100 (screen
+  linkage) is computed by Music.exe, so it falls back to Dance to the Beat.
 - **Wireless** — 2.4G status, battery, sleep timer (0/1/10/20/30 min), disconnect / wake notification log.
 - **Key test** — OS-level capture (Windows RawInput / Linux evdev), 87-key tri-state highlight, event log, stats.
 - **Device info** — firmware / battery / capability matrix, game-mode fields, time sync, raw command console.

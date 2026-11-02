@@ -529,4 +529,50 @@ C:\Users\ptfm\Documents\ajazz-re\driver\dist-packages\MK87Studio-0.1.1-win64-por
 
 源码运行（改完代码免重打包）：`cd driver && .venv\Scripts\python.exe shell.py`
 
+---
+
+## 17 2026-11-02 深夜：补全官方渲染器（12 模式中 11 个真移植）
+
+### 17.1 用户要求
+
+- 「都补上」——把剩余 7 个官方渲染器（15/16/18/19/20/21/22）也移植，mode 100 保持回落。
+
+### 17.2 做法
+
+- 源码：`docs/_music_b2.js`（Ce/Ee/De/Oe/Ae/je/Ne/Pe 官方函数）、`docs/_music_a.js`、`docs/_music_b.js`；
+  模式 22（L / Dual Heart Dance）的内置双心坐标表从 `capture/official_music_live/layout-classic-CMxiG14P.js`
+  提取（官方内置 5 个几何分支：F≥7 / 总键数>102 / >90 / >75 / 其余；**MK87 是 F=6、87 键，命中 >75 键分支**，
+  左/右心各 5 层 × 45 格，第 0 层为心尖；全部按官方逐字移植 `_DUAL_HEART_TABLES`，未自造兜底）
+- Python 侧：新增 `_render_mode_15/16/18/19/20/21/22`；复用既有 `st` 状态，新增键：
+  `volcanoHeight`/`volcanoDir`（15）、`tuningPhase`（19）；`IMPLEMENTED_MODES` 扩到
+  `{1,4,13,14,15,16,17,18,19,20,21,22}`；`_render_frame` 增加分支；模式 100 仍回落 13
+- 分工：移植由子代理完成，Lead 独立验证（测试 / ASCII 形态 / 打包冒烟）
+
+### 17.3 验证（已实测，2026-11-02 22:36）
+
+| 检查 | 结果 |
+|---|---|
+| 单元测试 | `unittest discover -s tests` → **Ran 52 tests, OK**（新增 10 个：7 模式各 1 + amp=0 静音 + backmode 0/1/2/4/5/6–11 全组合 + IMPLEMENTED_MODES 精确断言） |
+| ASCII 形态自检 | 12 个模式逐一渲染 6×17 网格：15 三塔长高、16 中心两行光条+箭形、18 顶边横条+右列竖条+对角带、19 左右触须、20 右侧波浪推进、21 逐行柱状、22 双心图案、1/4 EQ 柱、13 同心环、14 四色射线、17 正弦拖尾 |
+| 跨实现对拍 | 子代理从官方 bundle 抽出 9 个渲染函数，用临时 Node 脚本按相同状态跑 4 组参数、逐格比较：**99,960 格 0 差异**（临时脚本未入库，记为一次性验证） |
+| headless UI 自检 | 8/8 PASS、console error 0（`capture/ui_music_preview/report.json`） |
+| 打包冒烟 | `MK87Config.exe --tray` → 读 `%LOCALAPPDATA%\mk87\instance.json` 拿动态端口：`/api/version=0.1.1`，`/api/music/status.implementedModes = 12 个` |
+
+### 17.4 已知近似 / 边界
+
+- **mode 100（屏光联动）仍回落 13**：官方由 Music.exe 抓屏幕内容计算，主机侧没有对应渲染器，要真复刻需逆向 Music.exe 的屏幕采集映射逻辑。
+- 引擎级 `huePhase += 0.01/tick` 是早期 `music_ref.js` 的既有近似（官方 `pe()` 不加，各渲染器内部自增）；为不改变 13/14/17 既有观感未动。
+- 模式 19 使用 `Math.random`（官方行为），逐帧不可复现；单测只做范围断言。
+- 模式 15 的 `volcanoKeyPositions` 分支未移植（MK87 无该配置，不可达；docstring 已注明）。
+- 模式 22 的 5 个官方几何分支全部移植，MK87 只命中 `>75 键` 分支。
+
+### 17.5 交付
+
+| 项 | 值 |
+|---|---|
+| 本地 exe | `driver\dist\MK87Config\MK87Config.exe`（2026-11-02 22:36:30，9.9MB，FileVersion 0.1.1.0） |
+| 便携包 | `driver\dist-packages\MK87Studio-0.1.1-win64-portable.zip`（38.1MB） |
+| SHA256 | `61A33D73A56C05499269197C5C767CDF477B5723FF2C2643252CB25242D15DA7` |
+| 冒烟要点 | --tray 启动 → `/api/music/status.implementedModes` 返回 12 个模式，证明打包内已是新代码 |
+
 

@@ -27,6 +27,7 @@ const MUSIC_MODES = [
   { mode: 17, name: '萤火轨迹', nameEn: 'Firefly Trail' },
   { mode: 4, name: '曲率频谱', nameEn: 'Curvature Frequency Steps' },
 ];
+const MUSIC_IMPLEMENTED = [1, 4, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22];
 const KEY_GEO = KEY_LAYOUT.rows.flat().map((k) => ({
   slot: k.slot,
   row: k.row,
@@ -651,7 +652,7 @@ export class MockServer {
           modes: MUSIC_MODES, fps: S.music.fps, level: S.music.level, device: S.music.deviceId,
           amplitude: S.music.amplitude, backmode: S.music.backmode,
           backmodeBrightness: S.music.backmodeBrightness,
-          implementedModes: [1, 4, 13, 14, 17],
+          implementedModes: MUSIC_IMPLEMENTED,
           colors: S.music.colors || {},
         }),
       },
@@ -662,7 +663,7 @@ export class MockServer {
           if (body.mode !== undefined) {
             const req = Number(body.mode) || 13;
             m.requestedMode = req;
-            m.mode = [1, 4, 13, 14, 17].includes(req) ? req : 13;
+            m.mode = MUSIC_IMPLEMENTED.includes(req) ? req : 13;
           }
           if (body.backmode !== undefined) m.backmode = Number(body.backmode) || 0;
           if (body.backmodeBrightness !== undefined) m.backmodeBrightness = Number(body.backmodeBrightness) || 100;
@@ -671,7 +672,7 @@ export class MockServer {
           return {
             ok: true, running: true, mode: m.mode, requestedMode: m.requestedMode,
             backmode: m.backmode, backmodeBrightness: m.backmodeBrightness,
-            amplitude: m.amplitude, fps: m.fps, implementedModes: [1, 4, 13, 14, 17],
+            amplitude: m.amplitude, fps: m.fps, implementedModes: MUSIC_IMPLEMENTED,
           };
         },
       },
@@ -1009,7 +1010,7 @@ export class MockServer {
     m.style = body.style === 'pulse' ? 'pulse' : 'spectrum';
     m.fps = Number(body.fps) || 20;
     m.requestedMode = Number(body.mode) || 13;
-    m.mode = [1, 4, 13, 14, 17].includes(m.requestedMode) ? m.requestedMode : 13;
+    m.mode = MUSIC_IMPLEMENTED.includes(m.requestedMode) ? m.requestedMode : 13;
     m.backmode = Number(body.backmode) || 0;
     m.backmodeBrightness = Number(body.backmodeBrightness) || 100;
     m.amplitude = Number(body.amplitude) || Math.round((Number(body.sensitivity) || 1) * 50);

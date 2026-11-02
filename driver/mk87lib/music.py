@@ -8,12 +8,19 @@
 
 渲染器：**逐行移植官方 bundle**（scripts/music_ref.js 已 31/31 自检通过），
 不再使用早期自研的 spectrum/rainbow 等简化渲染（那种会点亮几乎全部按键，观感是"全亮"）。
-已移植模式：
+已移植 12 个官方模式（模式号 = 官方 mode）：
   13 = Dance to the Beat（同心环扩散，默认）
   14 = Dust Glow Spiral（中心四色射线旋转）
+  15 = Dormant Volcano（左/中/右三塔火山，无坐标表走官方柱状兜底）
+  16 = Light Arrow Piercing（右侧光条 + 固定箭形点阵）
   17 = Firefly Trail（中心行正弦波 + 拖尾）
-  4  = Curvature Frequency Steps（背景 + 包络柱状；1 与之相同）
-其余官方模式（15/16/18/19/20/21/22）暂回落到 13，等后续补齐。
+  18 = Light Cocoon Resonance（顶部/右列边框 + 对角光带）
+  19 = Tuning Fork Vibration（左右音叉触须 + 随机抖动暗色拖尾）
+  20 = Curvature Legacy Track（右侧向内的弯曲波形）
+  21 = Row Wave Rhythm（逐行不等长柱 + 色相渐变）
+  22 = Dual Heart Dance（官方内置双心坐标图案逐层点亮）
+  1/4 = Curvature Frequency Steps（背景 + 包络柱状；1 与 4 相同）
+模式 100（屏光联动）仍回落到 13：官方把它交给插件 Music.exe 计算，主机侧没有渲染器。
 
 音频分析：官方 K7/Nse（总振幅）+ 3 段 Pse + 32 段频谱（前端电平条用）。
 """
@@ -22,6 +29,7 @@ from __future__ import annotations
 import logging
 import math
 import platform
+import random
 import subprocess
 import threading
 import time
@@ -78,7 +86,7 @@ STYLE_TO_MODE = {
     "spiral": 14,
     "frequency": 4,
 }
-IMPLEMENTED_MODES = {13, 14, 17, 4, 1}
+IMPLEMENTED_MODES = {1, 4, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22}
 
 
 def _clamp(v: float, lo: float, hi: float) -> float:
@@ -400,6 +408,483 @@ def _render_mode_13(grid, lay: dict, st: dict) -> None:
                 grid[r][c] = color
 
 
+def _render_mode_15(grid, lay: dict, st: dict) -> None:
+    """官方 Ee：休眠火山（左/中/右三塔随振幅长高，彩虹色相各自错开 120°）。
+
+    MK87 没有 musicConfig.volcanoKeyPositions，走官方 fallback 分支：三座塔按
+    「固定宽度表 + 列比例」逐层画——左塔从第 0 列向右展、右塔从最后一列向左展、
+    中塔是以中间列为轴逐层收窄的梯形。高度用 0/±1 的爬山滞回（官方 we/Te）。
+    官方"有 volcanoKeyPositions 坐标表"的分支未移植（MK87 无该配置，不可达）。
+    """
+    st["huePhase"] = (st["huePhase"] + 0.01) % 1.0
+    n = (st["huePhase"] * 360.0) % 360.0
+    F, P = lay["F"], lay["P"]
+    left_widths: List[int] = [3, 3, 2, 2, 2, 1]
+    right_widths: List[int] = [4, 3, 3, 3, 2, 1]
+    total_keys = len(lay["cells"])  # 官方 keyList.flat().length
+    if total_keys < 75:
+        right_widths = [4, 3, 3, 2, 1, 1]
+    elif total_keys > 100:
+        right_widths = [5, 4, 4, 2, 1, 1]
+    elif total_keys > 90:
+        right_widths = [4, 4, 4, 2, 1, 1]
+    mid_peak = int(math.floor(P / 2))
+    right_peak = P - 1
+    # 官方 d：目标高度；we/Te 为当前高度/剩余步数（爬升或回落都每 tick 只走 1 层）
+    target = min(F, int(math.floor((st["amp"] + st["amplitudeUI"] / 100.0 * 0.5) * F)))
+    height = st["volcanoHeight"]
+    if st["volcanoDir"] > 0:
+        st["volcanoDir"] -= 1
+        height = min(F, st["volcanoHeight"] + 1)
+        st["volcanoHeight"] = height
+    elif st["volcanoDir"] < 0:
+        st["volcanoDir"] += 1
+        height = max(0, st["volcanoHeight"] - 1)
+        st["volcanoHeight"] = height
+    else:
+        st["volcanoDir"] = target - st["volcanoHeight"]
+    rows = min(height, F)
+    if rows <= 0:
+        return
+    towers = (
+        (0, left_widths, _hsv(n, 1.0, 1.0)),
+        (mid_peak, None, _hsv((n + 120.0) % 360.0, 1.0, 1.0)),
+        (right_peak, right_widths, _hsv((n + 240.0) % 360.0, 1.0, 1.0)),
+    )
+    for idx, (peak, widths, color) in enumerate(towers):
+        if idx == 0:
+            for k in range(rows):
+                row = F - 1 - k
+                w = (widths[k] if widths and k < len(widths) else 0) or 1
+                for col in range(peak, min(P - 1, peak + w - 1) + 1):
+                    if 0 <= col < P:
+                        grid[row][col] = color
+        elif idx == 2:
+            for k in range(rows):
+                row = F - 1 - k
+                w = (widths[k] if widths and k < len(widths) else 0) or 1
+                for col in range(max(0, peak - w + 1), peak + 1):
+                    if 0 <= col < P:
+                        grid[row][col] = color
+        else:
+            # 中塔：官方 fallback 用 a[]/o[] 两张宽度表算内边界，逐层向中心收窄
+            for k in range(rows):
+                row = F - 1 - k
+                left_w = (left_widths[k] if k < len(left_widths) else 0) or 1
+                right_w = (right_widths[k] if k < len(right_widths) else 0) or 1
+                lo = left_w
+                hi = right_peak - right_w
+                span = hi - lo + 1
+                if span <= 0:
+                    continue
+                mid = (lo + hi) / 2.0
+                shrink = 0.0 if rows == 1 else k / (rows - 1)
+                half = max(1.0, math.floor(span * (1 - shrink))) / 2.0
+                start = max(lo, int(math.ceil(mid - half)))
+                stop = min(hi, int(math.floor(mid + half)))
+                for col in range(start, stop + 1):
+                    if 0 <= col < P:
+                        grid[row][col] = color
+
+
+#: 官方 De 的"光箭"固定点阵（row, col）：按键盘行数分支，MK87（6 行）用第三张表。
+_ARROW_CELLS_TALL = (
+    (1, 4), (1, 5), (1, 8), (1, 9), (2, 3), (2, 4), (2, 5), (2, 6), (2, 7), (2, 8),
+    (2, 9), (2, 10), (3, 4), (3, 5), (3, 6), (3, 7), (3, 8), (4, 5), (4, 6), (4, 7),
+    (5, 6), (5, 7),
+)
+_ARROW_CELLS_SHORT = (
+    (0, 4), (0, 5), (0, 8), (0, 9), (1, 3), (1, 4), (1, 5), (1, 6), (1, 7), (1, 8),
+    (1, 9), (2, 4), (2, 5), (2, 6), (2, 7), (2, 8), (3, 6), (3, 7),
+)
+_ARROW_CELLS_MID = (
+    (0, 4), (0, 5), (0, 8), (0, 9), (1, 3), (1, 4), (1, 5), (1, 6), (1, 7), (1, 8),
+    (1, 9), (1, 10), (2, 4), (2, 5), (2, 6), (2, 7), (2, 8), (3, 5), (3, 6), (3, 7),
+    (4, 6), (4, 7),
+)
+
+
+def _render_mode_16(grid, lay: dict, st: dict) -> None:
+    """官方 De：光箭穿刺（中心两行从右侧铺光条 + 固定箭形点阵随振幅放大）。"""
+    st["smoothAmp"] += (st["amp"] - st["smoothAmp"]) * (st["amplitudeUI"] / 100.0)
+    n = min(st["smoothAmp"], 1.0)
+    scale = 1 + n * 0.2
+    st["huePhase"] = (st["huePhase"] + 0.005) % 1.0
+    hue = (st["huePhase"] * 360.0) % 360.0
+    main = _hsv(hue, 1.0, 1.0)
+    back = _hsv((hue + 180.0) % 360.0, 1.0, 1.0)
+    F, P = lay["F"], lay["P"]
+    if F >= 7:
+        cells = _ARROW_CELLS_TALL
+    elif F < 6:
+        cells = _ARROW_CELLS_SHORT
+    else:
+        cells = _ARROW_CELLS_MID
+    centers = [F // 2 - 1, F // 2] if F % 2 == 0 else [F // 2]
+    bar = min(1.0, n + st["amplitudeUI"] / 100.0 * 0.1) * P
+    count = int(math.ceil(bar))
+    for row in centers:
+        for i in range(min(count, P)):
+            col = P - 1 - i
+            if 0 <= row < F and 0 <= col < P:
+                grid[row][col] = back
+    arrow = (
+        min(255, int(main[0] * scale)),
+        min(255, int(main[1] * scale)),
+        min(255, int(main[2] * scale)),
+    )
+    for (row, col) in cells:
+        if row < F and col < P:
+            grid[row][col] = arrow
+
+
+def _render_mode_18(grid, lay: dict, st: dict) -> None:
+    """官方 Oe：光茧共鸣（顶部横条 + 右列竖条 + 对角光带，随振幅扩张）。"""
+    st["smoothAmp"] += (st["amp"] - st["smoothAmp"]) * (st["amplitudeUI"] / 100.0)
+    n = st["smoothAmp"]
+    F, P = lay["F"], lay["P"]
+    length = int(math.ceil(P * n))
+    st["huePhase"] = (st["huePhase"] + 0.005) % 1.0
+    base_hue = st["huePhase"] * 360.0
+    cache: Dict[int, RGB] = {}
+
+    def _color(hue: float) -> RGB:
+        key = _rnd(hue)
+        if key not in cache:
+            cache[key] = _hsv(float(key), 1.0, 1.0)
+        return cache[key]
+
+    if length > 0:
+        start = max(0, P - length)
+        for col in range(start, P):
+            grid[0][col] = _color((base_hue + col / P * 120.0) % 360.0)
+        top = int(math.ceil(F * n))
+        for row in range(min(top, F)):
+            grid[row][P - 1] = _color((base_hue + 60.0 + row / F * 120.0) % 360.0)
+        dx = (P - 1) - start
+        dy = 0 - (F - 1)
+        steps = max(abs(dx), abs(dy))
+        if steps > 0:
+            rx = dx / steps
+            ry = dy / steps
+            dh = 180.0 / steps
+            for k in range(steps + 1):
+                col = _rnd(start + k * rx)
+                row = _rnd((F - 1) + k * ry)
+                color = _color((base_hue + k * dh) % 360.0)
+                for t in range(2):
+                    cx = col + t - 1
+                    if 0 <= cx < P and 0 <= row < F:
+                        grid[row][cx] = color
+                    if t < 1:
+                        cy = row + t - 1
+                        if 0 <= col < P and 0 <= cy < F and cy != row:
+                            grid[cy][col] = color
+
+
+def _render_mode_19(grid, lay: dict, st: dict) -> None:
+    """官方 Ae：音叉振动（左右两条触须，波形上下抖动 + 暗色余晖拖尾）。"""
+    F, P = lay["F"], lay["P"]
+    st["smoothAmp"] += (st["amp"] - st["smoothAmp"]) * (st["amplitudeUI"] / 100.0)
+    st["smoothAmp"] = _clamp(st["smoothAmp"], 0.0, 1.0)
+    n = st["smoothAmp"]
+    st["tuningPhase"] += 0.1
+    if st["tuningPhase"] >= math.pi * 2:
+        st["tuningPhase"] = 0.0
+    st["huePhase"] = (st["huePhase"] + 0.005 + n * 0.01) % 1.0
+    hue = st["huePhase"] * 360.0
+    cache: Dict[int, RGB] = {}
+
+    def _color(h: float) -> RGB:
+        key = _rnd(h)
+        if key not in cache:
+            cache[key] = _hsv(float(key), 1.0, 1.0)
+        return cache[key]
+
+    mid = int(math.floor(P / 2))
+    jitter = (random.random() - 0.5) * n * 0.1
+    base = mid * 0.2
+    reach = n * mid * 0.6
+    extra = jitter * mid * 0.15
+    count = int(math.floor(max(2.0, base + reach + extra)))
+    offset = int(math.floor(
+        n * P * 0.15 + n * P * 0.2 + (random.random() - 0.5) * n * P * 0.15
+    ))
+    fan = n * 0.8
+
+    def _fork(start_col: int, direction: int, color: RGB, steps: int,
+              left_side: bool) -> None:
+        width = 3 if offset > 2 else 2
+        trail = min(2, int(math.floor(n * 2)))
+        wave_amp = (random.random() * 2 - 1) * fan
+        freq = 0.2 + n * 0.4 + random.random() * fan * 0.1
+        phase = st["tuningPhase"] + (random.random() - 0.5) * fan
+        for r in range(steps):
+            col0 = start_col + r * direction
+            row_off = 0
+            if n > 0.1:
+                wave = math.sin(r * freq + phase) + (random.random() - 0.5) * fan * 0.5
+                row_off = int(math.floor(wave_amp * wave))
+            row = r + row_off
+            if 0 <= row < F:
+                for t in range(width):
+                    col = col0 + t if left_side else col0 + t + 1
+                    if 0 <= col < P:
+                        grid[row][col] = color
+            if trail > 0:
+                for t in range(1, trail + 1):
+                    col2 = col0 - direction * t
+                    row_off2 = 0
+                    if n > 0.1:
+                        wave2 = (math.sin((r - t) * freq + phase)
+                                 + (random.random() - 0.5) * fan * 0.3)
+                        row_off2 = int(math.floor(wave_amp * wave2))
+                    row2 = (r - t) + row_off2
+                    if 0 <= col2 < P and 0 <= row2 < F and grid[row2][col2][0] == 0:
+                        fade = 0.5 - t * 0.2
+                        grid[row2][col2] = (
+                            _rnd(color[0] * fade),
+                            _rnd(color[1] * fade),
+                            _rnd(color[2] * fade),
+                        )
+
+    if count > 0:
+        _fork(mid - 1 - offset, -1, _color((hue + n * 60.0) % 360.0), count, True)
+        _fork(mid + 1 + offset, -1, _color((hue + 180.0 + n * 60.0) % 360.0), count, False)
+
+
+def _render_mode_20(grid, lay: dict, st: dict) -> None:
+    """官方 Ne：曲率传承轨迹（右半区弯曲波形，从右向左推进并按列变细）。"""
+    F, P = lay["F"], lay["P"]
+    st["smoothAmp"] += (st["amp"] - st["smoothAmp"]) * 0.2
+    n = min(st["smoothAmp"], 1.0)
+    st["phase"] += 0.5
+    if st["phase"] >= math.pi * 2:  # 官方 ie：越界直接归零（不是取模）
+        st["phase"] = 0.0
+    st["huePhase"] = (st["huePhase"] + 0.02) % 1.0
+    centers = [F // 2 - 1, F // 2] if F % 2 == 0 else [F // 2]
+    thickness = max(2.0, math.floor(F / 2.5))
+    quarter = int(math.floor(P / 4))
+    rest = P - quarter
+    start_col = quarter + int(math.floor(rest * n))
+    for col in range(P - start_col, P):
+        phi = col / P * math.pi * 2
+        wave = math.sin(st["phase"] + phi)
+        fall = 1 - (col / (P - 1)) ** 1.2
+        body = max(2.0, thickness * 0.6)
+        amp_px = body * (1 + n) * max(0.3, st["amplitudeUI"] / 50.0) * fall
+        bend = _rnd(wave * amp_px)
+        color = _hsv((col / P * 360.0 + st["huePhase"] * 360.0) % 360.0, 1.0, 1.0)
+        for cr in centers:
+            row = cr + bend
+            if 0 <= row < F:
+                grid[row][col] = color
+            trail = min(3, abs(bend))
+            direction = 0 if bend == 0 else (1 if bend > 0 else -1)
+            for k in range(1, trail + 1):
+                rr = cr + direction * k
+                if 0 <= rr < F and rr != row:
+                    fade = 1 - k / (trail + 1)
+                    grid[rr][col] = (
+                        _rnd(color[0] * fade * 0.6),
+                        _rnd(color[1] * fade * 0.6),
+                        _rnd(color[2] * fade * 0.6),
+                    )
+
+
+def _render_mode_21(grid, lay: dict, st: dict) -> None:
+    """官方 Pe：行波浪节奏（逐行伪随机哈希波决定柱长，色相逐行渐变）。"""
+    F, P = lay["F"], lay["P"]
+    st["smoothAmp"] += (st["amp"] - st["smoothAmp"]) * (st["amplitudeUI"] / 100.0 * 0.8)
+    n = min(st["smoothAmp"], 1.0)
+    st["phase"] += 0.02
+    if st["phase"] >= math.pi * 2:  # 官方 ie：越界直接归零（不是取模）
+        st["phase"] = 0.0
+    st["huePhase"] = (st["huePhase"] + 0.01) % 1.0
+    for row in range(F):
+        seed = row * 123.456 + st["phase"] * 10
+        v1 = math.sin(seed) * 0.5 + 0.5
+        v2 = math.sin(seed * 1.618) * 0.5 + 0.5
+        v3 = math.sin(seed * 2.718) * 0.5 + 0.5
+        mix = v1 * 0.3 + v2 * 0.6 + v3 * 0.1
+        length = max(0, int(math.floor(n * P * 1.2 * mix)))
+        color = _hsv((st["huePhase"] * 360.0 + row / F * 180.0) % 360.0, 1.0, 1.0)
+        for col in range(min(length, P)):
+            grid[row][col] = color
+
+
+#: 官方 L（mode 22 双心共舞）内置坐标图案：两片心，按 (x=列, y=行) 从心尖向外分层。
+#: 官方按几何选表：F>=7 → 总键数>102 → >90 → >75 → 其余；MK87（F=6、87 键）命中 >75 分支，
+#: 即第 4 项——官方对 87 键布局内置了这张表，不需要 musicConfig 坐标配置。
+_DUAL_HEART_TABLES = (
+    (  # F.value>=7（7 行及以上键盘）
+        (  # 左心
+            ((3, 3),),
+            ((3, 2), (4, 2), (2, 3), (4, 3), (2, 4), (3, 4)),
+            ((2, 1), (3, 1), (4, 1), (5, 1), (1, 2), (5, 2), (1, 3), (5, 3), (1, 5), (2, 5),
+             (3, 5), (4, 5), (5, 5), (2, 2), (4, 4)),
+            ((0, 0), (1, 0), (2, 0), (3, 0), (4, 0), (6, 1), (0, 2), (6, 2), (0, 3), (6, 3),
+             (0, 4), (6, 4), (0, 5), (6, 5), (1, 6), (2, 6), (3, 6), (4, 6), (5, 6), (5, 4),
+             (1, 4), (1, 1)),
+            ((5, 0), (7, 1), (7, 2), (7, 3), (7, 4), (7, 5), (0, 6), (6, 6)),
+            ((6, 0), (7, 6), (0, 1)),
+        ),
+        (  # 右心
+            ((11, 3),),
+            ((11, 2), (12, 2), (10, 3), (12, 3), (10, 4), (11, 4)),
+            ((10, 1), (11, 1), (12, 1), (13, 1), (9, 2), (13, 2), (9, 3), (13, 3), (9, 5),
+             (10, 5), (11, 5), (12, 5), (13, 5), (10, 2), (12, 4)),
+            ((8, 0), (9, 0), (10, 0), (11, 0), (12, 0), (14, 1), (8, 2), (14, 2), (8, 3), (14, 3),
+             (8, 4), (14, 4), (8, 5), (14, 5), (9, 6), (10, 6), (11, 6), (12, 6), (13, 6),
+             (13, 4), (9, 4), (9, 1)),
+            ((7, 0), (13, 0), (15, 1), (15, 2), (15, 3), (15, 4), (15, 5), (8, 6), (14, 6)),
+            ((14, 0), (15, 0), (16, 1), (16, 2), (16, 3), (16, 4), (16, 5), (15, 6), (16, 6),
+             (8, 1)),
+        ),
+    ),
+    (  # 总键数 >102
+        (  # 左心
+            ((4, 2),),
+            ((4, 1), (5, 1), (3, 2), (5, 2), (3, 3), (4, 3)),
+            ((4, 0), (5, 0), (3, 1), (6, 1), (2, 2), (6, 2), (2, 3), (5, 3), (3, 4), (4, 4),
+             (5, 4)),
+            ((3, 0), (6, 0), (2, 1), (7, 1), (1, 2), (7, 2), (1, 3), (6, 3), (2, 4), (6, 4),
+             (3, 5), (4, 5), (5, 5), (6, 5), (7, 5), (8, 5), (9, 5)),
+            ((2, 0), (7, 0), (1, 1), (8, 1), (0, 2), (8, 2), (0, 3), (7, 3), (0, 4), (1, 4),
+             (7, 4), (1, 5), (2, 5)),
+            ((0, 0), (1, 0), (8, 0), (9, 0), (0, 1), (9, 1), (9, 2), (8, 3), (8, 4), (0, 5)),
+            ((9, 0), (9, 4)),
+        ),
+        (  # 右心
+            ((15, 2),),
+            ((15, 1), (14, 2), (16, 2), (14, 3), (15, 3)),
+            ((15, 0), (14, 1), (16, 1), (13, 2), (17, 2), (12, 3), (13, 3), (16, 3), (14, 4),
+             (15, 4), (16, 4)),
+            ((14, 0), (16, 0), (13, 1), (17, 1), (12, 2), (18, 2), (11, 3), (17, 3), (12, 4),
+             (13, 4), (17, 4), (18, 4), (13, 5), (14, 5), (15, 5), (16, 5), (17, 5), (18, 5)),
+            ((12, 0), (13, 0), (17, 0), (12, 1), (18, 1), (11, 2), (19, 2), (10, 3), (18, 3),
+             (11, 4), (19, 4), (11, 5), (12, 5), (19, 5)),
+            ((11, 0), (18, 0), (11, 1), (19, 1), (10, 2), (20, 2), (9, 3), (19, 3), (10, 4),
+             (20, 4), (10, 5), (20, 5)),
+            ((10, 0), (19, 0), (20, 0), (10, 1), (20, 1), (21, 1)),
+        ),
+    ),
+    (  # 总键数 >90
+        (  # 左心
+            ((4, 2),),
+            ((4, 1), (5, 1), (3, 2), (5, 2), (3, 3), (4, 3)),
+            ((4, 0), (6, 1), (2, 2), (6, 2), (2, 3), (6, 3), (4, 4), (3, 1), (5, 3)),
+            ((2, 0), (6, 0), (7, 1), (1, 2), (7, 2), (1, 3), (7, 3), (2, 4), (6, 4), (3, 5),
+             (4, 5), (5, 5), (5, 0), (3, 0), (5, 4), (3, 4), (2, 1)),
+            ((1, 0), (7, 0), (8, 1), (0, 2), (8, 2), (0, 3), (8, 3), (1, 4), (7, 4), (2, 5),
+             (6, 5), (1, 1)),
+            ((0, 0), (8, 0), (9, 2), (0, 4), (8, 4), (0, 5), (1, 5), (7, 5), (8, 5)),
+            ((9, 0), (9, 1), (9, 3), (9, 4), (9, 5), (0, 1)),
+        ),
+        (  # 右心
+            ((14, 2),),
+            ((14, 1), (15, 1), (13, 2), (15, 2), (13, 3), (14, 3)),
+            ((14, 0), (16, 1), (12, 2), (16, 2), (12, 3), (16, 3), (14, 4), (13, 1), (15, 3)),
+            ((12, 0), (16, 0), (17, 1), (11, 2), (17, 2), (11, 3), (17, 3), (12, 4), (16, 4),
+             (13, 5), (14, 5), (15, 5), (15, 0), (13, 0), (15, 4), (13, 4), (12, 1)),
+            ((11, 0), (17, 0), (18, 1), (10, 2), (18, 2), (10, 3), (18, 3), (11, 4), (17, 4),
+             (12, 5), (16, 5), (11, 1)),
+            ((10, 0), (18, 0), (10, 4), (18, 4), (10, 5), (11, 5), (17, 5), (18, 5)),
+            ((19, 0), (20, 0), (10, 1), (19, 4), (19, 5)),
+        ),
+    ),
+    (  # 总键数 >75（MK87 走这里）
+        (  # 左心
+            ((4, 2),),
+            ((4, 1), (5, 1), (3, 2), (5, 2), (3, 3), (4, 3)),
+            ((4, 0), (5, 0), (3, 1), (6, 1), (2, 2), (6, 2), (2, 3), (5, 3), (6, 3), (3, 4),
+             (4, 4), (5, 4), (6, 4)),
+            ((3, 0), (6, 0), (2, 1), (7, 1), (1, 2), (7, 2), (1, 3), (7, 3), (2, 4), (7, 4),
+             (2, 5), (3, 5), (4, 5), (5, 5), (6, 5), (7, 5)),
+            ((0, 0), (1, 0), (2, 0), (7, 0), (8, 0), (0, 1), (1, 1), (8, 1), (0, 2), (8, 2),
+             (8, 2), (0, 3), (8, 3), (0, 4), (1, 4), (8, 4), (0, 5), (1, 5), (8, 5)),
+        ),
+        (  # 右心
+            ((12, 2),),
+            ((12, 1), (13, 1), (11, 2), (13, 2), (11, 3), (12, 3)),
+            ((11, 0), (12, 0), (13, 0), (11, 1), (14, 1), (10, 2), (14, 2), (10, 3), (13, 3),
+             (14, 3), (11, 4), (12, 4), (13, 4)),
+            ((10, 0), (14, 0), (10, 1), (15, 1), (9, 2), (15, 2), (9, 3), (15, 3), (10, 4),
+             (14, 4), (15, 4), (11, 5), (12, 5), (13, 5), (14, 5)),
+            ((9, 0), (15, 0), (16, 0), (9, 1), (16, 1), (16, 2), (16, 3), (9, 4), (16, 4), (9, 5),
+             (10, 5), (15, 5), (16, 5)),
+        ),
+    ),
+    (  # 其余（少量键）
+        (  # 左心
+            ((3, 2),),
+            ((3, 1), (4, 1), (2, 2), (4, 2), (3, 3), (4, 3)),
+            ((3, 0), (4, 0), (2, 1), (5, 1), (1, 2), (5, 2), (2, 3), (5, 3), (4, 4), (5, 4),
+             (6, 4)),
+            ((2, 0), (5, 0), (1, 1), (6, 1), (0, 2), (6, 2), (0, 3), (1, 3), (6, 3), (2, 4)),
+            ((0, 0), (1, 0), (6, 0), (0, 1), (0, 4), (1, 4)),
+        ),
+        (  # 右心
+            ((9, 2),),
+            ((9, 1), (10, 1), (8, 2), (10, 2), (9, 3), (10, 3)),
+            ((9, 0), (10, 0), (8, 1), (11, 1), (7, 2), (11, 2), (8, 3), (11, 3), (7, 4), (8, 4),
+             (9, 4)),
+            ((8, 0), (11, 0), (12, 0), (7, 1), (12, 1), (12, 2), (7, 3), (12, 3), (13, 3), (7, 4),
+             (10, 4), (11, 4)),
+            ((7, 0), (13, 0), (14, 0), (13, 1), (14, 1), (13, 2), (14, 2), (14, 3), (12, 4),
+             (13, 4), (14, 4), (15, 4), (15, 0), (15, 1)),
+        ),
+    ),
+)
+
+
+def _render_mode_22(grid, lay: dict, st: dict) -> None:
+    """官方 L：双心共舞（内置双心坐标图案逐层点亮，脉搏/阈值与 13 同一套算法）。
+
+    官方开头算的左右心中心（a/o）与最大半径 l 在图案表里没有再用，故只保留选表逻辑。
+    """
+    F, P = lay["F"], lay["P"]
+    total_keys = len(lay["cells"])  # 官方 keyList.flat().length
+    if F >= 7:
+        left, right = _DUAL_HEART_TABLES[0]
+    elif total_keys > 102:
+        left, right = _DUAL_HEART_TABLES[1]
+    elif total_keys > 90:
+        left, right = _DUAL_HEART_TABLES[2]
+    elif total_keys > 75:
+        left, right = _DUAL_HEART_TABLES[3]
+    else:
+        left, right = _DUAL_HEART_TABLES[4]
+    layers = int(math.ceil((len(left) + len(right)) / 2.0))
+    st["phase"] += 0.005
+    if st["phase"] >= 1.0:  # 官方 ie：越界直接归零（不是取模）
+        st["phase"] = 0.0
+    st["huePhase"] += 0.005
+    if st["huePhase"] >= 1.0:
+        st["huePhase"] = 0.0
+    phases = [(st["phase"] - e / layers + 1) % 1.0 for e in range(layers)]
+    amp = min(st["amp"], 1.0)
+    threshold = max(0.01, 0.06 - amp * 0.05)
+    lit = 0 if amp < threshold else max(1, min(layers, _rnd(st["amp"] * layers)))
+    st["smoothValue"] += (lit - st["smoothValue"]) * (st["amplitudeUI"] / 100.0)
+    active = int(math.ceil(st["smoothValue"]))
+    for e in range(active):
+        if e >= len(left):
+            continue
+        color = _hsv(((phases[e] + st["huePhase"]) % 1.0) * 360.0, 1.0, 1.0)
+        for (x, y) in left[e]:
+            if 0 <= x < P and 0 <= y < F:
+                grid[y][x] = color
+    for e in range(active):
+        # 官方第二段的层数守卫写的是 u[e]（左心），这里照原样保留该判定
+        if e >= len(left) or e >= len(right):
+            continue
+        color = _hsv(((phases[e] + st["huePhase"]) % 1.0) * 360.0, 1.0, 1.0)
+        for (x, y) in right[e]:
+            if 0 <= x < P and 0 <= y < F:
+                grid[y][x] = color
+
+
 def _render_frame(lay: dict, st: dict, mode: int) -> List[List[RGB]]:
     grid = _zeros(lay["F"], lay["width"])
     if st["backmode"]:
@@ -410,10 +895,24 @@ def _render_frame(lay: dict, st: dict, mode: int) -> List[List[RGB]]:
         _render_mode_13(grid, lay, st)
     elif mode == 14:
         _render_mode_14(grid, lay, st)
+    elif mode == 15:
+        _render_mode_15(grid, lay, st)
+    elif mode == 16:
+        _render_mode_16(grid, lay, st)
     elif mode == 17:
         _render_mode_17(grid, lay, st)
+    elif mode == 18:
+        _render_mode_18(grid, lay, st)
+    elif mode == 19:
+        _render_mode_19(grid, lay, st)
+    elif mode == 20:
+        _render_mode_20(grid, lay, st)
+    elif mode == 21:
+        _render_mode_21(grid, lay, st)
+    elif mode == 22:
+        _render_mode_22(grid, lay, st)
     else:
-        _render_mode_13(grid, lay, st)  # 未移植模式回落到 13
+        _render_mode_13(grid, lay, st)  # 100（屏光联动）等未移植模式回落到 13
     return grid
 
 
@@ -438,6 +937,11 @@ class MusicEngine:
             "huePhase": 0.0,
             "smoothValue": 0.0,
             "rotate": 0.0,
+            # 模式 15（官方 we/Te）：火山当前高度、剩余爬升/回落步数
+            "volcanoHeight": 0,
+            "volcanoDir": 0,
+            # 模式 19（官方 ke）：音叉的波形相位
+            "tuningPhase": 0.0,
             "centerRow": self.lay["centerRow"],
             "centerCol": self.lay["centerCol"],
         }

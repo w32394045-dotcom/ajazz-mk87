@@ -157,7 +157,11 @@ payload[n] = keyValue；payload[n+1..3] = grid[row][col] 的 RGB
 > 渲染器函数源码已从 bundle 倒出：`docs/_music_a.js`（模式列表/主循环/部分渲染器）、
 > `docs/_music_b.js`、`docs/_music_b2.js`（Se/Ce/Ee/De/Oe/Ae/je/Ne/Pe/Fe 全量）。
 > `scripts/music_ref.js` 已**逐行精确移植**：Kab（总振幅）、Pse（3 段）、背景全表、模式 1/4/13/14/17；
-> 其余模式可照着 `_music_b2.js` 直接补进同一个 `renderMode*` 接口。
+> **2026-11-02 补全**：15/16/18/19/20/21/22 也已按官方函数逐行移植进 `driver/mk87lib/music.py`
+> （含从 `capture/official_music_live/layout-classic-CMxiG14P.js` 取出的模式 22 内置双心坐标表 5 个分支），
+> 并与官方 bundle 做了跨实现逐帧对拍（6×17 网格，99,960 格 0 差异）。
+> 模式 100（屏光联动）仍由 Music.exe 计算，主机侧没有渲染器，回落 13。
+> `MK87` 无 `volcanoKeyPositions`，模式 15 走官方柱状兜底分支。
 
 ## 7. 背景模式表（官方 `_e`）
 
