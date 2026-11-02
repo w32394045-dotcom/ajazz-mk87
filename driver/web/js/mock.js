@@ -158,7 +158,7 @@ export class MockServer {
       ],
       conflicts: saved.conflicts || [],
       frames: { running: false, fps: 20, frames: 0 },
-      music: { running: false, deviceId: 'default', sensitivity: 1.0, style: 'spectrum', fps: 20, mode: 13, level: 0, colors: {}, frame: 0 },
+      music: { running: false, deviceId: 'default', sensitivity: 1.0, style: 'spectrum', fps: 20, mode: 13, requestedMode: 13, backmode: 0, backmodeBrightness: 100, amplitude: 50, level: 0, colors: {}, frame: 0 },
       tftJob: null,
       keytest: { running: false, events: [] },
       rawLog: [],
@@ -647,9 +647,33 @@ export class MockServer {
       },
       {
         method: 'GET', path: '/api/music/status', handler: () => ({
-          running: S.music.running, mode: S.music.mode, modes: MUSIC_MODES, fps: S.music.fps,
-          level: S.music.level, device: S.music.deviceId, colors: S.music.colors || {},
+          running: S.music.running, mode: S.music.mode, requestedMode: S.music.requestedMode,
+          modes: MUSIC_MODES, fps: S.music.fps, level: S.music.level, device: S.music.deviceId,
+          amplitude: S.music.amplitude, backmode: S.music.backmode,
+          backmodeBrightness: S.music.backmodeBrightness,
+          implementedModes: [1, 4, 13, 14, 17],
+          colors: S.music.colors || {},
         }),
+      },
+      {
+        method: 'POST', path: '/api/music/update', handler: async (body) => {
+          const m = S.music;
+          if (!m.running) throw MockServer.fail('音乐律动未在运行，无法热更新参数', 'not_running');
+          if (body.mode !== undefined) {
+            const req = Number(body.mode) || 13;
+            m.requestedMode = req;
+            m.mode = [1, 4, 13, 14, 17].includes(req) ? req : 13;
+          }
+          if (body.backmode !== undefined) m.backmode = Number(body.backmode) || 0;
+          if (body.backmodeBrightness !== undefined) m.backmodeBrightness = Number(body.backmodeBrightness) || 100;
+          if (body.amplitude !== undefined) m.amplitude = Number(body.amplitude) || 50;
+          if (body.fps !== undefined) m.fps = Number(body.fps) || 20;
+          return {
+            ok: true, running: true, mode: m.mode, requestedMode: m.requestedMode,
+            backmode: m.backmode, backmodeBrightness: m.backmodeBrightness,
+            amplitude: m.amplitude, fps: m.fps, implementedModes: [1, 4, 13, 14, 17],
+          };
+        },
       },
 
       /* ---------------- 无线 ---------------- */
@@ -984,7 +1008,11 @@ export class MockServer {
     m.sensitivity = Number(body.sensitivity) || 1.0;
     m.style = body.style === 'pulse' ? 'pulse' : 'spectrum';
     m.fps = Number(body.fps) || 20;
-    m.mode = [13, 14, 17, 4, 1].includes(Number(body.mode)) ? Number(body.mode) : 13;
+    m.requestedMode = Number(body.mode) || 13;
+    m.mode = [1, 4, 13, 14, 17].includes(m.requestedMode) ? m.requestedMode : 13;
+    m.backmode = Number(body.backmode) || 0;
+    m.backmodeBrightness = Number(body.backmodeBrightness) || 100;
+    m.amplitude = Number(body.amplitude) || Math.round((Number(body.sensitivity) || 1) * 50);
     m.colors = {};
     m.frame = 0;
     m.phase = 0;

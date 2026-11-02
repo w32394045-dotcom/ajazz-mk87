@@ -18,7 +18,7 @@
 
 | Music rhythm · Current | Music rhythm · Official |
 |---|---|
-| <img src="capture/ui_music_preview/02-music-current-running.png" width="480" alt="Music rhythm, local visualizer"> | <img src="capture/ui_music_preview/03-music-official-running.png" width="480" alt="Music rhythm, official renderer"> |
+| <img src="capture/ui_music_preview/03-music-current-running.png" width="480" alt="Music rhythm, Current scheme"> | <img src="capture/ui_music_preview/02-music-official-running.png" width="480" alt="Music rhythm, Official scheme"> |
 
 | TFT screen (240×135) | Logs & diagnostics |
 |---|---|
@@ -57,8 +57,9 @@ Releases are built by GitHub Actions and come with a `SHA256SUMS.txt`.
 - **Macros** — 100 slots / 3072 B editor: record keys, delays, press/release, repeat N times, press-to-stop.
 - **Key mapping / FN** — 87-key normal + FN layers: HID keys, combos, macros, firmware FUNC actions, disabled,
   restore-defaults, live 4-byte encoding preview. FN layer is read-only over 2.4G.
-- **Music rhythm (USB only)** — system audio loopback → official renderers (Dance to the Beat / Dust Glow
-  Spiral / Firefly Trail / Curvature Frequency Steps) → 20 fps per-key frame stream.
+- **Music rhythm (USB only)** — two schemes: **Official** (identical settings to the official v1 plugin:
+  12 display modes / 11 background modes / background brightness / amplitude — hot-switchable while playing)
+  and **Current** (this tool's own mode / frame rate / sensitivity) → 20 fps per-key frame stream.
 - **Wireless** — 2.4G status, battery, sleep timer (0/1/10/20/30 min), disconnect / wake notification log.
 - **Key test** — OS-level capture (Windows RawInput / Linux evdev), 87-key tri-state highlight, event log, stats.
 - **Device info** — firmware / battery / capability matrix, game-mode fields, time sync, raw command console.

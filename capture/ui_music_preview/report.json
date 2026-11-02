@@ -1,11 +1,12 @@
 {
   "url": "http://127.0.0.1:8123/?mock=1#music",
   "checks": {
-    "boot+tabs": true,
+    "boot+scheme-tabs": true,
     "start-clicked": true,
-    "current-preview-painted": true,
-    "official-tab-clicked": true,
     "official-preview-painted": true,
+    "hot-switch-to-current": true,
+    "hot-switch-keeps-running": true,
+    "hot-switch-back-official": true,
     "stopped-clears-colors": true,
     "en-mode-no-cjk": true
   },
@@ -14,8 +15,9 @@
     "当前方案",
     "官方方案"
   ],
-  "currentPainted": 87,
+  "defaultOfficial": true,
   "officialPainted": 87,
+  "currentPainted": 87,
   "stoppedLeft": 0,
   "cjkLeft": []
 }

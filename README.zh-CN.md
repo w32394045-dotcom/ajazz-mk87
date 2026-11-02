@@ -18,7 +18,7 @@ USB / 2.4G 协议的完整逆向实现，全部功能**离线本地运行**。
 
 | 音乐律动 · 当前方案 | 音乐律动 · 官方方案 |
 |---|---|
-| <img src="capture/ui_music_preview/02-music-current-running.png" width="480" alt="音乐律动，本地频谱动画"> | <img src="capture/ui_music_preview/03-music-official-running.png" width="480" alt="音乐律动，官方渲染器"> |
+| <img src="capture/ui_music_preview/03-music-current-running.png" width="480" alt="音乐律动，当前方案"> | <img src="capture/ui_music_preview/02-music-official-running.png" width="480" alt="音乐律动，官方方案"> |
 
 | TFT 屏幕（240×135） | 日志与诊断 |
 |---|---|
@@ -57,8 +57,9 @@ Linux 包内已包含 udev 规则（免 root 访问 HID），安装后请重新�
 - **宏** —— 100 槽 / 3072B 编辑器：录键、延迟、按下/抬起、重复 N 次、再按结束。
 - **改键 / FN** —— 87 键主层 + FN 层：HID 键、组合键、宏、固件 FUNC 动作、禁用、恢复默认，
   实时预览 4B 编码；2.4G 下 FN 层只读。
-- **音乐律动（仅 USB）** —— 系统音频回环 → 官方渲染器（律动节拍 / 光尘螺旋 / 萤火轨迹 /
-  曲率频谱）→ 20fps 逐键帧流。
+- **音乐律动（仅 USB）** —— 两种方案：**官方方案**（与官方 v1 插件完全相同的设置项：显示模式 12 种 /
+  背景模式 11 种 / 背景亮度 / 振幅，播放中热切换）与**当前方案**（本工具的模式 / 帧率 / 灵敏度）
+  → 20fps 逐键帧流。
 - **无线** —— 2.4G 状态、电量、休眠时间（0/1/10/20/30 分钟）、断连 / 唤醒通知日志。
 - **按键测试** —— OS 级捕获（Windows RawInput / Linux evdev），87 键三态高亮、事件日志、统计。
 - **设备信息** —— 固件 / 电量 / 能力矩阵、游戏模式字段、时间同步、原始命令控制台。

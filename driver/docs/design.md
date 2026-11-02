@@ -167,9 +167,10 @@ driver/
 | 方法 | 路径 | 说明 |
 |---|---|---|
 | GET | `/api/music/devices` | 音频输出设备列表（loopback 候选） |
-| POST | `/api/music/start` | `{deviceId, sensitivity:1.0, mode:13, fps:20}`（`mode` 为官方渲染器模式，旧 `style` 仍兼容） |
+| POST | `/api/music/start` | `{deviceId, sensitivity:1.0, mode:13, fps:20, backmode:0, backmodeBrightness:100, amplitude:50}`（`backmode`/`backmodeBrightness`/`amplitude` 为官方 v1 参数，`mode` 为官方渲染器模式，旧 `style` 仍兼容） |
+| POST | `/api/music/update` | 运行中热更新（不打断音频）：`{mode?, backmode?, backmodeBrightness?, amplitude?, fps?}`，返回同 status |
 | POST | `/api/music/stop` | 停止 |
-| GET | `/api/music/status` | `{running,mode,modes,fps,level,bands32,deviceId,frames,colors}`；运行中 `colors` = 当前帧逐键颜色 `{slot:[r,g,b]}`（官方方案预览回放用） |
+| GET | `/api/music/status` | `{running,mode,requestedMode,modes,implementedModes,amplitude,backmode,backmodeBrightness,fps,level,bands32,deviceId,frames,colors}`；运行中 `colors` = 当前帧逐键颜色 `{slot:[r,g,b]}`（官方方案预览回放用） |
 
 ### 4.8 无线 / 按键测试 / 备份 / 设置
 

@@ -472,4 +472,61 @@ curl -s "$API/repos/w32394045-dotcom/ajazz-mk87/releases/tags/v0.1.1"
 | 本地包重建 | 删除旧 `driver/dist/MK87Config` 后执行 `packaging/windows/build-portable.ps1`：`MK87Config.exe` 10,390,408 B / FileVersion **0.1.1.0** / LegalCopyright 含 MIT；便携包 `driver/dist-packages/MK87Studio-0.1.1-win64-portable.zip` 39,893,935 B；已确认打包内 `_internal/web/js/pages/music.js` 含「当前方案 / 官方方案」新代码 |
 | 交付路径（真机验收用） | `driver\dist\MK87Config\MK87Config.exe`（双击即用，免安装）；便携 zip 见上 |
 
+---
+
+## 16 2026-11-02 晚间：音乐律动「官方方案」= 官方同款设置项 + 热切换
+
+### 16.1 用户反馈（原话要点）
+
+- 「不太满意，我意思是官方方案后整个设置项全部搬掉换为官方同款的，就是真的官方同款，这次请你快速改」
+- 「还有一点无法热切换种类还是什么的」
+
+即：官方方案不能只是"预览动画换一种"，而要把**整块设置项**换成官方 v1 插件的同款参数；且这些设置要能在**播放中热切换**，不能停止音乐再改。
+
+### 16.2 官方同款参数（来源 `docs/music-constants.json`，官方 bundle 提取）
+
+| 项 | 内容 |
+|---|---|
+| 显示模式（12） | 13 随曲起舞 / 22 双心共舞 / 14 尘埃光漩 / 15 蛰伏火山 / 16 光矢穿心 / 18 光茧共振 / 19 音叉振空 / 17 萤火轨迹 / 20 曲率遗轨 / 21 行波律动 / 4 曲率频阶 / 100 屏光联动（官方由 Music.exe 计算） |
+| 背景模式（11） | 0 无 / 1 绿黄红 / 2 彩虹 / 4 色谱 / 5 频谱循环 / 6 白 / 7 红 / 8 橙 / 9 黄 / 10 蓝 / 11 绿 |
+| 参数范围 | `amplitude` 1–100（默认 50）；`backmodeBrightness` 10–100（默认 100） |
+| 数据落盘 | 新增前端静态模块 `driver/web/js/data/music.js`（由 `docs/music-constants.json` 生成，运行时不解析 JSON） |
+
+### 16.3 实现
+
+| 层 | 改动 |
+|---|---|
+| `mk87lib/music.py` | `MusicPlayer.start()` 接受 `backmode`/`backmodeBrightness`/`amplitude` 并传入 `MusicEngine`（背景渲染 `_apply_background` 已支持）；新增 `MusicPlayer.update()` 运行中热更新（模式/背景/亮度/振幅/fps）；主循环周期每帧重算，支持 fps 热更新；`status()` 增加 `requestedMode`/`implementedModes`/`backmode`/`backmodeBrightness`/`amplitude`；`MusicEngine.set_backmode()` |
+| `server/app.py` | 新增 `POST /api/music/update`（热更新）；`/api/music/start` 透传官方参数 |
+| `web/js/pages/music.js` | 顶部双方案 tabs（**官方方案为默认**）；官方方案设置项 = 官方同款（显示模式 select / 背景模式 select / 背景亮度 slider / 振幅 slider）；当前方案保留原参数；**方案切换与所有参数改动都走热更新（120ms 防抖），不打断音乐**；未移植渲染器在 UI 明确提示回落 |
+| `web/js/mock.js` | 支持 `/api/music/update`，回显官方参数与 `implementedModes` |
+| `web/js/i18n-en-dom.js` | 新增 20+ 条英文文案 |
+| `tools/ui_shots.py` | 自检升级：8 项检查，含**热切换不停止律动** |
+| 文档 | `design.md` §4.7 补 start/update/status 契约；`driver/README`、`web/README`、中英 README 更新音乐功能说明 |
+
+### 16.4 验证（已实测，2026-11-02 21:59）
+
+| 检查 | 结果 |
+|---|---|
+| 后端语法 | `py_compile mk87lib/music.py server/app.py` OK |
+| 单元测试 | `unittest discover -s tests` → **Ran 42 tests, OK**（新增 4 个热更新/背景测试） |
+| 前端自检 | headless Chrome：**8/8 PASS**，console error 0；含「官方方案上色」「热切换后仍在运行」「切回官方」「停止清色」「EN 无中文残留」 |
+| 截图证据 | `capture/ui_music_preview/01-official-idle … 06-en-light`（官方设置项、官方运行、热切到当前方案、切回官方、停止、英文浅色） |
+| 本地便携包 | 重新构建：`MK87Config.exe` 2026-11-02 21:58:55 / 9.9MB；`MK87Studio-0.1.1-win64-portable.zip` 38MB，SHA256 `44AC9DF8…F155B230`；已确认打包内 `web/js/pages/music.js` + `web/js/data/music.js` 含官方方案代码 |
+
+### 16.5 未验证 / 已知边界
+
+- **渲染器移植范围**：官方 12 个显示模式中真正移植了 13 / 14 / 17 / 4（官方渲染器逐行移植），其余 7 个（22/15/16/18/19/20/21）与 100（Music.exe 专用）会**回落到「随曲起舞」**；官方方案设置项与参数是官方同款，但这些模式的渲染效果仍非官方（UI 有明确提示）。补齐需要逐个移植官方 bundle 渲染函数。
+- 真机 USB 下的官方方案实际观感待验收。
+- 背景模式渲染已接入 `_apply_background`，但部分背景（1/2/4/5）依赖布局环形数据，真机观感待验收。
+
+### 16.6 交付路径（真机验收）
+
+```text
+C:\Users\ptfm\Documents\ajazz-re\driver\dist\MK87Config\MK87Config.exe   # 双击运行（已含官方方案 + 热切换）
+C:\Users\ptfm\Documents\ajazz-re\driver\dist-packages\MK87Studio-0.1.1-win64-portable.zip
+```
+
+源码运行（改完代码免重打包）：`cd driver && .venv\Scripts\python.exe shell.py`
+
 

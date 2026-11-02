@@ -454,6 +454,11 @@ class MusicEngine:
     def set_amplitude(self, amplitude_ui: int) -> None:
         self.st["amplitudeUI"] = _clamp(int(amplitude_ui), 1, 100)
 
+    def set_backmode(self, backmode: int, brightness: int) -> None:
+        """热更新官方背景参数（backmode 0..11 / 亮度 10..100）。"""
+        self.st["backmode"] = int(_clamp(int(backmode), 0, 11))
+        self.st["backmodeBrightness"] = int(_clamp(int(brightness), 10, 100))
+
     def tick(self, amp1000: int) -> bytes:
         """喂当前总振幅（0..1000），返回 348 字节逐键载荷。"""
         if amp1000 > 0:
@@ -783,8 +788,11 @@ class MusicPlayer:
         self._thread: Optional[threading.Thread] = None
         self._stop = threading.Event()
         self.mode = 13
+        self.requested_mode = 13
         self.amplitude_ui = 50
         self.sensitivity = 1.0
+        self.backmode = 0
+        self.backmode_brightness = 100
         self.fps = 20
         self.device_id: Optional[str] = None
         self.level = 0.0
@@ -812,16 +820,24 @@ class MusicPlayer:
 
     def start(self, device_id: Optional[str] = None, mode: Optional[int] = None,
               style: Optional[str] = None, sensitivity: float = 1.0,
-              fps: int = 20) -> dict:
+              fps: int = 20, backmode: int = 0, backmode_brightness: int = 100,
+              amplitude: Optional[int] = None) -> dict:
         if self.device.transport != "usb":
             raise MK87Error("音乐律动仅支持 USB 有线连接（2.4G 官方不支持）")
         self.stop()
         if mode is None:
             mode = STYLE_TO_MODE.get(str(style or ""), 13)
+        self.requested_mode = int(mode)
         self.mode = int(mode) if int(mode) in IMPLEMENTED_MODES else 13
         self.sensitivity = max(0.1, min(4.0, float(sensitivity)))
-        # 官方 amplitude(1..100)：默认 50；灵敏度滑块 0.2..2.0 → 10..100
-        self.amplitude_ui = int(_clamp(round(self.sensitivity * 50), 10, 100))
+        # 官方 amplitude(1..100)：默认 50；显式传 amplitude 时直接采用，否则由灵敏度换算
+        if amplitude is not None:
+            self.amplitude_ui = int(_clamp(int(amplitude), 1, 100))
+        else:
+            self.amplitude_ui = int(_clamp(round(self.sensitivity * 50), 10, 100))
+        # 官方背景参数：backmode(0..11) / backmodeBrightness(10..100)
+        self.backmode = int(_clamp(int(backmode or 0), 0, 11))
+        self.backmode_brightness = int(_clamp(int(backmode_brightness or 100), 10, 100))
         self.fps = max(5, min(40, int(fps)))
         self.device_id = device_id
         self.errors = 0
@@ -835,8 +851,9 @@ class MusicPlayer:
         self.timing = {"read": 0.0, "analyze": 0.0, "send": 0.0, "frames": 0}
         self._thread = threading.Thread(target=self._loop, name="mk87-music", daemon=True)
         self._thread.start()
-        log.info("音乐律动启动: mode=%s amplitude=%s fps=%s device=%s",
-                 self.mode, self.amplitude_ui, self.fps, device_id or "默认输出")
+        log.info("音乐律动启动: mode=%s(请求 %s) amplitude=%s backmode=%s bb=%s fps=%s device=%s",
+                 self.mode, self.requested_mode, self.amplitude_ui,
+                 self.backmode, self.backmode_brightness, self.fps, device_id or "默认输出")
         # 等音频引擎真正打开再返回：失败要立刻报错，不能"假装成功"
         if not self._ready.wait(timeout=5.0):
             self._stop.set()
@@ -860,7 +877,9 @@ class MusicPlayer:
             capture = AudioCapture(self.device_id)
             capture.open()
             analyzer = Analyzer(capture.samplerate)
-            self._engine = MusicEngine(self.mode, amplitude_ui=self.amplitude_ui)
+            self._engine = MusicEngine(self.mode, amplitude_ui=self.amplitude_ui,
+                                       backmode=self.backmode,
+                                       backmode_brightness=self.backmode_brightness)
             self._snapshot = lighting.ensure_frame_mode(self.device)
             # 帧流走原生通道（Windows）：hidapi 逐包 ACK 只能到 ~10fps，原生通道实测 20fps
             self._sender = lighting.FrameSender(self.device)
@@ -876,7 +895,6 @@ class MusicPlayer:
                 except Exception:
                     pass
             return
-        period = 1.0 / self.fps
         next_t = time.time()
         self.timing = {"read": 0.0, "analyze": 0.0, "send": 0.0, "frames": 0}
         try:
@@ -918,6 +936,8 @@ class MusicPlayer:
                     log.warning("音乐帧发送异常 #%d: %s", self.errors, exc)
                     if self.errors > 50:
                         break
+                # 周期每帧重算：支持运行中热更新 fps
+                period = 1.0 / max(5, min(40, int(self.fps or 20)))
                 next_t += period
                 sleep = next_t - time.time()
                 if sleep < -period:
@@ -943,6 +963,34 @@ class MusicPlayer:
                 lighting.restore_effect(self.device, self._snapshot["before"])
                 self._snapshot = None
 
+    def update(self, mode: Optional[int] = None, amplitude: Optional[int] = None,
+               backmode: Optional[int] = None, backmode_brightness: Optional[int] = None,
+               fps: Optional[int] = None) -> dict:
+        """运行中热更新参数（显示模式 / 背景模式 / 背景亮度 / 振幅 / 帧率），不打断音频采集。"""
+        engine = self._engine
+        if engine is None or not self.running:
+            raise MK87Error("音乐律动未在运行，无法热更新参数")
+        if mode is not None:
+            self.requested_mode = int(mode)
+            engine.set_mode(int(mode))
+            self.mode = engine.mode
+        if amplitude is not None:
+            self.amplitude_ui = int(_clamp(int(amplitude), 1, 100))
+            engine.set_amplitude(self.amplitude_ui)
+        if backmode is not None or backmode_brightness is not None:
+            engine.set_backmode(
+                self.backmode if backmode is None else backmode,
+                self.backmode_brightness if backmode_brightness is None else backmode_brightness,
+            )
+            self.backmode = int(engine.st["backmode"])
+            self.backmode_brightness = int(engine.st["backmodeBrightness"])
+        if fps is not None:
+            self.fps = max(5, min(40, int(fps)))
+        log.info("音乐律动热更新: mode=%s(请求 %s) backmode=%s bb=%s amp=%s fps=%s",
+                 self.mode, self.requested_mode, self.backmode,
+                 self.backmode_brightness, self.amplitude_ui, self.fps)
+        return self.status()
+
     def stop(self) -> dict:
         if self.running:
             log.info("音乐律动停止: 共 %d 帧, %d 错误", self.frames, self.errors)
@@ -958,8 +1006,12 @@ class MusicPlayer:
         return {
             "running": self.running,
             "mode": self.mode,
+            "requestedMode": self.requested_mode,
             "modes": MODES,
             "amplitude": self.amplitude_ui,
+            "backmode": self.backmode,
+            "backmodeBrightness": self.backmode_brightness,
+            "implementedModes": sorted(IMPLEMENTED_MODES),
             "sensitivity": self.sensitivity,
             "fps": self.fps,
             "deviceId": self.device_id,

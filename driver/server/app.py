@@ -664,21 +664,38 @@ def api_music_start(payload: dict = Body(default={})):
     dev = _dev()
     manager.music.device = dev
     mode = payload.get("mode")
-    if mode is None and "style" in payload:
-        # 旧前端兼容：style 字符串 → 官方模式
-        mode = None
     return manager.music.start(
         device_id=payload.get("deviceId"),
         mode=int(mode) if mode is not None else None,
         style=payload.get("style"),
         sensitivity=float(payload.get("sensitivity", 1.0)),
         fps=int(payload.get("fps", 20)),
+        # 官方 v1 参数（与官方 UI 同款）
+        backmode=int(payload.get("backmode", 0) or 0),
+        backmode_brightness=int(payload.get("backmodeBrightness", payload.get("backBrightness", 100)) or 100),
+        amplitude=(int(payload["amplitude"]) if payload.get("amplitude") is not None else None),
     )
 
 
 @app.post("/api/music/stop")
 def api_music_stop():
     return manager.music.stop()
+
+
+@app.post("/api/music/update")
+def api_music_update(payload: dict = Body(default={})):
+    """运行中热更新音乐律动参数（显示模式 / 背景模式 / 背景亮度 / 振幅 / 帧率）。"""
+    manager.music.update(
+        mode=(int(payload["mode"]) if payload.get("mode") is not None else None),
+        amplitude=(int(payload["amplitude"]) if payload.get("amplitude") is not None else None),
+        backmode=(int(payload["backmode"]) if payload.get("backmode") is not None else None),
+        backmode_brightness=(int(payload["backmodeBrightness"])
+                             if payload.get("backmodeBrightness") is not None else None),
+        fps=(int(payload["fps"]) if payload.get("fps") is not None else None),
+    )
+    st = manager.music.status()
+    st["supported"] = manager.device.status.transport == "usb"
+    return st
 
 
 @app.get("/api/music/status")
