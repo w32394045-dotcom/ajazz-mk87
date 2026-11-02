@@ -167,9 +167,9 @@ driver/
 | 方法 | 路径 | 说明 |
 |---|---|---|
 | GET | `/api/music/devices` | 音频输出设备列表（loopback 候选） |
-| POST | `/api/music/start` | `{deviceId, sensitivity:1.0, style:"spectrum"|"pulse", fps:20}` |
+| POST | `/api/music/start` | `{deviceId, sensitivity:1.0, mode:13, fps:20}`（`mode` 为官方渲染器模式，旧 `style` 仍兼容） |
 | POST | `/api/music/stop` | 停止 |
-| GET | `/api/music/status` | `{running,fps,level,device}` |
+| GET | `/api/music/status` | `{running,mode,modes,fps,level,bands32,deviceId,frames,colors}`；运行中 `colors` = 当前帧逐键颜色 `{slot:[r,g,b]}`（官方方案预览回放用） |
 
 ### 4.8 无线 / 按键测试 / 备份 / 设置
 
@@ -196,6 +196,10 @@ driver/
 {"type":"job", "data":{"job":"tft","state":"done"|"error","error":null}}
 {"type":"keyevent", "data":{"vkey":65,"name":"A","down":true,"ts":...}}
 {"type":"music_level", "data":{"level":0.6,"bands":[...]}}   // 节流 10fps
+{"type":"music_frame", "data":{"mode":13,"frame":123,"fps":20,
+                               "colors":{"0":[r,g,b], ...}}}  // 后端实发帧逐键颜色，
+                                                              // 跟随引擎 fps（默认 20fps）；
+                                                              // 「官方方案」预览直接回放它
 {"type":"toast", "data":{"level":"info"|"warn"|"error","message":"..."}}
 {"type":"log", "data":{"line":"..."}}             // 调试控制台
 ```

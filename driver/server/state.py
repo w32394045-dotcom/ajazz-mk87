@@ -281,22 +281,55 @@ class DeviceManager:
         self._music_level_thread.start()
 
     def _music_level_loop(self) -> None:
-        """音乐律动运行时，以 10fps 推送电平/32 段频谱给前端可视化。"""
+        """音乐律动运行时推送两类事件：
+
+        * ``music_level``（10fps）：总振幅 + 32 段频谱，给电平条/频谱条用；
+        * ``music_frame``（跟随引擎 fps，默认 20fps）：后端**实际发给键盘那一帧**的
+          逐键颜色，前端「官方方案」预览直接回放它，保证屏幕预览与键盘逐键一致。
+        """
+        level_due = 0.0
+        frame_due = 0.0
         while not self._stop.is_set():
             try:
                 if self.music.running:
-                    self.emit({
-                        "type": "music_level",
-                        "data": {
-                            "level": round(float(self.music.level), 3),
-                            "bands": [round(float(b), 3) for b in self.music.levels32],
-                        },
-                    })
-                    time.sleep(0.1)
+                    now = time.time()
+                    if now >= level_due:
+                        level_due = now + 0.1
+                        self.emit({
+                            "type": "music_level",
+                            "data": {
+                                "level": round(float(self.music.level), 3),
+                                "bands": [round(float(b), 3) for b in self.music.levels32],
+                            },
+                        })
+                    if now >= frame_due:
+                        frame_due = now + 1.0 / max(5, min(40, int(self.music.fps or 20)))
+                        frame = self._music_frame_event()
+                        if frame is not None:
+                            self.emit(frame)
+                    delay = min(level_due, frame_due) - time.time()
+                    time.sleep(min(0.1, max(0.005, delay)))
                     continue
+                level_due = frame_due = 0.0
             except Exception:  # noqa: BLE001
                 pass
-            time.sleep(0.25)
+            time.sleep(0.1)
+
+    def _music_frame_event(self) -> Optional[dict]:
+        """把 MusicPlayer 最近一帧的逐键颜色转成 WS 事件（还没出帧时返回 None）。"""
+        colors = self.music.last_colors
+        if not colors:
+            return None
+        return {
+            "type": "music_frame",
+            "data": {
+                "mode": int(self.music.mode),
+                "frame": int(self.music.frames),
+                "fps": int(self.music.fps),
+                "colors": {str(int(slot)): [int(rgb[0]), int(rgb[1]), int(rgb[2])]
+                           for slot, rgb in colors.items()},
+            },
+        }
 
     def stop(self) -> None:
         log.info("设备管理停止")

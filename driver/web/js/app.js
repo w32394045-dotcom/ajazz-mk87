@@ -117,6 +117,8 @@ i18n.onChange(() => {
 
 /** English 时对整页 DOM 应用翻译层；中文时停用（页面重挂载即恢复中文原文） */
 function applyLanguageToDom() {
+  // 页面模块会读 <html lang> 决定动态文案的语言（如音乐模式名），这里保证首屏也同步
+  document.documentElement.lang = i18n.lang === 'en' ? 'en' : 'zh-CN';
   if (i18n.lang === 'en') enableAutoTranslate(document.body);
   else disableAutoTranslate();
 }

@@ -442,6 +442,9 @@ class MusicEngine:
             "centerCol": self.lay["centerCol"],
         }
         self._silence = 0
+        #: 最近一帧的逐键颜色 {keyValue: (r,g,b)}（供前端「官方方案」预览回放；
+        #: 与设备实际收到的 348B 载荷同源，保证屏幕预览和键盘同步）
+        self.last_colors: Dict[int, RGB] = {}
 
     def set_mode(self, mode: int) -> None:
         mode = int(mode)
@@ -466,6 +469,7 @@ class MusicEngine:
         for cell in self.lay["visible"]:
             c = grid[cell["row"]][cell["col"]] if cell["col"] < len(grid[cell["row"]]) else (0, 0, 0)
             colors[cell["value"]] = c
+        self.last_colors = colors
         return lighting.build_frame_payload(colors)
 
 
@@ -790,6 +794,8 @@ class MusicPlayer:
         self.errors = 0
         self.last_error = ""
         self.last_payload: bytes = b""
+        #: 最近一帧逐键颜色（与 last_payload 同源，供前端官方方案预览）
+        self.last_colors: Dict[int, RGB] = {}
         self._snapshot: Optional[dict] = None
         self._engine: Optional[MusicEngine] = None
         self._drainer: Optional[AckDrainer] = None
@@ -822,6 +828,7 @@ class MusicPlayer:
         self.last_error = ""
         self.frames = 0
         self.levels32 = [0.0] * 32
+        self.last_colors = {}
         self._stop.clear()
         self._ready = threading.Event()
         self._start_error = None
@@ -884,6 +891,8 @@ class MusicPlayer:
                     self.bands = analysis["bands"]
                     self.levels32 = analysis.get("bands32") or []
                     payload = self._engine.tick(analysis["amp1000"]) if self._engine else b""
+                    # 记录本帧逐键颜色：前端「官方方案」预览直接回放（与设备实发帧同源）
+                    self.last_colors = self._engine.last_colors if self._engine else {}
                     # 音乐帧流 20fps：原生通道逐包等 ACK（单包 0.5~3ms），不再走 hidapi
                     if self._sender is not None:
                         self._sender.send(payload, self.frames & 0xFF, wait_ack=True,
@@ -919,6 +928,7 @@ class MusicPlayer:
             self.errors += 1
             self.last_error = str(exc)
         finally:
+            self.last_colors = {}
             try:
                 capture.close()
             except Exception:
@@ -956,6 +966,9 @@ class MusicPlayer:
             "level": round(float(self.level), 3),
             "bands": [round(float(b), 3) for b in self.bands],
             "bands32": [round(float(b), 3) for b in self.levels32],
+            # 官方方案预览：运行中返回当前帧逐键颜色 {slot: [r,g,b]}，未运行返回空对象
+            "colors": ({str(int(slot)): [int(rgb[0]), int(rgb[1]), int(rgb[2])]
+                        for slot, rgb in self.last_colors.items()} if self.running else {}),
             "frames": self.frames,
             "errors": self.errors,
             "lastError": self.last_error,

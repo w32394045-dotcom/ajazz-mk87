@@ -18,6 +18,53 @@ const SLEEP_TIMES = [0, 1, 10, 20, 30];
 
 const KEY_SLOTS = KEY_LAYOUT.rows.flat().map((k) => k.slot);
 
+/* ---------------------------------------------------------------- 音乐律动 mock
+   仅 mock 演示用的“近似官方渲染器”：真实逐键帧由后端 Python 渲染器生成，
+   这里只是让没有硬件/后端时键盘可视化也有动画可看。 */
+const MUSIC_MODES = [
+  { mode: 13, name: '律动节拍', nameEn: 'Dance to the Beat' },
+  { mode: 14, name: '光尘螺旋', nameEn: 'Dust Glow Spiral' },
+  { mode: 17, name: '萤火轨迹', nameEn: 'Firefly Trail' },
+  { mode: 4, name: '曲率频谱', nameEn: 'Curvature Frequency Steps' },
+];
+const KEY_GEO = KEY_LAYOUT.rows.flat().map((k) => ({
+  slot: k.slot,
+  row: k.row,
+  col: (k.x + k.w / 2) / KEY_LAYOUT.rowWidth,
+  mid: (k.row + 0.5) / KEY_LAYOUT.rows.length,
+}));
+const KEY_DIST = KEY_GEO.map((k) => clamp(Math.hypot((k.col - 0.5) * 1.9, (k.mid - 0.5) * 1.15) / 1.05, 0, 1));
+
+function musicMockColors(mode, phase, level, levels) {
+  const colors = {};
+  for (let i = 0; i < KEY_GEO.length; i++) {
+    const k = KEY_GEO[i];
+    const d = KEY_DIST[i];
+    let rgb = [0, 0, 0];
+    if (mode === 13) {
+      const wave = Math.max(0, Math.sin(d * 8.5 - phase * 2.4));
+      const v = clamp(level * 1.9 * wave + wave * 0.12, 0, 1);
+      rgb = hsl((20 + d * 250 + phase * 8) % 360, 95, 20 + v * 38);
+    } else if (mode === 14) {
+      const ang = Math.atan2(k.mid - 0.5, k.col - 0.5);
+      const ray = Math.max(0, Math.sin(ang * 3 + phase * 1.4));
+      const v = clamp(level * 1.7 * (0.3 + 0.7 * ray), 0, 1);
+      rgb = hsl((ang * 57 + 200 + phase * 30) % 360, 90, 18 + v * 40);
+    } else if (mode === 17) {
+      const wave = Math.max(0, Math.sin(k.col * 7 - phase * 2.2)) * Math.max(0, 1 - Math.abs(k.mid - 0.5) * 1.3);
+      const v = clamp(level * 1.8 * wave, 0, 1);
+      rgb = hsl((190 + k.col * 90 + phase * 10) % 360, 95, 16 + v * 42);
+    } else {
+      const band = clamp(Math.floor(k.col * 32), 0, 31);
+      const v = clamp((levels[band] || 0) * 1.5, 0, 1);
+      if (v > 0.03) rgb = hsl((205 + band * 5) % 360, 95, 16 + v * 42);
+    }
+    colors[k.slot] = rgb;
+  }
+  return colors;
+}
+
+
 /* HSL → [r,g,b] */
 function hsl(h, s, l) {
   h = ((h % 360) + 360) % 360; s /= 100; l /= 100;
@@ -111,7 +158,7 @@ export class MockServer {
       ],
       conflicts: saved.conflicts || [],
       frames: { running: false, fps: 20, frames: 0 },
-      music: { running: false, deviceId: 'default', sensitivity: 1.0, style: 'spectrum', fps: 20, level: 0 },
+      music: { running: false, deviceId: 'default', sensitivity: 1.0, style: 'spectrum', fps: 20, mode: 13, level: 0, colors: {}, frame: 0 },
       tftJob: null,
       keytest: { running: false, events: [] },
       rawLog: [],
@@ -600,7 +647,8 @@ export class MockServer {
       },
       {
         method: 'GET', path: '/api/music/status', handler: () => ({
-          running: S.music.running, fps: S.music.fps, level: S.music.level, device: S.music.deviceId,
+          running: S.music.running, mode: S.music.mode, modes: MUSIC_MODES, fps: S.music.fps,
+          level: S.music.level, device: S.music.deviceId, colors: S.music.colors || {},
         }),
       },
 
@@ -936,6 +984,9 @@ export class MockServer {
     m.sensitivity = Number(body.sensitivity) || 1.0;
     m.style = body.style === 'pulse' ? 'pulse' : 'spectrum';
     m.fps = Number(body.fps) || 20;
+    m.mode = [13, 14, 17, 4, 1].includes(Number(body.mode)) ? Number(body.mode) : 13;
+    m.colors = {};
+    m.frame = 0;
     m.phase = 0;
     m.levels = new Array(32).fill(0);
     const target = new Array(32).fill(0);
@@ -957,6 +1008,9 @@ export class MockServer {
       }
       m.level = Math.round((sum / 32) * 1000) / 1000;
       this._emit('music_level', { level: m.level, bands: m.levels.map((v) => Math.round(v * 1000) / 1000) });
+      m.frame = (m.frame || 0) + 1;
+      m.colors = musicMockColors(m.mode, m.phase, m.level, m.levels);
+      this._emit('music_frame', { mode: m.mode, fps: m.fps, frame: m.frame, colors: m.colors });
     }, Math.round(1000 / m.fps));
     this.timers.add(m.timer);
   }
@@ -967,6 +1021,8 @@ export class MockServer {
     m.timer = null;
     m.running = false;
     m.level = 0;
+    m.colors = {};
+    m.frame = 0;
     m.levels = new Array(32).fill(0);
   }
 

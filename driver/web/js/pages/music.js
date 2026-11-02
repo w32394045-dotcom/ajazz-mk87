@@ -3,9 +3,9 @@
    仅 USB 支持：2.4G 下官方明确不支持（spec-lighting.md §4.6）。 */
 import { KEY_LAYOUT } from '../data/keyboard.js';
 import { icon } from '../icons.js';
-import { h, clamp } from '../util.js';
+import { h, clamp, store } from '../util.js';
 import { Keyboard } from '../components/keyboard.js';
-import { createSlider, createSegmented, badge, kvList } from '../components/widgets.js';
+import { createSlider, createSegmented, createTabs, badge, kvList } from '../components/widgets.js';
 
 const BAND_COUNT = 32;
 const KEYS = KEY_LAYOUT.rows.flat().map((k) => ({ slot: k.slot, col: clamp(Math.floor((k.x / 275) * BAND_COUNT), 0, BAND_COUNT - 1) }));
@@ -42,6 +42,12 @@ export default {
     let targetLevels = new Array(BAND_COUNT).fill(0);
     let running = false;
     let raf = null;
+    /* 键盘可视化预览：current = 本地频谱动画；official = 回放后端实发帧（官方渲染器） */
+    let previewMode = store.get('mk87.music.preview', 'current');
+    if (previewMode !== 'official') previewMode = 'current';
+    let officialColors = null;      // Map<slot, [r,g,b]> 后端最近一帧
+    let officialMode = null;        // 后端实际运行的模式
+    let officialFps = null;
     const offs = [];
 
     /* ---------------- 数据 ---------------- */
@@ -61,6 +67,8 @@ export default {
           statusModes = st.modes;
           mode = Number(st.mode || st.modes[0].mode || 13);
         }
+        if (st.mode != null) officialMode = Number(st.mode);
+        if (st.colors && typeof st.colors === 'object') officialColors = officialFrameMap(st.colors);
         if (st.supported === false) supported = false;
       }
     } catch { /* ignore */ }
@@ -103,12 +111,34 @@ export default {
     const styleSeg = createSegmented({
       options: modeOptions,
       value: mode,
+      small: true,
       onChange: (v) => { mode = Number(v); },
     });
     const fpsSeg = createSegmented({
       options: [{ value: 15, label: '15' }, { value: 20, label: '20' }, { value: 30, label: '30' }],
       value: 20, small: true,
       onChange: (v) => { fps = v; },
+    });
+
+    /* 键盘可视化：两套动画切换（当前方案 / 官方方案） */
+    const previewHint = h('span', { class: 'hint' }, '');
+    const previewNoteMain = h('span', {}, '');
+    const previewNoteBadge = h('span', { class: 'badge accent', style: { display: 'none' } });
+    const previewNoteState = h('span', {}, '');
+    const previewNoteFps = h('span', {}, '');
+    const previewNote = h('div', {
+      class: 'tiny muted',
+      style: { marginTop: '10px', display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center' },
+    }, previewNoteMain, previewNoteBadge, previewNoteState, previewNoteFps);
+    const previewTabs = createTabs({
+      tabs: [{ id: 'current', label: '当前方案' }, { id: 'official', label: '官方方案' }],
+      active: previewMode,
+      onChange: (v) => {
+        previewMode = v === 'official' ? 'official' : 'current';
+        store.set('mk87.music.preview', previewMode);
+        keyboard.clearColors();
+        applyPreviewMode();
+      },
     });
 
     const startBtn = h('button', { class: 'btn primary lg', html: `${icon('play', { size: 16 })}<span>开始律动</span>` });
@@ -158,6 +188,53 @@ export default {
       }
     }
 
+    /* ---------------- 键盘可视化预览 ---------------- */
+    function officialFrameMap(colors) {
+      const map = new Map();
+      if (!colors || typeof colors !== 'object') return map;
+      for (const [slot, rgb] of Object.entries(colors)) {
+        if (Array.isArray(rgb) && rgb.length >= 3) {
+          map.set(Number(slot), [Number(rgb[0]) || 0, Number(rgb[1]) || 0, Number(rgb[2]) || 0]);
+        }
+      }
+      return map;
+    }
+
+    function modeNameOf(id) {
+      const list = statusModes || DEFAULT_MODES;
+      const hit = list.find((m) => Number(m.mode) === Number(id));
+      return hit ? modeLabel(hit) : (id != null ? `mode ${id}` : '官方渲染器');
+    }
+
+    /** 刷新预览说明文字（官方方案会显示后端实际运行的模式与 fps） */
+    function refreshPreviewNote() {
+      const official = previewMode === 'official';
+      if (!official) {
+        previewNoteMain.textContent = '按键颜色 = 所在列的频率强度，是本工具自己的可视化；与设备实际输出无关';
+        previewNoteBadge.style.display = 'none';
+        previewNoteBadge.textContent = '';
+        previewNoteState.textContent = '';
+        previewNoteFps.textContent = '';
+        return;
+      }
+      previewNoteMain.textContent = '官方渲染器实发帧：逐键颜色与键盘同步';
+      previewNoteBadge.textContent = modeNameOf(officialMode != null ? officialMode : mode);
+      previewNoteBadge.style.display = '';
+      previewNoteState.textContent = running
+        ? (officialColors ? '实时回放中' : '等待首帧…')
+        : '开始律动后显示实时回放';
+      previewNoteFps.textContent = `${officialFps || fps} fps`;
+    }
+
+    /** 切换预览方案：清掉键盘上的旧颜色，刷新标题与说明 */
+    function applyPreviewMode(clear = false) {
+      if (clear) keyboard.clearColors();
+      previewHint.textContent = previewMode === 'official'
+        ? '设备实发帧（官方渲染器）'
+        : '本地频谱预览（非设备输出）';
+      refreshPreviewNote();
+    }
+
     /* ---------------- 电平原画 ---------------- */
     function paintLevels() {
       for (let i = 0; i < BAND_COUNT; i++) {
@@ -171,14 +248,19 @@ export default {
       levelMeter.querySelector('i').style.width = `${clamp(avg / 0.55, 0, 1) * 100}%`;
       meterValue.textContent = avg.toFixed(3);
       if (running) {
-        // 键盘可视化：列 = 频率带
-        const frame = new Map();
-        for (const k of KEYS) {
-          const v = clamp(levels[k.col] * 1.15, 0, 1);
-          const rgb = v < 0.02 ? [22, 28, 40] : hslToRgb(196 + k.col * 4.8, 95, 42 + v * 26);
-          frame.set(k.slot, rgb);
+        if (previewMode === 'official') {
+          // 官方方案：直接回放后端发给键盘的那一帧（逐键颜色同源）
+          if (officialColors && officialColors.size) keyboard.applyColorFrame(officialColors);
+        } else {
+          // 当前方案：本地频谱动画（列 = 频率带），仅前端预览，与设备实际输出无关
+          const frame = new Map();
+          for (const k of KEYS) {
+            const v = clamp(levels[k.col] * 1.15, 0, 1);
+            const rgb = v < 0.02 ? [22, 28, 40] : hslToRgb(196 + k.col * 4.8, 95, 42 + v * 26);
+            frame.set(k.slot, rgb);
+          }
+          keyboard.applyColorFrame(frame);
         }
-        keyboard.applyColorFrame(frame);
       }
     }
     function loop() {
@@ -190,6 +272,14 @@ export default {
     offs.push(api.on('ws:music_level', (d) => {
       if (!d) return;
       targetLevels = Array.from({ length: BAND_COUNT }, (_, i) => clamp(Number(d.bands?.[i] ?? d.level ?? 0), 0, 1));
+    }));
+    offs.push(api.on('ws:music_frame', (d) => {
+      if (!d) return;
+      const firstFrame = !officialColors || !officialColors.size;
+      if (d.mode != null) officialMode = Number(d.mode);
+      if (d.fps != null) officialFps = Number(d.fps);
+      officialColors = officialFrameMap(d.colors);
+      if (firstFrame && officialColors.size) refreshPreviewNote();
     }));
 
     function setRunning(on) {
@@ -204,6 +294,7 @@ export default {
         if (!raf) loop();
       } else {
         keyboard.clearColors();
+        officialColors = null;
         targetLevels = new Array(BAND_COUNT).fill(0);
         setTimeout(() => {
           if (running) return;
@@ -212,6 +303,7 @@ export default {
           paintLevels();
         }, 400);
       }
+      refreshPreviewNote();
     }
 
     async function startMusic() {
@@ -246,11 +338,11 @@ export default {
         statusBadge,
       ),
       h('div', { class: 'card-body' },
-        h('div', { class: 'grid grid-2', style: { marginBottom: '14px' } },
-          h('div', { class: 'field' }, h('div', { class: 'field-label' }, '模式'), styleSeg.el),
-          h('div', { class: 'field' }, h('div', { class: 'field-label' }, '帧率（fps）'), h('div', { class: 'row' }, fpsSeg.el, h('span', { class: 'tiny muted' }, '实测 20fps 稳定'))),
-        ),
-        sensSlider.el,
+        h('div', { class: 'field' }, h('div', { class: 'field-label' }, '模式'), styleSeg.el),
+        h('div', { class: 'field', style: { marginTop: '12px' } },
+          h('div', { class: 'field-label' }, '帧率（fps）'),
+          h('div', { class: 'row' }, fpsSeg.el, h('span', { class: 'tiny muted' }, '实测 20fps 稳定'))),
+        h('div', { style: { marginTop: '14px' } }, sensSlider.el),
         h('div', { class: 'row mt-16' }, startBtn, stopBtn,
           h('div', { class: 'spacer' }),
           h('span', { class: 'tiny muted' }, '比官方 v1 更省心：无需 Music.exe 插件'),
@@ -260,8 +352,13 @@ export default {
         h('div', { class: 'row mt-12', style: { gap: '12px' } },
           h('span', { class: 'tiny muted' }, '总振幅'), levelMeter, meterValue,
         ),
-        h('div', { class: 'section-title', style: { marginTop: '20px' } }, h('h2', {}, '键盘可视化'), h('span', { class: 'hint' }, '本地预览（真实帧流由后端推送设备）')),
+        h('div', { class: 'section-title', style: { marginTop: '20px' } },
+          h('h2', {}, '键盘可视化'),
+          previewHint,
+          h('div', { class: 'spacer' }),
+          previewTabs.el),
         keyboard.deck,
+        previewNote,
       ),
     );
 
@@ -320,6 +417,7 @@ export default {
     renderSupport();
     renderDevices();
     setRunning(running);
+    applyPreviewMode();
     if (!running) {
       cancelAnimationFrame(raf); raf = null;
       paintLevels();
