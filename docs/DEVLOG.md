@@ -461,4 +461,15 @@ curl -s "$API/repos/w32394045-dotcom/ajazz-mk87/releases/tags/v0.1.1"
 | 验证 | 发布页 `https://github.com/w32394045-dotcom/ajazz-mk87/releases/tag/v0.1.1` 返回 200；API 读取正文：`startswith('# MK87 Studio')`=True、含 `界面 / Screenshots`、`许可 / License`、`MIT License`、`v0.1.1 更新`，6 个图片 URL 全部 200 |
 | 备注 | deb 控制文件本身没有 License 字段（Debian 规范），RPM spec 的 `License: MIT` 生效；已发布的 v0.1.1 安装包内不含 LICENSE 文件，下一个版本会随打包带 README 许可段 |
 
+### 15.6 README 双语独立化 + 截图内嵌 + 本地包重建（2026-11-02 21:45）
+
+| 项 | 内容 |
+|---|---|
+| 用户澄清 | 「完全独立的双语（EN 为默认）」+「截图直接内嵌到 README」——不是同一段里中英逐行对照 |
+| README | `README.md` 重写为英文（仓库默认语言）；新增 `README.zh-CN.md` 独立完整中文版；两文件顶部互相链接 |
+| 截图内嵌 | 6 张图改用仓库相对路径（`driver/docs/screenshots/*.png` + `capture/ui_music_preview/*.png`），GitHub 仓库首页直接渲染；音乐两张标注为演示模式 |
+| 发布页 | `.github/release-notes.md` 改为英文默认（满足 EN 默认），中文入口链接到 `README.zh-CN.md`；截图不再重复放在发布页，改为链接 README |
+| 本地包重建 | 删除旧 `driver/dist/MK87Config` 后执行 `packaging/windows/build-portable.ps1`：`MK87Config.exe` 10,390,408 B / FileVersion **0.1.1.0** / LegalCopyright 含 MIT；便携包 `driver/dist-packages/MK87Studio-0.1.1-win64-portable.zip` 39,893,935 B；已确认打包内 `_internal/web/js/pages/music.js` 含「当前方案 / 官方方案」新代码 |
+| 交付路径（真机验收用） | `driver\dist\MK87Config\MK87Config.exe`（双击即用，免安装）；便携 zip 见上 |
+
 
