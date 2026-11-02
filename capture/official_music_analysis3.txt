@@ -1,0 +1,55 @@
+﻿records: 1498 segments: 29
+label                        n  chg   lit maxlit top
+A mode=1 绿色/黄色/红色           51    3   0.1      4 FE0000:4, FEFE00:1
+A mode=2 彩虹色                51    0   0.0      0 
+A mode=13 随曲起舞              50   23   4.0      9 B6FF00:9, 00FF00:9, 000CFF:8
+A mode=4 曲率频阶               51    3   0.0      1 F6FF00:1, 62FF00:1
+A mode=5 频谱循环               51   23   3.7     21 AA00FF:21, 006AFF:19, FF00D4:19
+A mode=6 白色                 50   28   3.2     18 FEFEFE:126, 00FF6A:35
+A mode=7 红色                 51   41   7.1     25 FE0000:346, FEFEFE:15
+A mode=8 橙色                 51   26   3.2     22 FE3F00:164
+A mode=9 黄色                 50   36   7.1     22 FEFE00:269, FE3F00:85
+A mode=11 蓝色                51   42  13.9     52 00FE00:684, FEFE00:25
+A mode=10 绿色                51   39   6.9     26 0000FE:301, 00FE00:50
+A mode=100 屏光联动             50   38 102.0    102 F0F1F1:138, D7D7D8:138, E0E0E1:138
+B backmode=0 无              51   50  11.2     40 0026FF:24, FF0059:24, FF0083:16
+B backmode=6 白色             51   50  94.5    102 FEFEFE:4273, 37FF00:32, FF6E00:24
+B backmode=7 红色             50   49 102.0    102 FE0000:4048, FEFEFE:465, 00FF15:24
+B backmode=8 橙色             51   50 102.0    102 FE3F00:4078, FE0000:465, 1000FF:17
+B backmode=9 黄色             51   50 102.0    102 FEFE00:4234, FE3F00:465, BFFF00:17
+B backmode=10 蓝色            50   49 102.0    102 0000FE:4059, FEFE00:465, 08FF00:16
+B backmode=11 绿色            51   49 102.0    102 00FE00:4117, 0000FE:465, FFE900:25
+B backmode=1 绿色/黄色/红色       50   49 102.0    102 00FE00:1719, FE0000:1393, FEFE00:1162
+B backmode=2 彩虹色            51   50 102.0    102 FE0000:929, FEFE00:870, 00FE00:770
+B backmode=4 色谱             50   49 102.0    102 FE00FE:85, FEFE00:85, FE0000:85
+B backmode=5 频谱循环           51   49 102.0    102 5500FF:196, FF6A00:187, FF0016:186
+C amp=30                    51   50  26.7    102 00FF2B:309, FF0094:32, BF00FF:31
+C amp=60                    50   49  24.0     88 A100FF:36, 00FF0C:31, 00FFB6:24
+C amp=100                   51   50  21.2    102 004CFF:32, 00F6FF:31, 00FF5D:27
+D bb=100                    51   50  92.9    102 FE0000:1533, 00FE00:1396, FEFE00:1276
+D bb=50                     50   47 101.9    102 7E0000:1526, 007E00:1415, 7E7E00:1299
+D bb=20                     51   50 102.0    102 320000:1554, 003200:1418, 323200:1292
+
+=== B backmode=1 绿色/黄色/红色 ===
+R GGGGGGGGGGGGGGG
+GGGGGGGYYYGGGGGGG
+YYYYYYYYCYYYYYYYY
+YYYYYYYYYYYYY    
+R RRRRRRRRRRR  R 
+RRR   R   RRRRRRR
+
+=== B backmode=2 彩虹色 ===
+Y MMMMMMMMMMMMMMM
+BBBBBBBMMMBBBBBBB
+CCCCCCCMMMCCCCCCC
+GGGGGGGMMMGGG    
+Y YYYYYYYYYYY  Y 
+RRR   R   RRRRRRR
+
+=== C amp=100 ===
+. ...............
+.......BBB.......
+.......BMB.......
+.......BBB...    
+. ...........  . 
+...   .   .......
