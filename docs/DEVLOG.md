@@ -456,7 +456,9 @@ curl -s "$API/repos/w32394045-dotcom/ajazz-mk87/releases/tags/v0.1.1"
 | 截图 | 固定 `v0.1.1` tag 的 `raw.githubusercontent.com` URL（不随 main 变化）：UI 浅色/深色（真机）、TFT 屏幕、日志与设置、音乐页「当前方案 / 官方方案」（后两张为演示模式截图）；**6/6 URL 实测 HTTP 200** |
 | 许可 | 新增根目录 `LICENSE`（MIT · Copyright (c) 2026 w32394045-dotcom，1,073 B）；根 `README.md` 与 `driver/README.md` 增加许可段；`mk87.spec` `License: Freeware → MIT`；Windows `version_info.txt` 的 `LegalCopyright` 改为 MIT；并注明 `assets/`、`tools/Music.exe` 等原厂提取物**不在 MIT 授权范围** |
 | 上线方式 | 不重打 tag：用 GitHub API `PATCH /releases/431494652` 更新已发布的 v0.1.1 页面正文；发布页 HTTP 200，正文含 6 张图 / 许可 / 双语段落 |
-| 验证 | 发布页 `https://github.com/w32394045-dotcom/ajazz-mk87/releases/tag/v0.1.1` 返回 200；API 读取正文含 `界面 / Screenshots`、`许可 / License`、`MIT License`、`v0.1.1 更新` |
+| 事故（已修） | 第一次 PATCH 用 PowerShell `Invoke-RestMethod -Body <byte[]>`，GitHub 把正文存成了 PowerShell 对象字符串（`{"value" => "...\\n..."}`，33,570 字符、0 个真实换行、页面渲染错乱）。改用 Python `urllib.request` + `json.dumps` PATCH 后恢复正常：8,588 字符 / 10,858 B（与本地文件一致）、148 个真实换行、6 张图 |
+| 防复发 | GitHub API 的写操作统一用 Python urllib（或 `curl --data-binary @file -H 'Content-Type: application/json'`），不用 PowerShell 的 byte[] `-Body` |
+| 验证 | 发布页 `https://github.com/w32394045-dotcom/ajazz-mk87/releases/tag/v0.1.1` 返回 200；API 读取正文：`startswith('# MK87 Studio')`=True、含 `界面 / Screenshots`、`许可 / License`、`MIT License`、`v0.1.1 更新`，6 个图片 URL 全部 200 |
 | 备注 | deb 控制文件本身没有 License 字段（Debian 规范），RPM spec 的 `License: MIT` 生效；已发布的 v0.1.1 安装包内不含 LICENSE 文件，下一个版本会随打包带 README 许可段 |
 
 
