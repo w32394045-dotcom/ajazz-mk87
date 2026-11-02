@@ -403,3 +403,46 @@ cd driver
 - 新增未跟踪 2 个：`driver/tests/test_music_preview.py`、`driver/tools/ui_shots.py`。
 - 仍是未跟踪（上一节调研产物）：`docs/DEVLOG.md`、`probe/*.py`、`capture/official_music_*`、本节 `capture/ui_music_preview/`。
 - 未改：`driver/web/js/data/*`、`driver/server/app.py`、打包/CI 配置。
+
+---
+
+## 15 2026-11-02 晚间：发布 v0.1.1（已上线）
+
+### 15.1 做了什么
+
+| 项 | 内容 |
+|---|---|
+| 发布页 | GitHub Release `v0.1.1`（tag `v0.1.1` → 提交 `bbb5c58`），由 CI 自动构建并发布 |
+| 版本号 | `0.1.0 → 0.1.1`，7 处：`mk87lib.__version__`、`server.VERSION`、`status.webVersion`、Windows `version_info.txt`（filevers/prodvers/FileVersion/ProductVersion）、`mk87.iss`、Linux `mk87.spec` |
+| Release notes | `.github/release-notes.md` 新增「v0.1.1 更新」段（音乐预览双标签、英文 lang 修复、测试/自检脚本、WS 文档）；功能表音乐条目补「当前方案 / 官方方案」 |
+| 修掉的发布隐患 | `mk87.spec` 的 `Version:` 之前硬编码 `0.1.0`，而 `build-rpm.sh` 虽传 `--define version_override`，spec 没接 → 升版本后 RPM 会锁死旧版本号。现改为 `%{?version_override}%{!?version_override:0.1.1}` |
+| CI | tag 触发 run #14（`41452181866`）：offline tests（win/ubuntu）、linux deb+rpm、windows portable+installer、publish release **全部 success** |
+
+### 15.2 发布页实测（2026-11-02 21:27 +08:00）
+
+- URL：https://github.com/w32394045-dotcom/ajazz-mk87/releases/tag/v0.1.1 （`draft=false`、`prerelease=false`）
+
+| 资产 | 大小（字节） | SHA256（前 16 位） |
+|---|---|---|
+| `MK87Studio-0.1.1-win64-portable.zip` | 38,966,363 | `3dcdd3ee1ffc634e` |
+| `MK87Studio-0.1.1-win64-setup.exe` | 30,116,590 | `61661e3595b95e11` |
+| `mk87_0.1.1_amd64.deb` | 207,913,858 | `e67150c0afe7cf1d` |
+| `mk87-0.1.1-1.x86_64.rpm` | 248,454,402 | `d05192cd9ed4c0b0` |
+| `SHA256SUMS.txt` | 378 | `1832cc978b3d33d1` |
+
+### 15.3 复跑 / 排查命令
+
+```bash
+# 触发发布：打 tag 并推送（CI 自动构建 + 发布；版本号先按 §15.1 的 7 处同步改好）
+git tag -a v0.1.1 -m "MK87 Studio v0.1.1" && git push origin v0.1.1
+
+# 查看构建与产物
+curl -s "$API/repos/w32394045-dotcom/ajazz-mk87/actions/runs?per_page=3"
+curl -s "$API/repos/w32394045-dotcom/ajazz-mk87/releases/tags/v0.1.1"
+```
+
+### 15.4 未验证 / 注意
+
+- 安装包体积：Linux deb/rpm 约 200–240MB（PyInstaller 打包 Qt/WebEngine 的既有现象，v0.1.0 相同）——本次未优化。
+- **v0.1.1 安装包里的音乐双预览效果仍需真机验收**（同 §14.7）。
+- Windows 安装包在 CI 里 `continue-on-error: true`，本次实际成功；若以后失败，release 仍会发布但会少 `setup.exe`（release job `fail_on_unmatched_files: false`）。
