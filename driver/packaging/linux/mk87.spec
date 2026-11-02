@@ -1,5 +1,6 @@
 Name:           mk87
-Version:        0.1.0
+# 显式版本号；build-rpm.sh 传 --define version_override 时以它为准（避免改了 __version__ 而 spec 忘记同步）
+Version:        %{?version_override}%{!?version_override:0.1.1}
 Release:        1%{?dist}
 Summary:        AJAZZ MK87 keyboard configuration tool (unofficial)
 
