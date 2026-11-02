@@ -3,6 +3,7 @@ name: build
 on:
   push:
     branches: [main]
+    tags: ["v*"]
   workflow_dispatch:
 
 jobs:
@@ -91,3 +92,36 @@ jobs:
             driver/dist-packages/*.zip
             driver/dist-installer/*.exe
           if-no-files-found: warn
+
+  # 打 v* tag 时自动发布 GitHub Release（附件 = 全部安装包 + SHA256SUMS.txt）
+  release:
+    name: publish GitHub Release
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: [linux-packages, windows-package]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+      - name: Collect release files + checksums
+        run: |
+          mkdir -p release-files
+          find artifacts -type f \( -name '*.zip' -o -name '*.exe' -o -name '*.deb' -o -name '*.rpm' \) \
+            -exec cp -v {} release-files/ \;
+          cd release-files
+          sha256sum * > SHA256SUMS.txt
+          echo '--- release files ---'
+          ls -lh
+      - name: Publish release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: "MK87 Studio ${{ github.ref_name }}"
+          tag_name: ${{ github.ref_name }}
+          body_path: .github/release-notes.md
+          files: release-files/*
+          draft: false
+          prerelease: false
+          fail_on_unmatched_files: false

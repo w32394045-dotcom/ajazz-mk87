@@ -4,6 +4,20 @@
 > 官方网页驱动：`https://ajazz.driveall.cn`
 > 状态：**协议逆向完成（静态 + 真机验证全部收口）**，进入自有工具/驱动实现阶段。
 
+## 下载（成品软件）
+
+👉 **https://github.com/w32394045-dotcom/ajazz-mk87/releases/latest**
+
+| 平台 | 文件 | 说明 |
+|---|---|---|
+| Windows | `MK87Studio-*-win64-portable.zip` | 免安装，解压双击 `MK87Config.exe` |
+| Windows | `MK87Studio-*-win64-setup.exe` | 安装版（快捷方式 / 可选开机自启） |
+| Linux | `mk87_*_amd64.deb` | `sudo apt install ./mk87_*_amd64.deb` |
+| Linux | `mk87-*.x86_64.rpm` | `sudo dnf install ./mk87-*.x86_64.rpm` |
+
+Linux 包内含 udev 规则（免 root 访问 HID），装完重新插拔键盘即可。发布由 GitHub Actions
+自动构建（Windows 便携/安装包、Linux deb/rpm + `SHA256SUMS.txt`）。
+
 ## 这是什么仓库
 
 本仓库包含三部分：
