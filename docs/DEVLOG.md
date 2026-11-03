@@ -720,6 +720,14 @@ C:\Users\ptfm\Documents\ajazz-re\driver\dist-packages\MK87Studio-0.1.1-win64-por
   `/api/status.webVersion=0.1.3`、`/api/music/status.officialModes` 21 项、`/api/quit` 正常退出
 - 本地包：`driver\dist-packages\MK87Studio-0.1.3-win64-portable.zip`（39,945,250 B），
   SHA256 `9425EBFD19E464448DD3444945F2969EADE650EB11CCFBA00E2F348EA69E43BF`
-- 发布：commit → push main → CI 测试/打包 → tag `v0.1.3` → CI 自动 GitHub Release（正文
-  `.github/release-notes.md`，附件 Win 便携/安装包 + Linux deb/rpm + SHA256SUMS）
+- 发布（已完成）：commit `2dc49d4` → push main → CI 运行
+  [#24](https://github.com/w32394045-dotcom/ajazz-mk87/actions/runs/41589846610) 全绿
+  （Windows/Ubuntu 测试 + Linux deb/rpm + Win 便携/安装包）→ tag `v0.1.3` → CI 运行
+  [#25](https://github.com/w32394045-dotcom/ajazz-mk87/actions/runs/41590923612) 全绿 →
+  Release 2026-11-03 14:42（UTC 06:42）发布：<https://github.com/w32394045-dotcom/ajazz-mk87/releases/tag/v0.1.3>
+  - 附件（CI 构建）：`MK87Studio-0.1.3-win64-portable.zip` 39,018,302 B（SHA256
+    `addc078d…82174`）/ `MK87Studio-0.1.3-win64-setup.exe` 30,164,516 B / `mk87-0.1.3-1.x86_64.rpm`
+    248,562,940 B / `mk87_0.1.3_amd64.deb` 208,010,428 B / `SHA256SUMS.txt`
+  - 已下载 Release 的 portable zip 复算 SHA256 与 SHA256SUMS 一致；本地包与 CI 包因构建环境不同哈希不同，
+    Release 以 CI 构件为准
 - 本批明确未做（后置）：mode 100 自研屏幕同步；E2/E4 硬件实验；自定义 HEX 输入
