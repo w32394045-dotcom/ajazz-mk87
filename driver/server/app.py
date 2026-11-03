@@ -407,7 +407,9 @@ def api_keymap_actions():
 @app.get("/api/lighting")
 def api_lighting():
     dev = _dev()
-    return lighting.get_effect(dev)
+    # mode 回读 0 时兜底读一次逐键表：fw1.19 会把自定义族固化成 mode=0，
+    # 灯其实还亮着自定义逐键颜色。字段不变，只把 isCustom 修正为 true。
+    return lighting.get_effect_with_custom_fallback(dev)
 
 
 @app.put("/api/lighting")

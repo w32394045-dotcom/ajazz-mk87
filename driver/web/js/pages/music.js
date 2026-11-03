@@ -1,7 +1,9 @@
 /* pages/music.js — 音乐律动（仅 USB）：两种方案
-   * 当前方案：本工具参数（官方渲染器模式 13/14/17/4/1 + 灵敏度 + 帧率），键盘可视化为本地频谱动画
+   * 当前方案：本工具参数（官方渲染器模式 13/14/17/4 + 灵敏度 + 帧率），键盘可视化为本地频谱动画
    * 官方方案：设置项与官方 v1 插件完全一致（显示模式 12 种 / 背景模式 11 种 / 背景亮度 / 振幅），
      键盘可视化回放后端实发帧（官方渲染器逐键颜色，与键盘同步）
+   两套参数表见 data/music.js（官方 v1 真值，来源 docs/music-v1-config.json +
+   capture/official_music_colors3.jsonl 采样）；后端标注哪些 v1 模式已移植见 status.officialImplementedModes。
    引擎在 Python 后端（WASAPI loopback / PipeWire monitor → FFT → 20fps 逐键帧流 0x32）。
    仅 USB 支持：2.4G 下官方明确不支持（spec-lighting.md §4.6）。 */
 import { KEY_LAYOUT } from '../data/keyboard.js';
@@ -20,8 +22,8 @@ const DEFAULT_MODES = [
   { mode: 17, name: '萤火轨迹', nameEn: 'Firefly Trail' },
   { mode: 4, name: '曲率频谱', nameEn: 'Curvature Frequency Steps' },
 ];
-/** 后端已移植的官方渲染器（后端 status.implementedModes 可用时以它为准） */
-const IMPLEMENTED_FALLBACK = [1, 4, 13, 14, 17];
+/** 后端已移植的官方 v1 渲染器（后端 status.officialImplementedModes 可用时以它为准） */
+const IMPLEMENTED_FALLBACK = [1, 2, 4, 5, 6, 7, 8, 9, 10, 11, 13];
 
 function hslToRgb(hue, s = 95, l = 55) {
   hue = ((hue % 360) + 360) % 360;
@@ -92,7 +94,9 @@ export default {
           statusModes = st.modes;
           mode = Number(st.mode || st.modes[0].mode || 13);
         }
-        if (Array.isArray(st.implementedModes) && st.implementedModes.length) {
+        if (Array.isArray(st.officialImplementedModes) && st.officialImplementedModes.length) {
+          implementedModes = st.officialImplementedModes.map(Number);
+        } else if (Array.isArray(st.implementedModes) && st.implementedModes.length) {
           implementedModes = st.implementedModes.map(Number);
         }
         if (st.mode != null) backendMode = Number(st.mode);
@@ -169,9 +173,9 @@ export default {
       const m = OFFICIAL_MUSIC_MODES.find((x) => x.value === Number(officialModeSelect.value));
       let text = '';
       if (m) {
-        if (m.renderer === 'plugin') text = '该模式由官方 Music.exe 计算，本工具不支持，会回落到「随曲起舞」';
+        if (m.renderer === 'plugin') text = '屏光联动由官方 Music.exe 读取屏幕内容；本工具的自研屏幕同步待做，会回落到「随曲起舞」';
         else if (!isPorted(m.value)) text = '该模式渲染器尚未移植，会回落到「随曲起舞」';
-        else text = '官方渲染器已移植';
+        else text = '官方渲染器已移植（颜色/调色板已用官方采样校验）';
       }
       officialModeHint.textContent = text;
     }
@@ -246,7 +250,9 @@ export default {
       if (st.mode != null) backendMode = Number(st.mode);
       if (st.requestedMode != null) backendRequested = Number(st.requestedMode);
       if (st.fps != null) backendFps = Number(st.fps);
-      if (Array.isArray(st.implementedModes) && st.implementedModes.length) {
+      if (Array.isArray(st.officialImplementedModes) && st.officialImplementedModes.length) {
+        implementedModes = st.officialImplementedModes.map(Number);
+      } else if (Array.isArray(st.implementedModes) && st.implementedModes.length) {
         implementedModes = st.implementedModes.map(Number);
       }
       if (st.colors && typeof st.colors === 'object') officialColors = officialFrameMap(st.colors);
@@ -483,7 +489,7 @@ export default {
           if (!isPorted(offMode)) {
             const m = OFFICIAL_MUSIC_MODES.find((x) => x.value === Number(offMode));
             ctx.toastWarn(m?.renderer === 'plugin'
-              ? '该模式由官方 Music.exe 计算，本工具不支持，将回落到「随曲起舞」'
+              ? '屏光联动由官方 Music.exe 读屏计算；本工具自研屏幕同步待做，将回落到「随曲起舞」'
               : '该模式的官方渲染器尚未移植，将回落到「随曲起舞」');
           }
           body = {
@@ -595,6 +601,8 @@ export default {
         h('div', { class: 'tiny muted', style: { lineHeight: '1.8' } },
           h('p', {}, '官方 v1 音乐律动把参数交给 Windows 专有的 Music.exe，由它用原生 HID 驱动键盘；浏览器也不发帧，所以跨平台不可用。'),
           h('p', {}, '本工具的「官方方案」使用与官方 v1 插件完全相同的设置项：显示模式（12 种）、背景模式（11 种）、背景亮度、振幅；由本地移植的官方渲染器计算逐键帧并发送（cmd 0x32）。'),
+          h('p', {}, '其中 1/2/4/5/6/7/8/9/10/11 是官方「曲率频阶柱状」的不同调色板（模式号即调色板），13 是同心环；颜色、覆盖率与亮度缩放都用官方采样（capture/official_music_colors3.jsonl）逐项校验过。'),
+          h('p', {}, '显示模式 100「屏光联动」由官方 Music.exe 读屏计算，本工具的自研屏幕同步待做，当前会回落到 13。'),
           h('p', {}, '「当前方案」保留本工具自己的参数（模式 / 帧率 / 灵敏度）与本地频谱预览动画，用于对比调试。'),
           h('p', {}, '因此音乐律动完全在本地、跨平台可用，且不需要安装任何插件。'),
         ),

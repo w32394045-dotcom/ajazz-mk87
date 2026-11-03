@@ -1,0 +1,55 @@
+{
+  "meta": {
+    "source": "capture/official_music_live/layout-classic-CMxiG14P.js @ offset 2301489 (function D7, music V1 page config)",
+    "extracted": "2026-11-03",
+    "note": "MK87 的 musicConfig.version===1，官方 UI 实际使用这份 v1 配置；music-constants.json 里的 musicModes 是 v2 列表，不适用于 MK87 v1。"
+  },
+  "defaults": {
+    "mode": 1,
+    "amplitude": 30,
+    "backmode": 0,
+    "backmodebrightness": 100
+  },
+  "displayModes": [
+    { "value": 1, "key": "music_mode_text1", "zh": "绿色/黄色/红色", "en": "Green/Yellow/Red" },
+    { "value": 2, "key": "music_mode_text2", "zh": "彩虹色", "en": "Rainbow" },
+    { "value": 13, "key": "music_mode_text3", "zh": "随曲起舞", "en": "Dance to the Beat" },
+    { "value": 4, "key": "music_mode_text4", "zh": "曲率频阶", "en": "Curvature Frequency Steps" },
+    { "value": 5, "key": "music_mode_text5", "zh": "频谱循环", "en": "Spectrum Cycle" },
+    { "value": 6, "key": "music_mode_text6", "zh": "白色", "en": "White" },
+    { "value": 7, "key": "music_mode_text7", "zh": "红色", "en": "Red" },
+    { "value": 8, "key": "music_mode_text8", "zh": "橙色", "en": "Orange" },
+    { "value": 9, "key": "music_mode_text9", "zh": "黄色", "en": "Yellow" },
+    { "value": 11, "key": "music_mode_text10", "zh": "绿色", "en": "Green" },
+    { "value": 10, "key": "music_mode_text11", "zh": "蓝色", "en": "Blue" },
+    { "value": 100, "key": "music_mode_text21", "zh": "屏光联动", "en": "Screen light linkage" }
+  ],
+  "backgroundModes": [
+    { "value": 0, "key": "music_bg_text1", "zh": "无", "en": "None" },
+    { "value": 6, "key": "music_bg_text2", "zh": "白色", "en": "White" },
+    { "value": 7, "key": "music_bg_text3", "zh": "红色", "en": "Red" },
+    { "value": 8, "key": "music_bg_text4", "zh": "橙色", "en": "Orange" },
+    { "value": 9, "key": "music_bg_text5", "zh": "黄色", "en": "Yellow" },
+    { "value": 10, "key": "music_bg_text6", "zh": "蓝色", "en": "Blue" },
+    { "value": 11, "key": "music_bg_text7", "zh": "绿色", "en": "Green" },
+    { "value": 1, "key": "music_bg_text8", "zh": "绿色/黄色/红色", "en": "Green/Yellow/Red" },
+    { "value": 2, "key": "music_bg_text9", "zh": "彩虹色", "en": "Rainbow" },
+    { "value": 4, "key": "music_bg_text10", "zh": "色谱", "en": "Color Spectrum" },
+    { "value": 5, "key": "music_bg_text11", "zh": "频谱循环", "en": "Spectrum Loop" }
+  ],
+  "ranges": {
+    "amplitude": { "min": 1, "max": 100, "default": 30, "sliderStep": 1 },
+    "backmodebrightness": { "min": 1, "max": 100, "default": 100, "sliderStep": 1 }
+  },
+  "server": {
+    "plugin": "MusicPlug.exe (127.0.0.1:9191)",
+    "startParamFormat": "/api/keyboard/musiceffect?param=<mode>&<amplitude>&<backmode>&<backmodebrightness>&1",
+    "poll": "/api/keyboard/musiceffect/",
+    "pollIntervalMs": 100
+  },
+  "notes": [
+    "显示模式包含纯色类（6 白 / 7 红 / 8 橙 / 9 黄 / 11 绿 / 10 蓝）、渐变类（1 绿黄红 / 2 彩虹 / 5 频谱循环）与动画类（13 / 4 / 100）。",
+    "官方 v1 UI 没有独立的 LED 颜色参数：前景颜色由显示模式本身决定，背景颜色由背景灯光显示模式决定。",
+    "本工具若要增加「LED 颜色」下拉框，属于自研扩展（单色覆盖渲染器颜色），不是官方 v1 协议参数。"
+  ]
+}

@@ -239,6 +239,26 @@ class Shell:
             pass
 
     # ---------------------------------------------------------- 退出
+    def _stop_music_and_wait(self, timeout: float = 3.0) -> bool:
+        """停止音乐律动，并同步等待 restore_effect 跑完（最多 timeout 秒）。
+
+        事故背景（2026-11-02 22:45）：音乐 start 写了 mode=128 后进程被关机杀死，
+        music.py 的 finally: restore_effect() 没执行，键盘一直停在自定义逐键表。
+        具体等待逻辑在 state.DeviceManager.stop_music（按 lighting 记录的恢复
+        时间戳确认），这里保证它在 os._exit 之前被调用且失败只告警。
+        """
+        manager = getattr(self, "manager", None)
+        if manager is None:
+            return True
+        try:
+            ok = bool(manager.stop_music(timeout))
+        except Exception as exc:  # noqa: BLE001
+            log.warning("退出：停止音乐/等待灯效恢复失败: %s", exc)
+            return False
+        if ok:
+            log.info("退出：音乐已停止且灯效已恢复（或无需恢复）")
+        return ok
+
     def quit(self) -> None:
         """托盘「退出」：停后台任务 → 停服务 → 关窗口/托盘 → 进程退出（幂等）。
 
@@ -256,11 +276,13 @@ class Shell:
                 self.manager.tft_job.cancel()
             except Exception:  # noqa: BLE001
                 pass
-            for stopper in ("music", "keytest"):
-                try:
-                    getattr(self.manager, stopper).stop()
-                except Exception:  # noqa: BLE001
-                    pass
+            # 顺序很重要：先停音乐并等 restore_effect 跑完，再关设备；
+            # 否则 restore 写不进去，键盘会停在自定义逐键表。
+            self._stop_music_and_wait(3.0)
+            try:
+                self.manager.keytest.stop()
+            except Exception:  # noqa: BLE001
+                pass
             try:
                 self.manager.stop()
             except Exception:  # noqa: BLE001
@@ -286,7 +308,8 @@ class Shell:
 
         t = threading.Thread(target=_cleanup, name="mk87-quit", daemon=True)
         t.start()
-        t.join(timeout=6)
+        # 清理预算 8s：音乐停止/灯效恢复最多 3s + keytest 1.5s + 设备关闭 ~1s + 托盘
+        t.join(timeout=8)
         # 兜底：清理线程卡住也强制退出（进程退出即释放托盘/窗口/端口）
         log.warning("清理超时，强制退出")
         os._exit(0)

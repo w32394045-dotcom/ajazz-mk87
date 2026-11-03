@@ -222,6 +222,13 @@ class DeviceManager:
         self.keytest = keyscan_mod.get_scanner(callback=self._on_key_event, only_ajazz=False)
         self._recent_events: List[dict] = []
         self._last_battery: Optional[int] = None
+        self._last_battery_state: Optional[tuple] = None
+        self._battery_error = ""
+        self._battery_error_at = 0.0
+        #: 2.4G 电量（cmd 0x37 首包 byte[3]）连续失败时熔断，避免每 2s 卡 1s 超时
+        self._battery_24g_fails = 0
+        self._battery_24g_retry_at = 0.0
+        self._conn_gen = 0
         self._stop = threading.Event()
         self._monitor_thread: Optional[threading.Thread] = None
         self._was_connected = False
@@ -331,20 +338,44 @@ class DeviceManager:
             },
         }
 
+    def stop_music(self, timeout: float = 3.0) -> bool:
+        """停止音乐律动，并等待它 finally 里的 restore_effect 跑完。
+
+        事故背景（2026-11-02 22:45）：音乐 start 后进程被关机杀死，restore 没执行，
+        键盘一直停在自定义逐键表。music.stop() 只 join 2s；这里再按 lighting 侧
+        记录的恢复时间戳确认恢复已发生，最多等 timeout 秒。返回是否确认恢复。
+        """
+        started = time.time()
+        was_running = bool(getattr(self.music, "running", False))
+        try:
+            self.music.stop()
+        except Exception as exc:  # noqa: BLE001
+            log.warning("停止音乐律动失败: %s", exc)
+        if not was_running:
+            return True
+        deadline = started + max(0.5, float(timeout))
+        while time.time() < deadline:
+            restore = lighting.restore_state()
+            if float(restore.get("ts") or 0.0) >= started:
+                log.info("音乐已停止，灯效恢复完成（mode=%s result=%s）",
+                         restore.get("mode"), restore.get("result"))
+                return True
+            time.sleep(0.05)
+        log.warning("等待音乐灯效恢复超时（%.1fs），继续关闭设备", timeout)
+        return False
+
     def stop(self) -> None:
         log.info("设备管理停止")
         self._stop.set()
-        try:
-            self.music.stop()
-        except Exception:
-            pass
+        # 顺序：先停音乐并等灯效恢复，再关 HID 句柄（否则 restore 写不进去）
+        self.stop_music(3.0)
         try:
             self.keytest.stop()
-        except Exception:
+        except Exception:  # noqa: BLE001
             pass
         try:
             self.device.close()
-        except Exception:
+        except Exception:  # noqa: BLE001
             pass
 
     def _monitor(self) -> None:
@@ -367,17 +398,23 @@ class DeviceManager:
         with self.lock:
             try:
                 status = self.device.connect()
-                log.info("设备已连接: %s %s fw=%s transport=%s vid=0x%04X pid=0x%04X",
+                log.info("设备已连接: %s %s fw=%s transport=%s vid=0x%04X pid=0x%04X "
+                         "battery=%d%% charging=%d workMode=%d",
                          status.product, status.manufacturer, status.firmware,
-                         status.transport, status.vid, status.pid)
+                         status.transport, status.vid, status.pid,
+                         status.battery, status.charging, getattr(status, "work_mode", 0))
                 self._was_connected = True
                 self._last_battery = status.battery
+                self._conn_gen += 1
+                gen = self._conn_gen
                 # 与官方一致：每次连接自动对时一次（MK87 屏幕时间）
                 try:
                     self.device.sync_time()
                 except Exception as exc:  # noqa: BLE001
                     log.debug("连接后屏幕对时失败: %s", exc)
                 self.emit({"type": "status", "data": self.status()})
+                # 刚连上时首读可能还是旧值（尤其 2.4G 唤醒/握手未完成）：延迟 2s 再读一次
+                self._schedule_battery_recheck(gen)
                 return True
             except Exception as exc:  # noqa: BLE001
                 if not quiet:
@@ -392,18 +429,97 @@ class DeviceManager:
                     log.debug("扫描未发现设备: %s", exc)
                 return False
 
+    def _schedule_battery_recheck(self, gen: int, delay: float = 2.0) -> None:
+        """连接后延迟重读设备信息（不阻塞 FastAPI/监控线程）。
+
+        用连接代号 gen 防止旧连接的延迟任务把数据写到新连接上。
+        """
+
+        def _run() -> None:
+            if self._stop.wait(max(0.0, float(delay))):
+                return
+            if gen != self._conn_gen or self._stop.is_set():
+                return
+            if not self.device.status.connected or self.tft_job.running:
+                return
+            log.info("连接后延迟 %.1fs 重读设备信息（校准电量/充电/工作模式）", delay)
+            self._refresh_battery()
+
+        threading.Thread(target=_run, name="mk87-battery-recheck", daemon=True).start()
+
+    def _read_battery_24g(self) -> Optional[int]:
+        """2.4G 下读电量（官方用 0x37 回包的 battery 字节）；失败熔断 5 分钟。"""
+        now = time.time()
+        if now < self._battery_24g_retry_at:
+            return None
+        try:
+            battery = self.device.read_battery_24g()
+        except Exception as exc:  # noqa: BLE001
+            self._battery_24g_fails += 1
+            if self._battery_24g_fails >= 3:
+                self._battery_24g_retry_at = now + 300.0
+                log.warning("2.4G 电量读取连续失败 %d 次，暂停 5 分钟（暂用设备信息 d[17]）: %s",
+                            self._battery_24g_fails, exc)
+            else:
+                log.warning("2.4G 电量读取失败（暂用设备信息 d[17]）: %s", exc)
+            return None
+        if isinstance(battery, int):
+            self._battery_24g_fails = 0
+            return battery
+        return None
+
     def _refresh_battery(self) -> None:
+        """每 2s 刷新电量/充电/工作模式。
+
+        * 每次成功读取都覆写 status（不再只在百分比变化时更新，charging 才不会滞后）；
+        * 2.4G 下优先用官方路径（0x37 回包电量），USB 用 GET_DEVICE_INFO d[17]；
+        * 失败限频告警（错误变化或每 60s 一次），避免每 2s 刷屏。
+        """
+        transport = str(getattr(self.device.status, "transport", "") or "")
         try:
             info = self.device.get_device_info()
-            battery = int(info.get("batteryLevel", 0))
-            if battery != self._last_battery:
-                self._last_battery = battery
-                self.device.status.battery = battery
-                self.device.status.charging = int(info.get("chargeStatus", 0))
-                self.emit({"type": "battery",
-                           "data": {"percent": battery, "charging": self.device.status.charging}})
-        except Exception:
-            pass
+        except Exception as exc:  # noqa: BLE001
+            now = time.time()
+            msg = str(exc)
+            if msg != self._battery_error or now - self._battery_error_at >= 60.0:
+                log.warning("刷新电量失败: %s", exc)
+                self._battery_error = msg
+                self._battery_error_at = now
+            return
+        self._battery_error = ""
+
+        st = self.device.status
+        battery = int(info.get("batteryLevel", 0))
+        charging = int(info.get("chargeStatus", 0))
+        work_mode = int(info.get("workMode", getattr(st, "work_mode", 0)) or 0)
+        source = "device_info"
+        if transport == "2.4g":
+            battery_24g = self._read_battery_24g()
+            if battery_24g is not None and 0 <= battery_24g <= 100:
+                battery = battery_24g
+                source = "24g_rgb"
+            elif battery_24g is None:
+                source = "24g_fallback"
+
+        prev = (int(getattr(st, "battery", 0)), int(getattr(st, "charging", 0)),
+                int(getattr(st, "work_mode", 0)))
+        st.battery = battery
+        st.charging = charging
+        if hasattr(st, "work_mode"):
+            st.work_mode = work_mode
+        if hasattr(st, "battery_source"):
+            st.battery_source = source
+        self._last_battery = battery
+        now_state = (battery, charging, work_mode)
+        if now_state != self._last_battery_state:
+            self._last_battery_state = now_state
+            log.info("设备状态: battery=%d%% charging=%d workMode=%d transport=%s source=%s",
+                     battery, charging, work_mode, transport, source)
+            self.emit({"type": "battery",
+                       "data": {"percent": battery, "charging": charging,
+                                "workMode": work_mode}})
+        elif prev != now_state:
+            log.debug("设备状态变化（不触发 UI）: %s -> %s", prev, now_state)
 
     # ------------------------------------------------------------------ 对外
     def mark_disconnected(self, reason: str = "") -> None:

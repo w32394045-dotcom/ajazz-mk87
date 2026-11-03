@@ -25,9 +25,12 @@ const MUSIC_MODES = [
   { mode: 13, name: '律动节拍', nameEn: 'Dance to the Beat' },
   { mode: 14, name: '光尘螺旋', nameEn: 'Dust Glow Spiral' },
   { mode: 17, name: '萤火轨迹', nameEn: 'Firefly Trail' },
-  { mode: 4, name: '曲率频谱', nameEn: 'Curvature Frequency Steps' },
+  { mode: 4, name: '曲率频阶', nameEn: 'Curvature Frequency Steps' },
 ];
-const MUSIC_IMPLEMENTED = [1, 4, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22];
+/* 官方 v1 已移植的 12 个显示模式里除 100（屏光联动，自研屏幕同步待做）之外的 11 个；
+   与后端 mk87lib.music.V1_IMPLEMENTED_MODES 保持一致。 */
+const MUSIC_OFFICIAL_IMPLEMENTED = [1, 2, 4, 5, 6, 7, 8, 9, 10, 11, 13];
+const MUSIC_IMPLEMENTED = [1, 2, 4, 5, 6, 7, 8, 9, 10, 11, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22];
 const KEY_GEO = KEY_LAYOUT.rows.flat().map((k) => ({
   slot: k.slot,
   row: k.row,
@@ -35,6 +38,9 @@ const KEY_GEO = KEY_LAYOUT.rows.flat().map((k) => ({
   mid: (k.row + 0.5) / KEY_LAYOUT.rows.length,
 }));
 const KEY_DIST = KEY_GEO.map((k) => clamp(Math.hypot((k.col - 0.5) * 1.9, (k.mid - 0.5) * 1.15) / 1.05, 0, 1));
+
+/* 官方 v1 纯色显示模式在 mock 里的颜色（与采样真值一致：FE 是 255 经 (c*n)>>8 缩放） */
+const MOCK_SOLID = { 6: [254, 254, 254], 7: [254, 0, 0], 8: [254, 63, 0], 9: [254, 254, 0], 10: [0, 0, 254], 11: [0, 254, 0] };
 
 function musicMockColors(mode, phase, level, levels) {
   const colors = {};
@@ -55,6 +61,11 @@ function musicMockColors(mode, phase, level, levels) {
       const wave = Math.max(0, Math.sin(k.col * 7 - phase * 2.2)) * Math.max(0, 1 - Math.abs(k.mid - 0.5) * 1.3);
       const v = clamp(level * 1.8 * wave, 0, 1);
       rgb = hsl((190 + k.col * 90 + phase * 10) % 360, 95, 16 + v * 42);
+    } else if (MOCK_SOLID[mode]) {
+      // 官方 v1 纯色模式：单一颜色，按列频率强度调亮度
+      const band = clamp(Math.floor(k.col * 32), 0, 31);
+      const v = clamp((levels[band] || 0) * 1.5, 0, 1);
+      if (v > 0.03) rgb = MOCK_SOLID[mode].map((x) => Math.round(x * v));
     } else {
       const band = clamp(Math.floor(k.col * 32), 0, 31);
       const v = clamp((levels[band] || 0) * 1.5, 0, 1);
@@ -653,6 +664,7 @@ export class MockServer {
           amplitude: S.music.amplitude, backmode: S.music.backmode,
           backmodeBrightness: S.music.backmodeBrightness,
           implementedModes: MUSIC_IMPLEMENTED,
+          officialImplementedModes: MUSIC_OFFICIAL_IMPLEMENTED,
           colors: S.music.colors || {},
         }),
       },
@@ -673,6 +685,7 @@ export class MockServer {
             ok: true, running: true, mode: m.mode, requestedMode: m.requestedMode,
             backmode: m.backmode, backmodeBrightness: m.backmodeBrightness,
             amplitude: m.amplitude, fps: m.fps, implementedModes: MUSIC_IMPLEMENTED,
+            officialImplementedModes: MUSIC_OFFICIAL_IMPLEMENTED,
           };
         },
       },

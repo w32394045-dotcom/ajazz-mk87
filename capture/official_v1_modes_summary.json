@@ -1,0 +1,1099 @@
+{
+ "input": "C:\\Users\\ptfm\\Documents\\ajazz-re\\capture\\official_music_colors3.jsonl",
+ "segments": [
+  {
+   "mode": 1,
+   "backmode": 0,
+   "amp": 30,
+   "bb": 100,
+   "label": "A mode=1 绿色/黄色/红色",
+   "frames": 51,
+   "stable_from": 0,
+   "lit_min": 0,
+   "lit_avg": 0.1,
+   "lit_max": 4,
+   "distinct_per_frame": 0.06,
+   "hue_drift": 0.0,
+   "top_colors": [
+    [
+     "FE0000",
+     4
+    ],
+    [
+     "FEFE00",
+     1
+    ]
+   ],
+   "behavior": "静态单色"
+  },
+  {
+   "mode": 2,
+   "backmode": 0,
+   "amp": 30,
+   "bb": 100,
+   "label": "A mode=2 彩虹色",
+   "frames": 51,
+   "stable_from": 0,
+   "lit_min": 0,
+   "lit_avg": 0.0,
+   "lit_max": 0,
+   "distinct_per_frame": 0.0,
+   "hue_drift": 0.0,
+   "top_colors": [],
+   "behavior": "无输出（全黑）"
+  },
+  {
+   "mode": 13,
+   "backmode": 0,
+   "amp": 30,
+   "bb": 100,
+   "label": "A mode=13 随曲起舞",
+   "frames": 50,
+   "stable_from": 0,
+   "lit_min": 0,
+   "lit_avg": 3.96,
+   "lit_max": 9,
+   "distinct_per_frame": 0.88,
+   "hue_drift": 67.2,
+   "top_colors": [
+    [
+     "B6FF00",
+     9
+    ],
+    [
+     "00FF00",
+     9
+    ],
+    [
+     "000CFF",
+     8
+    ],
+    [
+     "FF00CB",
+     8
+    ],
+    [
+     "FF3F00",
+     8
+    ],
+    [
+     "99FF00",
+     8
+    ]
+   ],
+   "behavior": "整帧单色·逐帧变色(循环)"
+  },
+  {
+   "mode": 4,
+   "backmode": 0,
+   "amp": 30,
+   "bb": 100,
+   "label": "A mode=4 曲率频阶",
+   "frames": 51,
+   "stable_from": 0,
+   "lit_min": 0,
+   "lit_avg": 0.04,
+   "lit_max": 1,
+   "distinct_per_frame": 0.04,
+   "hue_drift": 34.8,
+   "top_colors": [
+    [
+     "F6FF00",
+     1
+    ],
+    [
+     "62FF00",
+     1
+    ]
+   ],
+   "behavior": "整帧单色·逐帧变色(循环)"
+  },
+  {
+   "mode": 5,
+   "backmode": 0,
+   "amp": 30,
+   "bb": 100,
+   "label": "A mode=5 频谱循环",
+   "frames": 51,
+   "stable_from": 0,
+   "lit_min": 0,
+   "lit_avg": 3.71,
+   "lit_max": 21,
+   "distinct_per_frame": 0.41,
+   "hue_drift": 32.5,
+   "top_colors": [
+    [
+     "AA00FF",
+     21
+    ],
+    [
+     "006AFF",
+     19
+    ],
+    [
+     "FF00D4",
+     19
+    ],
+    [
+     "2BFF00",
+     12
+    ],
+    [
+     "FF4000",
+     11
+    ],
+    [
+     "40FF00",
+     10
+    ]
+   ],
+   "behavior": "整帧单色·逐帧变色(循环)"
+  },
+  {
+   "mode": 6,
+   "backmode": 0,
+   "amp": 30,
+   "bb": 100,
+   "label": "A mode=6 白色",
+   "frames": 50,
+   "stable_from": 0,
+   "lit_min": 0,
+   "lit_avg": 3.22,
+   "lit_max": 18,
+   "distinct_per_frame": 0.72,
+   "hue_drift": 0.0,
+   "top_colors": [
+    [
+     "FEFEFE",
+     126
+    ],
+    [
+     "00FF6A",
+     35
+    ]
+   ],
+   "behavior": "整帧单色·逐帧变色(循环)"
+  },
+  {
+   "mode": 7,
+   "backmode": 0,
+   "amp": 30,
+   "bb": 100,
+   "label": "A mode=7 红色",
+   "frames": 51,
+   "stable_from": 5,
+   "lit_min": 0,
+   "lit_avg": 7.52,
+   "lit_max": 25,
+   "distinct_per_frame": 0.85,
+   "hue_drift": 0.0,
+   "top_colors": [
+    [
+     "FE0000",
+     346
+    ]
+   ],
+   "behavior": "静态单色"
+  },
+  {
+   "mode": 8,
+   "backmode": 0,
+   "amp": 30,
+   "bb": 100,
+   "label": "A mode=8 橙色",
+   "frames": 51,
+   "stable_from": 0,
+   "lit_min": 0,
+   "lit_avg": 3.22,
+   "lit_max": 22,
+   "distinct_per_frame": 0.47,
+   "hue_drift": 0.0,
+   "top_colors": [
+    [
+     "FE3F00",
+     164
+    ]
+   ],
+   "behavior": "静态单色"
+  },
+  {
+   "mode": 9,
+   "backmode": 0,
+   "amp": 30,
+   "bb": 100,
+   "label": "A mode=9 黄色",
+   "frames": 50,
+   "stable_from": 5,
+   "lit_min": 0,
+   "lit_avg": 5.98,
+   "lit_max": 22,
+   "distinct_per_frame": 0.89,
+   "hue_drift": 0.0,
+   "top_colors": [
+    [
+     "FEFE00",
+     269
+    ]
+   ],
+   "behavior": "静态单色"
+  },
+  {
+   "mode": 11,
+   "backmode": 0,
+   "amp": 30,
+   "bb": 100,
+   "label": "A mode=11 蓝色",
+   "frames": 51,
+   "stable_from": 5,
+   "lit_min": 0,
+   "lit_avg": 14.87,
+   "lit_max": 52,
+   "distinct_per_frame": 0.91,
+   "hue_drift": 0.0,
+   "top_colors": [
+    [
+     "00FE00",
+     684
+    ]
+   ],
+   "behavior": "静态单色"
+  },
+  {
+   "mode": 10,
+   "backmode": 0,
+   "amp": 30,
+   "bb": 100,
+   "label": "A mode=10 绿色",
+   "frames": 51,
+   "stable_from": 5,
+   "lit_min": 0,
+   "lit_avg": 6.54,
+   "lit_max": 26,
+   "distinct_per_frame": 0.78,
+   "hue_drift": 0.0,
+   "top_colors": [
+    [
+     "0000FE",
+     301
+    ]
+   ],
+   "behavior": "静态单色"
+  },
+  {
+   "mode": 100,
+   "backmode": 0,
+   "amp": 30,
+   "bb": 100,
+   "label": "A mode=100 屏光联动",
+   "frames": 50,
+   "stable_from": 0,
+   "lit_min": 102,
+   "lit_avg": 102.0,
+   "lit_max": 102,
+   "distinct_per_frame": 84.44,
+   "hue_drift": 0.6,
+   "top_colors": [
+    [
+     "F0F1F1",
+     138
+    ],
+    [
+     "D7D7D8",
+     138
+    ],
+    [
+     "E0E0E1",
+     138
+    ],
+    [
+     "EBEBEB",
+     122
+    ],
+    [
+     "D1D1D2",
+     94
+    ],
+    [
+     "EBEBEC",
+     92
+    ]
+   ],
+   "behavior": "同帧多色(渐变/图案)"
+  },
+  {
+   "mode": 13,
+   "backmode": 0,
+   "amp": 30,
+   "bb": 100,
+   "label": "B backmode=0 无",
+   "frames": 51,
+   "stable_from": 0,
+   "lit_min": 0,
+   "lit_avg": 11.2,
+   "lit_max": 40,
+   "distinct_per_frame": 2.16,
+   "hue_drift": 74.5,
+   "top_colors": [
+    [
+     "0026FF",
+     24
+    ],
+    [
+     "FF0059",
+     24
+    ],
+    [
+     "FF0083",
+     16
+    ],
+    [
+     "FF0043",
+     16
+    ],
+    [
+     "007BFF",
+     16
+    ],
+    [
+     "FF2100",
+     16
+    ]
+   ],
+   "behavior": "同帧多色(渐变/图案)"
+  },
+  {
+   "mode": 13,
+   "backmode": 6,
+   "amp": 30,
+   "bb": 100,
+   "label": "B backmode=6 白色",
+   "frames": 51,
+   "stable_from": 0,
+   "lit_min": 25,
+   "lit_avg": 94.45,
+   "lit_max": 102,
+   "distinct_per_frame": 3.0,
+   "hue_drift": 61.1,
+   "top_colors": [
+    [
+     "FEFEFE",
+     4273
+    ],
+    [
+     "37FF00",
+     32
+    ],
+    [
+     "FF6E00",
+     24
+    ],
+    [
+     "C7FF00",
+     17
+    ],
+    [
+     "F600FF",
+     16
+    ],
+    [
+     "FF00D4",
+     16
+    ]
+   ],
+   "behavior": "同帧多色(渐变/图案)"
+  },
+  {
+   "mode": 13,
+   "backmode": 7,
+   "amp": 30,
+   "bb": 100,
+   "label": "B backmode=7 红色",
+   "frames": 50,
+   "stable_from": 5,
+   "lit_min": 102,
+   "lit_avg": 102.0,
+   "lit_max": 102,
+   "distinct_per_frame": 3.18,
+   "hue_drift": 0.0,
+   "top_colors": [
+    [
+     "FE0000",
+     4048
+    ],
+    [
+     "00FF15",
+     24
+    ],
+    [
+     "D000FF",
+     24
+    ],
+    [
+     "FF006E",
+     16
+    ],
+    [
+     "FF3B00",
+     16
+    ],
+    [
+     "FF0022",
+     16
+    ]
+   ],
+   "behavior": "静态单色"
+  },
+  {
+   "mode": 13,
+   "backmode": 8,
+   "amp": 30,
+   "bb": 100,
+   "label": "B backmode=8 橙色",
+   "frames": 51,
+   "stable_from": 5,
+   "lit_min": 102,
+   "lit_avg": 102.0,
+   "lit_max": 102,
+   "distinct_per_frame": 3.24,
+   "hue_drift": 1.1,
+   "top_colors": [
+    [
+     "FE3F00",
+     4078
+    ],
+    [
+     "1000FF",
+     17
+    ],
+    [
+     "FFC300",
+     17
+    ],
+    [
+     "FFAA00",
+     16
+    ],
+    [
+     "00FF3F",
+     16
+    ],
+    [
+     "BF00FF",
+     16
+    ]
+   ],
+   "behavior": "同帧多色(渐变/图案)"
+  },
+  {
+   "mode": 13,
+   "backmode": 9,
+   "amp": 30,
+   "bb": 100,
+   "label": "B backmode=9 黄色",
+   "frames": 51,
+   "stable_from": 5,
+   "lit_min": 101,
+   "lit_avg": 101.98,
+   "lit_max": 102,
+   "distinct_per_frame": 2.96,
+   "hue_drift": 6.9,
+   "top_colors": [
+    [
+     "FEFE00",
+     4234
+    ],
+    [
+     "FF6100",
+     17
+    ],
+    [
+     "BF00FF",
+     16
+    ],
+    [
+     "EE00FF",
+     16
+    ],
+    [
+     "0026FF",
+     16
+    ],
+    [
+     "006AFF",
+     16
+    ]
+   ],
+   "behavior": "同帧多色(渐变/图案)"
+  },
+  {
+   "mode": 13,
+   "backmode": 10,
+   "amp": 30,
+   "bb": 100,
+   "label": "B backmode=10 蓝色",
+   "frames": 50,
+   "stable_from": 5,
+   "lit_min": 102,
+   "lit_avg": 102.0,
+   "lit_max": 102,
+   "distinct_per_frame": 3.18,
+   "hue_drift": 0.0,
+   "top_colors": [
+    [
+     "0000FE",
+     4059
+    ],
+    [
+     "08FF00",
+     16
+    ],
+    [
+     "0004FF",
+     16
+    ],
+    [
+     "FF4800",
+     16
+    ],
+    [
+     "BBFF00",
+     16
+    ],
+    [
+     "00FFBB",
+     16
+    ]
+   ],
+   "behavior": "静态单色"
+  },
+  {
+   "mode": 13,
+   "backmode": 11,
+   "amp": 30,
+   "bb": 100,
+   "label": "B backmode=11 绿色",
+   "frames": 51,
+   "stable_from": 5,
+   "lit_min": 102,
+   "lit_avg": 102.0,
+   "lit_max": 102,
+   "distinct_per_frame": 3.13,
+   "hue_drift": 4.4,
+   "top_colors": [
+    [
+     "00FE00",
+     4117
+    ],
+    [
+     "FFE900",
+     25
+    ],
+    [
+     "0800FF",
+     24
+    ],
+    [
+     "19FF00",
+     24
+    ],
+    [
+     "FF3F00",
+     23
+    ],
+    [
+     "005DFF",
+     16
+    ]
+   ],
+   "behavior": "同帧多色(渐变/图案)"
+  },
+  {
+   "mode": 13,
+   "backmode": 1,
+   "amp": 30,
+   "bb": 100,
+   "label": "B backmode=1 绿色/黄色/红色",
+   "frames": 50,
+   "stable_from": 5,
+   "lit_min": 102,
+   "lit_avg": 102.0,
+   "lit_max": 102,
+   "distinct_per_frame": 5.58,
+   "hue_drift": 3.9,
+   "top_colors": [
+    [
+     "FE0000",
+     1393
+    ],
+    [
+     "00FE00",
+     1254
+    ],
+    [
+     "FEFE00",
+     1162
+    ],
+    [
+     "FFFF00",
+     24
+    ],
+    [
+     "FF1500",
+     20
+    ],
+    [
+     "1000FF",
+     17
+    ]
+   ],
+   "behavior": "同帧多色(渐变/图案)"
+  },
+  {
+   "mode": 13,
+   "backmode": 2,
+   "amp": 30,
+   "bb": 100,
+   "label": "B backmode=2 彩虹色",
+   "frames": 51,
+   "stable_from": 5,
+   "lit_min": 102,
+   "lit_avg": 102.0,
+   "lit_max": 102,
+   "distinct_per_frame": 8.33,
+   "hue_drift": 29.1,
+   "top_colors": [
+    [
+     "FE0000",
+     759
+    ],
+    [
+     "FE00FE",
+     728
+    ],
+    [
+     "FEFE00",
+     728
+    ],
+    [
+     "0000FE",
+     615
+    ],
+    [
+     "00FEFE",
+     615
+    ],
+    [
+     "00FE00",
+     615
+    ]
+   ],
+   "behavior": "同帧多色(渐变/图案)"
+  },
+  {
+   "mode": 13,
+   "backmode": 4,
+   "amp": 30,
+   "bb": 100,
+   "label": "B backmode=4 色谱",
+   "frames": 50,
+   "stable_from": 5,
+   "lit_min": 102,
+   "lit_avg": 102.0,
+   "lit_max": 102,
+   "distinct_per_frame": 70.38,
+   "hue_drift": 75.2,
+   "top_colors": [
+    [
+     "FF007F",
+     42
+    ],
+    [
+     "A1FF00",
+     41
+    ],
+    [
+     "D400FF",
+     39
+    ],
+    [
+     "00FFC7",
+     38
+    ],
+    [
+     "C700FF",
+     31
+    ],
+    [
+     "FF00E1",
+     28
+    ]
+   ],
+   "behavior": "同帧多色(渐变/图案)"
+  },
+  {
+   "mode": 13,
+   "backmode": 5,
+   "amp": 30,
+   "bb": 100,
+   "label": "B backmode=5 频谱循环",
+   "frames": 51,
+   "stable_from": 0,
+   "lit_min": 101,
+   "lit_avg": 101.98,
+   "lit_max": 102,
+   "distinct_per_frame": 10.27,
+   "hue_drift": 35.9,
+   "top_colors": [
+    [
+     "5500FF",
+     196
+    ],
+    [
+     "FF6A00",
+     187
+    ],
+    [
+     "FF0016",
+     186
+    ],
+    [
+     "00FF00",
+     175
+    ],
+    [
+     "00D4FF",
+     160
+    ],
+    [
+     "00FFBF",
+     156
+    ]
+   ],
+   "behavior": "同帧多色(渐变/图案)"
+  },
+  {
+   "mode": 13,
+   "backmode": 0,
+   "amp": 30,
+   "bb": 100,
+   "label": "C amp=30",
+   "frames": 51,
+   "stable_from": 0,
+   "lit_min": 0,
+   "lit_avg": 26.71,
+   "lit_max": 102,
+   "distinct_per_frame": 2.86,
+   "hue_drift": 70.9,
+   "top_colors": [
+    [
+     "00FF2B",
+     309
+    ],
+    [
+     "FF0094",
+     32
+    ],
+    [
+     "BF00FF",
+     31
+    ],
+    [
+     "1500FF",
+     27
+    ],
+    [
+     "FF1500",
+     24
+    ],
+    [
+     "FF00E1",
+     17
+    ]
+   ],
+   "behavior": "同帧多色(渐变/图案)"
+  },
+  {
+   "mode": 13,
+   "backmode": 0,
+   "amp": 60,
+   "bb": 100,
+   "label": "C amp=60",
+   "frames": 50,
+   "stable_from": 0,
+   "lit_min": 0,
+   "lit_avg": 23.96,
+   "lit_max": 88,
+   "distinct_per_frame": 3.0,
+   "hue_drift": 76.7,
+   "top_colors": [
+    [
+     "A100FF",
+     36
+    ],
+    [
+     "00FF0C",
+     31
+    ],
+    [
+     "00FFB6",
+     24
+    ],
+    [
+     "A1FF00",
+     24
+    ],
+    [
+     "FF00B2",
+     20
+    ],
+    [
+     "00BFFF",
+     16
+    ]
+   ],
+   "behavior": "同帧多色(渐变/图案)"
+  },
+  {
+   "mode": 13,
+   "backmode": 0,
+   "amp": 100,
+   "bb": 100,
+   "label": "C amp=100",
+   "frames": 51,
+   "stable_from": 0,
+   "lit_min": 0,
+   "lit_avg": 21.2,
+   "lit_max": 102,
+   "distinct_per_frame": 2.82,
+   "hue_drift": 75.2,
+   "top_colors": [
+    [
+     "004CFF",
+     32
+    ],
+    [
+     "00F6FF",
+     31
+    ],
+    [
+     "00FF5D",
+     27
+    ],
+    [
+     "4CFF00",
+     25
+    ],
+    [
+     "00FFB6",
+     24
+    ],
+    [
+     "00E5FF",
+     24
+    ]
+   ],
+   "behavior": "同帧多色(渐变/图案)"
+  },
+  {
+   "mode": 13,
+   "backmode": 1,
+   "amp": 30,
+   "bb": 100,
+   "label": "D bb=100",
+   "frames": 51,
+   "stable_from": 0,
+   "lit_min": 9,
+   "lit_avg": 92.88,
+   "lit_max": 102,
+   "distinct_per_frame": 4.75,
+   "hue_drift": 15.3,
+   "top_colors": [
+    [
+     "FE0000",
+     1533
+    ],
+    [
+     "00FE00",
+     1396
+    ],
+    [
+     "FEFE00",
+     1276
+    ],
+    [
+     "00A9FF",
+     32
+    ],
+    [
+     "00FF00",
+     20
+    ],
+    [
+     "3F00FF",
+     16
+    ]
+   ],
+   "behavior": "同帧多色(渐变/图案)"
+  },
+  {
+   "mode": 13,
+   "backmode": 1,
+   "amp": 30,
+   "bb": 50,
+   "label": "D bb=50",
+   "frames": 50,
+   "stable_from": 5,
+   "lit_min": 100,
+   "lit_avg": 101.91,
+   "lit_max": 102,
+   "distinct_per_frame": 4.73,
+   "hue_drift": 24.5,
+   "top_colors": [
+    [
+     "7E0000",
+     1526
+    ],
+    [
+     "007E00",
+     1415
+    ],
+    [
+     "7E7E00",
+     1299
+    ],
+    [
+     "FF5900",
+     17
+    ],
+    [
+     "99FF00",
+     16
+    ],
+    [
+     "00FF33",
+     16
+    ]
+   ],
+   "behavior": "同帧多色(渐变/图案)"
+  },
+  {
+   "mode": 13,
+   "backmode": 1,
+   "amp": 30,
+   "bb": 20,
+   "label": "D bb=20",
+   "frames": 51,
+   "stable_from": 5,
+   "lit_min": 102,
+   "lit_avg": 102.0,
+   "lit_max": 102,
+   "distinct_per_frame": 4.96,
+   "hue_drift": 10.7,
+   "top_colors": [
+    [
+     "320000",
+     1554
+    ],
+    [
+     "003200",
+     1418
+    ],
+    [
+     "323200",
+     1292
+    ],
+    [
+     "FF00CB",
+     16
+    ],
+    [
+     "FFA500",
+     16
+    ],
+    [
+     "FF0043",
+     16
+    ]
+   ],
+   "behavior": "同帧多色(渐变/图案)"
+  }
+ ],
+ "palette": {
+  "1": {
+   "kind": "bands",
+   "colors": [
+    "00FE00",
+    "FE0000",
+    "FEFE00"
+   ]
+  },
+  "2": {
+   "kind": "bands",
+   "colors": [
+    "0000FE",
+    "00FE00",
+    "00FEFE",
+    "FE0000",
+    "FE00FE",
+    "FEFE00"
+   ]
+  },
+  "6": {
+   "kind": "solid",
+   "colors": [
+    "FEFEFE"
+   ]
+  },
+  "7": {
+   "kind": "solid",
+   "colors": [
+    "FE0000"
+   ]
+  },
+  "8": {
+   "kind": "solid",
+   "colors": [
+    "FE3F00"
+   ]
+  },
+  "9": {
+   "kind": "solid",
+   "colors": [
+    "FEFE00"
+   ]
+  },
+  "10": {
+   "kind": "solid",
+   "colors": [
+    "0000FE"
+   ]
+  },
+  "11": {
+   "kind": "solid",
+   "colors": [
+    "00FE00"
+   ]
+  },
+  "4": {
+   "kind": "hue",
+   "colors": []
+  },
+  "5": {
+   "kind": "hue",
+   "colors": []
+  },
+  "13": {
+   "kind": "hue",
+   "colors": []
+  },
+  "100": {
+   "kind": "screen",
+   "colors": []
+  }
+ },
+ "brightness": {
+  "100": "FE",
+  "50": "7E",
+  "20": "32"
+ }
+}

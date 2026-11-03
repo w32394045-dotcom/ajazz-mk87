@@ -5,12 +5,14 @@
 * 亮度 identity 1..6，其中 **1 = 全灭**，工具侧建议 2..6（官方 UI 显示 1..6）；
 * 逐键自定义灯 = SET_CUSTOM_LED_DATA(0x24) 512 字节 = 128 × [idx, R, G, B]；
 * 自定义模式族 mode ∈ {20, 21, 128} 共用同一张表；128 是 UI 上的「自定义」；
+  **fw1.19 写 128 会被固件归零（回读 mode=0）**，帧流展示入口改用 20/21（`ensure_frame_mode`）；
 * 逐键帧流 cmd 0x32：每帧 87 键 × 4 字节 [keyValue, R, G, B]，按官方 keyList 行优先排列；
   必须先切到 mode 20/21/128 才显示，停发约 5 秒后回落到自定义表。
 """
 from __future__ import annotations
 
 import json
+import logging
 import math
 import os
 import sys
@@ -21,11 +23,22 @@ from typing import Callable, Dict, List, Optional, Tuple
 from . import const
 from .errors import MK87Error
 
+log = logging.getLogger("mk87.lighting")
+
 DATA_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "data")
 
 RGB = Tuple[int, int, int]
 CUSTOM_FAMILY = (20, 21, 128)
 CUSTOM_MODE = 128
+#: 帧流展示入口：fw1.19 写 128 会被固件归零（回读 mode=0），改用官方自定义族 20/21。
+#: 优先 20；若回读异常再试 21（两者共用同一张逐键表）。
+FRAME_MODES = (20, 21)
+#: 可以安全写回的灯效模式：1..19 官方效果 + 自定义族 20/21/128
+VALID_EFFECT_MODES = frozenset(range(1, 20)) | frozenset(CUSTOM_FAMILY)
+
+#: 最近一次 restore_effect 的结果（shell 退出时据此等待恢复完成，见 shell.py）
+_restore_lock = threading.Lock()
+_restore_state: Dict[str, object] = {"ts": 0.0, "mode": None, "result": "none"}
 
 
 # ----------------------------------------------------------------------
@@ -101,6 +114,66 @@ def get_effect(device) -> dict:
     }
 
 
+def colors_have_light(colors: Optional[Dict[int, tuple]]) -> bool:
+    """逐键颜色表里是否存在非黑槽（空槽读回是 [idx,0,0,0]）。"""
+    for rgb in (colors or {}).values():
+        try:
+            if max(int(rgb[0]), int(rgb[1]), int(rgb[2])) > 0:
+                return True
+        except Exception:  # noqa: BLE001
+            continue
+    return False
+
+
+def resolve_is_custom(mode: int, colors: Optional[Dict[int, tuple]] = None) -> bool:
+    """isCustom 判定（纯函数，便于单测）。
+
+    * 自定义族 20/21/128 → True；
+    * mode 回读 0（fw1.19 把 128 固化成自定义族后回读 0）且逐键表有非黑颜色 → True；
+    * 其它情况 → False。
+    """
+    mode = int(mode)
+    if mode in CUSTOM_FAMILY:
+        return True
+    if mode == 0:
+        return colors_have_light(colors)
+    return False
+
+
+#: 只在「mode 回读 0 → 判定为自定义态」状态切换时打一次 info，避免每次请求刷日志
+_custom_fallback_logged = False
+
+
+def get_effect_with_custom_fallback(device) -> dict:
+    """读取灯效；mode 回读 0 时补读逐键表判断是否其实停在自定义逐键态。
+
+    前端目前不消费这个兜底，但 API 语义更准，也方便日志诊断。
+    2.4G 下不探测：GET_ALL_LIGHTS_RGB(0x33) 在 32B 报告上要拆 ~22 包，
+    官方 2.4G 读灯走 0x37（5 包），这里不值得为一次页面加载付出这个代价。
+    """
+    global _custom_fallback_logged
+    effect = get_effect(device)
+    if int(effect["mode"]) != 0:
+        _custom_fallback_logged = False
+        return effect
+    transport = str(getattr(getattr(device, "status", None), "transport", "") or "")
+    if transport != "usb":
+        return effect
+    try:
+        colors = device.get_lights_frame()
+    except Exception as exc:  # noqa: BLE001
+        log.debug("mode 回读 0，补读逐键灯表失败: %s", exc)
+        return effect
+    if resolve_is_custom(0, colors):
+        effect["isCustom"] = True
+        if not _custom_fallback_logged:
+            lit = sum(1 for rgb in colors.values() if max(int(x) for x in rgb[:3]) > 0)
+            log.info("灯效 mode 回读 0，但逐键灯表有 %d 个非黑槽 → 判定为自定义逐键态"
+                     "（isCustom=true）", lit)
+            _custom_fallback_logged = True
+    return effect
+
+
 def set_effect(device, *,
                mode: int,
                rgb: RGB = (255, 255, 255),
@@ -168,6 +241,17 @@ def set_custom(device, colors: Dict[int, RGB], apply: bool = True,
             direction=0,
         )
         result["appliedMode"] = CUSTOM_MODE
+        # fw1.19 实测：写 128 后回读 mode=0（被固件归零，灯仍停在自定义逐键表）。
+        # 只有日志告警，不自动改写，避免误切到其它效果。
+        time.sleep(0.2)
+        try:
+            backed = int(device.get_led_effect()["mode"])
+        except Exception as exc:  # noqa: BLE001
+            log.debug("自定义灯效写后回读失败: %s", exc)
+            backed = CUSTOM_MODE
+        if backed == 0:
+            log.warning("mode 128 被固件归零，当前为自定义态（回读 mode=0，逐键表仍生效）")
+        result["readbackMode"] = backed
     return result
 
 
@@ -242,27 +326,98 @@ def send_frame(device, payload: bytes, frame_index: int = 0,
 
 
 def ensure_frame_mode(device) -> dict:
-    """确保设备处于自定义族模式（帧流显示的前提），返回进入前的灯效快照。"""
+    """确保设备处于自定义族模式（帧流显示的前提），返回进入前的灯效快照。
+
+    fw1.19 实测：写 ``mode=128`` 会被固件固化成自定义族并回读 0，因此展示入口
+    改用 20/21（官方自定义族，共用同一张逐键表）。每次写入后等 200ms 回读确认；
+    回读异常（如仍是 0）只告警，不中断帧流——逐键帧通常仍能显示。
+    """
     cur = device.get_led_effect()
     snapshot = bytes(cur["raw"])
-    if cur["mode"] not in CUSTOM_FAMILY:
+    if cur["mode"] in CUSTOM_FAMILY:
+        return {"before": snapshot, "wasMode": cur["mode"], "entryMode": cur["mode"]}
+    brightness = clamp_brightness(cur["brightness"])
+    speed = clamp_speed(cur["speed"])
+    entry_mode = None
+    for mode in FRAME_MODES:
         device.set_led_effect(
-            mode=CUSTOM_MODE,
+            mode=mode,
             red=255, green=255, blue=255,
             color_mode=1,
-            brightness=clamp_brightness(cur["brightness"]),
-            speed=clamp_speed(cur["speed"]),
+            brightness=brightness,
+            speed=speed,
             direction=0,
         )
-    return {"before": snapshot, "wasMode": cur["mode"]}
-
-
-def restore_effect(device, snapshot: bytes) -> None:
-    if snapshot:
+        time.sleep(0.2)
         try:
-            device.request(const.CMD["SET_LED_EFFECT"], bytes(snapshot), content_size=16, timeout=0.8)
-        except Exception:
-            pass
+            backed = int(device.get_led_effect()["mode"])
+        except Exception as exc:  # noqa: BLE001
+            log.warning("帧流入口 mode=%d 写后回读失败: %s", mode, exc)
+            continue
+        if backed in CUSTOM_FAMILY:
+            entry_mode = mode
+            break
+        log.warning("帧流入口 mode=%d 写后回读异常: mode=%s（期望 %s），继续发送帧流",
+                    mode, backed, "/".join(str(m) for m in CUSTOM_FAMILY))
+    if entry_mode is None:
+        log.warning("帧流入口写入 20/21 后回读均不在自定义族（可能被固件归零），"
+                    "仍按自定义态继续发送逐键帧")
+    return {"before": snapshot, "wasMode": cur["mode"], "entryMode": entry_mode}
+
+
+def _record_restore(mode, result: str) -> None:
+    with _restore_lock:
+        _restore_state.update({"ts": time.time(), "mode": mode, "result": result})
+
+
+def restore_state() -> dict:
+    """最近一次 :func:`restore_effect` 的结果快照（shell 退出时等待恢复用）。"""
+    with _restore_lock:
+        return dict(_restore_state)
+
+
+def restore_effect(device, snapshot: bytes, fallback: Optional[bytes] = None) -> bool:
+    """把进入帧流前的灯效快照写回；快照无效时绝不原样写设备。
+
+    真机事故（2026-11-02 22:45）：进程被关机杀死时快照里 mode 已被污染成 0，
+    旧实现原样写回，键盘永远停在自定义逐键表。现在的规则：
+
+    * 快照首字节（mode）必须在 1..19 ∪ {20,21,128}，否则跳过并 ``log.warning``；
+    * 调用方可传 16 字节 ``fallback`` 指定安全值，仅在快照无效时使用；
+    * 返回是否真的写入了设备。
+    """
+    raw = bytes(snapshot or b"")
+    mode = int(raw[0]) if raw else -1
+    if len(raw) >= 16 and mode in VALID_EFFECT_MODES:
+        try:
+            device.request(const.CMD["SET_LED_EFFECT"], raw[:16],
+                           content_size=16, timeout=0.8)
+            _record_restore(mode, "restored")
+            log.info("灯效快照已恢复: mode=%d", mode)
+            return True
+        except Exception as exc:  # noqa: BLE001
+            _record_restore(mode, f"error: {exc}")
+            log.warning("恢复灯效快照失败（mode=%d）: %s", mode, exc)
+            return False
+
+    fb = bytes(fallback or b"")
+    fb_mode = int(fb[0]) if fb else -1
+    if len(fb) >= 16 and fb_mode in VALID_EFFECT_MODES:
+        try:
+            device.request(const.CMD["SET_LED_EFFECT"], fb[:16],
+                           content_size=16, timeout=0.8)
+            _record_restore(fb_mode, "fallback")
+            log.warning("灯效快照无效（mode=%s），已用 fallback mode=%d 恢复", mode, fb_mode)
+            return True
+        except Exception as exc:  # noqa: BLE001
+            _record_restore(fb_mode, f"fallback-error: {exc}")
+            log.warning("恢复 fallback 灯效失败（mode=%d）: %s", fb_mode, exc)
+            return False
+
+    _record_restore(mode, "skipped-invalid")
+    log.warning("快照无效（mode=%s，首 16B=%s），跳过恢复：不把被污染的 mode 写回设备",
+                mode, raw[:16].hex() or "(空)")
+    return False
 
 
 class FrameSender:

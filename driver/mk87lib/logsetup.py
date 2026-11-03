@@ -289,6 +289,8 @@ def _device_snapshot() -> Optional[dict]:
             "pid": getattr(st, "pid", None),
             "battery": getattr(st, "battery", None),
             "charging": getattr(st, "charging", None),
+            "batterySource": getattr(st, "battery_source", ""),
+            "workMode": getattr(st, "work_mode", None),
             "tftMaxFrames": getattr(st, "tft_max_frames", None),
             "tftByteOrder": getattr(st, "tft_byte_order", None),
             "lastError": getattr(st, "last_error", ""),

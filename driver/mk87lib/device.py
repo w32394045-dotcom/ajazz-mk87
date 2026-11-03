@@ -33,6 +33,8 @@ class DeviceStatus:
     battery: int = 0
     charging: int = 0
     work_mode: int = 0
+    #: 电量来源（诊断用）：device_info / 24g_rgb / 24g_fallback；不进 /api/status
+    battery_source: str = ""
     key_count: int = const.KEY_COUNT
     tft_max_frames: int = 0
     led_max_frames: int = 0
@@ -453,6 +455,47 @@ class MK87Device:
             "tftColorByteOrder": d[35],
             "raw": d,
         }
+
+    def read_battery_24g(self, timeout: float = 1.0) -> Optional[int]:
+        """2.4G 专用：读 GET_ALL_LIGHTS_RGB_24G(0x37) 首包响应里的电量字节。
+
+        官方网页驱动在 2.4G 下**不用** GET_DEVICE_INFO 的 d[17] 刷电量，而是用
+        0x37 回包的 battery 字节覆写（docs/wireless-profiles-led-animation.md §4.2）：
+
+        * 请求：4 字节自定义头 ``[0xAA, 0x37, 包序号, 0]`` + 全 0 请求体
+          （payload 32B → 每包 28 字节数据）；
+        * 响应：4 字节头 ``[0x55, 0x37, 包序号, 电量]``，灯色数据从 byte[4] 起；
+        * 本方法只发第 0 包、只取首包 byte[3]，**不解析灯色、不写设备**。
+
+        只在 ``transport == "2.4g"`` 时有效（USB 电量仍以 GET_DEVICE_INFO 为准）。
+        2.4G 的 64B 通道（0xFF59）无响应，因此不做 cmd59 分支。
+        """
+        if self.protocol is None or self.status.transport != "2.4g":
+            return None
+        if self._tft_busy.is_set() and threading.get_ident() != self._tft_busy_owner:
+            return None
+        iface = self.protocol.iface
+        cmd = const.CMD["GET_ALL_LIGHTS_RGB_24G"]
+        report = bytearray(iface.info.payload_len + 1)  # 首字节 = report ID 0
+        report[1] = 0xAA                                # 自定义头从 body[0] 开始
+        report[2] = cmd & 0xFF
+        report[3] = 0                                   # 包序号 0
+        report[4] = 0
+        with self._lock:
+            iface.write_report(bytes(report))
+            deadline = time.time() + max(0.2, float(timeout))
+            while time.time() < deadline:
+                raw = iface.read_report(timeout=max(0.005, deadline - time.time()))
+                if not raw:
+                    break
+                r = bytes(raw)
+                # Linux hidraw 可能带前导 report ID 0；Windows 不带（不能依赖
+                # normalize_report：它只认 report[1]==0x55，而 2.4G 回包 byte[1]=0x37）
+                if r[0] == 0 and len(r) > 4 and r[1] == 0x55:
+                    r = r[1:]
+                if len(r) >= 4 and r[0] == 0x55 and r[1] == cmd:
+                    return int(r[3])
+        raise MK87Error("2.4G 电量读取无响应")
 
     def get_game_mode(self) -> dict:
         d = bytes(self.request(const.CMD["GET_GAME_MODE"], content_size=56, timeout=0.8)[:56])

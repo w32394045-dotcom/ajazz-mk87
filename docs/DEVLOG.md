@@ -575,4 +575,54 @@ C:\Users\ptfm\Documents\ajazz-re\driver\dist-packages\MK87Studio-0.1.1-win64-por
 | SHA256 | `61A33D73A56C05499269197C5C767CDF477B5723FF2C2643252CB25242D15DA7` |
 | 冒烟要点 | --tray 启动 → `/api/music/status.implementedModes` 返回 12 个模式，证明打包内已是新代码 |
 
+---
+
+## 18 2026-11-03：电量/灯效/游戏模式三问题 + 官方音乐 v1 真值对齐
+
+### 18.1 用户反馈（原话要点）
+
+- 重启电脑后电量显示 78%（实际 100%）；关驱动/重启后灯效模式被重置且「不是普通模式」；重启后键盘像进了「游戏模式」
+- 「那四个音效有问题……官方方案这边重新采样，不要按旧方案；旧方案保留在当前方案标签」
+- 「屏光联动可以不用官方的，我们自己按字面意思做一个，比它更好」；「增加第三个下拉框（LED 颜色）」
+- 「可以用子 Agent 研究，你来检验」「上下文空间不多了」
+
+### 18.2 三问题调查（子代理，只读；报告要点）
+
+| 问题 | 根因 | 证据 |
+|---|---|---|
+| 电量 78% | 工具只是如实显示 `GET_DEVICE_INFO` d[17]；但**电量/充电从不写日志**，且 `charging` 只在百分比变化时刷新、异常全静默；2.4G 下官方是从 `GET_ALL_LIGHTS_RGB_24G*` 回包取 battery，本工具无此路径 | 日志 `%LOCALAPPDATA%\mk87\logs\session-20261103-121649-1552.log:16`（连接）无电量字段；实测 d[17]=100/d[18]=2 连读 5 次 |
+| 灯效重置 | **不是启动/退出逻辑**：11/2 22:45 音乐 start 写了 mode=128 后进程被关机杀死，`restore_effect()` 没跑，键盘停在自定义逐键表（WASD 绿 + 空格粉）；fw1.19 会把 128 固化成自定义族且 mode 回读 0 | `session-20261102-224047-14936.log:76958/76961/76963`；最后一行 22:45:49 无「开始退出」；今天实测 `GET_CUSTOM_LED_DATA`/`GET_ALL_LIGHTS_RGB` 正好 5 键 |
+| 「游戏模式」 | 与本工具无关（全量日志 0 条 `TX cmd=0x21`、0 条 game-mode 写；56B 与 11/1 快照逐字节相同）；**大概率与灯效问题同源**——只剩 WASD+空格 看起来像游戏高亮 | `docs/restore_state.json` 对比；官方 db `gamemode=0/disable_win=0` |
+
+### 18.3 修复（子代理实现，Lead 复核；92 tests OK）
+
+| 文件 | 改动 |
+|---|---|
+| `mk87lib/lighting.py` | `ensure_frame_mode` 展示入口改用 20/21（绝不写 128），写后 0.2s 回读；`restore_effect` 写回前校验快照 mode，0/非法一律不写；`restore_state()` 暴露最近恢复状态；`set_custom` 写 128 后回读归零告警；`get_effect_with_custom_fallback()`：mode 回读 0 时用 `GET_ALL_LIGHTS_RGB` 判断是否自定义表态并返回 `isCustom` |
+| `server/state.py` | `_refresh_battery` 每次成功都更新 battery/charging/work_mode 并限频记日志/广播；连接日志带 battery/charging/workMode/transport；连接后 2s 延迟重读（gen 防串连接）；2.4G 电量读取 + 失败熔断 5 分钟；`stop_music(3s)` 确认 restore 已跑后再关 HID |
+| `mk87lib/device.py` | `read_battery_24g()`（只发 cmd55 首包，只读；2.4G 才用）；`DeviceStatus.battery_source` |
+| `shell.py` / `app.py` / `logsetup.py` | 退出顺序：停音乐等 restore → keytest → 关设备，`os._exit` 前最多等 8s；`GET /api/lighting` 走 isCustom 兜底；诊断包加 batterySource/workMode |
+| 测试 | 新增 `driver/tests/test_battery_lighting_state.py`（28 tests，全 fake 设备）；全套 **92 tests OK** |
+
+### 18.4 官方音乐 v1 真值（关键修正）
+
+- **之前用错了列表**：`docs/music-constants.json` 的 12 模式是 v2 列表；MK87 是 `musicConfig.version===1`，官方 v1 UI 真实下拉（从 `capture/official_music_live/layout-classic-CMxiG14P.js` offset≈2301489 函数 D7 提取，落盘 [docs/music-v1-config.json](music-v1-config.json)）：
+  - 显示模式：`1 绿黄红 / 2 彩虹 / 13 随曲起舞 / 4 曲率频阶 / 5 频谱循环 / 6 白 / 7 红 / 8 橙 / 9 黄 / 11 绿 / 10 蓝 / 100 屏光联动`
+  - 背景：`0 无 / 6 白 / 7 红 / 8 橙 / 9 黄 / 10 蓝 / 11 绿 / 1 绿黄红 / 2 彩虹 / 4 色谱 / 5 频谱循环`
+  - 振幅 1–100（默认 30）、背景亮度 1–100（默认 100）、`musicV1Config` 默认 mode=1
+- 用官方采样 `capture/official_music_colors3.jsonl`（`probe/analyze_official_v1_modes.py`）对齐：
+  - 颜色模式真值：6/7/8/9/11/10 = `FEFEFE/FE0000/FE3F00/FEFE00/00FE00/0000FE`；**11=绿、10=蓝**（旧脚本文案反了）
+  - 亮度缩放公式：`(c * int(bb*255/100)) >> 8`（bb=100/50/20 → FE/7E/32），修复旧实现 round 差 1
+  - 1/2/4/5/6..11 是「曲率频阶柱状」同一几何 + 不同调色板；13 是同心环；背景 11 种全部铺满
+- 实现：`music.py` 新增 `_render_mode_steps` 覆盖 1/2/4/5/6/7/8/9/10/11，`V1_DISPLAY_MODES`/`V1_IMPLEMENTED_MODES`，status 增 `officialModes`/`officialImplementedModes`，背景亮度 1–100；前端 `data/music.js`/`pages/music.js`/`mock.js` 同步；**「当前方案」标签页零改动**
+- 验证：headless UI 8/8 PASS（含 EN 无中文残留）、打包前全套 92 tests OK；旧 `capture/official_music_analysis3.txt` 中交叉验证：背景模式 6–11 全亮、bb 线性缩放与本次结论一致
+
+### 18.5 未决 / 已知局限
+
+- **采样只有 10Hz HTTP 回放**：颜色模式几何（柱状 vs 楔形）无法逐像素确证；mode 2 采样零输出、1/4 输出稀疏，属推断实现；纯色模式实现为「柱状部分点亮」而非全键铺满（与采样覆盖率一致）。
+- 2.4G 电量路径**无 2.4G 硬件未真机验证**（失败会熔断 5 分钟后回退 d[17]，日志可查）。
+- 需要用户配合的实验：E1 重启后电量时间线（新日志已加）；E2 写回 mode=11 后断电/重启验证持久性（需用户同意写一次设备）；E4 禁用 MusicPlug 自启对照（需改系统设置）。
+- 屏光联动（100）与 LED 颜色第三下拉框：尚未实现（下一步）。
+
+
 

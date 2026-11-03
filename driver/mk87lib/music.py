@@ -8,8 +8,8 @@
 
 渲染器：**逐行移植官方 bundle**（scripts/music_ref.js 已 31/31 自检通过），
 不再使用早期自研的 spectrum/rainbow 等简化渲染（那种会点亮几乎全部按键，观感是"全亮"）。
-已移植 12 个官方模式（模式号 = 官方 mode）：
-  13 = Dance to the Beat（同心环扩散，默认）
+官方模式号 → 渲染器（20 个模式全部可用）：
+  13 = Se  Dance to the Beat（同心环扩散，默认）
   14 = Dust Glow Spiral（中心四色射线旋转）
   15 = Dormant Volcano（左/中/右三塔火山，无坐标表走官方柱状兜底）
   16 = Light Arrow Piercing（右侧光条 + 固定箭形点阵）
@@ -19,8 +19,14 @@
   20 = Curvature Legacy Track（右侧向内的弯曲波形）
   21 = Row Wave Rhythm（逐行不等长柱 + 色相渐变）
   22 = Dual Heart Dance（官方内置双心坐标图案逐层点亮）
-  1/4 = Curvature Frequency Steps（背景 + 包络柱状；1 与 4 相同）
-模式 100（屏光联动）仍回落到 13：官方把它交给插件 Music.exe 计算，主机侧没有渲染器。
+  1/2/4/5/6/7/8/9/10/11 = Fe 曲率频阶柱状 + 调色板（模式号即调色板：1 绿黄红分行、
+    2 六色横条、4 径向色相、5 旋转单色、6/7/8/9/10/11 纯白/红/橙/黄/蓝/绿）
+模式 100（屏光联动）仍回落到 13：官方把它交给插件 Music.exe 读屏计算，主机侧没有渲染器
+（本工具自研屏幕同步待做）。
+
+官方 v1 参数真值见 docs/music-v1-config.json：显示模式 12 个、背景模式 11 个、
+振幅 1–100（默认 30）、背景亮度 1–100（默认 100）；纯色/亮度公式由
+capture/official_music_colors3.jsonl 采样反推（probe/analyze_official_v1_modes.py）。
 
 音频分析：官方 K7/Nse（总振幅）+ 3 段 Pse + 32 段频谱（前端电平条用）。
 """
@@ -56,8 +62,7 @@ MODE_NAMES = {
     13: ("律动节拍", "Dance to the Beat"),
     14: ("光尘螺旋", "Dust Glow Spiral"),
     17: ("萤火轨迹", "Firefly Trail"),
-    4: ("曲率频谱", "Curvature Frequency Steps"),
-    1: ("曲率频谱（细）", "Curvature Frequency Steps"),
+    4: ("曲率频阶", "Curvature Frequency Steps"),
     15: ("休眠火山", "Dormant Volcano"),
     16: ("光箭穿刺", "Light Arrow Piercing"),
     18: ("光茧共鸣", "Light Cocoon Resonance"),
@@ -65,9 +70,19 @@ MODE_NAMES = {
     20: ("曲率传承", "Curvature Legacy Track"),
     21: ("行波节奏", "Row Wave Rhythm"),
     22: ("双心共舞", "Dual Heart Dance"),
+    # 官方 v1 UI 的其余显示模式（文案取自 docs/music-v1-config.json）
+    1: ("绿色/黄色/红色", "Green/Yellow/Red"),
+    2: ("彩虹色", "Rainbow"),
+    5: ("频谱循环", "Spectrum Cycle"),
+    6: ("白色", "White"),
+    7: ("红色", "Red"),
+    8: ("橙色", "Orange"),
+    9: ("黄色", "Yellow"),
+    10: ("蓝色", "Blue"),
+    11: ("绿色", "Green"),
 }
 
-#: 前端可选模式（当前已完整移植的官方渲染器）
+#: 前端「当前方案」可选模式（本工具自己的组合，与官方 v1 下拉无关）
 MODES = [
     {"mode": 13, "name": MODE_NAMES[13][0], "nameEn": MODE_NAMES[13][1]},
     {"mode": 14, "name": MODE_NAMES[14][0], "nameEn": MODE_NAMES[14][1]},
@@ -86,7 +101,21 @@ STYLE_TO_MODE = {
     "spiral": 14,
     "frequency": 4,
 }
-IMPLEMENTED_MODES = {1, 4, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22}
+IMPLEMENTED_MODES = {
+    1, 2, 4, 5, 6, 7, 8, 9, 10, 11, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22,
+}
+
+#: 官方 v1 UI 的 12 个显示模式（顺序与 docs/music-v1-config.json 一致）
+V1_DISPLAY_MODES = [1, 2, 13, 4, 5, 6, 7, 8, 9, 11, 10, 100]
+
+#: 其中主机侧已实现渲染器的：100（屏光联动）由官方 Music.exe 读屏计算，
+#: 本工具尚未做自研屏幕同步，仍回落 13；「官方方案」下拉据此标注未移植。
+V1_IMPLEMENTED_MODES = [m for m in V1_DISPLAY_MODES if m != 100]
+
+#: 走官方 Fe（曲率频阶柱状）几何的显示模式：模式号同时就是调色板 id
+#: （1=绿黄红分行 / 2=6 色横条 / 4=径向色相 / 5=旋转单色 / 6..11=纯色）。
+#: 依据：capture/official_music_colors3.jsonl 采样反推（见 probe/analyze_official_v1_modes.py）。
+V1_STEP_MODES = (1, 2, 4, 5, 6, 7, 8, 9, 10, 11)
 
 
 def _clamp(v: float, lo: float, hi: float) -> float:
@@ -175,27 +204,42 @@ def _zeros(F: int, P: int) -> List[List[RGB]]:
     return [[(0, 0, 0) for _ in range(P)] for _ in range(F)]
 
 
+def _brightness_scale(brightness_pct: float) -> int:
+    """官方亮度缩放系数 0..255：``int(bb*255/100)``（截断）。
+
+    采样验证（capture/official_music_colors3.jsonl D 组，背景红 bb=100/50/20）：
+    → 254/126/50，只有「系数 255/127/51 + 通道位运算」这组能同时对上；
+    round(bb*2.55) 在 bb=50 会给 128 → 127（错），故必须截断。
+    """
+    return int(float(brightness_pct) * 255.0 / 100.0)
+
+
+def _scale_channel(channel: int, scale: int) -> int:
+    """官方通道缩放：``(通道 * 系数) >> 8``（等价于 floor(c*n/256)）。
+
+    采样验证：纯白 bb=100 → FE（不是 FF）、橙 8 号色 → FE3F00（不是 FE4000）、
+    红 bb=50 → 7E、bb=20 → 32。JS 的 Math.round 会给出 FE4000，与实际不符。
+    """
+    return (int(channel) * int(scale)) >> 8
+
+
 def _fill_solid(grid, color: RGB, brightness_pct: float) -> None:
-    n = _rnd(brightness_pct * 2.55)
-    c = (
-        _rnd(n * color[0] / 256),
-        _rnd(n * color[1] / 256),
-        _rnd(n * color[2] / 256),
-    )
+    n = _brightness_scale(brightness_pct)
+    c = (_scale_channel(color[0], n), _scale_channel(color[1], n), _scale_channel(color[2], n))
     for row in grid:
         for i in range(len(row)):
             row[i] = c
 
 
 def _fill_row_bands(grid, colors: List[RGB], brightness_pct: float) -> None:
-    n = _rnd(brightness_pct * 2.55)
+    n = _brightness_scale(brightness_pct)
     rows = len(grid)
     per = rows // len(colors)
     extra = rows % len(colors)
     row_idx = 0
     for ci, color in enumerate(colors):
         cnt = per + (1 if ci < extra else 0)
-        c = (_rnd(n * color[0] / 256), _rnd(n * color[1] / 256), _rnd(n * color[2] / 256))
+        c = (_scale_channel(color[0], n), _scale_channel(color[1], n), _scale_channel(color[2], n))
         for _ in range(cnt):
             if row_idx >= rows:
                 break
@@ -218,15 +262,26 @@ def _fill_radial_hue(grid, center_row: int, center_col: int, hue_phase: float) -
 
 
 def _fill_solid_hue(grid, hue_phase: float, brightness_pct: float) -> None:
-    hue = _rnd(hue_phase) % 360
-    c = _hsv(hue, 1.0, brightness_pct / 255.0)
+    """整屏单色，色相随时间旋转（官方 v1 显示模式 5 / 背景模式 5「频谱循环」）。
+
+    hue_phase 是 0..1 的相位（引擎每 tick +0.01 → 5s 转一圈）：
+    采样里同一段内整帧只有一种颜色、颜色逐帧走完整个色环（AA00FF → 006AFF → …），
+    且饱和色最大通道是 FF（满值），故 value = bb/100。
+    """
+    hue = (float(hue_phase) * 360.0) % 360.0
+    value = _clamp(float(brightness_pct) / 100.0, 0.0, 1.0)
+    c = _hsv(hue, 1.0, value)
     for row in grid:
         for i in range(len(row)):
             row[i] = c
 
 
 def _apply_background(grid, backmode: int, brightness_pct: float, st: dict) -> None:
-    """官方 _e：背景模式（0 = 黑、6..11 纯色、1/2 横向分段、4 径向色相、5 旋转纯色）。"""
+    """官方 _e：调色板（背景模式与「曲率频阶」显示模式的共用颜色方案）。
+
+    backmode：0 = 不画、6..11 纯色、1/2 横向分段、4 径向色相、5 旋转纯色。
+    显示模式 1/2/4/5/6..11 也把显示模式号当调色板 id 传进来（官方同一个函数）。
+    """
     if backmode == 6:
         _fill_solid(grid, (255, 255, 255), brightness_pct)
     elif backmode == 7:
@@ -285,11 +340,19 @@ def _build_rings(lay: dict) -> List[List[Tuple[int, int]]]:
     return rings
 
 
-def _render_mode_1or4(grid, mode: int, lay: dict, st: dict) -> None:
-    """官方 Fe：背景 + 包络柱状（1 与 4 同一渲染器）。"""
+def _render_mode_steps(grid, mode: int, lay: dict, st: dict) -> None:
+    """官方 Fe（曲率频阶柱状）+ 调色板 = 显示模式号。
+
+    官方 v1 的 1/2/4/5/6/7/8/9/10/11 共用这一种几何：包络柱状只在柱高范围内点亮，
+    柱子颜色由「显示模式号」当调色板 id 决定（同一个调色板函数也用于背景模式）：
+      1 绿黄红分行 / 2 六色横条 / 4 中心径向色相 / 5 旋转单色 / 6..11 纯色。
+    采样证据（capture/official_music_colors3.jsonl）：这些模式每帧只有单一颜色族、
+    覆盖率随振幅在 10%~50% 波动、6..11 的主色与背景同号纯色完全一致（FE0000…）。
+    """
     n = st["amplitudeUI"] / 100.0
     st["smoothAmp"] += (st["amp"] - st["smoothAmp"]) * n
     bg = _zeros(lay["F"], lay["P"])
+    # 注意：这里的 palette 参数就是「显示模式号」，不是背景模式
     _apply_background(bg, mode, st["backmodeBrightness"], st)
     st["phase"] += st["amplitudeUI"] / 1000.0
     i = min(st["smoothAmp"], 1.0)
@@ -312,6 +375,10 @@ def _render_mode_1or4(grid, mode: int, lay: dict, st: dict) -> None:
         for col in range(lay["P"]):
             if target < bars[col]:
                 grid[row][col] = bg[row][col]
+
+
+#: 兼容旧名字（1 与 4 曾被认为是「同一渲染器」）
+_render_mode_1or4 = _render_mode_steps
 
 
 def _render_mode_14(grid, lay: dict, st: dict) -> None:
@@ -889,8 +956,8 @@ def _render_frame(lay: dict, st: dict, mode: int) -> List[List[RGB]]:
     grid = _zeros(lay["F"], lay["width"])
     if st["backmode"]:
         _apply_background(grid, st["backmode"], st["backmodeBrightness"], st)
-    if mode in (1, 4):
-        _render_mode_1or4(grid, mode, lay, st)
+    if mode in V1_STEP_MODES:
+        _render_mode_steps(grid, mode, lay, st)
     elif mode == 13:
         _render_mode_13(grid, lay, st)
     elif mode == 14:
@@ -930,7 +997,7 @@ class MusicEngine:
             "mode": mode,
             "amplitudeUI": _clamp(int(amplitude_ui), 1, 100),
             "backmode": int(backmode),
-            "backmodeBrightness": _clamp(int(backmode_brightness), 10, 100),
+            "backmodeBrightness": _clamp(int(backmode_brightness), 1, 100),
             "amp": 0.0,
             "smoothAmp": 0.0,
             "phase": 0.0,
@@ -959,9 +1026,9 @@ class MusicEngine:
         self.st["amplitudeUI"] = _clamp(int(amplitude_ui), 1, 100)
 
     def set_backmode(self, backmode: int, brightness: int) -> None:
-        """热更新官方背景参数（backmode 0..11 / 亮度 10..100）。"""
+        """热更新官方背景参数（backmode 0..11 / 亮度 1..100，官方 v1 范围）。"""
         self.st["backmode"] = int(_clamp(int(backmode), 0, 11))
-        self.st["backmodeBrightness"] = int(_clamp(int(brightness), 10, 100))
+        self.st["backmodeBrightness"] = int(_clamp(int(brightness), 1, 100))
 
     def tick(self, amp1000: int) -> bytes:
         """喂当前总振幅（0..1000），返回 348 字节逐键载荷。"""
@@ -1341,7 +1408,7 @@ class MusicPlayer:
             self.amplitude_ui = int(_clamp(round(self.sensitivity * 50), 10, 100))
         # 官方背景参数：backmode(0..11) / backmodeBrightness(10..100)
         self.backmode = int(_clamp(int(backmode or 0), 0, 11))
-        self.backmode_brightness = int(_clamp(int(backmode_brightness or 100), 10, 100))
+        self.backmode_brightness = int(_clamp(int(backmode_brightness or 100), 1, 100))
         self.fps = max(5, min(40, int(fps)))
         self.device_id = device_id
         self.errors = 0
@@ -1516,6 +1583,9 @@ class MusicPlayer:
             "backmode": self.backmode,
             "backmodeBrightness": self.backmode_brightness,
             "implementedModes": sorted(IMPLEMENTED_MODES),
+            # 「官方方案」下拉只列 v1 的 12 个；这里是其中主机侧已实现渲染器的模式
+            "officialModes": list(V1_DISPLAY_MODES),
+            "officialImplementedModes": list(V1_IMPLEMENTED_MODES),
             "sensitivity": self.sensitivity,
             "fps": self.fps,
             "deviceId": self.device_id,
