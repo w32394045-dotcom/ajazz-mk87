@@ -375,7 +375,7 @@ export const EN_TEXT = {
   "原生帧率": "Native FPS",
   "自研增强": "Custom",
   "实测帧率": "Measured frame rate",
-  "LED 颜色覆盖只对动态多色模式（1/2/4/5/13）生效；纯色模式 6/7/8/9/10/11 仍使用官方采样色。": "LED color override applies only to dynamic multi-color modes (1/2/4/5/13); solid modes 6/7/8/9/10/11 keep the official sampled color.",
+  "LED 颜色覆盖对全部动态多色模式生效（1/2/4/5/13 与补回的 14–22）；纯色模式 6/7/8/9/10/11 仍使用官方采样色。": "LED color override applies to all dynamic multi-color modes (1/2/4/5/13 and the restored 14–22); solid modes 6/7/8/9/10/11 keep the official sampled color.",
   "自研增强：官方方案默认 66 fps（不是官方 UI 的设置项）": "Custom enhancement: the Official scheme defaults to 66 fps (not an official UI setting)",
   "官方 v1 设置项：显示模式 21 种（含屏光联动）/ 背景模式 11 种 / 背景亮度 / 振幅；LED 颜色与原生帧率为本工具增强": "Official v1 settings: 21 display modes (incl. Screen light linkage) / 11 background modes / background brightness / amplitude; LED color and native FPS are custom enhancements",
   "该模式渲染器已移植（自研实现，未做官方采样校验）": "Renderer ported (custom implementation — not verified against official samples)",

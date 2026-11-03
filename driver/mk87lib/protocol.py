@@ -17,6 +17,7 @@
 from __future__ import annotations
 
 import logging
+import threading
 import time
 from typing import List, Optional
 
@@ -25,6 +26,131 @@ from .errors import ProtocolTimeout
 from .transport import HidInterface, normalize_report
 
 log = logging.getLogger("mk87.protocol")
+
+#: 音乐 ACK 类回包的主命令字节（66fps 播放时每秒数百条，逐条记日志没有价值）。
+_QUIET_ACK_CMD = 0x32
+#: 设备主动上报（断连/休眠/复位/notify）：即使帧很短也必须保留，不能当短 ACK 静默。
+_NOTIFY_CMDS = frozenset((0xFA, 0xFC))
+
+
+class _Bucket:
+    """一个聚合键的计数状态。"""
+
+    __slots__ = ("headline", "total", "pending", "last_emit", "sample", "extra")
+
+    def __init__(self, now: float):
+        self.headline = ""
+        self.total = 0
+        self.pending = 0
+        self.last_emit = now
+        self.sample = b""
+        self.extra = ""
+
+
+class _RateLimitedLogger:
+    """把高频 DEBUG 按 key 聚合成摘要，避免每条 HID 回包都格式化 + 写盘。
+
+    规则（同一 key）：
+
+    * 首条立即输出，便于确认通道有数据；
+    * 之后最多每 ``interval`` 秒输出一条摘要（累计条数 + 最近 24 字节 payload）；
+    * 累计达到 ``max_count`` 且距上次输出超过 ``min_interval`` 时可提前输出。
+
+    真正需要逐条诊断的低频路径（HID TX、请求-响应配对的 HID RX）不走这里。
+    所有状态都在实例里，测试可通过 :func:`reset_rate_limits` 重置。
+    """
+
+    def __init__(
+        self,
+        logger: logging.Logger = log,
+        interval: float = 2.0,
+        max_count: int = 200,
+        min_interval: float = 0.5,
+    ) -> None:
+        self.logger = logger
+        self.interval = max(0.0, float(interval))
+        self.max_count = max(1, int(max_count))
+        self.min_interval = max(0.0, float(min_interval))
+        self._buckets = {}
+        self._lock = threading.Lock()
+
+    def note(self, key, headline: str, sample: bytes = b"", extra: str = "") -> None:
+        """计一条；只有满足限速条件时才真正格式化并写 DEBUG。"""
+        now = time.monotonic()
+        with self._lock:
+            bucket = self._buckets.get(key)
+            if bucket is None:
+                bucket = _Bucket(now)
+                self._buckets[key] = bucket
+            bucket.headline = headline
+            bucket.total += 1
+            bucket.pending += 1
+            bucket.sample = sample
+            bucket.extra = extra
+            elapsed = now - bucket.last_emit
+            should_emit = (
+                bucket.total == 1
+                or elapsed >= self.interval
+                or (bucket.pending >= self.max_count and elapsed >= self.min_interval)
+            )
+            if not should_emit:
+                return
+            total, pending = bucket.total, bucket.pending
+            sample, extra = bucket.sample, bucket.extra
+            bucket.pending = 0
+            bucket.last_emit = now
+        self._write(headline, extra, total, pending, sample)
+
+    def _write(self, headline: str, extra: str, total: int, pending: int,
+               sample: bytes) -> None:
+        try:
+            suffix = f" last={logsetup.redact(sample, 48)}" if sample else ""
+            more = f" (+{pending})" if pending > 1 else ""
+            self.logger.debug("%s 聚合 %s 累计=%d%s%s",
+                              headline, extra, total, more, suffix)
+        except Exception:  # noqa: BLE001 - 日志自身失败绝不能影响协议收发
+            pass
+
+    def flush(self) -> None:
+        """输出所有尚未写出的聚合计数（测试 / 退出前用）。"""
+        with self._lock:
+            pending = [
+                (b.headline, b.extra, b.total, b.pending, b.sample)
+                for b in self._buckets.values() if b.pending
+            ]
+            for bucket in self._buckets.values():
+                bucket.pending = 0
+        for headline, extra, total, count, sample in pending:
+            self._write(headline, extra, total, count, sample)
+
+    def reset(self) -> None:
+        with self._lock:
+            self._buckets.clear()
+
+
+_rx_log = _RateLimitedLogger(log)
+
+
+def reset_rate_limits() -> None:
+    """重置 HID RX 限速日志状态（单测用）。"""
+    _rx_log.reset()
+
+
+def flush_rate_limits() -> None:
+    """立即输出待聚合计数（单测 / 诊断用）。"""
+    _rx_log.flush()
+
+
+def _is_quiet_frame(report: bytes) -> bool:
+    """音乐 ACK / 短 ACK 帧：只计数不逐条记录。"""
+    if len(report) < 2 or report[0] != 0x55:
+        return False
+    cmd = report[1]
+    if cmd == _QUIET_ACK_CMD:
+        return True
+    if cmd in _NOTIFY_CMDS:
+        return False
+    return len(report) <= 10
 
 
 class Protocol:
@@ -141,15 +267,18 @@ class Protocol:
                 if r is None:
                     break
                 if len(r) < 9 or r[0] != 0x55:
-                    log.debug("HID RX 非协议帧 len=%d %s", len(r), logsetup.redact(r, 96))
+                    _rx_log.note(("nonproto",), "HID RX 非协议帧",
+                                 sample=r, extra=f"len={len(r)}")
                     continue
                 if r[1] != (cmd & 0xFF):
-                    log.debug("HID RX 其它命令 cmd=0x%02X len=%d", r[1], len(r))
+                    _rx_log.note(("other", r[1]), "HID RX 其它命令",
+                                 sample=r, extra=f"cmd=0x{r[1]:02X} len={len(r)}")
                     continue
                 if expect_addr is not None:
                     addr = r[3] | (r[4] << 8)
                     if addr != expect_addr:
-                        log.debug("HID RX 地址不匹配 got=%d want=%d", addr, expect_addr)
+                        _rx_log.note(("addr", r[1]), "HID RX 地址不匹配", sample=r,
+                                     extra=f"cmd=0x{r[1]:02X} got={addr} want={expect_addr}")
                         continue
                 log.debug("HID RX cmd=0x%02X len=%d", cmd, len(r))
                 return r
@@ -157,8 +286,18 @@ class Protocol:
         return None
 
     def read_event(self, timeout: float = 0.05) -> Optional[bytes]:
-        """读取一条非请求响应（通知帧 / 异步 ACK），原样返回 payload。"""
+        """读取一条非请求响应（通知帧 / 异步 ACK），原样返回 payload。
+
+        高频回包（音乐 ACK / 短 ACK）不逐条写日志；其它通知按 cmd 聚合并限速，
+        避免 66fps 播放时每秒数百条 DEBUG 拖慢磁盘。
+        """
         r = self.iface.read_normalized(timeout)
-        if r is not None:
-            log.debug("HID 通知帧 len=%d %s", len(r), logsetup.redact(r, 96))
+        if r is None:
+            return None
+        if not _is_quiet_frame(r):
+            if len(r) >= 2 and r[0] == 0x55:
+                _rx_log.note(("notify", r[1]), "HID 通知帧", sample=r,
+                             extra=f"cmd=0x{r[1]:02X} len={len(r)}")
+            else:
+                _rx_log.note(("raw",), "HID 通知帧", sample=r, extra=f"len={len(r)}")
         return r

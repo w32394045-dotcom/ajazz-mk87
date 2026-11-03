@@ -15,7 +15,7 @@
    * custom：14–22 为官方 v2 研究得出的扩展模式，由本工具自研渲染器实现（未做官方采样校验）。
    * plugin：屏光联动由官方 Music.exe 读屏计算，本工具自研屏幕同步待做（当前回落 13）。
 
-   LED 颜色覆盖（OFFICIAL_COLOR_SCHEMES）只作用于动态多色模式 1/2/4/5/13；
+   LED 颜色覆盖（OFFICIAL_COLOR_SCHEMES）作用于全部动态多色模式（1/2/4/5/13 + 补回的 14–22）；
    纯色模式 6/7/8/9/10/11 保持官方采样色，default 表示不覆盖（与官方一致）。
    原生帧率（OFFICIAL_FRAME_RATES）是本工具增强，不是官方 UI 设置项，官方方案默认 66。 */
 
@@ -59,7 +59,7 @@ export const OFFICIAL_COLOR_SCHEMES = [
 ];
 
 /* LED 颜色覆盖能生效的动态多色模式（纯色 6/7/8/9/10/11 不受影响） */
-export const OFFICIAL_COLOR_MODE_VALUES = [1, 2, 4, 5, 13];
+export const OFFICIAL_COLOR_MODE_VALUES = [1, 2, 4, 5, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22];
 
 /* 原生帧率选项：本工具增强（官方 v1 固定 20fps），官方方案默认 66 */
 export const OFFICIAL_FRAME_RATES = [20, 60, 66];

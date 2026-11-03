@@ -31,8 +31,9 @@
 1–100（默认 100）；纯色/亮度公式由 capture/official_music_colors3.jsonl 采样反推
 （probe/analyze_official_v1_modes.py）。
 
-LED 颜色覆盖（本工具增强）：COLOR_SCHEMES 的 color id 只替换动态多色模式（1/2/4/5/13）
-的「色相来源」，动画相位/径向角度/环相位全部保留；纯色模式 6~11 与背景不受影响。
+LED 颜色覆盖（本工具增强）：COLOR_SCHEMES 的 color id 只替换**动态多色**模式的
+「色相来源」——1/2/4/5/13 与 14~22 共 14 个模式（见 COLOR_OVERLAY_MODES），
+动画相位/径向角度/环相位/拖尾明暗全部保留；纯色模式 6~11 与背景不受影响。
 
 音频分析：官方 K7/Nse（总振幅）+ 3 段 Pse + 32 段频谱（前端电平条用）。
 """
@@ -263,11 +264,14 @@ COLOR_SCHEMES = (
 )
 COLOR_IDS = tuple(cid for cid, _stops in COLOR_SCHEMES)
 DEFAULT_COLOR = "default"
-#: 颜色覆盖只作用于**动态多色**模式：
-#:   1 = 绿黄红分行 / 2 = 彩虹六色横条 / 4 = 径向色相 / 5 = 旋转单色 / 13 = 同心环。
-#: 纯色模式 6~11（官方采样色）与自研模式 14~22（自带配色）保持原样；
-#: 背景（backmode）永远不受影响。
-COLOR_OVERLAY_MODES = frozenset({1, 2, 4, 5, 13})
+#: 颜色覆盖只作用于**动态多色**模式（本工具增强，v0.1.4 起覆盖全部 14 个）：
+#:   1 = 绿黄红分行 / 2 = 彩虹六色横条 / 4 = 径向色相频谱柱 / 5 = 旋转单色 /
+#:   13 = 同心环；
+#:   14~22 = 官方渲染器（4 色射线 / 三塔火山 / 光箭 / 萤火 / 光茧 / 音叉 /
+#:   曲率传承 / 行波 / 双心）——这些模式的颜色同样只由色相决定，按同一
+#:   「hue → 调色板位置」映射取样，动画相位/几何/明暗层次原样保留。
+#: 纯色模式 6~11（官方采样色）保持原样；背景（backmode）永远不受影响。
+COLOR_OVERLAY_MODES = frozenset({1, 2, 4, 5, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22})
 
 
 def _hex_rgb(value: str) -> RGB:
@@ -663,8 +667,9 @@ def _render_mode_4(grid, lay: dict, st: dict,
     440Hz/100Hz/2k/4k/8k 单音 + 阶梯扫频 + 静音，均为官方 MusicPlug.exe 自己算的颜色）：
       * 柱子**底部对齐**，17 列 = 频率（左低右高，对数）；200 Hz 只点亮最左 1~3 列，
         6.4 kHz 只点亮最右几列 —— 旧的合成包络（任何声音都点满左半边）与真值不符；
-      * 每列柱高 = 该频段能量（Analyzer 的 32 段对数频谱压成 17 段）× amplitude 增益，
-        没有频谱输入时才退化成 _MODE4_CURVATURE 轮廓（单测/外部直接 tick(amp) 的场景）；
+      * 每列柱高 = 该频段能量（Analyzer 的 32 段对数频谱压成 17 段）× amplitude 增益；
+        真实音频链路给过频谱后，静音就是柱子归零（不会退回旧轮廓）；只有从未收到
+        频谱输入（单测/外部直接 tick(amp)）时才退化成 _MODE4_CURVATURE 轮廓；
       * 颜色 = 以 (centerRow,centerCol) 为原点的径向色相（满饱和），
         左右半屏相差 180°；整个调色板约 0.8 圈/s 旋转；
       * 柱高随 amplitude 增长：amp=30 时单音峰值约 4/6 行，amp=100 时顶到 6/6。
@@ -678,8 +683,10 @@ def _render_mode_4(grid, lay: dict, st: dict,
     st["mode4Hue"] = _advance(st.get("mode4Hue", 0.0), _MODE4_HUE_STEP, dt, 1.0)
     hue0 = st["mode4Hue"] * 360.0
     bands = st.get("spectrum17") or []
-    if not any(bands):
-        # 没有频谱输入（单测/外部直接 tick(amp)）：退化成随振幅伸缩的「曲率」轮廓
+    if not any(bands) and not st.get("has_spectrum"):
+        # 从未收到过频谱输入（单测/外部直接 tick(amp)）：退化成随振幅伸缩的「曲率」轮廓。
+        # 注意：真实音频链路只要给过一次 bands32（has_spectrum=True），即使某一帧全 0
+        # （安静段落/回环瞬时断流）也不再退回旧轮廓——否则真机上会闪回「旧方案」观感。
         amp = _clamp(st["amp"] * 2.0, 0.0, 1.0)
         bands = [_MODE4_CURVATURE[c] * amp for c in range(_MODE4_COLS)]
     # 柱高 = 该频段能量 × amplitude 增益：amp=30 时单音峰值约 4/6 行、amp=100 时顶到 6/6
@@ -696,8 +703,21 @@ def _render_mode_4(grid, lay: dict, st: dict,
             grid[row][c] = _hue_color(hue, pal)
 
 
-def _render_mode_14(grid, lay: dict, st: dict) -> None:
-    """官方 Ce：中心 4 色射线旋转。"""
+#: 模式 14 四条射线的官方固定色相：绿 120° / 蓝 240° / 黄 60° / 红 0°。
+#: 无调色板时 ``_hue_color(h, None)`` 就是 ``_hsv(h, 1, 1)``，与官方四个固定
+#: RGB 逐字节一致（120→(0,255,0) / 240→(0,0,255) / 60→(255,255,0) / 0→(255,0,0)）。
+_MODE14_RAY_HUES = (120.0, 240.0, 60.0, 0.0)
+
+
+def _render_mode_14(grid, lay: dict, st: dict,
+                    pal: Optional[Palette] = None) -> None:
+    """官方 Ce：中心 4 色射线旋转。
+
+    pal：颜色覆盖（本工具增强）——射线角度/旋转/线段几何全部不动，只把四条
+    射线的「固定色」换成按各自原色相（120/240/60/0°）在新调色板上取样：
+    单色 id → 四条射线同色（旋转的十字）；渐变 id → 四条射线分取渐变上四个
+    位置，「四色射线」的观感保留。
+    """
     t = st["amplitudeUI"] / 100.0
     dt = float(st.get("dt", 1.0))
     st["smoothAmp"] = _smooth(st["smoothAmp"], st["amp"], t, dt)
@@ -711,7 +731,7 @@ def _render_mode_14(grid, lay: dict, st: dict) -> None:
     r1 = min(st["smoothAmp"], 1.0)
     length = max(1.0, max_dist * r1)
     a = r1
-    colors = [(0, 255, 0), (0, 0, 255), (255, 255, 0), (255, 0, 0)]
+    colors = [_hue_color(h, pal) for h in _MODE14_RAY_HUES]
     angles = [0, 45, 90, 135]
     span = max(0.5, length)
     step_count = int(span / 0.5)
@@ -729,8 +749,14 @@ def _render_mode_14(grid, lay: dict, st: dict) -> None:
             m += 0.5
 
 
-def _render_mode_17(grid, lay: dict, st: dict) -> None:
-    """官方 je：中心行正弦波 + 拖尾。"""
+def _render_mode_17(grid, lay: dict, st: dict,
+                    pal: Optional[Palette] = None) -> None:
+    """官方 je：中心行正弦波 + 拖尾。
+
+    pal：颜色覆盖（本工具增强）——列方向色相（含 huePhase 推进）与波形/拖尾
+    全部不变，只把「色相 → RGB」换成在新调色板 hue/360 处取样；拖尾仍按原
+    系数衰减（单色 id 下整条波同色，但明暗层次保留）。
+    """
     t = min(st["amp"], 1.0)
     dt = float(st.get("dt", 1.0))
     st["phase"] = _advance(st["phase"], 0.5, dt)
@@ -745,7 +771,7 @@ def _render_mode_17(grid, lay: dict, st: dict) -> None:
         fall = 1 - (n / (P - 1)) ** 0.8 if P > 1 else 1.0
         scale = (1 + t * 2) * max(0.3, st["amplitudeUI"] / 50.0) * fall
         c = _rnd(wave * scale)
-        color = _hsv((n / P * 360 + st["huePhase"] * 360) % 360, 1.0, 1.0)
+        color = _hue_color((n / P * 360 + st["huePhase"] * 360) % 360, pal)
         for cr in centers:
             row = cr + c
             if 0 <= row < F:
@@ -798,13 +824,17 @@ def _render_mode_13(grid, lay: dict, st: dict,
                 grid[r][c] = color
 
 
-def _render_mode_15(grid, lay: dict, st: dict) -> None:
+def _render_mode_15(grid, lay: dict, st: dict,
+                    pal: Optional[Palette] = None) -> None:
     """官方 Ee：休眠火山（左/中/右三塔随振幅长高，彩虹色相各自错开 120°）。
 
     MK87 没有 musicConfig.volcanoKeyPositions，走官方 fallback 分支：三座塔按
     「固定宽度表 + 列比例」逐层画——左塔从第 0 列向右展、右塔从最后一列向左展、
     中塔是以中间列为轴逐层收窄的梯形。高度用 0/±1 的爬山滞回（官方 we/Te）。
     官方"有 volcanoKeyPositions 坐标表"的分支未移植（MK87 无该配置，不可达）。
+
+    pal：颜色覆盖（本工具增强）——三塔仍按原色相（相差 120°）与相位推进取色，
+    只把「色相 → RGB」换成在新调色板 hue/360 处取样；塔高/宽度/爬山逻辑不变。
     """
     dt = float(st.get("dt", 1.0))
     st["huePhase"] = _advance(st["huePhase"], 0.01, dt, 1.0)
@@ -848,9 +878,9 @@ def _render_mode_15(grid, lay: dict, st: dict) -> None:
     if rows <= 0:
         return
     towers = (
-        (0, left_widths, _hsv(n, 1.0, 1.0)),
-        (mid_peak, None, _hsv((n + 120.0) % 360.0, 1.0, 1.0)),
-        (right_peak, right_widths, _hsv((n + 240.0) % 360.0, 1.0, 1.0)),
+        (0, left_widths, _hue_color(n, pal)),
+        (mid_peak, None, _hue_color((n + 120.0) % 360.0, pal)),
+        (right_peak, right_widths, _hue_color((n + 240.0) % 360.0, pal)),
     )
     for idx, (peak, widths, color) in enumerate(towers):
         if idx == 0:
@@ -905,16 +935,22 @@ _ARROW_CELLS_MID = (
 )
 
 
-def _render_mode_16(grid, lay: dict, st: dict) -> None:
-    """官方 De：光箭穿刺（中心两行从右侧铺光条 + 固定箭形点阵随振幅放大）。"""
+def _render_mode_16(grid, lay: dict, st: dict,
+                    pal: Optional[Palette] = None) -> None:
+    """官方 De：光箭穿刺（中心两行从右侧铺光条 + 固定箭形点阵随振幅放大）。
+
+    pal：颜色覆盖（本工具增强）——主色（箭形）与背景色（光条，原色相 +180°）
+    仍按原相位推进，只把「色相 → RGB」换成在新调色板 hue/360 处取样；单色 id
+    下光条与箭头同色相，箭头仍按振幅放大（保持明暗/大小层次）。
+    """
     dt = float(st.get("dt", 1.0))
     st["smoothAmp"] = _smooth(st["smoothAmp"], st["amp"], st["amplitudeUI"] / 100.0, dt)
     n = min(st["smoothAmp"], 1.0)
     scale = 1 + n * 0.2
     st["huePhase"] = _advance(st["huePhase"], 0.005, dt, 1.0)
     hue = (st["huePhase"] * 360.0) % 360.0
-    main = _hsv(hue, 1.0, 1.0)
-    back = _hsv((hue + 180.0) % 360.0, 1.0, 1.0)
+    main = _hue_color(hue, pal)
+    back = _hue_color((hue + 180.0) % 360.0, pal)
     F, P = lay["F"], lay["P"]
     if F >= 7:
         cells = _ARROW_CELLS_TALL
@@ -940,8 +976,14 @@ def _render_mode_16(grid, lay: dict, st: dict) -> None:
             grid[row][col] = arrow
 
 
-def _render_mode_18(grid, lay: dict, st: dict) -> None:
-    """官方 Oe：光茧共鸣（顶部横条 + 右列竖条 + 对角光带，随振幅扩张）。"""
+def _render_mode_18(grid, lay: dict, st: dict,
+                    pal: Optional[Palette] = None) -> None:
+    """官方 Oe：光茧共鸣（顶部横条 + 右列竖条 + 对角光带，随振幅扩张）。
+
+    pal：颜色覆盖（本工具增强）——三条光带各自的色相（顶行 +0~120°、右列
+    +60~180°、对角线 180°/步）与相位推进不变，只把「色相 → RGB」换成在新调色板
+    hue/360 处取样；单色 id 下三条光带同色（几何/长度层次保留）。
+    """
     dt = float(st.get("dt", 1.0))
     st["smoothAmp"] = _smooth(st["smoothAmp"], st["amp"], st["amplitudeUI"] / 100.0, dt)
     n = st["smoothAmp"]
@@ -954,7 +996,7 @@ def _render_mode_18(grid, lay: dict, st: dict) -> None:
     def _color(hue: float) -> RGB:
         key = _rnd(hue)
         if key not in cache:
-            cache[key] = _hsv(float(key), 1.0, 1.0)
+            cache[key] = _hue_color(float(key), pal)
         return cache[key]
 
     if length > 0:
@@ -985,8 +1027,14 @@ def _render_mode_18(grid, lay: dict, st: dict) -> None:
                             grid[cy][col] = color
 
 
-def _render_mode_19(grid, lay: dict, st: dict) -> None:
-    """官方 Ae：音叉振动（左右两条触须，波形上下抖动 + 暗色余晖拖尾）。"""
+def _render_mode_19(grid, lay: dict, st: dict,
+                    pal: Optional[Palette] = None) -> None:
+    """官方 Ae：音叉振动（左右两条触须，波形上下抖动 + 暗色余晖拖尾）。
+
+    pal：颜色覆盖（本工具增强）——左右触须仍按原色相（相差 180°，随 amp 偏移）
+    取色，抖动/触须长度/拖尾衰减（0.5/0.3 系数）全部不变，只把「色相 → RGB」
+    换成在新调色板 hue/360 处取样。
+    """
     F, P = lay["F"], lay["P"]
     dt = float(st.get("dt", 1.0))
     st["smoothAmp"] = _smooth(st["smoothAmp"], st["amp"], st["amplitudeUI"] / 100.0, dt)
@@ -1003,7 +1051,7 @@ def _render_mode_19(grid, lay: dict, st: dict) -> None:
     def _color(h: float) -> RGB:
         key = _rnd(h)
         if key not in cache:
-            cache[key] = _hsv(float(key), 1.0, 1.0)
+            cache[key] = _hue_color(float(key), pal)
         return cache[key]
 
     mid = int(math.floor(P / 2))
@@ -1058,8 +1106,13 @@ def _render_mode_19(grid, lay: dict, st: dict) -> None:
         _fork(mid + 1 + offset, -1, _color((hue + 180.0 + n * 60.0) % 360.0), count, False)
 
 
-def _render_mode_20(grid, lay: dict, st: dict) -> None:
-    """官方 Ne：曲率传承轨迹（右半区弯曲波形，从右向左推进并按列变细）。"""
+def _render_mode_20(grid, lay: dict, st: dict,
+                    pal: Optional[Palette] = None) -> None:
+    """官方 Ne：曲率传承轨迹（右半区弯曲波形，从右向左推进并按列变细）。
+
+    pal：颜色覆盖（本工具增强）——列方向色相（含 huePhase 推进）与波形弯曲/
+    拖尾衰减不变，只把「色相 → RGB」换成在新调色板 hue/360 处取样。
+    """
     F, P = lay["F"], lay["P"]
     dt = float(st.get("dt", 1.0))
     st["smoothAmp"] = _smooth(st["smoothAmp"], st["amp"], 0.2, dt)
@@ -1080,7 +1133,7 @@ def _render_mode_20(grid, lay: dict, st: dict) -> None:
         body = max(2.0, thickness * 0.6)
         amp_px = body * (1 + n) * max(0.3, st["amplitudeUI"] / 50.0) * fall
         bend = _rnd(wave * amp_px)
-        color = _hsv((col / P * 360.0 + st["huePhase"] * 360.0) % 360.0, 1.0, 1.0)
+        color = _hue_color((col / P * 360.0 + st["huePhase"] * 360.0) % 360.0, pal)
         for cr in centers:
             row = cr + bend
             if 0 <= row < F:
@@ -1098,8 +1151,13 @@ def _render_mode_20(grid, lay: dict, st: dict) -> None:
                     )
 
 
-def _render_mode_21(grid, lay: dict, st: dict) -> None:
-    """官方 Pe：行波浪节奏（逐行伪随机哈希波决定柱长，色相逐行渐变）。"""
+def _render_mode_21(grid, lay: dict, st: dict,
+                    pal: Optional[Palette] = None) -> None:
+    """官方 Pe：行波浪节奏（逐行伪随机哈希波决定柱长，色相逐行渐变）。
+
+    pal：颜色覆盖（本工具增强）——行方向色相（huePhase + row/F*180°）与柱长
+    哈希/相位推进不变，只把「色相 → RGB」换成在新调色板 hue/360 处取样。
+    """
     F, P = lay["F"], lay["P"]
     dt = float(st.get("dt", 1.0))
     st["smoothAmp"] = _smooth(st["smoothAmp"], st["amp"],
@@ -1116,7 +1174,7 @@ def _render_mode_21(grid, lay: dict, st: dict) -> None:
         v3 = math.sin(seed * 2.718) * 0.5 + 0.5
         mix = v1 * 0.3 + v2 * 0.6 + v3 * 0.1
         length = max(0, int(math.floor(n * P * 1.2 * mix)))
-        color = _hsv((st["huePhase"] * 360.0 + row / F * 180.0) % 360.0, 1.0, 1.0)
+        color = _hue_color((st["huePhase"] * 360.0 + row / F * 180.0) % 360.0, pal)
         for col in range(min(length, P)):
             grid[row][col] = color
 
@@ -1246,10 +1304,15 @@ _DUAL_HEART_TABLES = (
 )
 
 
-def _render_mode_22(grid, lay: dict, st: dict) -> None:
+def _render_mode_22(grid, lay: dict, st: dict,
+                    pal: Optional[Palette] = None) -> None:
     """官方 L：双心共舞（内置双心坐标图案逐层点亮，脉搏/阈值与 13 同一套算法）。
 
     官方开头算的左右心中心（a/o）与最大半径 l 在图案表里没有再用，故只保留选表逻辑。
+
+    pal：颜色覆盖（本工具增强）——两颗心共用同一「层色相」（phases + huePhase，
+    与 13 的环相位同构），按同一 hue→调色板映射取样；层级点亮/脉搏不变。
+    渐变 id 下随层相位在 stops 上铺开（两心同层同色，保留原左右对称观感）。
     """
     F, P = lay["F"], lay["P"]
     total_keys = len(lay["cells"])  # 官方 keyList.flat().length
@@ -1280,7 +1343,7 @@ def _render_mode_22(grid, lay: dict, st: dict) -> None:
     for e in range(active):
         if e >= len(left):
             continue
-        color = _hsv(((phases[e] + st["huePhase"]) % 1.0) * 360.0, 1.0, 1.0)
+        color = _hue_color(((phases[e] + st["huePhase"]) % 1.0) * 360.0, pal)
         for (x, y) in left[e]:
             if 0 <= x < P and 0 <= y < F:
                 grid[y][x] = color
@@ -1288,7 +1351,7 @@ def _render_mode_22(grid, lay: dict, st: dict) -> None:
         # 官方第二段的层数守卫写的是 u[e]（左心），这里照原样保留该判定
         if e >= len(left) or e >= len(right):
             continue
-        color = _hsv(((phases[e] + st["huePhase"]) % 1.0) * 360.0, 1.0, 1.0)
+        color = _hue_color(((phases[e] + st["huePhase"]) % 1.0) * 360.0, pal)
         for (x, y) in right[e]:
             if 0 <= x < P and 0 <= y < F:
                 grid[y][x] = color
@@ -1300,7 +1363,8 @@ def _render_frame(lay: dict, st: dict, mode: int) -> List[List[RGB]]:
         # 背景永远用官方配色：颜色覆盖层只作用于前景调色板，不传 pal
         _apply_background(grid, st["backmode"], st["backmodeBrightness"], st)
     # ---- 颜色覆盖层的唯一入口（本工具增强）----
-    # 只有「动态多色」模式消费用户调色板；纯色 6~11、自研 14~22、未实现的 100 都传 None。
+    # 只有「动态多色」模式消费用户调色板（COLOR_OVERLAY_MODES：1/2/4/5/13 + 14~22）；
+    # 纯色 6~11、未实现的 100（回落 13）都不消费。
     pal = st.get("palette") if mode in COLOR_OVERLAY_MODES else None
     if mode == 4:
         _render_mode_4(grid, lay, st, pal)  # 官方 v1 真值：频谱柱 + 旋转径向色相
@@ -1309,23 +1373,23 @@ def _render_frame(lay: dict, st: dict, mode: int) -> List[List[RGB]]:
     elif mode == 13:
         _render_mode_13(grid, lay, st, pal)
     elif mode == 14:
-        _render_mode_14(grid, lay, st)
+        _render_mode_14(grid, lay, st, pal)
     elif mode == 15:
-        _render_mode_15(grid, lay, st)
+        _render_mode_15(grid, lay, st, pal)
     elif mode == 16:
-        _render_mode_16(grid, lay, st)
+        _render_mode_16(grid, lay, st, pal)
     elif mode == 17:
-        _render_mode_17(grid, lay, st)
+        _render_mode_17(grid, lay, st, pal)
     elif mode == 18:
-        _render_mode_18(grid, lay, st)
+        _render_mode_18(grid, lay, st, pal)
     elif mode == 19:
-        _render_mode_19(grid, lay, st)
+        _render_mode_19(grid, lay, st, pal)
     elif mode == 20:
-        _render_mode_20(grid, lay, st)
+        _render_mode_20(grid, lay, st, pal)
     elif mode == 21:
-        _render_mode_21(grid, lay, st)
+        _render_mode_21(grid, lay, st, pal)
     elif mode == 22:
-        _render_mode_22(grid, lay, st)
+        _render_mode_22(grid, lay, st, pal)
     else:
         _render_mode_13(grid, lay, st)  # 100（屏光联动）等未移植模式回落到 13
     return grid
@@ -1371,6 +1435,9 @@ class MusicEngine:
             "tuningPhase": 0.0,
             # 模式 4（官方 v1「曲率频阶」）：17 段频谱 + 径向色相相位
             "spectrum17": [0.0] * _MODE4_COLS,
+            #: 是否收到过真实音频链路的 bands32（区分「静音」与「无频谱输入」：
+            #: 收到过就永不退回旧轮廓，静音就是柱子归零）
+            "has_spectrum": False,
             "mode4Hue": 0.0,
             # 颜色覆盖调色板（None = default/不覆盖）：渲染层唯一消费点
             "palette": palette_for(self.color),
@@ -1429,6 +1496,7 @@ class MusicEngine:
                 self.st["amp"] = 0.0
         if bands32 is not None:
             self.st["spectrum17"] = _bands32_to_17(bands32)
+            self.st["has_spectrum"] = True
         self.st["dt"] = dt
         self.st["huePhase"] = _advance(self.st["huePhase"], 0.01, dt, 1.0)
         grid = _render_frame(self.lay, self.st, self.mode)

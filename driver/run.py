@@ -57,7 +57,11 @@ def main() -> int:
     print(f"  API    : {url}api/docs")
     print("  关闭窗口 / Ctrl+C 退出")
     print("=" * 62)
-    uvicorn.run(app, host=args.host, port=args.port, log_level=args.log_level)
+    # uvicorn 默认日志配置会 dictConfig → 关掉我们已装好的 root handler
+    # （会话日志/txt 日志全部失效，还刷 "Logging error" traceback），
+    # 与 shell.py 一致：跳过 uvicorn 日志配置，让日志统一进本工具 handler。
+    uvicorn.run(app, host=args.host, port=args.port, log_level=args.log_level,
+                log_config=None)
     return 0
 
 

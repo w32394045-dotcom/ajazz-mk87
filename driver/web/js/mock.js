@@ -34,7 +34,7 @@ const MUSIC_OFFICIAL_MODES = [1, 2, 13, 4, 5, 6, 7, 8, 9, 11, 10, 14, 15, 16, 17
    与后端 mk87lib.music.V1_IMPLEMENTED_MODES 保持一致。 */
 const MUSIC_OFFICIAL_IMPLEMENTED = MUSIC_OFFICIAL_MODES.filter((m) => m !== 100);
 const MUSIC_IMPLEMENTED = [1, 2, 4, 5, 6, 7, 8, 9, 10, 11, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22];
-/* LED 颜色覆盖只作用于动态多色模式（纯色 6/7/8/9/10/11 保持官方采样色） */
+/* LED 颜色覆盖作用于全部动态多色模式（纯色 6/7/8/9/10/11 保持官方采样色） */
 const MUSIC_COLOR_OVERRIDE_MODES = new Set(OFFICIAL_COLOR_MODE_VALUES);
 const KEY_GEO = KEY_LAYOUT.rows.flat().map((k) => ({
   slot: k.slot,
@@ -47,7 +47,7 @@ const KEY_DIST = KEY_GEO.map((k) => clamp(Math.hypot((k.col - 0.5) * 1.9, (k.mid
 /* 官方 v1 纯色显示模式在 mock 里的颜色（与采样真值一致：FE 是 255 经 (c*n)>>8 缩放） */
 const MOCK_SOLID = { 6: [254, 254, 254], 7: [254, 0, 0], 8: [254, 63, 0], 9: [254, 254, 0], 10: [0, 0, 254], 11: [0, 254, 0] };
 
-/* LED 颜色覆盖：mock 只改变动态多色模式（1/2/4/5/13）的演示颜色，纯色模式保持官方采样色 */
+/* LED 颜色覆盖：mock 只改变动态多色模式（1/2/4/5/13 + 14–22）的演示颜色，纯色模式保持官方采样色 */
 function hexToRgb(hex) {
   const n = parseInt(String(hex).replace('#', ''), 16);
   return [(n >> 16) & 255, (n >> 8) & 255, n & 255];

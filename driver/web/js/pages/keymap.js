@@ -106,7 +106,11 @@ export function normalizeWireAction(a) {
       return { type: 'macro', slot: Number(a.slot ?? a.value ?? a.param1 ?? 0), mask, count, name: a.name };
     }
     case 'combo': {
-      const keys = Array.isArray(a.keys) ? a.keys : [a.param1, a.param2, a.param3].filter((x) => x);
+      // 内部 keys[] / 后端 canonical mods+key / 旧 param1..3 三种形状都能归一
+      let keys;
+      if (Array.isArray(a.keys)) keys = a.keys;
+      else if (Array.isArray(a.mods) || a.key !== undefined) keys = [...(a.mods || []), Number(a.key ?? 0)].filter((x) => x);
+      else keys = [a.param1, a.param2, a.param3].filter((x) => x);
       return { type: 'combo', keys };
     }
     case 'mouse':
@@ -158,7 +162,11 @@ function normalizeCatalog(resp) {
   };
 }
 
-/** 前端内部模型 → 后端 wire 字段（spec-keymap.md §1 / design.md §4.6） */
+/** 前端内部模型 → 后端 canonical wire 字段（spec-keymap.md §1 / design.md §4.6）。
+    后端 encode_entry 的 canonical 形状：keyboard(value) / func(value) /
+    combo(mods+key) / consumer(value)；宏、鼠标、默认、禁用沿用既有形状。
+    注意：前端内部用 key/fn/combo(keys[])，这里必须转成 canonical 再发，
+    否则后端不认识 key/fn 会直接 400（v0.1.3 实测 bug）。 */
 export function toWireAction(a) {
   if (!a || typeof a !== 'object') return a;
   if (a.type === 'macro') {
@@ -168,10 +176,22 @@ export function toWireAction(a) {
   if (a.type === 'mouse') {
     return { type: 'mouse', param1: Number(a.param1) || 1, value: Number(a.button ?? a.value ?? 0), name: a.name };
   }
-  if (a.type === 'key') return { type: 'key', usage: Number(a.usage), name: a.name };
-  if (a.type === 'consumer') return { type: 'consumer', usage: Number(a.usage), name: a.name };
-  if (a.type === 'combo') return { type: 'combo', keys: a.keys };
-  if (a.type === 'fn') return { type: 'fn', id: Number(a.id), name: a.name };
+  if (a.type === 'key') {
+    return { type: 'keyboard', value: Number(a.usage ?? a.value ?? a.keyCode ?? 0), param1: Number(a.legacyParam1) || 0, name: a.name };
+  }
+  if (a.type === 'consumer') {
+    return { type: 'consumer', value: Number(a.usage ?? a.value ?? 0), name: a.name };
+  }
+  if (a.type === 'combo') {
+    // keys[] 与后端别名拆分规则保持一致：修饰键 E0–E7 最多 2 个，主键取最后一个非修饰键
+    const keys = Array.isArray(a.keys)
+      ? a.keys.map(Number)
+      : [...(a.mods || []).map(Number), Number(a.key ?? 0)].filter((k) => k);
+    const mods = keys.filter((k) => MODIFIER_USAGES.has(k)).slice(0, 2);
+    const mains = keys.filter((k) => !MODIFIER_USAGES.has(k));
+    return { type: 'combo', mods, key: mains.length ? mains[mains.length - 1] : 0 };
+  }
+  if (a.type === 'fn') return { type: 'func', value: Number(a.id ?? a.value ?? 0), name: a.name };
   return a;
 }
 

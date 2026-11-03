@@ -11,7 +11,43 @@ Screenshots and the full feature list live in the repository README:
 **[README.md (English)](https://github.com/w32394045-dotcom/ajazz-mk87/blob/main/README.md)** ·
 **[README.zh-CN.md (简体中文)](https://github.com/w32394045-dotcom/ajazz-mk87/blob/main/README.zh-CN.md)**
 
-## What's new in v0.1.3
+## What's new in v0.1.4
+
+> v0.1.4 is a bug-fix release on top of v0.1.3 (official music scheme). Everything below was reproduced
+> from the reports, fixed, and re-verified on a real MK87 (USB, fw 1.19).
+
+- **Fixed: key remap / macro bindings could not be saved** — the keymap page sent `key` / `fn` / `combo`
+  action types, but the backend encoder only accepted `keyboard` / `func` / `combo (mods + key)`, so every
+  "Apply changes" failed with HTTP 400. The backend now accepts both shapes, the frontend emits the canonical
+  schema, and `GET /api/keymap` combo entries round-trip correctly after reload. On-device saves
+  (canonical, legacy `key`, combo write + restore, FN-layer no-op) all returned 200 with byte-identical
+  readback.
+- **Fixed: UI stutters while music is playing** — with 66 fps frame streaming the protocol layer wrote one
+  DEBUG line per HID notification: **1,169,834 lines / 207 MB in 47 minutes** (414 lines/s), causing periodic
+  disk-I/O stalls. Notifications are now aggregated/rate-limited (`0x32` ACKs are no longer logged at all,
+  other frames summarized every ~2 s): the same workload now grows the session log by **~33 KB/min (−99.9 %)**.
+  Session logs are capped at 32 MB, old session logs are pruned at startup, and the macro table is read in
+  bulk (**`GET /api/macros` 48 s → 0.37 s**, 201 → 7 requests).
+- **Fixed: LED color overlay now covers all dynamic modes** — modes 14–22 (restored in v0.1.3) were not
+  recolored before; they now share the same palette mapping as 1/2/4/5/13 (single-color presets still keep
+  each mode's brightness structure, gradients keep their positional variation). Solid modes 6–11 keep the
+  official sampled colors, backgrounds are untouched, and `default` is still byte-identical
+  (220-combination snapshot regression).
+- **Fixed: mode 4 could flash the legacy synthetic contour** — one all-zero spectrum frame (quiet passage,
+  loopback dropout, 66 fps under load) used to switch Curvature Frequency Steps back to the old curvature
+  outline. After the first real spectrum frame the renderer never falls back; silence is now simply empty bars.
+- **Fixed: Amplitude / Background-brightness sliders were not applied** — the official-scheme sliders'
+  `onInput` handler triggered a hot update but never wrote the new value back, so every update re-sent the
+  stale 50 / 100. Dragging now applies the value live.
+- **Fixed: browser-mode (`run.py`) logging** — uvicorn's default log config closed the tool's log handlers,
+  leaving the session log empty and flooding stderr with thousands of "Logging error" tracebacks. `run.py`
+  now starts uvicorn with `log_config=None`, matching the native shell.
+- **Tests**: **206 unit tests green**; 17 headless-Chrome UI checks PASS; real-device re-verification:
+  keymap/macro saves OK, `GET /api/macros` 0.37 s, color overlay verified on modes 4 / 14 / 22,
+  66 fps streaming at 65.9 fps measured with 0 errors for 40 s and only +22 KB of session log, stopping
+  restored the original lighting exactly (`0affffffff000000010603000000aa55`).
+
+### v0.1.3
 
 - **Music rhythm · Official scheme now matches the official v1 truth**: the display-mode dropdown has
   **21 modes** — the 12 exposed by the official v1 UI plus the 9 modes (14–22) previously reverse-engineered
@@ -22,7 +58,7 @@ Screenshots and the full feature list live in the repository README:
 - **LED color overlay (our enhancement)**: a third dropdown adds **default (official palette) + 9 presets** —
   ice blue `#00E5FF`, violet `#B36CFF`, hot pink `#FF2E88`, lime `#A8FF3E`, warm amber `#FF6A00`, sakura
   `#FF7AB6→#B36CFF`, aurora `#3EFF9A→#00E5FF→#7A5CFF`, sunset `#FFC400→#FF6A00→#FF2E88`, ice-fire
-  `#00E5FF→#FEFEFE→#FF6A00`. It recolors only the dynamic multicolor modes **1/2/4/5/13**, keeps their
+  `#00E5FF→#FEFEFE→#FF6A00`. It recolors all dynamic multicolor modes (**1/2/4/5/13 + 14–22**), keeps their
   animation, leaves solid modes 6–11 and the background untouched, and `default` is byte-for-byte identical
   to v0.1.2 (220-combination snapshot regression).
 - **Native 20 / 60 / 66 fps (default 66)**: the official v1 plugin sends 530.5 packets/s ÷ 8 packets/frame
@@ -81,7 +117,7 @@ Checksums are attached as `SHA256SUMS.txt`.
 
 - **Music rhythm is USB-only** (officially unsupported over 2.4G).
 - **Music mode 100** (screen-light linkage) is computed by the official Music.exe, so it falls back to
-  Dance to the Beat; the LED color overlay applies to modes 1/2/4/5/13 only.
+  Dance to the Beat; the LED color overlay applies to all dynamic modes (6–11 stay their official colors).
 - **TFT upload takes exclusive bus access**: don't use other features while uploading.
 - Screen content is **write-only** — it cannot be read back; replacing or restoring it means re-uploading.
 - With the 2.4G receiver and the keyboard USB sharing one USB 2.0 hub, Windows may fail to start the

@@ -20,6 +20,8 @@
     {"type":"func","value":234,"name":"CTRL+C"}
     {"type":"funcV2","keyType":1,"value":28682,"name":"音量 +"}
     {"type":"raw","bytes":[...]}
+
+encode_entry() 额外兼容前端内部别名 key/fn/combo keys[]（见该函数文档）。
 """
 from __future__ import annotations
 
@@ -189,14 +191,54 @@ def decode_entry(buf4) -> dict:
 # ----------------------------------------------------------------------
 # 编码
 # ----------------------------------------------------------------------
+def _int_field(action: dict, names, default: int = 0) -> int:
+    """按顺序取第一个存在且非 None 的字段，转成 int；都没有时返回 default。"""
+    for name in names:
+        if name in action:
+            value = action[name]
+            if value is not None:
+                return int(value)
+    return int(default)
+
+
+def _combo_from_keys(keys) -> tuple:
+    """keys[] → (mods, key)：0xE0–0xE7 视为修饰键（最多取前 2 个），
+    主键取最后一个非修饰键；全是修饰键时主键为 0。"""
+    mods: List[int] = []
+    main = 0
+    for raw in keys or []:
+        try:
+            usage = int(raw)
+        except (TypeError, ValueError):
+            continue
+        if 0xE0 <= usage <= 0xE7:
+            if len(mods) < 2:
+                mods.append(usage)
+        else:
+            main = usage
+    return mods, main & 0xFF
+
+
 def encode_entry(action: Optional[dict]) -> bytes:
+    """action 字典 → 4 字节条目。
+
+    canonical 字段（服务端 / API / 前端共用）优先；同时兼容前端内部别名，
+    两者对同一语义产生逐字节相同的编码：
+        keyboard | key      ← value / usage / keyCode
+        func     | fn       ← value / id
+        combo               ← mods+key，或 keys[]（自动拆分修饰键与主键）
+        consumer            ← value / usage
+        macro               ← slot / value / param1（mask、repeat、count 逻辑不变）
+    未知 type 仍抛 MK87Error（API 层据此返回 400）。
+    """
     if not action:
         return b"\x00\x00\x00\x00"
     t = action.get("type")
     if t in (None, "default"):
         return b"\x00\x00\x00\x00"
-    if t == "keyboard":
-        return bytes([PAGE["KEYBOARD"], 0, action.get("value", 0) & 0xFF, 0])
+    if t in ("key", "keyboard"):
+        value = _int_field(action, ("value", "usage", "keyCode"))
+        return bytes([PAGE["KEYBOARD"], 0, value & 0xFF, 0])
     if t == "mouse":
         return bytes([PAGE["MOUSE"], action.get("param1", 1) & 0xFF,
                       action.get("value", action.get("button", 0)) & 0xFF, 0])
@@ -204,20 +246,26 @@ def encode_entry(action: Optional[dict]) -> bytes:
         # 官方没有独立「禁用」编码；唯一形似的是 extendChars 的 ⊠（HID 0x6F），真机未验证
         return bytes([PAGE["KEYBOARD"], 0, 0x6F, 0])
     if t == "consumer":
-        v = int(action.get("value", 0)) & 0xFFFF
+        v = _int_field(action, ("value", "usage")) & 0xFFFF
         return bytes([PAGE["CONSUMER_KEY"], v & 0xFF, (v >> 8) & 0xFF, 0])
     if t == "macro":
-        mask = action.get("mask", action.get("repeat", 0))
-        count = action.get("count", 0)
-        return bytes([PAGE["MACRO"], action.get("slot", 0) & 0xFF,
-                      int(mask) & 0xFF, int(count) & 0xFF])
+        slot = _int_field(action, ("slot", "value", "param1"))
+        mask = _int_field(action, ("mask", "repeat"))
+        count = _int_field(action, ("count",))
+        return bytes([PAGE["MACRO"], slot & 0xFF, mask & 0xFF, count & 0xFF])
     if t == "combo":
         mods = list(action.get("mods") or [])
-        m1 = mods[0] if len(mods) > 0 else 0
-        m2 = mods[1] if len(mods) > 1 else 0
-        return bytes([PAGE["CB"], m1 & 0xFF, m2 & 0xFF, action.get("key", 0) & 0xFF])
-    if t == "func":
-        v = int(action.get("value", 0)) & 0xFFFFFF
+        key = action.get("key")
+        if not mods and isinstance(action.get("keys"), (list, tuple)):
+            mods, split_key = _combo_from_keys(action["keys"])
+            if key is None:
+                key = split_key
+        m1 = int(mods[0]) & 0xFF if len(mods) > 0 else 0
+        m2 = int(mods[1]) & 0xFF if len(mods) > 1 else 0
+        key_value = 0 if key is None else int(key)
+        return bytes([PAGE["CB"], m1, m2, key_value & 0xFF])
+    if t in ("func", "fn"):
+        v = _int_field(action, ("value", "id")) & 0xFFFFFF
         return bytes([PAGE["FUNC"], (v >> 16) & 0xFF, (v >> 8) & 0xFF, v & 0xFF])
     if t == "funcV2":
         key_type = action.get("keyType")
@@ -332,7 +380,6 @@ def key_get(device, slot: int) -> bytes:
 def patch_matrix(device, layer: str, patches: Dict[int, dict]) -> dict:
     """读-改-写：把 layer（normal/fn）里指定槽位改成给定 action，写回并校验。"""
     read = read_normal_matrix if layer == "normal" else read_fn_matrix
-    write = write_normal_matrix if layer == "fn" else write_normal_matrix
     base = bytearray(read(device))
     for slot, action in patches.items():
         slot = int(slot)

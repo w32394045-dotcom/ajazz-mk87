@@ -625,8 +625,9 @@ class TestColorSchemes(unittest.TestCase):
         self.assertEqual(music.COLOR_IDS, COLOR_ORDER,
                          "后端颜色表 id 必须与前端一致（顺序也一致）")
         self.assertEqual(music.DEFAULT_COLOR, "default")
-        self.assertEqual(music.COLOR_OVERLAY_MODES, frozenset({1, 2, 4, 5, 13}),
-                         "覆盖只作用于动态多色模式 1/2/4/5/13")
+        self.assertEqual(music.COLOR_OVERLAY_MODES,
+                         frozenset({1, 2, 4, 5, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22}),
+                         "覆盖作用于全部动态多色模式 1/2/4/5/13 + 14~22")
         for cid in COLOR_ORDER:
             if cid == "default":
                 continue
@@ -674,7 +675,7 @@ class TestColorSchemes(unittest.TestCase):
 
 
 class TestColorOverlayRenderers(unittest.TestCase):
-    """颜色覆盖的渲染行为：1/2/4/5/13 生效，纯色/背景/其余模式保持官方配色。"""
+    """颜色覆盖的渲染行为：动态多色模式（1/2/4/5/13 + 14~22）生效，纯色/背景不变。"""
 
     def test_mode4_single_color_exact(self):
         bands = [1.0] * 32
@@ -770,11 +771,14 @@ class TestColorOverlayRenderers(unittest.TestCase):
         lit = {rgb for rgb in engine.last_colors.values() if sum(rgb) > 0}
         self.assertEqual(lit, {(254, 254, 254)}, "模式 6 仍是官方纯白")
 
-    def test_other_modes_and_background_ignore_color(self):
+    def test_other_modes_consume_color(self):
+        """14~22 自 v0.1.4 起也消费颜色覆盖（逐模式细节见 test_music_color_modes）。"""
         for mode in (14, 15, 16, 17, 18, 19, 20, 21, 22):
-            self.assertEqual(music_default_digest(mode, 4, "aurora"),
-                             music_default_digest(mode, 4),
-                             f"模式 {mode} 的颜色来自自身算法，不受覆盖影响")
+            self.assertNotEqual(music_default_digest(mode, 4, "aurora"),
+                                music_default_digest(mode, 4),
+                                f"模式 {mode} 现在应受颜色覆盖影响")
+
+    def test_background_ignores_color(self):
         for backmode in (1, 2, 4, 5):
             self.assertEqual(music_default_digest(6, backmode, "ice"),
                              music_default_digest(6, backmode),

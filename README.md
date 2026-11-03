@@ -8,7 +8,7 @@
 - **Device**: USB `VID 0x0C45 / PID 0x8047`; 2.4G receiver `VID 0x0C45 / PID 0xFEFE`
 - **Official web driver** (reverse-engineered): `https://ajazz.driveall.cn`
 - **Everything local**: no network access, no telemetry, no vendor driver required
-- **Latest release**: [v0.1.3](https://github.com/w32394045-dotcom/ajazz-mk87/releases/latest)
+- **Latest release**: [v0.1.4](https://github.com/w32394045-dotcom/ajazz-mk87/releases/latest)
 
 ## Screenshots
 
@@ -40,7 +40,30 @@
 Linux packages ship the udev rules (root-free HID access); replug the keyboard after install.
 Releases are built by GitHub Actions and come with a `SHA256SUMS.txt`.
 
-## What's new in v0.1.3
+## What's new in v0.1.4
+
+- **Fixed: key remapping / macro bindings could not be saved** — the keymap page sent `key` / `fn` / `combo`
+  wire types while the backend encoder only accepted `keyboard` / `func` / `combo (mods + key)`, so every
+  "Apply changes" returned HTTP 400. Backend now accepts both forms and the frontend emits the canonical
+  schema; combo keys also round-trip correctly after a page reload. Verified on a real MK87 (canonical,
+  alias-key, combo write + restore and FN-layer no-op saves all returned 200 with byte-identical readback).
+- **Fixed: UI hiccups while music is playing** — the protocol layer logged every HID notification frame at
+  DEBUG level (1,169,834 lines / 207 MB in one 47-minute 66 fps session). Notifications are now aggregated
+  and rate-limited (≈33 KB/min, −99.9 %), session logs are capped at 32 MB and old sessions are pruned, and
+  the macro table is read in bulk (`GET /api/macros` 48 s → 0.37 s; 201 → 7 requests).
+- **Fixed: LED color overlay now covers every dynamic mode** — previously only 1/2/4/5/13; the restored
+  modes 14–22 are now recolored too. Solid modes 6–11 keep their official sampled colors and `default`
+  remains byte-for-byte identical (220-combination snapshot regression).
+- **Fixed: mode 4 could flash the old synthetic contour** — a single frame with an all-zero spectrum (quiet
+  passage / loopback dropout) used to switch Curvature Frequency Steps back to the legacy curvature outline.
+  Once real spectrum has been received the renderer never falls back; silence means empty bars.
+- **Fixed: Amplitude / Background-brightness sliders did not send their values** — their `onInput` handler
+  never wrote the new value back, so hot-update always sent the previous 50/100. Dragging now applies live.
+- **Fixed: browser-mode (`run.py`) logging** — uvicorn's default log config closed the tool's log handlers
+  (empty session log + thousands of "Logging error" tracebacks on stderr). uvicorn now starts with
+  `log_config=None`, same as the native shell.
+
+### v0.1.3
 
 - **Music rhythm · Official scheme aligned with the official v1 truth** — the display-mode dropdown is now
   **21 modes**: the 12 exposed by the official v1 UI plus the 9 modes (14–22) that had already been
@@ -51,9 +74,10 @@ Releases are built by GitHub Actions and come with a `SHA256SUMS.txt`.
 - **LED color overlay (this tool's own enhancement)** — a third dropdown offers **default (official palette)
   + 9 presets**: ice blue `#00E5FF`, violet `#B36CFF`, hot pink `#FF2E88`, lime `#A8FF3E`, warm amber
   `#FF6A00`, sakura `#FF7AB6→#B36CFF`, aurora `#3EFF9A→#00E5FF→#7A5CFF`, sunset
-  `#FFC400→#FF6A00→#FF2E88`, ice-fire `#00E5FF→#FEFEFE→#FF6A00`. It recolors only the dynamic multicolor
-  modes **1/2/4/5/13**, keeping their original animation; solid modes 6–11 and the background are untouched,
-  and `default` is byte-for-byte identical to v0.1.2 (220-combination snapshot regression).
+  `#FFC400→#FF6A00→#FF2E88`, ice-fire `#00E5FF→#FEFEFE→#FF6A00`. It recolors all dynamic multicolor
+  modes **1/2/4/5/13 and the restored 14–22**, keeping their original animation; solid modes 6–11 and the
+  background are untouched, and `default` is byte-for-byte identical to v0.1.2 (220-combination snapshot
+  regression).
 - **Native 20 / 60 / 66 fps, default 66** — the official v1 plugin sends 530.5 packets/s ÷ 8 packets/frame
   ≈ **66.3 fps**, so the official scheme now defaults to 66 fps (Current keeps 15/20/30). ≤30 fps keeps
   per-packet ACK; ≥60 fps writes 7 packets back-to-back and drains ACKs asynchronously (synchronous
@@ -91,8 +115,8 @@ Releases are built by GitHub Actions and come with a `SHA256SUMS.txt`.
   hot-switchable while playing) and **Current** (this tool's own mode / frame rate / sensitivity) → native
   **20/60/66 fps** per-key frame stream (official scheme defaults to 66; official v1 measured ≈66.3 fps).
   Mode 4 is a 17-column bottom-aligned spectrum matching the official sampler, and the LED color overlay
-  (default + 9 presets) recolors modes 1/2/4/5/13 only. Mode 100 (screen linkage) is computed by Music.exe,
-  so it falls back to Dance to the Beat.
+  (default + 9 presets) recolors every dynamic mode (1/2/4/5/13 + the restored 14–22). Mode 100 (screen
+  linkage) is computed by Music.exe, so it falls back to Dance to the Beat.
 - **Wireless** — 2.4G status, battery, sleep timer (0/1/10/20/30 min), disconnect / wake notification log.
 - **Key test** — OS-level capture (Windows RawInput / Linux evdev), 87-key tri-state highlight, event log, stats.
 - **Device info** — firmware / battery / capability matrix, game-mode fields, time sync, raw command console.

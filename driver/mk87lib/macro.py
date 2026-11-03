@@ -17,19 +17,30 @@
 
     目录: contentSize=400, addrStart=0,   所有包 last=0
     数据: contentSize=len(data), addrStart=400, 末包 last=1
+
+读取（read_all_macros）::
+
+    目录 1 次 GET_MACRO；数据区从 DATA_START 起按 ≤512B 连续读（约 6 次），
+    本地按目录 offset 解析 head4/count/body；批量失败自动回退旧的逐槽读取。
 """
 from __future__ import annotations
 
+import logging
 import math
 from typing import Dict, List, Optional
 
 from . import const
-from .errors import MK87Error
+from .errors import MK87Error, ProtocolTimeout
+
+log = logging.getLogger("mk87.macro")
 
 DIR_SIZE = const.MACRO_DIR_SIZE
 DATA_START = DIR_SIZE
 SLOT_COUNT = const.MACRO_SLOT_COUNT
 DEFAULT_CAPACITY = const.MACRO_SPACE  # 整个宏区（含 400B 目录）
+
+#: 宏数据区批量读取的单次字节数（GET_MACRO 每包 ≤56B，512B ≈ 10 包）。
+MACRO_READ_CHUNK = 512
 
 ACTION_TYPE_KEYBOARD = 3
 ACTION_TYPE_MOUSE = 1
@@ -136,48 +147,188 @@ def read_raw(device, addr: int, size: int) -> bytes:
 def read_macro(device, slot: int) -> Optional[List[dict]]:
     table = read_directory(device)
     off = int.from_bytes(table[slot * 4:slot * 4 + 4], "little")
-    if not off:
+    capacity = getattr(getattr(device, "status", None), "macro_space", DEFAULT_CAPACITY)
+    if not off or not _valid_offset(off, capacity):
         return None
     head = read_raw(device, off, 4)
     count = (head[0] | (head[1] << 8)) // 2
+    max_body = max(0, min(_macro_space(device), const.MACRO_SPACE) - off - 4)
+    count = min(count, max_body // 4)
     if count <= 0:
         return []
     body = read_raw(device, off + 4, count * 4)
     return decode_block(head, body)
 
 
-def read_all_macros(device) -> dict:
-    table = read_directory(device)
-    entries = decode_directory(table)
+def _macro_space(device) -> int:
+    """设备上报的宏区总大小（缺失/异常时按 3072）。"""
+    value = getattr(getattr(device, "status", None), "macro_space", DEFAULT_CAPACITY)
+    try:
+        return int(value)
+    except (TypeError, ValueError):
+        return DEFAULT_CAPACITY
+
+
+def _valid_offset(off: int, capacity: int) -> bool:
+    """目录项是否像合法的宏块绝对偏移（块头 4B 必须落在 [DATA_START, capacity) 内）。
+
+    fw1.19 实测：宏目录被写坏时目录里会出现像宏动作数据的数值（如 0x3200ff47），
+    旧实现会拿它当偏移去读，`count` 又可能被解析成巨大值 → 单槽读几百 KB，
+    /api/macros 会卡几十秒。这里先做合法性过滤，坏目录直接按空表返回。
+    """
+    try:
+        value = int(off)
+    except (TypeError, ValueError):
+        return False
+    return DATA_START <= value <= max(DATA_START, int(capacity) - 4)
+
+
+def _read_region(device, addr: int, size: int, chunk: int = MACRO_READ_CHUNK) -> bytes:
+    """连续读取 [addr, addr+size)：每次 request ≤ chunk 字节（内部再拆 56B 包）。"""
+    out = bytearray()
+    pos = 0
+    while pos < size:
+        n = min(chunk, size - pos)
+        part = bytes(device.request(
+            const.CMD["GET_MACRO"],
+            content_size=n,
+            addr_start=addr + pos,
+            timeout=1.0,
+        ))
+        if len(part) < n:
+            # 少回补零，保证本地按 offset 切块稳定；decode_block 仍按实际长度截断。
+            part += b"\x00" * (n - len(part))
+        out += part[:n]
+        pos += n
+    return bytes(out)
+
+
+def _read_slot(device, off: int, capacity: Optional[int] = None) -> tuple:
+    """旧版单槽读取：返回 (actions, body_len)；单槽损坏/偏移非法不影响整表。"""
+    try:
+        cap = int(capacity) if capacity is not None else int(_macro_space(device))
+        if not _valid_offset(off, cap):
+            return [], 0
+        head = read_raw(device, off, 4)
+        count = (head[0] | (head[1] << 8)) // 2
+        max_body = max(0, min(cap, const.MACRO_SPACE) - int(off) - 4)
+        count = min(count, max_body // 4)  # 防坏块头把单槽读成几百 KB
+        if count <= 0:
+            return [], 0
+        body = read_raw(device, off + 4, count * 4)
+        return decode_block(head, body), len(body)
+    except Exception:  # noqa: BLE001 - 单个宏损坏不应让整表失败
+        return [], 0
+
+
+def _read_slots_legacy(device, table: bytes, valid: Optional[Dict[int, int]] = None) -> tuple:
+    """旧实现：目录 + 每个合法槽位 2 次小请求（批量读取失败时的回退）。"""
+    capacity = getattr(getattr(device, "status", None), "macro_space", DEFAULT_CAPACITY)
+    entries = valid if valid is not None else {
+        s: o for s, o in decode_directory(table).items() if _valid_offset(o, capacity)
+    }
     slots = []
     used = 0
     for slot, off in sorted(entries.items()):
-        try:
-            head = read_raw(device, off, 4)
-            count = (head[0] | (head[1] << 8)) // 2
-            body = read_raw(device, off + 4, count * 4) if count > 0 else b""
-            actions = decode_block(head, body)
-        except Exception as exc:  # noqa: BLE001 - 单个宏损坏不应让整表失败
-            actions = []
-            head = b"\x00\x00\x00\x00"
-            body = b""
-        block_len = 4 + len(body)
+        actions, body_len = _read_slot(device, off, capacity)
+        block_len = 4 + body_len
         used += block_len
-        slots.append({
-            "slot": slot,
-            "offset": off,
-            "actions": actions,
-            "bytes": block_len,
-        })
+        slots.append({"slot": slot, "offset": off, "actions": actions, "bytes": block_len})
+    return slots, used
+
+
+def _parse_slot_from_region(region: bytes, off: int):
+    """从数据区缓存解析一个宏块；偏移越界/块不完整时返回 None。"""
+    rel = off - DATA_START
+    if rel < 0 or rel + 4 > len(region):
+        return None
+    head = region[rel:rel + 4]
+    count = (head[0] | (head[1] << 8)) // 2
+    body_len = min(count * 4, max(0, len(region) - rel - 4))
+    if body_len <= 0:
+        return head, b""
+    return head, region[rel + 4:rel + 4 + body_len]
+
+
+def _parse_slots_from_region(device, table: bytes, region: bytes,
+                             valid: Optional[Dict[int, int]] = None) -> tuple:
+    """按目录 offset 在本地缓存里解析所有槽；只有异常槽才回退单槽读取。"""
     capacity = getattr(getattr(device, "status", None), "macro_space", DEFAULT_CAPACITY)
+    entries = valid if valid is not None else {
+        s: o for s, o in decode_directory(table).items() if _valid_offset(o, capacity)
+    }
+    slots = []
+    used = 0
+    for slot, off in sorted(entries.items()):
+        parsed = _parse_slot_from_region(region, off)
+        if parsed is None:
+            actions, body_len = _read_slot(device, off, capacity)
+        else:
+            head, body = parsed
+            actions = decode_block(head, body)
+            body_len = len(body)
+        block_len = 4 + body_len
+        used += block_len
+        slots.append({"slot": slot, "offset": off, "actions": actions, "bytes": block_len})
+    return slots, used
+
+
+def _macros_payload(table: bytes, capacity: int, slots: List[dict], used: int) -> dict:
+    """组装对外的宏表结构（字段与旧实现完全一致）。"""
     return {
         "slots": slots,
         "used": used,
         "capacity": capacity,
         "dataCapacity": max(0, capacity - DATA_START),
         "slotCount": SLOT_COUNT,
-        "directory": [int.from_bytes(table[i * 4:i * 4 + 4], "little") for i in range(SLOT_COUNT)],
+        "directory": [int.from_bytes(table[i * 4:i * 4 + 4], "little")
+                      for i in range(SLOT_COUNT)],
     }
+
+
+def _read_all_macros_legacy(device) -> dict:
+    """旧实现（目录 + 逐槽 head/body），保留给回退路径与对比测试。"""
+    table = read_directory(device)
+    capacity = getattr(getattr(device, "status", None), "macro_space", DEFAULT_CAPACITY)
+    slots, used = _read_slots_legacy(device, table)
+    return _macros_payload(table, capacity, slots, used)
+
+
+def read_all_macros(device) -> dict:
+    """读整张宏表：目录 1 次 + 数据区连续批量读（约 6 次），失败回退逐槽读取。
+
+    目录项先做偏移合法性过滤（见 :func:`_valid_offset`）：坏目录直接返回空表 +
+    ``corruptDirectory``/``invalidSlots`` 诊断字段，不再拿垃圾偏移去读设备
+    （实测坏目录会让旧实现卡 40+ 秒）。
+    """
+    table = read_directory(device)
+    capacity = getattr(getattr(device, "status", None), "macro_space", DEFAULT_CAPACITY)
+    entries = decode_directory(table)
+    valid = {s: off for s, off in entries.items() if _valid_offset(off, capacity)}
+    invalid = [{"slot": int(s), "offset": int(off)}
+               for s, off in entries.items() if s not in valid]
+    space = min(_macro_space(device), const.MACRO_SPACE)
+    region_len = max(0, space - DATA_START)
+    if not valid:
+        if invalid:
+            log.warning("宏目录损坏：%d 个偏移非法（例 %s），按空表处理（可用一次保存重写目录）",
+                        len(invalid), invalid[0])
+        payload = _macros_payload(table, capacity, [], 0)
+        if invalid:
+            payload["corruptDirectory"] = True
+            payload["invalidSlots"] = invalid
+        return payload
+    try:
+        region = _read_region(device, DATA_START, region_len) if region_len else b""
+        slots, used = _parse_slots_from_region(device, table, region, valid)
+    except (ProtocolTimeout, MK87Error) as exc:
+        log.warning("宏表批量读取失败，回退逐槽读取: %s", exc)
+        slots, used = _read_slots_legacy(device, table, valid)
+    payload = _macros_payload(table, capacity, slots, used)
+    if invalid:
+        payload["corruptDirectory"] = True
+        payload["invalidSlots"] = invalid
+    return payload
 
 
 def _write_chunks(device, cmd: int, payload: bytes, addr_start: int, final_last: bool,

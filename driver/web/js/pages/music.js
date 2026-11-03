@@ -223,12 +223,12 @@ export default {
     const offBrightSlider = createSlider({
       label: '背景亮度', min: OFFICIAL_LIMITS.backBrightness.min, max: OFFICIAL_LIMITS.backBrightness.max,
       step: OFFICIAL_LIMITS.backBrightness.step, value: offBackBright, format: (v) => `${v}%`,
-      onInput: () => scheduleLiveUpdate(),
+      onInput: (v) => { offBackBright = Number(v); scheduleLiveUpdate(); },
     });
     const offAmpSlider = createSlider({
       label: '振幅', min: OFFICIAL_LIMITS.amplitude.min, max: OFFICIAL_LIMITS.amplitude.max,
       step: 1, value: offAmplitude, format: (v) => String(v),
-      onInput: () => scheduleLiveUpdate(),
+      onInput: (v) => { offAmplitude = Number(v); scheduleLiveUpdate(); },
     });
 
     /* LED 颜色覆盖（本工具增强；default = 不覆盖，与官方完全一致） */
@@ -246,7 +246,7 @@ export default {
       },
     });
     const colorHint = h('div', { class: 'field-hint', style: { marginTop: '6px' } },
-      'LED 颜色覆盖只对动态多色模式（1/2/4/5/13）生效；纯色模式 6/7/8/9/10/11 仍使用官方采样色。');
+      'LED 颜色覆盖对全部动态多色模式生效（1/2/4/5/13 与补回的 14–22）；纯色模式 6/7/8/9/10/11 仍使用官方采样色。');
     officialColorSelect.addEventListener('change', () => {
       offColor = officialColorSelect.value;
       colorPreview.style.background = colorPreviewBackground(offColor);

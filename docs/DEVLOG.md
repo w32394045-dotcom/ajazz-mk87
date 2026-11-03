@@ -731,3 +731,47 @@ C:\Users\ptfm\Documents\ajazz-re\driver\dist-packages\MK87Studio-0.1.1-win64-por
   - 已下载 Release 的 portable zip 复算 SHA256 与 SHA256SUMS 一致；本地包与 CI 包因构建环境不同哈希不同，
     Release 以 CI 构件为准
 - 本批明确未做（后置）：mode 100 自研屏幕同步；E2/E4 硬件实验；自定义 HEX 输入
+
+---
+
+## 20 2026-11-03（晚）：v0.1.4 修用户报告的 4 个 bug + 性能治理
+
+### 20.1 用户反馈（原话要点）
+
+- 「宏键和改建设置根本设置不了」（改键页「应用修改」必失败）
+- 「用着用着就突然卡顿一下」（音乐播放时周期性卡顿）
+- 「颜色除了这一个阶梯能用，其他全部不能覆盖上」（LED 颜色只对部分模式生效）
+- 「频率阶梯……并没有走频率阶梯，而是走我们的旧方案」（确认为 A：选了颜色预设后模式 4 像旧方案）
+- 「振动幅度调整如同虚设，看不到明显变化」
+
+### 20.2 根因 → 修复 → 验证
+
+| # | 问题 | 根因 | 修复 | 验证 |
+|---|---|---|---|---|
+| 1 | 改键/宏保存 HTTP 400 | 前端 `toWireAction()` 发 `key`/`fn`/`combo{keys}`，后端 `encode_entry()` 只认 `keyboard`/`func`/`combo(mods+key)` → `MK87Error("未知的 action type")` → 400 | 后端兼容两套 wire 格式（含 combo keys 拆分、macro slot 回退）；前端改发 canonical；`normalizeWireAction` 兼容后端 combo `mods/key`；顺手删 `patch_matrix` 死代码 | 真机：canonical no-op / 旧别名 `key` / combo 写入+恢复 / FN 层 no-op 全部 200，slot0 readback `02002900` 一致；新增 15 测试 |
+| 2 | 播放音乐时周期性卡顿 | 66fps 帧流时协议层把**每个 HID 通知帧**逐条 DEBUG 写盘：47min 会话 **1,169,834 行 / 207MB（414 行/s）**，磁盘 I/O 抖动；session 日志无上限；宏表逐槽读实测 48.3s | 通知按 (类别,cmd) 聚合限速（0x32 ACK 完全不打，其它 ~2s 摘要，首条立即）；session 日志 32MB 上限 + 启动清理旧会话（保留 5 个 / 64MB）；宏表改「目录 1 次 + 数据区 ≤512B 块连续读」；另修 `run.py` 的 uvicorn dictConfig 关掉本工具 handler（会话日志空白 + 3.9 万条 Logging error） | 真机 40s@66fps：session 日志仅 **+22.3KB（33KB/min，旧 ~4.4MB/min）**；`GET /api/music/status` 8–11ms、`/api/status` 4–7ms；`GET /api/macros` **48.3s → 366ms**（100 槽假设备 201→7 请求） |
+| 3 | 颜色只覆盖部分模式 | `COLOR_OVERLAY_MODES` 只有 1/2/4/5/13；补回的 14–22 渲染器不消费 palette | 扩到 `{1,2,4,5,13,14..22}`（14 个动态模式），14–22 渲染器加 `pal` 形参，只替换「色相→RGB」，几何/相位/亮度不动；纯色 6–11 与背景不变 | 真机抓 WS 逐键帧：mode 4/14/22 选 `ice` 后全部点亮键为冰蓝族（4:32/32、14:19/19、22:87/87）；default 220 组合快照仍逐字节一致 |
+| 4 | 模式 4 闪回旧方案 | `_render_mode_4` 在 `spectrum17` 全 0 时退回 `_MODE4_CURVATURE` 合成轮廓（安静/回环断流帧），单色预设下特别显眼 | 引擎加 `has_spectrum`：真实音频链路给过一次 `bands32` 后**永不退回旧轮廓**；旧轮廓只保留给「从未收到频谱」的离线/单测 `tick(amp)` 场景 | 新增 3 测试（喂过非零频谱后全 0 → 空帧；`tick(amp)` 保留旧轮廓；恢复频谱后柱子恢复） |
+| 5 | 振幅/背景亮度滑块无效 | `pages/music.js` 官方方案两个滑块 `onInput: () => scheduleLiveUpdate()` **没把新值写回** `offAmplitude`/`offBackBright`，热更新永远发旧值（50/100） | `onInput: (v) => { offAmplitude = Number(v); ... }`（亮度同理） | 后端 update amplitude 10 vs 100 帧输出明显不同（真机抓帧）；滑块链路修复 |
+| 6 | 宏表读取 48s（附带发现） | 用户设备宏目录被写坏（目录值像宏动作数据 0x3200ff47…，不是合法偏移），旧实现拿垃圾当偏移、`count` 解析成巨大值 → 单槽读几百 KB | `read_all_macros` 先做偏移合法性过滤（`[400, capacity-4]`），坏目录直接空表 + `corruptDirectory`/`invalidSlots` 诊断、不再读设备；`_read_slot` 限制 count/地址上界；写回验证拒绝非法目录 | 真机：坏目录场景目录读 1 次即返回（不再大读），`/api/macros` 366ms |
+| 7 | 浏览器模式日志失效（附带） | `run.py` 用 `uvicorn.run` 默认 log_config → dictConfig 关闭已装 handler；`shell.py` 早已 `log_config=None` | `run.py` 同步 `log_config=None`；`_SessionFileHandler.emit` 在 stream=None 时按需重开（防御） | 源码运行 session 日志正常增长、日志错误清零 |
+
+### 20.3 验证与数据
+
+- 单测：`cd driver; .\.venv\Scripts\python.exe -m unittest discover -s tests -q` → **206 tests OK**（v0.1.3 基线 152；新增 keymap 15 / 性能 15 / 颜色 14 / mode4 3 / 宏健壮性 6 / 其他 1）
+- UI 自检：headless Chrome `tools/ui_shots.py` → **17/17 PASS**（keymap.js / music.js 改动后）
+- 真机 v0.1.4 验证（USB fw1.19，`run.py` 源码服务 + HTTP/WS 驱动）：
+  - 改键：canonical 200 / alias key 200 / combo 写入 200 + 恢复 readback 一致 / FN no-op 200
+  - 宏：`GET /api/macros` 366ms、slots=0（见 §20.4）
+  - 颜色：mode 4/14/22 冰蓝覆盖生效
+  - 帧流：66fps 40.2s 实测 **65.9fps**、0 错误、sendMode=`burst+drainer`、日志 +22.3KB
+  - 停止恢复：`0affffffff000000010603000000aa55` 与开始前逐字节一致（用户当前灯效）
+
+### 20.4 遗留 / 说明
+
+- 用户设备的宏目录原本已损坏（内容像宏数据而非偏移，固件也拒绝写回该非法目录）。备份原始 3072B 到
+  `%TEMP%\mk87_macro_area_backup.bin` 后，已把目录写 0（空宏表，keymap 无宏绑定）；宏功能从此可正常
+  读写（真机已验证 write_macros 回读一致），需要重新录制宏。
+- 振幅语义按官方端口各不相同（mode 13 是平滑系数、mode 4 是柱高增益、15 是爬升层数…），滑块现在能真正
+  把值发到后端；部分模式在高电平时仍会顶满（官方语义如此），未重新标定真值。
+- E 项（mode 100 自研屏光同步 / E2 / E4 实验）仍按用户要求后置。
