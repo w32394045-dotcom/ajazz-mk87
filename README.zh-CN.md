@@ -8,7 +8,7 @@ USB / 2.4G 协议的完整逆向实现，全部功能**离线本地运行**。
 - **设备**：USB `VID 0x0C45 / PID 0x8047`；2.4G 接收器 `VID 0x0C45 / PID 0xFEFE`
 - **官方网页驱动**（已逆向）：`https://ajazz.driveall.cn`
 - **全程本地**：不访问外网、不上传数据、不依赖官方驱动
-- **最新版本**：[v0.1.5](https://github.com/w32394045-dotcom/ajazz-mk87/releases/latest)
+- **最新版本**：[v0.1.6](https://github.com/w32394045-dotcom/ajazz-mk87/releases/latest)
 
 ## 界面截图
 
@@ -40,24 +40,45 @@ USB / 2.4G 协议的完整逆向实现，全部功能**离线本地运行**。
 Linux 包内已包含 udev 规则（免 root 访问 HID），安装后请重新插拔键盘。
 发布由 GitHub Actions 自动构建，附件含 `SHA256SUMS.txt` 校验值。
 
-如果 Linux 上仍识别不到键盘：先重新插拔，再检查 `ls -l /dev/hidraw*`（键盘对应的 hidraw 节点要对当前用户可读写）
-和 `~/.local/state/mk87/logs/mk87.log`（日志会列出枚举到的每个 HID 接口）。从 v0.1.5 起，本工具会自己读取
-HID report descriptor 解析 usage page —— 因为 hidapi 的 Linux hidraw 后端在枚举时 `usage_page` 恒为 0。
+如果 Linux 上识别不到键盘，先跑内置自检：
 
-## v0.1.5 更新
+```bash
+mk87 --diagnose     # 打印 hidapi 后端、hidraw 节点、usage page、权限
+```
 
-- **修复：Linux 上识别不到键盘** —— hidapi 的 hidraw 后端在 Linux 上 `hid.enumerate()` 返回的
-  `usage_page` 恒为 0（[hidapi 已知限制](https://sourceforge.net/p/libusb/mailman/message/36968076/)），
-  而本工具靠 usage page（`0xFF68` 主协议 / `0xFF67` TFT / `0xFF60` 2.4G / `0xFFFF` 唤醒）区分接口，
-  所以在 Linux 上永远找不到设备。现在会对每个枚举到的接口读取 HID report descriptor
-  （优先 hidapi `get_report_descriptor()`，失败回退 `/sys/class/hidraw/hidrawN/device/report_descriptor`），
-  解析第一个 Usage Page / Usage 来还原接口身份与 payload 长度。Windows 行为不变（本来就有 usage page）。
-- 诊断增强：设备日志会列出每个枚举接口（product / pid / usagePage / usage / interface / payload / path）；
-  Linux 上「找不到设备」的错误会提示 udev 规则与 report descriptor 权限；新增
-  `probe/linux_hid_check.py` 一键打印同样信息，方便复制反馈。
-- 测试：**215 个单元测试全绿**（新增 9 个 Linux 传输测试：descriptor 解析、补齐逻辑、hidapi/sysfs 回退、
-  Windows 不受影响）。Linux 真机验证：请运行 `probe/linux_hid_check.py` 和 app；若仍识别不到，
-  把 `~/.local/state/mk87/logs/mk87.log` 发我。
+同一份报告会保存到 `~/.local/state/mk87/logs/diagnose.txt`。Linux 上本工具必须使用 hidapi 的 **hidraw**
+后端（模块 `hidraw`，路径 `/dev/hidrawN`）；PyPI wheel 里的 `hid` 模块是 **libusb** 后端，不能用来配置
+这把键盘（设备路径不对、没有 usage page、需要 /dev/bus/usb 权限还会和内核 HID 驱动抢接口）。详见
+下方 v0.1.6 更新说明。
+
+## v0.1.6 更新
+
+- **修复：Linux 上仍然识别不到键盘（v0.1.5 反馈的真正根因）** —— PyPI 的 `hidapi` wheel 在 Linux 上
+  打包了**两个**扩展模块：`hid`（libusb 后端）和 `hidraw`（hidraw 后端）。cython-hidapi 的构建默认把
+  `hid` 编成 libusb 后端，所以 `import hid` 在 Linux 上拿到的是 libusb 实现：枚举出来的 path 是
+  `1-1.1:1.0` 这类总线路径（不是 `/dev/hidrawN`），`usage_page` 恒为 0（libusb 枚举时读不到描述符），
+  打开还需要 `/dev/bus/usb` 权限、并会和内核 HID 驱动抢接口。现在 Linux 上改用 `hidraw` 后端：path 是
+  `/dev/hidrawN`，usage page 直接由 sysfs 解析；v0.1.5 的 report descriptor 解析保留为兜底。
+  Windows 继续用原生 `hid` 模块，行为不变。
+- **新增 `--diagnose` 自检** —— `mk87 --diagnose`（源码环境用
+  `python3 probe/linux_hid_check.py`）会打印：hidapi 后端、原始枚举结果、本工具解析出的接口、
+  每个 `/sys/class/hidraw/hidraw*` 节点的 vid/pid/接口号/usage page/权限、udev 规则状态和结论，
+  并保存到 `~/.local/state/mk87/logs/diagnose.txt`。
+- **Linux 报错更明确** —— 只剩 libusb 后端时不再假装连接，直接提示安装官方 wheel / 升级安装包；
+  「找不到设备」的提示里带上 `--diagnose`。
+- **Linux 启动日志更干净** —— 明确让 pywebview 用 Qt 后端，不再先刷一条误导性的
+  `GTK cannot be loaded` traceback 再回退。
+- 测试：**226 个单元测试全绿**（新增 11 个：后端选择优先级、接口号 0 的保留、sysfs HID_ID/接口号解析、
+  libusb 风格 path 的 sysfs 兜底、libusb 后端拦截）。Windows 真机回归：`connected=True fw=1.19
+  battery=100 tftMax=140`。
+
+### v0.1.5
+
+- **Linux 修复尝试（report descriptor 解析）** —— v0.1.5 误以为 hidapi 的 hidraw 后端在 Linux 上不填
+  `usage_page`，于是给每个接口自己读 HID report descriptor 重新解析 usage page（见 v0.1.6 根因：实际是
+  **libusb** 后端被导入）。这套解析保留作为兜底。
+- 诊断增强：设备日志列出每个枚举接口；`probe/linux_hid_check.py` 一键打印同样信息。
+- 测试：215 个单元测试全绿（新增 9 个 Linux 传输测试）。
 
 ### v0.1.4
 

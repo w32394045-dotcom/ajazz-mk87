@@ -16,7 +16,7 @@ from typing import Callable, Dict, List, Optional
 from . import const
 from .errors import DeviceDisconnected, DeviceNotFound, MK87Error
 from .protocol import Protocol
-from .transport import HidInterface, IfaceInfo, enumerate_ifaces
+from .transport import BACKEND, HidInterface, IfaceInfo, enumerate_ifaces
 
 log = logging.getLogger("mk87.device")
 
@@ -128,6 +128,7 @@ class MK87Device:
     def connect(self) -> DeviceStatus:
         """扫描并连接设备（优先 USB 有线，否则 2.4G）。"""
         self.close()
+        log.debug("hidapi 后端: %s", BACKEND)
         infos = enumerate_ifaces(const.VID)
         self._ifaces = infos
         for i in infos:
@@ -172,15 +173,14 @@ class MK87Device:
                 hint = ""
                 if platform.system() == "Linux":
                     hint = (
-                        "；Linux 需要 udev 规则并重新插拔键盘："
-                        "sudo cp packaging/udev/99-ajazz-mk87.rules /etc/udev/rules.d/ && "
-                        "sudo udevadm control --reload-rules && sudo udevadm trigger"
+                        "；Linux 排查：mk87 --diagnose 会打印后端、"
+                        "hidraw 节点和权限；或运行 python3 probe/linux_hid_check.py"
                     )
                     if infos and all(i.usage_page == 0 for i in infos):
                         hint += (
-                            "；已枚举到 AJAZZ 设备但读不到 usage_page —— 通常是 /dev/hidraw* "
-                            "权限不足或 report descriptor 不可读，请检查 udev 规则是否生效、"
-                            "重新插拔后再试（日志里会列出枚举到的接口）"
+                            "；已枚举到 AJAZZ 设备但读不到 usage_page —— 后端/权限问题，"
+                            "sudo cp packaging/udev/99-ajazz-mk87.rules /etc/udev/rules.d/ && "
+                            "sudo udevadm control --reload-rules && sudo udevadm trigger 后重插键盘"
                         )
                 raise DeviceNotFound(
                     "未找到可用的 MK87 协议接口。请确认键盘已连接（USB 线或 2.4G 接收器）" + hint

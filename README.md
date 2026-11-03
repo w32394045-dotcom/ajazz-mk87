@@ -8,7 +8,7 @@
 - **Device**: USB `VID 0x0C45 / PID 0x8047`; 2.4G receiver `VID 0x0C45 / PID 0xFEFE`
 - **Official web driver** (reverse-engineered): `https://ajazz.driveall.cn`
 - **Everything local**: no network access, no telemetry, no vendor driver required
-- **Latest release**: [v0.1.5](https://github.com/w32394045-dotcom/ajazz-mk87/releases/latest)
+- **Latest release**: [v0.1.6](https://github.com/w32394045-dotcom/ajazz-mk87/releases/latest)
 
 ## Screenshots
 
@@ -40,29 +40,50 @@
 Linux packages ship the udev rules (root-free HID access); replug the keyboard after install.
 Releases are built by GitHub Actions and come with a `SHA256SUMS.txt`.
 
-If the app does not detect the keyboard on Linux: replug after install, then check
-`ls -l /dev/hidraw*` (the keyboard's hidraw nodes must be readable by your user) and
-`~/.local/state/mk87/logs/mk87.log` (it lists every enumerated HID interface). Since v0.1.5 the app reads
-HID usage pages from the report descriptor itself, because hidapi's Linux hidraw backend always reports
-`usage_page = 0`.
+If the app does not detect the keyboard on Linux, run the built-in self check first:
 
-## What's new in v0.1.5
+```bash
+mk87 --diagnose     # prints hidapi backend, hidraw nodes, usage pages, permissions
+```
 
-- **Fixed: the keyboard was not detected on Linux** — `hid.enumerate()` with hidapi's hidraw backend returns
-  `usage_page = 0` for every interface on Linux
-  ([known hidapi limitation](https://sourceforge.net/p/libusb/mailman/message/36968076/)), while the tool
-  identifies its protocol / TFT / 2.4G interfaces by usage page (`0xFF68 / 0xFF67 / 0xFF60 / 0xFFFF`), so the
-  device could never be found on Linux. The app now reads the HID report descriptor of each enumerated
-  interface (hidapi `get_report_descriptor()`, falling back to
-  `/sys/class/hidraw/hidrawN/device/report_descriptor`) and parses the first Usage Page / Usage to rebuild
-  interface identity and payload sizes. Windows behaviour is unchanged (usage pages are already present).
-- Diagnostics: the device log now lists every enumerated interface (`product / pid / usagePage / usage /
-  interface / payload / path`), and the Linux "not found" error mentions the udev rules and the
-  report-descriptor/permission hint. `probe/linux_hid_check.py` prints the same information plus descriptor
-  parses for quick support reports.
-- Tests: **215 unit tests green** (9 new Linux transport tests: descriptor parser, enrichment, hidapi/sysfs
-  fallback, Windows no-op). Linux real-hardware verification: run `probe/linux_hid_check.py` and the app; if
-  the keyboard still does not show up, attach `~/.local/state/mk87/logs/mk87.log`.
+It writes the same report to `~/.local/state/mk87/logs/diagnose.txt`. The app must use hidapi's **hidraw**
+backend on Linux (module `hidraw`, paths `/dev/hidrawN`); the `hid` module bundled in the PyPI wheel is the
+**libusb** backend and cannot be used for this keyboard (wrong device paths, no usage pages, USB-device
+permissions and kernel-driver conflicts). See "What's new in v0.1.6".
+
+## What's new in v0.1.6
+
+- **Fixed: Linux still could not detect the keyboard (root cause of the v0.1.5 report)** — the PyPI `hidapi`
+  wheel ships **two** extension modules on Linux: `hid` (built against **libusb**) and `hidraw` (built
+  against **hidraw**). cython-hidapi's build defaults to libusb, so `import hid` on Linux returned the libusb
+  backend: `enumerate()` paths look like `1-1.1:1.0` instead of `/dev/hidrawN`, `usage_page` is always 0
+  (libusb cannot read the descriptor during enumeration), opening needs `/dev/bus/usb` permissions and fights
+  the kernel HID driver. The tool now selects `hidraw` on Linux, which reports `/dev/hidrawN` paths and fills
+  usage pages straight from sysfs — the v0.1.5 report-descriptor parsing stays as a fallback. Windows keeps
+  using the native `hid` module; behaviour there is unchanged.
+- **New: `--diagnose` self check** — `mk87 --diagnose` (or `python3 probe/linux_hid_check.py`
+  from a source checkout) prints the hidapi backend, raw enumeration, parsed interfaces, every
+  `/sys/class/hidraw/hidraw*` node with vid/pid/interface/usage page/permissions, the udev rule state and a
+  verdict, and saves it to `~/.local/state/mk87/logs/diagnose.txt`.
+- **Linux: clearer failures** — if only the libusb backend is present the tool now refuses to "connect" and
+  tells you to install the official wheel / upgrade the package; the "not found" message points at
+  `--diagnose`.
+- **Linux: quieter startup** — pywebview is told to use its Qt backend directly, so the packaged app no
+  longer logs a misleading `GTK cannot be loaded` traceback before falling back to Qt.
+- Tests: **226 unit tests green** (11 new: backend selection/preference, interface-number 0 handling,
+  sysfs HID_ID/interface parsing, libusb-style path fallback, libusb-backend guard). Windows regression
+  re-checked on a real MK87: `connected=True fw=1.19 battery=100 tftMax=140`.
+
+### v0.1.5
+
+- **Attempted Linux fix (report-descriptor parsing)** — v0.1.5 assumed hidapi's hidraw backend leaves
+  `usage_page = 0` on Linux and rebuilt interface identity by parsing each interface's HID report descriptor
+  (hidapi `get_report_descriptor()`, falling back to
+  `/sys/class/hidraw/hidrawN/device/report_descriptor`). The parsing is still used as a fallback, but the
+  real problem was the **libusb** backend being imported — see v0.1.6.
+- Diagnostics: the device log lists every enumerated interface (`product / pid / usagePage / usage /
+  interface / payload / path`), and `probe/linux_hid_check.py` printed the same information.
+- Tests: 215 unit tests green (9 Linux transport tests).
 
 ### v0.1.4
 

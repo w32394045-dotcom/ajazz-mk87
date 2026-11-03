@@ -54,6 +54,13 @@ if sys.platform != "win32":
         pass
 hiddenimports += collect_submodules("uvicorn")
 hiddenimports += ["server.app", "server.state", "mk87lib"]
+# hidapi wheel 在 Linux 上打包了两个扩展模块：hid（libusb 后端）和 hidraw
+# （hidraw 后端）。本工具 Linux 只用 hidraw（transport 里用 importlib 动态导入，
+# PyInstaller 静态分析看不到），Windows 用 hid。见 mk87lib/transport.py 顶部说明。
+if sys.platform.startswith("linux"):
+    hiddenimports += ["hidraw"]
+else:
+    hiddenimports += ["hid"]
 
 icon = os.path.join(ROOT, "assets", "mk87.ico")
 version_file = os.path.join(ROOT, "packaging", "windows", "version_info.txt")

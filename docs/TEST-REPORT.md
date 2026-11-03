@@ -484,3 +484,23 @@
 | Linux 真机 | **待用户执行** `python3 probe/linux_hid_check.py` + app；失败时附 `~/.local/state/mk87/logs/mk87.log` |
 
 诊断工具：`probe/linux_hid_check.py`（列出枚举接口、/dev/hidraw 权限、descriptor 解析与结论）。
+
+## 18 v0.1.6 Linux 真正根因修复（2026-11-03 深夜）
+
+> 触发：用户装 v0.1.5 后 Linux 仍识别不到设备，附日志包。根因不是 usage_page 解析，而是
+> **Linux 上 hidapi 导入到了 libusb 后端**（`hid` 模块），没导入 hidraw 后端（`hidraw` 模块）。
+> 详见 [DEVLOG §22](DEVLOG.md)。
+
+| 测试项 | 结果 |
+|---|---|
+| 后端选择 | Linux 优先 `hidraw`（命中后不再尝试 `hid`）；缺 hidraw 时回退 `hid` 并标记 `libusb`；都缺 → `missing`；Windows → `hid`/`native` |
+| libusb 后端拦截 | Linux + `BACKEND=="libusb"` 时 `enumerate_ifaces()` 抛 `DeviceNotFound`，提示安装官方 wheel / 升级安装包 |
+| 接口号 0 | `interface_number=0` 保留为 0（旧 `or -1` 会变成 -1）；`None`/缺省 → -1；字符串数字可解析 |
+| sysfs 反查 | `HID_ID=0003:0C45:8047` 解析正确；`hidraw*` 节点遍历；按 pid+`bInterfaceNumber` 取到对应 descriptor；无节点/无匹配返回 None |
+| descriptor 三级读取 | hidapi `get_report_descriptor()` → `/dev/hidrawN` sysfs → pid/接口号 sysfs 反查（libusb 风格 path `1-1.1:1.0` 也能取到） |
+| 全量单测 | **226 tests OK**（新增 11 个：后端选择 ×4、libusb 拦截 ×1、接口号 ×1、sysfs 反查 ×5） |
+| Windows 真机回归 | `BACKEND=native`；8 条接口记录含 `0xFF68`/`0xFF67`；`connect()` → `connected=True transport=usb fw=1.19 battery=100 tftMax=140` |
+| Linux 真机 | **待用户执行**：装 v0.1.6 → 打开 app；异常时 `mk87 --diagnose`（输出存 `~/.local/state/mk87/logs/diagnose.txt`） |
+
+诊断入口：`--diagnose` 打印 hidapi 后端 / 原始枚举 / 解析接口 / `/sys/class/hidraw` 节点 + 权限 /
+udev 规则 / 结论；源码环境同一套逻辑在 `probe/linux_hid_check.py`。

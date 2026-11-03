@@ -573,7 +573,7 @@ class DeviceManager:
         st = self.device.status.to_dict()
         st["mock"] = False
         st["shell"] = bool(getattr(self, "shell_mode", False))
-        st["webVersion"] = "0.1.5"
+        st["webVersion"] = "0.1.6"
         st["recentNotifications"] = [
             e for e in self.device.recent_events if e.get("type") == "notification"
         ][-10:]

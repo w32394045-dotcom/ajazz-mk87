@@ -14,6 +14,7 @@
     python shell.py              # 正常启动（显示窗口）
     python shell.py --tray       # 静默启动到托盘（开机自启用）
     python shell.py --debug      # 打开 WebView 开发者工具
+    python shell.py --diagnose   # 只打印设备/HID 自检信息后退出（排查识别不到设备）
 """
 from __future__ import annotations
 
@@ -340,7 +341,10 @@ class Shell:
         self._build_tray()
         threading.Thread(target=self.tray.run, name="mk87-tray", daemon=True).start()
 
-        webview.start(debug=self.debug)
+        # Linux 上 pywebview 默认先试 GTK（缺 python3-gi 时先刷一条 ERROR 再回退 Qt）；
+        # 打包版只带 Qt，直接指定 qt，避免误导性报错和多余的回退尝试。
+        gui = "qt" if sys.platform.startswith("linux") else None
+        webview.start(debug=self.debug, gui=gui)
         # webview.start 返回 = 窗口被销毁（正常退出路径已在 quit() 处理，这里兜底）
         if not self._quitting:
             self.quit()
@@ -375,13 +379,45 @@ def setup_logging() -> None:
     )
 
 
+def _run_diagnose() -> int:
+    """打印 HID/设备自检信息（识别不到设备时用），同时保存到日志目录。"""
+    from mk87lib import logsetup
+    from mk87lib.diag import collect_diagnostics
+
+    try:
+        text = "\n".join(collect_diagnostics())
+    except Exception:  # noqa: BLE001
+        log.exception("自检失败")
+        return 1
+    out_path = os.path.join(logsetup.log_dir(), "diagnose.txt")
+    try:
+        with open(out_path, "w", encoding="utf-8") as f:
+            f.write(text + "\n")
+    except Exception:  # noqa: BLE001
+        out_path = ""
+    if sys.stdout is not None:
+        try:
+            # Windows 控制台默认 GBK，✓/✗ 等字符会 UnicodeEncodeError
+            sys.stdout.reconfigure(errors="replace")  # type: ignore[attr-defined]
+        except Exception:  # noqa: BLE001 - 旧版/被重定向的 stdout
+            pass
+        print(text)
+        if out_path:
+            print(f"\n（以上内容已保存到 {out_path}）")
+    return 0
+
+
 def main() -> int:
     ap = argparse.ArgumentParser(description="MK87 Studio 桌面外壳")
     ap.add_argument("--tray", action="store_true", help="静默启动到系统托盘（开机自启用）")
     ap.add_argument("--debug", action="store_true", help="打开 WebView 开发者工具")
     ap.add_argument("--no-single-instance", action="store_true", help="跳过单实例检查（调试用）")
+    ap.add_argument("--diagnose", action="store_true", help="打印设备/HID 自检信息后退出")
     args = ap.parse_args()
     setup_logging()
+
+    if args.diagnose:
+        return _run_diagnose()
 
     if not args.no_single_instance:
         if not SingleInstance().acquire():

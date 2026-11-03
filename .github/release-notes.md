@@ -11,28 +11,48 @@ Screenshots and the full feature list live in the repository README:
 **[README.md (English)](https://github.com/w32394045-dotcom/ajazz-mk87/blob/main/README.md)** ·
 **[README.zh-CN.md (简体中文)](https://github.com/w32394045-dotcom/ajazz-mk87/blob/main/README.zh-CN.md)**
 
+## What's new in v0.1.6
+
+> v0.1.6 fixes the real Linux root cause behind the v0.1.5 "device not detected" report.
+
+- **Fixed: the keyboard is now detected on Linux** — the PyPI `hidapi` wheel ships **two** Linux extension
+  modules: `hid` (built against **libusb**) and `hidraw` (built against **hidraw**). cython-hidapi's build
+  defaults to libusb, so `import hid` on Linux returned the libusb backend: enumerated paths look like
+  `1-1.1:1.0` instead of `/dev/hidrawN`, `usage_page` is always 0 (libusb cannot read the report descriptor
+  while enumerating), opening needs `/dev/bus/usb` permissions, and it competes with the kernel HID driver.
+  The tool now imports `hidraw` on Linux — paths are `/dev/hidrawN`, usage pages come from sysfs, and the
+  packaged udev rules grant access. The v0.1.5 report-descriptor parser remains as a fallback. Windows keeps
+  using the native `hid` module (unchanged).
+- **New: built-in self check** — `mk87 --diagnose` prints the hidapi backend, raw
+  `hid.enumerate()` output, parsed interfaces, every `/sys/class/hidraw/hidraw*` node (vid/pid/interface/
+  usage page/permissions), udev rule state and a verdict, and saves it to
+  `~/.local/state/mk87/logs/diagnose.txt`.
+- **Clearer Linux failures** — if only the libusb backend is available the tool refuses to report a bogus
+  connection and says how to fix it; the "device not found" message points at `--diagnose`.
+- **Cleaner Linux startup** — pywebview is asked for its Qt backend directly, removing the misleading
+  `GTK cannot be loaded` traceback logged before the Qt fallback.
+- **Tests**: 226 unit tests green (11 new: backend preference, interface-number 0 handling, sysfs HID_ID /
+  interface parsing, libusb-style path fallback, libusb-backend guard). Windows real-device regression:
+  `connected=True fw=1.19 battery=100 tftMax=140`.
+- **Linux users**: install the deb/rpm (the udev rules are included), then run
+  `mk87 --diagnose` if anything still looks wrong and attach the output.
+
 ## What's new in v0.1.5
 
-> v0.1.5 is a Linux hot-fix built on v0.1.4.
+> v0.1.5 was a Linux hot-fix attempt built on v0.1.4. Its assumption (hidraw backend reporting
+> `usage_page = 0`) turned out to be wrong — see v0.1.6. The report-descriptor parser added there is still
+> used as a fallback.
 
-- **Fixed: the keyboard was not detected on Linux** — hidapi's Linux hidraw backend returns
-  `usage_page = 0` from `hid.enumerate()` for every interface
-  ([known hidapi limitation](https://sourceforge.net/p/libusb/mailman/message/36968076/)), but the tool
-  identifies its interfaces by usage page (`0xFF68` main protocol, `0xFF67` TFT, `0xFF60` 2.4G, `0xFFFF` wake).
-  As a result the device was never found on Linux. The app now reads each interface's HID report descriptor
-  (hidapi `get_report_descriptor()`, with a sysfs
-  `/sys/class/hidraw/hidrawN/device/report_descriptor` fallback) and parses the first Usage Page / Usage to
-  restore interface identity and payload sizes. Windows behaviour is unchanged (usage pages are already
-  reported there).
+- **Linux hot-fix attempt** — assumed hidapi's Linux backend left `usage_page = 0` for every interface and
+  rebuilt interface identity by reading each interface's HID report descriptor (hidapi
+  `get_report_descriptor()`, with a sysfs `/sys/class/hidraw/hidrawN/device/report_descriptor` fallback).
+  The parser is still used as a fallback, but the actual cause was the libusb backend being imported on
+  Linux — fixed in v0.1.6.
 - **Better Linux diagnostics** — the device log lists every enumerated interface
-  (`product / pid / usagePage / usage / interface / payload / path`), the "device not found" error now
-  mentions the udev rules and permission/descriptor hints, and `probe/linux_hid_check.py` prints the same
-  information for support reports.
+  (`product / pid / usagePage / usage / interface / payload / path`), and `probe/linux_hid_check.py` prints
+  the same information for support reports.
 - **Tests**: 215 unit tests green (9 new Linux transport tests: descriptor parser, interface enrichment,
   hidapi/sysfs fallback, Windows no-op).
-- **Linux users**: after installing the deb/rpm, replug the keyboard. If it is still not detected, run
-  `python3 probe/linux_hid_check.py` (or paste `~/.local/state/mk87/logs/mk87.log`) and open an issue —
-  the log now contains everything needed to pinpoint udev/permission vs. enumeration problems.
 
 ## What's new in v0.1.4
 

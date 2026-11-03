@@ -1,10 +1,16 @@
 # -*- coding: utf-8 -*-
-"""Linux HID 接口识别：hidapi(hidraw) 不填 usage_page → 解析 report descriptor 补齐。
+"""Linux HID 接口识别与后端选择。
 
-背景：hidapi 的 Linux hidraw 后端在 hid.enumerate() 里 usage_page/usage 恒为 0，
-而本工具靠 usagePage 区分 主协议(0xFF68)/TFT(0xFF67)/2.4G(0xFF60)/唤醒(0xFFFF)。
-不补齐时 Linux 上永远「未找到可用的 MK87 协议接口」。
+背景（v0.1.5 → v0.1.6）：
+* PyPI 的 hidapi wheel 在 Linux 上打包了两个扩展模块：
+  ``hid``（libusb 后端）和 ``hidraw``（hidraw 后端）；
+* ``import hid`` 拿到的是 libusb 后端：path 形如 ``1-1.1:1.0``、usage_page 恒为 0，
+  Linux 上必须用 ``import hidraw``（path = /dev/hidrawN，usage_page 由 sysfs 解析）；
+* 另外 hidraw 后端在少数发行版上也可能读不到 usage_page，所以保留
+  report descriptor 解析 + sysfs 反查兜底。
 """
+import os
+import tempfile
 import unittest
 from unittest import mock
 
@@ -12,10 +18,10 @@ from mk87lib import transport
 from mk87lib.transport import IfaceInfo
 
 
-def _iface(path, pid=0x8047, usage_page=0, usage=0):
+def _iface(path, pid=0x8047, usage_page=0, usage=0, iface=-1):
     return IfaceInfo(path=path, vid=0x0C45, pid=pid, product="AJAZZ KEYBOARD",
                      manufacturer="SONiX", serial="", usage_page=usage_page,
-                     usage=usage, interface_number=-1, payload_len=64)
+                     usage=usage, interface_number=iface, payload_len=64)
 
 
 def _desc(usage_page: int, usage: int = 1, trailing: bytes = b"") -> bytes:
@@ -122,6 +128,136 @@ class TestLinuxEnrichment(unittest.TestCase):
                 mock.patch("builtins.open", m):
             desc = transport._read_report_descriptor(info)
         self.assertEqual(desc, _desc(0xFF67, 2))
+
+
+class TestBackendSelection(unittest.TestCase):
+    """Linux 必须选 hidraw 后端；libusb 后端（官方 wheel 的默认 hid 模块）不可用。"""
+
+    def test_linux_prefers_hidraw_module(self):
+        real = object()
+        calls = []
+
+        def imp(name):
+            calls.append(name)
+            if name == "hidraw":
+                return real
+            raise ImportError(name)
+
+        with mock.patch.object(transport.platform, "system", return_value="Linux"):
+            mod, backend = transport._load_hid_backend(imp)
+        self.assertIs(mod, real)
+        self.assertEqual(backend, "hidraw")
+        self.assertEqual(calls, ["hidraw"], "hidraw 命中后不应再尝试 hid")
+
+    def test_linux_falls_back_to_libusb_when_hidraw_missing(self):
+        libusb = object()
+
+        def imp(name):
+            if name == "hid":
+                return libusb
+            raise ImportError(name)
+
+        with mock.patch.object(transport.platform, "system", return_value="Linux"):
+            mod, backend = transport._load_hid_backend(imp)
+        self.assertIs(mod, libusb)
+        self.assertEqual(backend, "libusb")
+
+    def test_missing_everything(self):
+        def imp(name):
+            raise ImportError(name)
+
+        with mock.patch.object(transport.platform, "system", return_value="Linux"):
+            mod, backend = transport._load_hid_backend(imp)
+        self.assertIsNone(mod)
+        self.assertEqual(backend, "missing")
+
+    def test_windows_uses_native_hid(self):
+        native = object()
+
+        def imp(name):
+            if name == "hid":
+                return native
+            raise ImportError(name)
+
+        with mock.patch.object(transport.platform, "system", return_value="Windows"):
+            mod, backend = transport._load_hid_backend(imp)
+        self.assertIs(mod, native)
+        self.assertEqual(backend, "native")
+
+    def test_enumerate_rejects_libusb_backend_on_linux(self):
+        with mock.patch.object(transport, "hid", mock.Mock()), \
+                mock.patch.object(transport, "BACKEND", "libusb"), \
+                mock.patch.object(transport.platform, "system", return_value="Linux"):
+            with self.assertRaises(transport.DeviceNotFound) as ctx:
+                transport.enumerate_ifaces(0x0C45)
+        self.assertIn("hidraw", str(ctx.exception))
+
+
+class TestInterfaceNumber(unittest.TestCase):
+    def test_interface_zero_is_kept(self):
+        self.assertEqual(transport._interface_number({"interface_number": 0}), 0)
+        self.assertEqual(transport._interface_number({"interface_number": 3}), 3)
+        self.assertEqual(transport._interface_number({"interface_number": None}), -1)
+        self.assertEqual(transport._interface_number({"interface_number": "2"}), 2)
+        self.assertEqual(transport._interface_number({}), -1)
+        self.assertEqual(transport._interface_number(4), 4)
+
+
+def _write_node(root: str, name: str, pid: int, iface: int, page: int,
+                usage: int = 1, vid: int = 0x0C45) -> str:
+    base = os.path.join(root, name)
+    device = os.path.join(base, "device")
+    os.makedirs(device, exist_ok=True)
+    with open(os.path.join(device, "uevent"), "w", encoding="utf-8") as f:
+        f.write(f"HID_ID=0003:{vid:08X}:{pid:08X}\nHID_NAME=AJAZZ KEYBOARD\n")
+    with open(os.path.join(device, "report_descriptor"), "wb") as f:
+        f.write(_desc(page, usage))
+    with open(os.path.join(base, "bInterfaceNumber"), "w", encoding="utf-8") as f:
+        f.write(f"{iface:02X}")
+    return base
+
+
+class TestSysfsFallback(unittest.TestCase):
+    """libusb 后端的 path 不是 /dev/hidrawN 时，用 sysfs 反查 report descriptor。"""
+
+    def test_parse_hid_id(self):
+        self.assertEqual(transport.parse_sysfs_hid_id("HID_ID=0003:00000C45:00008047"),
+                         (3, 0x0C45, 0x8047))
+        self.assertEqual(transport.parse_sysfs_hid_id(""), (None, None, None))
+
+    def test_iter_nodes(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            _write_node(tmp, "hidraw1", 0x8047, 2, 0xFF68)
+            _write_node(tmp, "hidraw5", 0x8047, 3, 0xFF67)
+            names = [name for name, _dir in transport.iter_sysfs_hidraw(tmp)]
+            self.assertEqual(names, ["hidraw1", "hidraw5"])
+
+    def test_descriptor_lookup_by_pid_and_interface(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            _write_node(tmp, "hidraw1", 0x8047, 2, 0xFF68, 1)
+            _write_node(tmp, "hidraw2", 0x8047, 3, 0xFF67, 2)
+            _write_node(tmp, "hidraw9", 0xFEFE, 0, 0xFF60, 0)
+            self.assertEqual(transport.sysfs_descriptor_for(0x8047, 2, tmp),
+                             _desc(0xFF68, 1))
+            self.assertEqual(transport.sysfs_descriptor_for(0x8047, 3, tmp),
+                             _desc(0xFF67, 2))
+            self.assertIsNone(transport.sysfs_descriptor_for(0x8047, 1, tmp))
+            self.assertEqual(transport.sysfs_descriptor_for(0xFEFE, 0, tmp),
+                             _desc(0xFF60, 0))
+
+    def test_empty_sysfs(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            self.assertEqual(list(transport.iter_sysfs_hidraw(tmp)), [])
+            self.assertIsNone(transport.sysfs_descriptor_for(0x8047, -1, tmp))
+
+    def test_read_report_descriptor_libusb_style_path(self):
+        info = _iface(b"1-1.1:1.0", iface=2)
+        with mock.patch.object(transport, "hid", None), \
+                mock.patch.object(transport, "sysfs_descriptor_for",
+                                  return_value=_desc(0xFF67, 2)) as m:
+            desc = transport._read_report_descriptor(info)
+        self.assertEqual(desc, _desc(0xFF67, 2))
+        m.assert_called_once_with(0x8047, 2)
 
 
 if __name__ == "__main__":

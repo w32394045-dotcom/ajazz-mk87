@@ -14,9 +14,21 @@
     2.4G 0C45:FEFE usagePage 0xFF60  payload 32   主协议（工作通道）
                     usagePage 0xFF59  payload 64   无响应（忽略）
                     usagePage 0xFFFF  payload 4    唤醒帧（report ID 5）
+
+Linux 后端（v0.1.6 起强制 hidraw）
+---------------------------------
+PyPI 的 ``hidapi`` wheel 在 Linux 上打包了**两个**扩展模块：
+``hid``（libusb 后端）和 ``hidraw``（hidraw 后端）。cython-hidapi 的 setup.py
+默认把 ``hid`` 编成 libusb 后端，于是 ``import hid`` 在 Linux 上拿到的是
+libusb 实现：``enumerate()`` 的 path 形如 ``1-1.1:1.0``（不是 ``/dev/hidrawN``）、
+usage_page 恒为 0、打开要 /dev/bus/usb 权限、还要和内核 HID 驱动抢接口 ——
+配置键盘必须用 ``import hidraw``。v0.1.5 及以前误用 ``hid``，Linux 因此永远
+识别不到设备（见 docs/DEVLOG.md §22）。
 """
 from __future__ import annotations
 
+import importlib
+import logging
 import os
 import platform
 import re
@@ -27,10 +39,33 @@ from typing import List, Optional, Tuple
 from . import const
 from .errors import DeviceDisconnected, DeviceNotFound
 
-try:  # hidapi 包在 import 时叫 hid
-    import hid  # type: ignore
-except Exception:  # pragma: no cover - 环境缺依赖时给出清晰错误
-    hid = None  # type: ignore
+log = logging.getLogger("mk87.transport")
+
+
+def _load_hid_backend(importer=None):
+    """选择 hidapi 的 Python 模块，返回 (module, 后端名)。
+
+    * Linux：优先 ``hidraw``（path=/dev/hidrawN，enumerate 自带 usage_page）；
+      没有 hidraw 模块时退回 ``hid``（libusb 后端，不可用于日常配置，只用于报错）。
+    * Windows/macOS：``hid``（原生 HID API）。
+    """
+    imp = importer or importlib.import_module
+    if platform.system() == "Linux":
+        try:
+            return imp("hidraw"), "hidraw"
+        except Exception:  # noqa: BLE001 - 见 Backend 说明
+            pass
+        try:
+            return imp("hid"), "libusb"
+        except Exception:  # noqa: BLE001
+            return None, "missing"
+    try:
+        return imp("hid"), "native"
+    except Exception:  # noqa: BLE001
+        return None, "missing"
+
+
+hid, BACKEND = _load_hid_backend()
 
 
 def _to_bytes(v) -> bytes:
@@ -89,16 +124,17 @@ def payload_len_for(pid: int, usage_page: int) -> int:
 
 
 # ----------------------------------------------------------------------
-# Linux：hidapi(hidraw) 不填 usage_page，需要自己读 report descriptor
+# Linux：接口身份（usage_page）的读取与补全
 # ----------------------------------------------------------------------
 def parse_report_descriptor_usage(desc) -> Tuple[Optional[int], Optional[int]]:
     """从 HID report descriptor 解析**第一个** Usage Page / Usage。
 
-    背景：hidapi 的 Linux hidraw 后端在 ``hid.enumerate()`` 里不填 usage_page/usage
-    （社区已知限制，恒为 0），而本工具靠 usagePage 区分主协议/TFT/2.4G/唤醒接口，
-    否则 Linux 上永远「找不到设备」。这里按 HID short item 格式解析：
-    前缀 = tag(4bit)<<4 | type(2bit)<<2 | size(2bit)，type 1=Global（Usage Page）、
-    type 2=Local（Usage）；遇到第一个 Collection(type 0, tag 0xA) 即停止。
+    本工具靠 usagePage 区分主协议/TFT/2.4G/唤醒接口。hidapi 的 hidraw 后端
+    会自己从 sysfs 解析出 usage_page；但 libusb 后端不填（恒为 0），部分发行版
+    的 sysfs 也可能读不到，所以这里保留一份纯 Python 解析作为兜底/诊断。
+    按 HID short item 格式解析：前缀 = tag(4bit)<<4 | type(2bit)<<2 | size(2bit)，
+    type 1=Global（Usage Page）、type 2=Local（Usage）；遇到第一个
+    Collection(type 0, tag 0xA) 即停止。
     """
     b = bytes(desc or b"")
     n = len(b)
@@ -126,9 +162,82 @@ def parse_report_descriptor_usage(desc) -> Tuple[Optional[int], Optional[int]]:
     return usage_page, usage
 
 
+SYSFS_HIDRAW_ROOT = "/sys/class/hidraw"
+
+
+def read_sysfs_text(path: str) -> Optional[str]:
+    try:
+        with open(path, "r", encoding="utf-8", errors="replace") as f:
+            return f.read()
+    except Exception:  # noqa: BLE001 - sysfs 不存在/无权限
+        return None
+
+
+def parse_sysfs_hid_id(uevent: Optional[str]) -> Tuple[Optional[int], Optional[int], Optional[int]]:
+    """解析 hidraw 的 uevent：``HID_ID=0003:00000C45:00008047`` -> (bus, vid, pid)。"""
+    m = re.search(r"HID_ID=([0-9A-Fa-f]+):([0-9A-Fa-f]{8}):([0-9A-Fa-f]{8})", uevent or "")
+    if not m:
+        return None, None, None
+    return int(m.group(1), 16), int(m.group(2), 16), int(m.group(3), 16)
+
+
+def _sysfs_interface_number(device_dir: str) -> int:
+    """从 sysfs 推断 hidraw 节点所属 USB 接口号（bInterfaceNumber / 1-1.1:1.0）。"""
+    real = os.path.realpath(device_dir)
+    try:
+        with open(os.path.join(os.path.dirname(real), "bInterfaceNumber"), "r",
+                  encoding="utf-8") as f:
+            return int(f.read().strip(), 16)
+    except Exception:  # noqa: BLE001 - 退化为解析 usb_interface 目录名
+        pass
+    m = re.search(r":(\d+)\.(\d+)$", os.path.basename(os.path.dirname(real)))
+    return int(m.group(2)) if m else -1
+
+
+def iter_sysfs_hidraw(root: str = SYSFS_HIDRAW_ROOT):
+    """遍历 ``/sys/class/hidraw/hidraw*``，产出 (节点名, 设备目录)。"""
+    try:
+        names = sorted(os.listdir(root))
+    except OSError:
+        return
+    for name in names:
+        if not name.startswith("hidraw"):
+            continue
+        base = os.path.join(root, name)
+        device_dir = os.path.join(base, "device")
+        if os.path.exists(os.path.join(device_dir, "uevent")):
+            yield name, device_dir
+
+
+def sysfs_descriptor_for(pid: int, interface_number: int = -1,
+                         root: str = SYSFS_HIDRAW_ROOT) -> Optional[bytes]:
+    """按 pid（+ 接口号）在 sysfs 里找 report descriptor。
+
+    hidraw 后端的 path 是 ``/dev/hidrawN``，直接按路径取即可；但 libusb 后端的
+    path 是 ``1-1.1:1.0`` 这类总线路径，只能用 pid/接口号反查。读到即可用于诊断。
+    """
+    for _name, device_dir in iter_sysfs_hidraw(root) or ():
+        uevent = read_sysfs_text(os.path.join(device_dir, "uevent"))
+        _bus, vid, node_pid = parse_sysfs_hid_id(uevent)
+        if vid != const.VID or node_pid != pid:
+            continue
+        if interface_number >= 0:
+            node_iface = _sysfs_interface_number(device_dir)
+            if node_iface >= 0 and node_iface != interface_number:
+                continue
+        try:
+            with open(os.path.join(device_dir, "report_descriptor"), "rb") as f:
+                data = f.read(4096)
+            if data:
+                return data
+        except Exception:  # noqa: BLE001
+            continue
+    return None
+
+
 def _read_report_descriptor(info: IfaceInfo) -> Optional[bytes]:
-    """读取一个 hidraw 接口的 report descriptor（hidapi API 优先，sysfs 兜底）。"""
-    # A) hidapi >= 0.14 暴露 get_report_descriptor()（内部走 hidraw ioctl）
+    """读取一个接口的 report descriptor（hidapi API 优先，sysfs 兜底）。"""
+    # A) hidapi >= 0.14 暴露 get_report_descriptor()（hidraw ioctl / USB 控制传输）
     if hid is not None:
         try:
             dev = hid.device()
@@ -142,9 +251,9 @@ def _read_report_descriptor(info: IfaceInfo) -> Optional[bytes]:
                     pass
             if desc:
                 return bytes(bytearray(desc))
-        except Exception:  # noqa: BLE001 - 权限/内核不支持时走 sysfs
+        except Exception:  # noqa: BLE001 - 权限/内核不支持/后端不匹配时走 sysfs
             pass
-    # B) sysfs：/sys/class/hidraw/hidrawN/device/report_descriptor
+    # B) path 就是 /dev/hidrawN
     try:
         path = info.path.decode("utf-8", "ignore") if isinstance(info.path, (bytes, bytearray)) else str(info.path)
         m = re.search(r"hidraw(\d+)\s*$", path)
@@ -155,34 +264,68 @@ def _read_report_descriptor(info: IfaceInfo) -> Optional[bytes]:
                 return data
     except Exception:  # noqa: BLE001
         pass
-    return None
+    # C) path 不是 /dev/hidrawN（例如 libusb 后端的 1-1.1:1.0）→ 用 pid/接口号反查
+    try:
+        return sysfs_descriptor_for(info.pid, info.interface_number)
+    except Exception:  # noqa: BLE001
+        return None
 
 
 def _enrich_linux_usage(ifaces: List[IfaceInfo]) -> List[IfaceInfo]:
     """Linux：为 usage_page=0 的接口补齐 usage_page/usage/payload_len。
 
     只对缺 usage_page 的接口做（Windows 上 enumerate 已带 usage_page，不受影响）。
-    失败时保持 0，由上层给出 Linux 权限/udev 提示。
+    hidraw 后端正常情况下 enumerate 已经填好，这里是兜底；仍失败时保持 0，
+    由上层给出 Linux 后端/权限提示。
     """
     for info in ifaces:
         if info.usage_page:
             continue
         desc = _read_report_descriptor(info)
         if not desc:
+            log.debug("Linux: 读不到 report descriptor pid=0x%04X iface=%s path=%r "
+                      "(后端=%s)", info.pid, info.interface_number, info.path, BACKEND)
             continue
         usage_page, usage = parse_report_descriptor_usage(desc)
         if usage_page is None:
+            log.debug("Linux: report descriptor 里没解析出 usage page pid=0x%04X iface=%s",
+                      info.pid, info.interface_number)
             continue
         info.usage_page = int(usage_page)
         info.usage = int(usage or 0)
         info.payload_len = payload_len_for(info.pid, info.usage_page)
+        log.debug("Linux: report descriptor 补齐 pid=0x%04X iface=%s usagePage=0x%04X",
+                  info.pid, info.interface_number, info.usage_page)
     return ifaces
+
+
+def _interface_number(raw) -> int:
+    """取 interface_number；注意 0 不是「缺省」（旧代码 ``or -1`` 会把 0 变成 -1）。"""
+    try:
+        value = raw.get("interface_number") if hasattr(raw, "get") else raw
+    except Exception:  # noqa: BLE001
+        return -1
+    if value is None:
+        return -1
+    try:
+        return int(value)
+    except (TypeError, ValueError):
+        return -1
 
 
 def enumerate_ifaces(vid: int = const.VID) -> List[IfaceInfo]:
     """枚举所有 AJAZZ HID 接口（键盘 USB + 2.4G 接收器）。"""
     if hid is None:
         raise DeviceNotFound("缺少 hidapi 依赖：pip install hidapi")
+    if platform.system() == "Linux" and BACKEND == "libusb":
+        # 官方 wheel 的 hid 模块是 libusb 后端：path 不是 /dev/hidrawN、拿不到
+        # usage_page、打开还要 /dev/bus/usb 权限并和内核 HID 驱动抢接口。
+        # 这种状态下「连接成功」也不可靠，直接给出可执行的修法。
+        raise DeviceNotFound(
+            "Linux 上 hidapi 只找到了 libusb 后端（模块 hid），没有 hidraw 后端（模块 hidraw）。"
+            "请安装官方 hidapi wheel（pip install --force-reinstall hidapi）后重启；"
+            "若为打包版，请升级到 v0.1.6 及以上"
+        )
     ifaces: List[IfaceInfo] = []
     try:
         raw = hid.enumerate(vid, 0)
@@ -201,7 +344,7 @@ def enumerate_ifaces(vid: int = const.VID) -> List[IfaceInfo]:
                 serial=_decode(d.get("serial_number")),
                 usage_page=usage_page,
                 usage=int(d.get("usage", 0) or 0),
-                interface_number=int(d.get("interface_number", -1) or -1),
+                interface_number=_interface_number(d),
                 payload_len=payload_len_for(pid, usage_page),
             )
         )

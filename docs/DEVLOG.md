@@ -856,3 +856,93 @@ C:\Users\ptfm\Documents\ajazz-re\driver\dist-packages\MK87Studio-0.1.1-win64-por
   - 本地冒烟：exe FileVersion 0.1.5.0，`--tray` → `connected=True`、`webVersion=0.1.5`、quit 正常
 - 待办：等用户 Linux 真机反馈；若 `probe/linux_hid_check.py` 显示接口 usagePage 已补齐但 app 仍不连，
   重点查 `/dev/hidraw*` 权限与后端 open 错误（日志已记录）。
+
+## 22 2026-11-03（深夜）：v0.1.6 修 Linux 真正根因 —— hidapi 后端选错（libusb）
+
+> 上一节 §21 的判断（「hidraw 后端不填 usage_page」）**不成立**。用户装 v0.1.5 后仍识别不到，
+> 附上了完整日志包（`E:\mk87-logs-20261103-212457.zip`，含 mk87.log / errors.log / system-info.txt），
+> 由日志反推出真正原因。
+
+### 22.1 用户反馈
+
+- 「还是不行…… 日志给你发这儿了」，系统：`Linux-7.2.13-1-surface-x86_64-with-glibc2.39`，
+  app 版本 v0.1.5（`/opt/mk87/MK87Config`，从 deb/rpm 装）。
+
+### 22.2 日志证据
+
+```
+[mk87.device] HID 接口: product='' pid=0x8047 usagePage=0x0000 usage=0x0000 iface=-1 payload=64 path=1-1.1:1.0
+[mk87.device] HID 接口: product='' pid=0x8047 usagePage=0x0000 usage=0x0000 iface=1 payload=64 path=1-1.1:1.1
+... (4 个接口，全部 usagePage=0、product 为空)
+error: [pywebview] GTK cannot be loaded: No module named 'gi'
+```
+
+两个关键点：
+
+1. `path=1-1.1:1.0` **不是 `/dev/hidrawN`**，而是 hidapi **libusb 后端**的路径格式
+   （`总线-端口:配置.接口`，见 hidapi `libusb/hid.c` 的 `get_path()`）；
+2. `product=''` + `usagePage=0` 同时出现 = libusb 后端 `libusb_open()` 失败（handle=NULL）时
+   hidapi 只填 VID/PID，不填字符串、不填 usage（`create_device_info_for_device()` 在 handle 为空时
+   直接 return）。即：**枚举到了设备，但一个接口都打不开**（/dev/bus/usb 权限不够），
+   而且就算打开，libusb 后端默认也不做 `INVASIVE_GET_USAGE`，usage_page 仍会是 0。
+
+### 22.3 根因
+
+- PyPI 的 `hidapi`（cython-hidapi）wheel 在 Linux 上打包了**两个**扩展模块：
+  - `hid` → 用 `libusb/hid.c` 编译，**libusb 后端**；
+  - `hidraw` → 用 `linux/hid.c` 编译，**hidraw 后端**。
+- cython-hidapi 的 `setup.py`：Linux 上若既没 `HIDAPI_WITH_HIDRAW` 也没 `HIDAPI_WITH_LIBUSB`，
+  默认 **`HIDAPI_WITH_LIBUSB = True`**；manylinux wheel 就是这样编的
+  （用 `hid.so` / `hidraw.so` 里的动态库字符串可验证：`hid` 依赖 `libusb-1.0.so`，
+  `hidraw` 依赖 `libudev.so`）。
+- 我们的 `transport.py` 一直 `import hid` → Linux 拿到 libusb 后端 → 路径不是 hidraw 设备、
+  usage page 恒 0、v0.1.5 的 sysfs 兜底又按 `/dev/hidrawN` 正则找路径（对不上）→
+  依旧「找不到设备」。
+- 附带说明：`hidraw` 后端在 `hid_enumerate()` 里会从
+  `/sys/class/hidraw/hidrawN/device/report_descriptor` 解析 usage page（hidapi `linux/hid.c`
+  `get_hid_report_descriptor_from_sysfs()`），**不需要 open 权限**；所以换对后端后，
+  即使 udev 规则没生效也至少能枚举出正确 usage page。
+
+### 22.4 修复（v0.1.6）
+
+- `transport.py`：
+  - 新增 `_load_hid_backend()`：Linux 上**优先 `import hidraw`**，只有没有 hidraw 模块时才退回
+    `hid`（并标记 `BACKEND="libusb"`）；Windows/macOS 用 `hid`。改用 `importlib.import_module`，
+    避免打包时把 Linux 用不到的 libusb 模块带进产物；模块级 `hid` / `BACKEND` 保持不变，
+    旧测试与调用方无需改动。
+  - `enumerate_ifaces()`：Linux 上若只剩 libusb 后端，直接抛出可执行的错误
+    （提示 `pip install --force-reinstall hidapi` / 升级安装包），不再拿错误路径去 open。
+  - 修 `interface_number` 的 `or -1` bug：接口号 0 会被当成缺省 → 现在保留 0。
+  - sysfs 兜底增强：新增 `iter_sysfs_hidraw()` / `parse_sysfs_hid_id()` / `sysfs_descriptor_for()`，
+    当 path 不是 `/dev/hidrawN`（例如 libusb 风格）时按 `HID_ID` 的 pid + `bInterfaceNumber`
+    反查 report descriptor；`_read_report_descriptor()` 变成 hidapi → 路径正则 → sysfs 反查三级。
+- `device.py`：连接时打印 `hidapi 后端: <backend>`；Linux 找不到设备时提示用 `--diagnose` 排查。
+- `shell.py`：
+  - 新增 `--diagnose`：打印完整 HID 自检（见下）后退出，并保存
+    `~/.local/state/mk87/logs/diagnose.txt`；
+  - Linux 上 `webview.start(gui="qt")`，不再先刷 GTK 加载失败的 ERROR（打包只带 Qt）。
+- 新增 `mk87lib/diag.py`：自检内容 = 平台/Python/frozen、`BACKEND`、`import hidraw`/`import hid`
+  结果与版本、`hid.enumerate()` 原始记录、本工具解析后的接口（含能否打开）、
+  `/sys/class/hidraw/*` 节点的 vid/pid/iface/usagePage/权限、udev 规则状态、结论。
+- `probe/linux_hid_check.py` 改为调用同一套 `collect_diagnostics()`（源码环境用），
+  不再维护两份逻辑。
+- `packaging/mk87.spec`：Linux `hiddenimports += ["hidraw"]`，Windows `+= ["hid"]`
+  （动态导入 PyInstaller 静态分析看不到，必须显式声明）。
+
+### 22.5 验证
+
+- `driver/tests/test_transport_linux.py` 新增 11 个测试：后端选择优先级（hidraw → hid → missing）、
+  Windows 用 `hid`、Linux libusb 后端被拦截、`interface_number=0` 保留、`HID_ID` 解析、
+  sysfs 节点遍历、按 pid+接口号取 descriptor、libusb 风格 path 的 sysfs 兜底。
+- 全量：**226 tests OK**（`driver\.venv\Scripts\python.exe -m unittest discover -s tests`）。
+- Windows 真机回归（USB fw 1.19）：`enumerate_ifaces()` 8 条记录（含 `0xFF68`/`0xFF67`），
+  `MK87Device.connect()` → `connected=True, transport=usb, fw=1.19, battery=100, tftMax=140`；
+  动态导入后 `BACKEND=native`。Windows 产物与行为不受影响。
+- **Linux 真机验证待用户**：装 v0.1.6 deb/rpm 后打开 app；若仍不对，运行
+  `mk87 --diagnose` 并把输出（或 `diagnose.txt`）发回。
+
+### 22.6 交付（v0.1.6）
+
+- 版本 0.1.6（7 处）；README / README.zh-CN / release-notes / 本日志 / TEST-REPORT §18 同步。
+- 风险/边界：若发行版系统 `libudev.so.1` 缺失，`import hidraw` 会失败 → 会明确报「没有 hidraw 后端」；
+  正常 systemd 桌面系统都带它。deb 已声明 `libudev1`，rpm 由 `systemd-udev` 拉入。
