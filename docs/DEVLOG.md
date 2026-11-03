@@ -775,3 +775,19 @@ C:\Users\ptfm\Documents\ajazz-re\driver\dist-packages\MK87Studio-0.1.1-win64-por
 - 振幅语义按官方端口各不相同（mode 13 是平滑系数、mode 4 是柱高增益、15 是爬升层数…），滑块现在能真正
   把值发到后端；部分模式在高电平时仍会顶满（官方语义如此），未重新标定真值。
 - E 项（mode 100 自研屏光同步 / E2 / E4 实验）仍按用户要求后置。
+
+### 20.5 交付（v0.1.4）
+
+- 本地验证后提交 `1927d39`，推送 main → CI 运行
+  [#27](https://github.com/w32394045-dotcom/ajazz-mk87/actions/runs/41631551498) 全绿
+  （Windows/Ubuntu 测试 + Linux deb/rpm + Win 便携/安装包）→ tag `v0.1.4` → CI 运行
+  [#28](https://github.com/w32394045-dotcom/ajazz-mk87/actions/runs/41632599330) 全绿 →
+  Release 2026-11-03 20:11（UTC 12:11）发布：
+  <https://github.com/w32394045-dotcom/ajazz-mk87/releases/tag/v0.1.4>
+  - CI 附件（Release 页 `SHA256SUMS.txt` 已复算校验）：`MK87Studio-0.1.4-win64-portable.zip`
+    39,034,179 B（SHA256 `71024422…9eac1`）/ `MK87Studio-0.1.4-win64-setup.exe` 30,172,420 B /
+    `mk87-0.1.4-1.x86_64.rpm` 248,573,133 B / `mk87_0.1.4_amd64.deb` 208,009,480 B
+  - 本地打包冒烟：`dist\MK87Config\MK87Config.exe` FileVersion **0.1.4.0**，`--tray` 启动后
+    `webVersion=0.1.4`、`officialModes=21`、`GET /api/macros` 276ms、`/api/quit` 正常退出
+- 本版共修复 7 项（§20.2 表），仍未做：mode 100 自研屏光同步、E2/E4 硬件实验、自定义 HEX、振幅按官方
+  真值重标定。
