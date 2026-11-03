@@ -946,3 +946,25 @@ error: [pywebview] GTK cannot be loaded: No module named 'gi'
 - 版本 0.1.6（7 处）；README / README.zh-CN / release-notes / 本日志 / TEST-REPORT §18 同步。
 - 风险/边界：若发行版系统 `libudev.so.1` 缺失，`import hidraw` 会失败 → 会明确报「没有 hidraw 后端」；
   正常 systemd 桌面系统都带它。deb 已声明 `libudev1`，rpm 由 `systemd-udev` 拉入。
+
+### 22.7 发布记录（v0.1.6）
+
+- 提交 `4bb371c` → main CI 运行
+  [#33](https://github.com/w32394045-dotcom/ajazz-mk87/actions/runs/41652035582) 全绿
+  （含 ubuntu/windows 单测 226、Linux deb+rpm 打包、Windows portable+setup）→
+  tag `v0.1.6` → CI 运行
+  [#34](https://github.com/w32394045-dotcom/ajazz-mk87/actions/runs/41653623806) 全绿 →
+  Release 2026-11-03 22:33 发布：<https://github.com/w32394045-dotcom/ajazz-mk87/releases/tag/v0.1.6>
+  - 附件（SHA256SUMS 已复算校验：下载 portable 复算 = `247960ad…f1475`，一致）：
+    - `MK87Studio-0.1.6-win64-portable.zip` 39,046,325 B（`247960ad350a88674440bb6eee2f5c28e1f25bee738cdfe091051830b41f1475`）
+    - `MK87Studio-0.1.6-win64-setup.exe` 30,186,799 B（`8ced83c6…d388`）
+    - `mk87-0.1.6-1.x86_64.rpm` 248,541,842 B（`64713eb8…5ac2`）
+    - `mk87_0.1.6_amd64.deb` 208,048,288 B（`b17f9f75…3d49`）
+  - 本地冒烟：dist exe FileVersion 0.1.6.0，`--tray` 启动后
+    `version=0.1.6 webVersion=0.1.6 connected=True transport=usb fw=1.19 battery=100 keys=87 tft=True`，
+    `/api/quit` 正常退出；本地 portable zip 39,975,380 B（与 CI 构建大小差异属正常，
+    CI 机为 Windows Server + 不同 PyInstaller/依赖缓存）。
+- 关键验证点：CI 的 Linux 打包任务成功 = PyInstaller 在 Linux 上确实把 `hidraw` 扩展模块打进产物
+  （`hiddenimports += ["hidraw"]`）；这是本次修复能否生效的前提。
+- 待办：用户装 v0.1.6 后 Linux 真机验证；若仍有问题，`mk87 --diagnose` 的输出足以定位
+  （后端名、hidraw 节点、usage page、权限、udev 规则）。
