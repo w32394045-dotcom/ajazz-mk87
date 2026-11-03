@@ -1,7 +1,7 @@
 # AJAZZ MK87 功能逆向总表（静态逆向 + 真机验证均已完成）
 
 > 状态标记：✅ 静态逆向完成 ｜ 🧪 已于真机验证 ｜ ⬜ 待真机 ｜ ⛔ MK87 不支持 / 死代码 / 已确认不可达
-> **真机测试已完成（2026-11-01），完整结果见 [TEST-REPORT.md](TEST-REPORT.md)**；本表"真机"列已按实测更新。
+> **真机测试已完成（2026-11-01；v0.1.3 复核 2026-11-03），完整结果见 [TEST-REPORT.md](TEST-REPORT.md)**；本表"真机"列已按实测更新。
 > 本表是"功能都逆向完了"的总索引；每行的细节证据见对应文档（`docs/` 下）。
 
 ## 一、协议底座（所有功能共用）
@@ -27,8 +27,8 @@
 | 7 | 自定义逐键灯 | `SET_CUSTOM_LED_DATA` 0x24 | ✅ | 🧪 写 8 色逐键对应；**mode 20/21/128 共用同一张表** | [lighting.md](lighting.md) |
 | 8 | 灯效动画（GIF 灯效/开机动画） | 0x41/0x42/0x40/0x36 | ✅ | ⛔ MK87 `ledMaxFrames=0`、无 `isShowGifEffect` | [lighting.md](lighting.md) |
 | 9 | 音乐律动（官方 v1，插件） | 本地 `127.0.0.1:9191` | ✅ | ⛔ 官方 UI 强制 Music.exe；插件直接驱动设备 | [music-rhythm.md](music-rhythm.md) §1 |
-| 10 | 音乐律动（自研链路） | `setMusicData`（USB→cmd 0x32） | ✅ | 🧪 **激活 = 先切 LED mode 20/21/128**；20fps / 15.5ms/帧；停帧 ~5s 回落 | [music-rhythm.md](music-rhythm.md)、[music_ref.js](../scripts/music_ref.js) |
-| 11 | 逐键实时帧流（AI 灯效/同步通道） | cmd 0x32（4B/键） | ✅ | 🧪 7 包/帧、ACK 0.5–3ms、可读回 `GET_ALL_LIGHTS_RGB` 验证 | [music-constants.json](music-constants.json) |
+| 10 | 音乐律动（自研链路） | `setMusicData`（USB→cmd 0x32） | ✅ | 🧪 **激活 = 先切 LED mode 20/21**（v0.1.2 及以前用 128，v0.1.3 起帧流入口绝不写 128）；官方方案 21 模式，原生 20/60/66fps 默认 66；停帧 ~5s 回落 | [music-rhythm.md](music-rhythm.md) §12、[music_ref.js](../scripts/music_ref.js) |
+| 11 | 逐键实时帧流（AI 灯效/同步通道） | cmd 0x32（4B/键） | ✅ | 🧪 7 包/帧；≤30fps 逐包 ACK（20fps 15.5ms/帧）、≥60fps 连写 7 包 + 异步 ACK 清道夫；66fps 100s 实测 65.78–65.89fps；可读回 `GET_ALL_LIGHTS_RGB` 验证 | [music-constants.json](music-constants.json)、[music-rhythm.md](music-rhythm.md) §12.4 |
 | 12 | 宏读取 | `GET_MACRO` 0x15 | ✅ | 🧪 空表、空间 3072B | [protocol_commands.js](protocol_commands.js) |
 | 13 | 宏写入 | `SET_MACRO` 0x25 | ✅ | 🧪 写宏 "abc"→回读逐字节一致；Insert 打出 abc；mask 0/1/2 语义实测确认 | [keymap.md](keymap.md) §16 |
 | 14 | TFT 壁纸（单帧） | `SET_TFT_MATERIAL` 0x4D | ✅ | 🧪 可写入（16 包 ACK=0x41），但 MK87 **无壁纸页 → 不可见** | [tft-page.md](tft-page.md) |
@@ -51,7 +51,8 @@
 
 **支持**：87 键改键（HID 键 / 组合键 CB / 宏 / FN 动作 / consumer 媒体键）、FN 层改键、19 种灯效 + 逐键自定义灯
 （20/21/128 同一张表）、240×135 TFT 自定义动画（≤140 帧，实测 135 帧 8.75MB / 311s 上传）、屏幕时间同步、
-游戏模式部分设置（休眠、按键延迟、12/24h 可写）、电池/充电读取、**主机逐键实时帧流（音乐/AI 灯效，20fps 稳定）**、
+游戏模式部分设置（休眠、按键延迟、12/24h 可写）、电池/充电读取、**主机逐键实时帧流（音乐/AI 灯效，
+原生 20/60/66fps、官方方案默认 66；官方 v1 实测 ≈66.3fps；21 种显示模式 + LED 颜色覆盖）**、
 2.4G 无线（0xFF60 通道，配置与 USB 共享，矩阵逐字节一致；**音乐律动仅 USB，官方确认 2.4G 不支持**）。
 
 **不支持 / 未启用**：磁轴全家（DKS/RT/SOCD/MT/TGL/RS）、侧灯/灯箱/点阵屏、灯效 GIF 动画（ledMaxFrames=0）、
@@ -84,7 +85,8 @@
     （0→255、7→11、8→12…16→1、255→0），工具侧应钳到 2..6。
 14. **写 0 的语义**：keyList 内的槽写 0 = **恢复出厂默认**；25 个配置外槽写 0 **被固件保护**（保持原值），
     写非零则生效 → 「官方写法会丢小键盘/音量」的静态推断在 fw1.19 上**不成立**。
-15. **逐键帧流激活条件**：必须先 `SET_LED_EFFECT` 切到 **mode ∈ {20,21,128}**；停止收帧 ~5s 后回落到自定义表（H2/H3 落定，H1 否）。
+15. **逐键帧流激活条件**：必须先 `SET_LED_EFFECT` 切到 **mode ∈ {20,21,128}**（v0.1.2 及以前的结论；
+    v0.1.3 起入口只写 20/21、**绝不写 128**，见第 27 条）；停止收帧 ~5s 后回落到自定义表（H2/H3 落定，H1 否）。
 16. **物理 LED 槽 86 个**：官方 keyList 标有键的 99/100/102 实际无灯（该位置是小屏幕），标无键的 97/98 实际有灯；
     Fn 键 LED 是**充电指示灯**（充电时强制红，LED 数据压不掉）。
 17. **2.4G 协议口 = 0xFF60（32B）**；0xFF59（64B）无响应且不在官方 WebHID 过滤器表；2.4G 下 `SET_LED_EFFECT`
@@ -101,13 +103,37 @@
 23. **官方确认 2.4G 模式不支持音乐律动**（用户转述官方说明）：真机三种帧格式均只产生「短暂白脉冲/随机色/竖条纹」，
     与「通道收到数据但固件无 2.4G 帧映射」一致 → 该项从「待还原」改为 **⛔ 设备不支持**，自研音乐律动只做 USB。
 
+**v0.1.3 真机复核（2026-11-03，证据见 [TEST-REPORT.md](TEST-REPORT.md) §15）**
+
+24. **显示模式 4 官方真值**：17 列频谱柱、**100% 底部对齐（1200/1200 帧）**；列=频率（左低右高、对数，
+    约 110Hz–12kHz），100Hz 只点最左 3 列、8kHz 只点最右 2 列；颜色=以 `(2,8)` 为原点的径向色相，
+    整块调色板约 **275°/s** 旋转（与 amplitude 无关）；柱高随 amplitude 增大（amp=30 单音峰值约 4/6 行、
+    amp=100 顶到 6/6）。旧「合成正弦包络」实现作废。
+25. **显示模式下拉 21 项**：官方 v1 UI 原有 12 项 + 补回 14–22 共 9 项。**20 项主机侧可渲染**，
+    100 屏光联动仍**回落 13**。模式 1/2/5/6–11 仍走 `Fe` 柱状几何；模式 4 已单独重写。
+26. **原生帧率 20/60/66（默认 66）**：官方 v1 实测 530.5 包/s ÷ 8 包/帧 ≈ **66.3fps**；≤30fps 逐包 ACK、
+    ≥60fps 连写 7 包 + 异步 ACK 清道夫。真机 66fps 连续 100s 实测 **65.78–65.89fps**（send 8.85ms/帧、
+    lateFrames ≤6、0 错误），60fps=60.06、20fps=19.97；21 模式 + 10 颜色切换 0 错误；停止后恢复
+    mode=11 / brightness=6 / speed=3。
+27. **灯效卡死根因（128）**：旧版音乐启动写 LED mode=128，进程被关机杀死时恢复未跑，fw1.19 把 128
+    固化成逐键自定义表（回读 mode=0）。v0.1.3 帧流入口**绝不写 128**，帧模式固定 20/21 并回读校验；恢复快照前
+    校验 mode（0/非法不写）；退出顺序改为「停音乐并等恢复 → 按键测试 → 关设备管理器」；`GET /api/lighting`
+    在 mode 回读 0 时用 `GET_ALL_LIGHTS_RGB` 判自定义并标 `isCustom`。「重启后像游戏模式」同源，
+    全量日志证实工具从未写过 game-mode（0 条 cmd 0x21）。
+28. **LED 颜色覆盖（自研增强）**：`default` + 9 套预设（冰蓝/紫罗兰/热粉/青柠/暖橙/樱花/极光/日落/冰火），
+    只作用动态多色模式 1/2/4/5/13，保留原动画；纯色 6–11 与背景不受影响；`default` 与改动前逐字节一致
+    （220 组合快照回归）。
+29. **电量/状态刷新**：电量、充电、工作模式每次读取都刷新并记日志（连接日志带 battery/charging/workMode/
+    transport，连接后延迟 2s 重读）；2.4G 电量走 cmd 0x37 首包 + `GET_ALL_LIGHTS_RGB_24G` 回包，
+    连续失败 3 次熔断 5 分钟回退 USB 路径。测试基线：**152 个单元测试全绿**、无头 Chrome UI 自检 17 项 PASS。
+
 ## 五、产物索引
 
-**文档（docs/）**：protocol.md｜deepdive-mk87.md｜keymap.md｜keymap-tables.json｜fn-layer-decode.json｜keymap_device_report.txt｜lighting.md｜lighting-modes.json｜tft-page.md｜tft-constants.json｜i18n-and-unknowns.md｜i18n-keys.json｜func-i18n-map.json｜key-events.md｜device-notifications.json｜wireless-profiles-led-animation.md｜wireless-constants.json｜music-rhythm.md｜music-constants.json｜device_config_32839.json｜device_dump.json｜**TEST-REPORT.md（真机测试报告）**｜FEATURES.md（本文）｜TEST-PLAN.md
+**文档（docs/）**：protocol.md｜deepdive-mk87.md｜keymap.md｜keymap-tables.json｜fn-layer-decode.json｜keymap_device_report.txt｜lighting.md｜lighting-modes.json｜tft-page.md｜tft-constants.json｜i18n-and-unknowns.md｜i18n-keys.json｜func-i18n-map.json｜key-events.md｜device-notifications.json｜wireless-profiles-led-animation.md｜wireless-constants.json｜music-rhythm.md｜music-constants.json｜music-v1-config.json｜device_config_32839.json｜device_dump.json｜**TEST-REPORT.md（真机测试报告）**｜FEATURES.md（本文）｜TEST-PLAN.md
 
 **参考实现（scripts/）**：keymap.js（按键编解码，34 断言全绿）｜**phase3_macro.py（宏表编解码，真机验证）**｜lighting_ref.js（453/0）｜keyevent_ref.js（18/0）｜wireless_ref.js（11/0）｜music_ref.js（31/31，真机链路已跑通）｜tft_ref.js（自检全绿）｜make_test_wav.py｜gen_music_frames.js｜各类取证/复现脚本
 
-**真机工具（probe/）**：ajazz.py（原生 HID 客户端）｜phase0_selftest.py｜phase1_lighting/_diag*/phase4_*/phase5_music/phase6_wireless/phase7_*｜restore_tft_default.py 等（见 TEST-REPORT.md §14）
+**真机工具（probe/）**：ajazz.py（原生 HID 客户端）｜phase0_selftest.py｜phase1_lighting/_diag*/phase4_*/phase5_music/phase6_wireless/phase7_*｜capture_official_v1_mode4.py + analyze_official_v1_mode4.py（官方 v1 模式 4 采样/分析）｜restore_tft_default.py 等（见 TEST-REPORT.md §14 / §15）
 
 **备用（capture/）**：零依赖 Chrome CDP WebHID 抓包工具（半自动，23/23 + 33/33 测试通过）
 
@@ -115,6 +141,6 @@
 
 ## 六、下一步
 
-静态逆向 → 真机验证**均已收口**。**真机测试项已全部关闭**（宏写入、2.4G 音乐律动、2.4G 休眠通知、12/24h、97/98 定位）。
-下一步转入工具/驱动实现：音乐律动（USB）、宏编辑器、改键工具，以及 2.4G+USB 同时连接的
-Windows 资源冲突处理方案（见对话记录里的"方案 B：软件隔离 + UAC helper"）。
+静态逆向 → 真机验证**均已收口**，工具/驱动已实现并发布到 **v0.1.3**（音乐律动 USB、宏编辑器、改键工具、
+TFT 上传等）。剩余事项：自研屏光联动（模式 100 当前回落 13）、2.4G + USB 同时连接的 Windows
+资源冲突提示（见对话记录里的"方案 B：软件隔离 + UAC helper"），以及 2.4G 音乐律动的官方固件限制跟踪。

@@ -6,6 +6,7 @@
 import { KEY_LAYOUT } from './data/keyboard.js';
 import { ACTIONS, DEFAULT_KEYMAP } from './data/actions.js';
 import { LIGHTING_MODES } from './data/lighting.js';
+import { OFFICIAL_COLOR_SCHEMES, OFFICIAL_COLOR_MODE_VALUES, OFFICIAL_FRAME_RATES, OFFICIAL_DEFAULT_FRAME_RATE } from './data/music.js';
 import { store, clamp } from './util.js';
 
 const TFT_W = 240;
@@ -27,10 +28,14 @@ const MUSIC_MODES = [
   { mode: 17, name: '萤火轨迹', nameEn: 'Firefly Trail' },
   { mode: 4, name: '曲率频阶', nameEn: 'Curvature Frequency Steps' },
 ];
-/* 官方 v1 已移植的 12 个显示模式里除 100（屏光联动，自研屏幕同步待做）之外的 11 个；
+/* 官方方案显示模式（21 项，含 100 屏光联动；顺序与 data/music.js 一致） */
+const MUSIC_OFFICIAL_MODES = [1, 2, 13, 4, 5, 6, 7, 8, 9, 11, 10, 14, 15, 16, 17, 18, 19, 20, 21, 22, 100];
+/* 官方方案已移植的渲染器：21 项里除 100（屏光联动，自研屏幕同步待做）之外的 20 项；
    与后端 mk87lib.music.V1_IMPLEMENTED_MODES 保持一致。 */
-const MUSIC_OFFICIAL_IMPLEMENTED = [1, 2, 4, 5, 6, 7, 8, 9, 10, 11, 13];
+const MUSIC_OFFICIAL_IMPLEMENTED = MUSIC_OFFICIAL_MODES.filter((m) => m !== 100);
 const MUSIC_IMPLEMENTED = [1, 2, 4, 5, 6, 7, 8, 9, 10, 11, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22];
+/* LED 颜色覆盖只作用于动态多色模式（纯色 6/7/8/9/10/11 保持官方采样色） */
+const MUSIC_COLOR_OVERRIDE_MODES = new Set(OFFICIAL_COLOR_MODE_VALUES);
 const KEY_GEO = KEY_LAYOUT.rows.flat().map((k) => ({
   slot: k.slot,
   row: k.row,
@@ -42,7 +47,36 @@ const KEY_DIST = KEY_GEO.map((k) => clamp(Math.hypot((k.col - 0.5) * 1.9, (k.mid
 /* 官方 v1 纯色显示模式在 mock 里的颜色（与采样真值一致：FE 是 255 经 (c*n)>>8 缩放） */
 const MOCK_SOLID = { 6: [254, 254, 254], 7: [254, 0, 0], 8: [254, 63, 0], 9: [254, 254, 0], 10: [0, 0, 254], 11: [0, 254, 0] };
 
-function musicMockColors(mode, phase, level, levels) {
+/* LED 颜色覆盖：mock 只改变动态多色模式（1/2/4/5/13）的演示颜色，纯色模式保持官方采样色 */
+function hexToRgb(hex) {
+  const n = parseInt(String(hex).replace('#', ''), 16);
+  return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
+}
+const MOCK_SCHEME_STOPS = new Map();
+for (const c of OFFICIAL_COLOR_SCHEMES) {
+  if (c.colors.length) MOCK_SCHEME_STOPS.set(c.id, c.colors.map(hexToRgb));
+}
+function schemeColorAt(id, t) {
+  const stops = MOCK_SCHEME_STOPS.get(id);
+  if (!stops || !stops.length) return null;
+  if (stops.length === 1) return stops[0];
+  const x = clamp(t, 0, 1) * (stops.length - 1);
+  const i = Math.floor(x);
+  const f = x - i;
+  const a = stops[i];
+  const b = stops[Math.min(i + 1, stops.length - 1)];
+  return [a[0] + (b[0] - a[0]) * f, a[1] + (b[1] - a[1]) * f, a[2] + (b[2] - a[2]) * f];
+}
+function tintFrameColor(rgb, colorId, t) {
+  const base = schemeColorAt(colorId, t);
+  if (!base) return rgb;
+  const intensity = Math.max(rgb[0], rgb[1], rgb[2]) / 255;
+  const k = 0.12 + 0.88 * intensity;
+  return base.map((v) => Math.round(clamp(v * k, 0, 255)));
+}
+
+function musicMockColors(mode, phase, level, levels, color) {
+  const schemeId = color && color !== 'default' && MUSIC_COLOR_OVERRIDE_MODES.has(mode) ? color : null;
   const colors = {};
   for (let i = 0; i < KEY_GEO.length; i++) {
     const k = KEY_GEO[i];
@@ -71,9 +105,23 @@ function musicMockColors(mode, phase, level, levels) {
       const v = clamp((levels[band] || 0) * 1.5, 0, 1);
       if (v > 0.03) rgb = hsl((205 + band * 5) % 360, 95, 16 + v * 42);
     }
+    if (schemeId) rgb = tintFrameColor(rgb, schemeId, mode === 13 ? d : k.col);
     colors[k.slot] = rgb;
   }
   return colors;
+}
+
+
+/* mock 的「实测帧率」：官方方案在原生帧率附近抖动（浮点，60~66 之间），当前方案返回设定值 */
+function musicMeasuredFps(m) {
+  if (!m.running) return null;
+  const base = m.official
+    ? (Number(m.nativeFps) || OFFICIAL_DEFAULT_FRAME_RATE)
+    : (Number(m.fps) || 20);
+  const jitter = m.official ? (Math.random() * 1.4 - 0.7) : 0;
+  let value = base + jitter;
+  if (m.official && base >= 60) value = clamp(value, 60, 66);
+  return Math.round(value * 10) / 10;
 }
 
 
@@ -170,7 +218,12 @@ export class MockServer {
       ],
       conflicts: saved.conflicts || [],
       frames: { running: false, fps: 20, frames: 0 },
-      music: { running: false, deviceId: 'default', sensitivity: 1.0, style: 'spectrum', fps: 20, mode: 13, requestedMode: 13, backmode: 0, backmodeBrightness: 100, amplitude: 50, level: 0, colors: {}, frame: 0 },
+      music: {
+        running: false, deviceId: 'default', sensitivity: 1.0, style: 'spectrum', fps: 20,
+        mode: 13, requestedMode: 13, backmode: 0, backmodeBrightness: 100, amplitude: 50,
+        color: 'default', nativeFps: OFFICIAL_DEFAULT_FRAME_RATE, official: false, measuredFps: null,
+        level: 0, colors: {}, frame: 0,
+      },
       tftJob: null,
       keytest: { running: false, events: [] },
       rawLog: [],
@@ -648,7 +701,11 @@ export class MockServer {
         method: 'POST', path: '/api/music/start', handler: async (body) => {
           if (S.transport !== 'usb') throw MockServer.fail('音乐律动仅支持 USB 有线连接（2.4G 不支持）', 'usb_only');
           if (!S.music.running) this._startMusic(body);
-          return { ok: true, running: true };
+          return {
+            ok: true, running: true, mode: S.music.mode, requestedMode: S.music.requestedMode,
+            color: S.music.color, fps: S.music.running ? (S.music.official ? S.music.measuredFps : S.music.fps) : null,
+            targetFps: S.music.official ? (S.music.nativeFps || OFFICIAL_DEFAULT_FRAME_RATE) : (S.music.fps || 20),
+          };
         },
       },
       {
@@ -660,10 +717,15 @@ export class MockServer {
       {
         method: 'GET', path: '/api/music/status', handler: () => ({
           running: S.music.running, mode: S.music.mode, requestedMode: S.music.requestedMode,
-          modes: MUSIC_MODES, fps: S.music.fps, level: S.music.level, device: S.music.deviceId,
+          modes: MUSIC_MODES,
+          fps: S.music.running ? (S.music.official ? S.music.measuredFps : S.music.fps) : null,
+          targetFps: S.music.official ? (S.music.nativeFps || OFFICIAL_DEFAULT_FRAME_RATE) : (S.music.fps || 20),
+          color: S.music.color || 'default',
+          level: S.music.level, device: S.music.deviceId,
           amplitude: S.music.amplitude, backmode: S.music.backmode,
           backmodeBrightness: S.music.backmodeBrightness,
           implementedModes: MUSIC_IMPLEMENTED,
+          officialModes: MUSIC_OFFICIAL_MODES,
           officialImplementedModes: MUSIC_OFFICIAL_IMPLEMENTED,
           colors: S.music.colors || {},
         }),
@@ -680,11 +742,27 @@ export class MockServer {
           if (body.backmode !== undefined) m.backmode = Number(body.backmode) || 0;
           if (body.backmodeBrightness !== undefined) m.backmodeBrightness = Number(body.backmodeBrightness) || 100;
           if (body.amplitude !== undefined) m.amplitude = Number(body.amplitude) || 50;
-          if (body.fps !== undefined) m.fps = Number(body.fps) || 20;
+          if (body.fps !== undefined) {
+            const n = Number(body.fps);
+            m.fps = n || 20;
+            if (OFFICIAL_FRAME_RATES.includes(n)) m.nativeFps = n;
+          }
+          /* 前端只在官方方案带 color；当前方案零改动（不带 color） */
+          if (body.color !== undefined) {
+            m.color = String(body.color) || 'default';
+            m.official = true;
+          } else {
+            m.official = false;
+          }
+          m.measuredFps = musicMeasuredFps(m);
           return {
             ok: true, running: true, mode: m.mode, requestedMode: m.requestedMode,
             backmode: m.backmode, backmodeBrightness: m.backmodeBrightness,
-            amplitude: m.amplitude, fps: m.fps, implementedModes: MUSIC_IMPLEMENTED,
+            amplitude: m.amplitude, color: m.color,
+            fps: m.official ? m.measuredFps : m.fps,
+            targetFps: m.official ? (m.nativeFps || OFFICIAL_DEFAULT_FRAME_RATE) : (m.fps || 20),
+            implementedModes: MUSIC_IMPLEMENTED,
+            officialModes: MUSIC_OFFICIAL_MODES,
             officialImplementedModes: MUSIC_OFFICIAL_IMPLEMENTED,
           };
         },
@@ -1022,6 +1100,12 @@ export class MockServer {
     m.sensitivity = Number(body.sensitivity) || 1.0;
     m.style = body.style === 'pulse' ? 'pulse' : 'spectrum';
     m.fps = Number(body.fps) || 20;
+    /* 前端只在官方方案带 color；当前方案零改动（不带 color） */
+    m.official = body.color !== undefined;
+    m.color = m.official ? (String(body.color) || 'default') : 'default';
+    if (OFFICIAL_FRAME_RATES.includes(Number(body.fps))) m.nativeFps = Number(body.fps);
+    else if (!m.nativeFps) m.nativeFps = OFFICIAL_DEFAULT_FRAME_RATE;
+    m.measuredFps = musicMeasuredFps(m);
     m.requestedMode = Number(body.mode) || 13;
     m.mode = MUSIC_IMPLEMENTED.includes(m.requestedMode) ? m.requestedMode : 13;
     m.backmode = Number(body.backmode) || 0;
@@ -1051,8 +1135,11 @@ export class MockServer {
       m.level = Math.round((sum / 32) * 1000) / 1000;
       this._emit('music_level', { level: m.level, bands: m.levels.map((v) => Math.round(v * 1000) / 1000) });
       m.frame = (m.frame || 0) + 1;
-      m.colors = musicMockColors(m.mode, m.phase, m.level, m.levels);
-      this._emit('music_frame', { mode: m.mode, fps: m.fps, frame: m.frame, colors: m.colors });
+      m.colors = musicMockColors(m.mode, m.phase, m.level, m.levels, m.color);
+      this._emit('music_frame', {
+        mode: m.mode, fps: m.official ? (m.measuredFps || m.fps) : m.fps,
+        frame: m.frame, colors: m.colors,
+      });
     }, Math.round(1000 / m.fps));
     this.timers.add(m.timer);
   }
@@ -1063,6 +1150,7 @@ export class MockServer {
     m.timer = null;
     m.running = false;
     m.level = 0;
+    m.measuredFps = null;
     m.colors = {};
     m.frame = 0;
     m.levels = new Array(32).fill(0);

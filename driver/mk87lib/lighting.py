@@ -421,15 +421,29 @@ def restore_effect(device, snapshot: bytes, fallback: Optional[bytes] = None) ->
 
 
 class FrameSender:
-    """音乐帧流专用发送器：Windows 原生 WriteFile/overlapped ReadFile，20fps 逐包 ACK。
+    """音乐帧流专用发送器：Windows 原生 WriteFile/overlapped ReadFile。
 
     背景（真机实测）：hidapi 在协议接口上逐包写+读 ACK 只能到 ~10fps（读超时要走
     CancelIoEx，单次 50~400ms）；而探针用的 Win32 原生句柄在同一设备上可以稳定
     逐包 ACK、20fps（docs/phase5_music.json 120 帧/6.0s）。因此这里 Windows 走原生通道。
+
+    两种发送模式（由 MusicPlayer 按目标帧率选择，见 ``music._send_strategy``）：
+    * ``wait_ack=True``（≤30fps）：逐包写 + 逐包等 ACK（单包 0.5~3ms，7 包平均 15.5ms）；
+    * ``wait_ack=False, drain=N``（≥60fps）：连写 7 包后帧末读走 N 个回包。66fps 每帧
+      预算 15.15ms，逐包等 ACK 的平均 15.5ms 已超预算，所以让写操作背靠背流水线化。
     """
 
-    def __init__(self, device):
+    def __init__(self, device, channel=None):
         self.device = device
+        self.frames = 0
+        self.acks = 0
+        #: 上一帧帧末没读到的回包数（欠账，下一帧多读回来，避免队列缓慢堆积）
+        self._ack_backlog = 0
+        if channel is not None:
+            # 单测注入的假通道（不打开真实设备）；body_len 默认 MK87 的 64B
+            self._ch = channel
+            self.body = int(getattr(channel, "body_len", 64) or 64)
+            return
         iface = device.protocol.iface
         self.body = iface.info.payload_len
         if sys.platform == "win32":
@@ -442,27 +456,66 @@ class FrameSender:
             )
         else:
             self._ch = _HidapiFrameChannel(iface)
-        self.frames = 0
-        self.acks = 0
+
+    def frame_packets(self, payload: bytes) -> int:
+        """一帧会被拆成几个 0x32 包（87 键 348B、body=64 → 7 包）。"""
+        chunk = max(1, self.body - 8)
+        return max(1, math.ceil(len(payload) / chunk))
 
     def send(self, payload: bytes, frame_index: int = 0,
-             wait_ack: bool = True, ack_timeout: float = 0.006) -> int:
+             wait_ack: bool = True, ack_timeout: float = 0.006,
+             drain: int = 0) -> int:
+        """发送一帧逐键颜色；返回本帧读到的 ACK 数。
+
+        wait_ack=True：逐包等 ACK（受 USB 轮询限制，实测约 9ms/包 → 上限 ~14fps 是
+        hidapi 路径；原生通道 0.5~3ms/包）；
+        wait_ack=False：连续写所有包，若 ``drain>0`` 再在帧末把本帧的回包读走
+        （读的是已经排队的回包，正常 ~0ms），防止固件输入缓冲堆积拖慢 WriteFile。
+        """
+        packets = build_frame_packets(payload, self.body, frame_index)
         acks = 0
-        for pkt in build_frame_packets(payload, self.body, frame_index):
-            self._ch.write(pkt)
-            if not wait_ack:
-                continue
-            deadline = time.time() + ack_timeout
-            while time.time() < deadline:
-                r = self._ch.read_normalized(timeout=max(0.001, deadline - time.time()))
-                if r is None:
-                    break
-                if len(r) >= 2 and r[0] == 0x55:
-                    acks += 1
-                    break
+        if wait_ack:
+            for pkt in packets:
+                self._ch.write(pkt)
+                deadline = time.time() + ack_timeout
+                while time.time() < deadline:
+                    r = self._ch.read_normalized(timeout=max(0.001, deadline - time.time()))
+                    if r is None:
+                        break
+                    if len(r) >= 2 and r[0] == 0x55:
+                        acks += 1
+                        break
+        else:
+            for pkt in packets:
+                self._ch.write(pkt)
+            if drain:
+                acks += self._drain_queued(len(packets), int(drain), ack_timeout)
         self.frames += 1
         self.acks += acks
         return acks
+
+    def _drain_queued(self, packet_count: int, drain: int, timeout: float) -> int:
+        """帧末 drain：读走本帧（+上帧欠账）的回包，返回其中 ACK 的个数。
+
+        正常情况每个 read 都立即返回（回包已排队）；只有固件丢了回包时才会多等
+        一次 timeout（原生通道最小等待 10ms），下一帧按欠账多读几个补上。
+        """
+        expected = min(int(drain) + self._ack_backlog, packet_count * 4)
+        got = 0
+        acks = 0
+        for _ in range(expected):
+            r = self._ch.read_normalized(timeout=timeout)
+            if r is None:
+                break
+            got += 1
+            if len(r) >= 2 and r[0] == 0x55:
+                acks += 1
+        self._ack_backlog = max(0, expected - got)
+        return acks
+
+    def read_ack(self, timeout: float = 0.1):
+        """读一个回包（ACK 清道夫线程专用；写走另一个句柄，可跨线程并发）。"""
+        return self._ch.read_normalized(timeout=timeout)
 
     def drain(self, duration: float = 0.02) -> None:
         self._ch.drain(duration)

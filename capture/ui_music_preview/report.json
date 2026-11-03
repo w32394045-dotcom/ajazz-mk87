@@ -2,8 +2,15 @@
   "url": "http://127.0.0.1:8123/?mock=1#music",
   "checks": {
     "boot+scheme-tabs": true,
+    "official-display-modes-21": true,
+    "official-mode-order": true,
+    "official-background-modes-11": true,
+    "official-led-colors-10": true,
+    "official-selects-3": true,
+    "native-fps-3-options": true,
     "start-clicked": true,
     "official-preview-painted": true,
+    "official-fps-readout": true,
     "hot-switch-to-current": true,
     "hot-switch-keeps-running": true,
     "hot-switch-back-official": true,
@@ -16,7 +23,45 @@
     "官方方案"
   ],
   "defaultOfficial": true,
+  "officialModeSelect": {
+    "options": 21,
+    "value": "13"
+  },
+  "officialBackgroundSelect": {
+    "options": 11,
+    "value": "0"
+  },
+  "officialColorSelect": {
+    "options": 10,
+    "value": "default"
+  },
+  "officialSelectCount": 3,
+  "nativeFpsButtons": 3,
+  "officialModeValues": [
+    1,
+    2,
+    13,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    11,
+    10,
+    14,
+    15,
+    16,
+    17,
+    18,
+    19,
+    20,
+    21,
+    22,
+    100
+  ],
   "officialPainted": 87,
+  "officialFpsReadout": "60.0",
   "currentPainted": 87,
   "stoppedLeft": 0,
   "cjkLeft": []

@@ -8,7 +8,7 @@
 - **Device**: USB `VID 0x0C45 / PID 0x8047`; 2.4G receiver `VID 0x0C45 / PID 0xFEFE`
 - **Official web driver** (reverse-engineered): `https://ajazz.driveall.cn`
 - **Everything local**: no network access, no telemetry, no vendor driver required
-- **Latest release**: [v0.1.2](https://github.com/w32394045-dotcom/ajazz-mk87/releases/latest)
+- **Latest release**: [v0.1.3](https://github.com/w32394045-dotcom/ajazz-mk87/releases/latest)
 
 ## Screenshots
 
@@ -40,17 +40,41 @@
 Linux packages ship the udev rules (root-free HID access); replug the keyboard after install.
 Releases are built by GitHub Actions and come with a `SHA256SUMS.txt`.
 
-## What's new in v0.1.2
+## What's new in v0.1.3
 
-- **Music rhythm · Official scheme** — the music page now has two schemes. **Official** (default) uses the exact
-  settings of the official v1 plugin (12 display modes, 11 background modes, background brightness, amplitude)
-  and renders with the official renderer code; **Current** keeps this tool's own parameters and local preview.
-- **Hot switching** — switch scheme, display/background mode or move the sliders while music is playing; no
-  stop/restart needed.
-- **11 of the 12 official renderers are now direct ports** (modes 1, 4, 13–22), including the built-in
-  dual-heart coordinate tables for mode 22. Mode 100 (screen-light linkage) is computed by the official
-  Music.exe and falls back to Dance to the Beat.
-- Bilingual README with embedded screenshots; MIT license; English UI `<html lang>` fix.
+- **Music rhythm · Official scheme aligned with the official v1 truth** — the display-mode dropdown is now
+  **21 modes**: the 12 exposed by the official v1 UI plus the 9 modes (14–22) that had already been
+  reverse-engineered but were not surfaced by the official UI. Mode 4 **Curvature Frequency Steps** was
+  rewritten from fresh sampling of the official MusicPlug.exe: 17 frequency columns, bottom-aligned
+  (1200/1200 frames), left-low → right-high on a log scale (~110 Hz–12 kHz), with a radial hue palette
+  (origin `(2,8)`) rotating ~275°/s. Mode 100 (screen-light linkage) still falls back to Dance to the Beat.
+- **LED color overlay (this tool's own enhancement)** — a third dropdown offers **default (official palette)
+  + 9 presets**: ice blue `#00E5FF`, violet `#B36CFF`, hot pink `#FF2E88`, lime `#A8FF3E`, warm amber
+  `#FF6A00`, sakura `#FF7AB6→#B36CFF`, aurora `#3EFF9A→#00E5FF→#7A5CFF`, sunset
+  `#FFC400→#FF6A00→#FF2E88`, ice-fire `#00E5FF→#FEFEFE→#FF6A00`. It recolors only the dynamic multicolor
+  modes **1/2/4/5/13**, keeping their original animation; solid modes 6–11 and the background are untouched,
+  and `default` is byte-for-byte identical to v0.1.2 (220-combination snapshot regression).
+- **Native 20 / 60 / 66 fps, default 66** — the official v1 plugin sends 530.5 packets/s ÷ 8 packets/frame
+  ≈ **66.3 fps**, so the official scheme now defaults to 66 fps (Current keeps 15/20/30). ≤30 fps keeps
+  per-packet ACK; ≥60 fps writes 7 packets back-to-back and drains ACKs asynchronously (synchronous
+  frame-end drain measured 19.8 ms/frame → 45.96 fps; async 8.85 ms/frame → 66 fps). Animation is
+  `dt`-normalized, so motion speed does not change with fps. The page shows measured fps; the status
+  contract is `fps` (float|null, measured) / `targetFps` (int, configured), and WS preview is capped at 30 Hz.
+  On a real MK87 (USB, fw 1.19) 66 fps held
+  **65.78–65.89 fps for 100 s** (0 errors); 60 fps = 60.06, 20 fps = 19.97. 21 modes × 10 colors switched
+  with 0 errors; stopping restored mode 11 / brightness 6 / speed 3.
+- **Battery / lighting robustness** — battery, charging and work mode are re-read and logged on every poll
+  (the connection log now carries battery/charging/workMode/transport, plus a delayed 2 s re-read after
+  connect). 2.4G battery uses cmd `0x37` (first packet + `GET_ALL_LIGHTS_RGB_24G` response), with a
+  3-failure / 5-minute circuit breaker that falls back to the USB path. The stuck-custom-lighting bug is
+  fixed at the root: v0.1.2's music start wrote LED mode **128**, and if the process was killed during
+  shutdown the restore never ran, so fw 1.19 turned 128 into a per-key custom table. The music path now
+  **never writes 128**, enters frame mode with 20/21 and verifies by readback, refuses to restore
+  snapshots whose mode is 0/invalid, restores lighting before closing the device manager, and marks `isCustom` via
+  `GET_ALL_LIGHTS_RGB` when the mode reads back 0. (The "looks like game mode after reboot" report had the
+  same cause; full logs show the tool never sent a game-mode `0x21` command — 0 entries.)
+- **Quality** — 152 unit tests green; 17 headless-Chrome UI checks PASS (21 modes / 3 dropdowns / 10 colors /
+  3 frame-rate tiers, live switching, no Chinese leakage in the English UI).
 
 ## Features
 
@@ -62,11 +86,13 @@ Releases are built by GitHub Actions and come with a `SHA256SUMS.txt`.
 - **Macros** — 100 slots / 3072 B editor: record keys, delays, press/release, repeat N times, press-to-stop.
 - **Key mapping / FN** — 87-key normal + FN layers: HID keys, combos, macros, firmware FUNC actions, disabled,
   restore-defaults, live 4-byte encoding preview. FN layer is read-only over 2.4G.
-- **Music rhythm (USB only)** — two schemes: **Official** (identical settings to the official v1 plugin:
-  12 display modes / 11 background modes / background brightness / amplitude — hot-switchable while playing)
-  and **Current** (this tool's own mode / frame rate / sensitivity) → 20 fps per-key frame stream.
-  11 of the 12 official renderers (1/4/13–22) are direct ports of the official code; mode 100 (screen
-  linkage) is computed by Music.exe, so it falls back to Dance to the Beat.
+- **Music rhythm (USB only)** — two schemes: **Official** (21 display modes — the 12 official v1 modes plus
+  the 9 restored modes 14–22 — 11 background modes, background brightness, amplitude and LED color overlay;
+  hot-switchable while playing) and **Current** (this tool's own mode / frame rate / sensitivity) → native
+  **20/60/66 fps** per-key frame stream (official scheme defaults to 66; official v1 measured ≈66.3 fps).
+  Mode 4 is a 17-column bottom-aligned spectrum matching the official sampler, and the LED color overlay
+  (default + 9 presets) recolors modes 1/2/4/5/13 only. Mode 100 (screen linkage) is computed by Music.exe,
+  so it falls back to Dance to the Beat.
 - **Wireless** — 2.4G status, battery, sleep timer (0/1/10/20/30 min), disconnect / wake notification log.
 - **Key test** — OS-level capture (Windows RawInput / Linux evdev), 87-key tri-state highlight, event log, stats.
 - **Device info** — firmware / battery / capability matrix, game-mode fields, time sync, raw command console.
@@ -81,7 +107,7 @@ Releases are built by GitHub Actions and come with a `SHA256SUMS.txt`.
 | 87-key remapping (HID / combos / macros / FN / media keys) | ✅ read & write |
 | FN layer remapping (26 default actions) | ✅ read & write |
 | 19 lighting effects + brightness / speed + per-key custom LEDs | ✅ |
-| Per-key live frame stream (20 fps, music / AI effects) | ✅ USB only (2.4G not supported by firmware) |
+| Per-key live frame stream (native 20/60/66 fps, default 66; official v1 ≈66.3 fps; music / AI effects) | ✅ USB only (2.4G not supported by firmware) |
 | Macros: 100 slots / 3072 B, format fully decoded | ✅ read & write |
 | TFT 240×135 custom animation (≤140 frames, ~63 KB/s) | ✅ upload & play |
 | Screen time sync | ✅ |

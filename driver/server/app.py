@@ -34,7 +34,7 @@ from mk87lib.errors import (
 from server import state
 
 WEB_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "web")
-VERSION = "0.1.2"
+VERSION = "0.1.3"
 
 manager = state.manager
 log = logging.getLogger("mk87.http")
@@ -661,6 +661,17 @@ def api_music_devices():
     return {"devices": music.list_devices(), "system": music.platform.system()}
 
 
+def _music_color(payload: dict) -> str:
+    """LED 颜色覆盖 id（本工具增强）。
+
+    「官方方案」总会带 color；「当前方案」按设计**不带** color（零改动）→ 这里回落
+    default，让切回「当前方案」时自动恢复官方配色。未知 id 由 MusicEngine 再回落
+    default 并打 debug 日志，所以这里只做字符串化。
+    """
+    color = payload.get("color")
+    return music.DEFAULT_COLOR if color is None else str(color)
+
+
 @app.post("/api/music/start")
 def api_music_start(payload: dict = Body(default={})):
     dev = _dev()
@@ -671,11 +682,15 @@ def api_music_start(payload: dict = Body(default={})):
         mode=int(mode) if mode is not None else None,
         style=payload.get("style"),
         sensitivity=float(payload.get("sensitivity", 1.0)),
-        fps=int(payload.get("fps", 20)),
+        # 原生帧率：15/20/30/60/66。归一/非法回落统一由 music._clamp_fps 负责
+        # （这里不做 int() 强转，非法值不会变成 500，而是回落默认 20）。
+        fps=payload.get("fps", music.DEFAULT_FPS),
         # 官方 v1 参数（与官方 UI 同款）
         backmode=int(payload.get("backmode", 0) or 0),
         backmode_brightness=int(payload.get("backmodeBrightness", payload.get("backBrightness", 100)) or 100),
         amplitude=(int(payload["amplitude"]) if payload.get("amplitude") is not None else None),
+        # LED 颜色覆盖（本工具增强，仅「官方方案」下发；缺省 default = 官方配色）
+        color=_music_color(payload),
     )
 
 
@@ -686,14 +701,20 @@ def api_music_stop():
 
 @app.post("/api/music/update")
 def api_music_update(payload: dict = Body(default={})):
-    """运行中热更新音乐律动参数（显示模式 / 背景模式 / 背景亮度 / 振幅 / 帧率）。"""
+    """运行中热更新音乐律动参数（显示模式 / 背景模式 / 背景亮度 / 振幅 / 帧率 / LED 颜色）。
+
+    color 缺省 → default：「当前方案」标签页按设计不发 color，切回时自动恢复官方配色。
+    返回体同 status：``fps`` 是实测值，``targetFps`` 是帧率配置值。
+    """
     manager.music.update(
         mode=(int(payload["mode"]) if payload.get("mode") is not None else None),
         amplitude=(int(payload["amplitude"]) if payload.get("amplitude") is not None else None),
         backmode=(int(payload["backmode"]) if payload.get("backmode") is not None else None),
         backmode_brightness=(int(payload["backmodeBrightness"])
                              if payload.get("backmodeBrightness") is not None else None),
-        fps=(int(payload["fps"]) if payload.get("fps") is not None else None),
+        # 帧率由 music._clamp_fps 归一（15/20/30/60/66；非法值回落 20）
+        fps=payload.get("fps"),
+        color=_music_color(payload),
     )
     st = manager.music.status()
     st["supported"] = manager.device.status.transport == "usb"

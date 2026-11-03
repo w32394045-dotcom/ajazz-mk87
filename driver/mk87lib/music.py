@@ -2,7 +2,9 @@
 
 协议真机结论（docs/music-rhythm.md §9 / TEST-REPORT §9）：
 * 必须先 SET_LED_EFFECT 到自定义族 mode ∈ {20,21,128}，再发 cmd 0x32 逐键帧才显示；
-* 一帧 = 87 键 × 4 字节 [keyValue, R, G, B]，按官方 keyList 行优先；USB 下 7 包/帧，20fps 稳定；
+* 一帧 = 87 键 × 4 字节 [keyValue, R, G, B]，按官方 keyList 行优先；USB 下 7 包/帧，
+  20fps 稳定；原生帧率可选 15/20/30/60/66（官方 v1 实测 ≈66fps = 530.5 包/s ÷ 8 包/帧），
+  动画按 dt_scale 归一到 20fps 基准，帧率不影响动效速度；
 * 停发约 5 秒后固件回落到自定义表；本模块停止时会主动恢复进入前的灯效；
 * 2.4G 官方不支持，仅 USB 可用。
 
@@ -24,9 +26,13 @@
 模式 100（屏光联动）仍回落到 13：官方把它交给插件 Music.exe 读屏计算，主机侧没有渲染器
 （本工具自研屏幕同步待做）。
 
-官方 v1 参数真值见 docs/music-v1-config.json：显示模式 12 个、背景模式 11 个、
-振幅 1–100（默认 30）、背景亮度 1–100（默认 100）；纯色/亮度公式由
-capture/official_music_colors3.jsonl 采样反推（probe/analyze_official_v1_modes.py）。
+官方 v1 参数真值见 docs/music-v1-config.json：显示模式列表见 V1_DISPLAY_MODES（官方 v1
+的 12 个 + 补回的 14~22，共 21 项）、背景模式 11 个、振幅 1–100（默认 30）、背景亮度
+1–100（默认 100）；纯色/亮度公式由 capture/official_music_colors3.jsonl 采样反推
+（probe/analyze_official_v1_modes.py）。
+
+LED 颜色覆盖（本工具增强）：COLOR_SCHEMES 的 color id 只替换动态多色模式（1/2/4/5/13）
+的「色相来源」，动画相位/径向角度/环相位全部保留；纯色模式 6~11 与背景不受影响。
 
 音频分析：官方 K7/Nse（总振幅）+ 3 段 Pse + 32 段频谱（前端电平条用）。
 """
@@ -39,6 +45,7 @@ import random
 import subprocess
 import threading
 import time
+from collections import deque
 from typing import Dict, List, Optional, Tuple
 
 import numpy as np
@@ -105,17 +112,106 @@ IMPLEMENTED_MODES = {
     1, 2, 4, 5, 6, 7, 8, 9, 10, 11, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22,
 }
 
-#: 官方 v1 UI 的 12 个显示模式（顺序与 docs/music-v1-config.json 一致）
-V1_DISPLAY_MODES = [1, 2, 13, 4, 5, 6, 7, 8, 9, 11, 10, 100]
+#: 「官方方案」显示模式下拉的 21 项：官方 v1 UI 的 12 个 + 研究阶段确认存在、
+#: 但 v1 页面未暴露的 9 个（14~22，取自 docs/music-constants.json 的 v2 列表；
+#: 渲染器本工具早已逐行移植）。顺序按产品要求，100（屏光联动）排最后。
+V1_DISPLAY_MODES = [1, 2, 13, 4, 5, 6, 7, 8, 9, 11, 10,
+                    14, 15, 16, 17, 18, 19, 20, 21, 22, 100]
 
-#: 其中主机侧已实现渲染器的：100（屏光联动）由官方 Music.exe 读屏计算，
+#: 其中主机侧已实现渲染器的 20 个：100（屏光联动）由官方 Music.exe 读屏计算，
 #: 本工具尚未做自研屏幕同步，仍回落 13；「官方方案」下拉据此标注未移植。
 V1_IMPLEMENTED_MODES = [m for m in V1_DISPLAY_MODES if m != 100]
 
-#: 走官方 Fe（曲率频阶柱状）几何的显示模式：模式号同时就是调色板 id
-#: （1=绿黄红分行 / 2=6 色横条 / 4=径向色相 / 5=旋转单色 / 6..11=纯色）。
+#: 走官方 Fe（曲率频阶柱状合成包络）几何的显示模式：模式号同时就是调色板 id
+#: （1=绿黄红分行 / 2=6 色横条 / 5=旋转单色 / 6..11=纯色）。
 #: 依据：capture/official_music_colors3.jsonl 采样反推（见 probe/analyze_official_v1_modes.py）。
-V1_STEP_MODES = (1, 2, 4, 5, 6, 7, 8, 9, 10, 11)
+#: 注意：显示模式 4「曲率频阶」不在其中 —— 官方 v1 真值是 17 列频谱柱
+#: （见 `_render_mode_4`，2026-11-03 重新采样确认）。
+V1_STEP_MODES = (1, 2, 5, 6, 7, 8, 9, 10, 11)
+
+
+# ----------------------------------------------------------------------
+# 帧率 / 动画时间归一（本工具增强）
+# ----------------------------------------------------------------------
+#: 前端原生帧率控件：官方方案 20/60/66（官方 v1 实测 ≈66fps = 530.5 包/s ÷ 8 包/帧），
+#: 当前方案 15/20/30。后端不限制只能取这几个值（5..66 均可），但 UI 只提供这些档。
+FPS_CHOICES = (15, 20, 30, 60, 66)
+DEFAULT_FPS = 20
+FPS_MIN, FPS_MAX = 5, 66
+#: 动画基准帧率：所有渲染器的「每 tick 自增」常量都按官方 20fps 标定。
+BASE_FPS = 20.0
+#: 动画步长钳制：20fps → 1.0；66fps → 0.303；卡顿/挂起时最多按 3 个基准帧推进一次。
+DT_SCALE_MIN, DT_SCALE_MAX = 0.2, 3.0
+#: 逐包 ACK 与 burst 的分界：真机实测 7 包逐包 ACK 平均 15.5ms/帧（最大 20.06ms），
+#: 30fps 的 33.3ms 预算有余量；66fps 的 15.15ms 预算不够 → ≥60fps 改走 burst + 帧末 drain。
+BURST_MIN_FPS = 60
+#: 实测帧率滚动窗口（秒）与最小可计算跨度（太短会有夸张抖动）。
+MEASURED_FPS_WINDOW = 2.0
+MEASURED_FPS_MIN_SPAN = 0.25
+#: ≥60fps 的发送策略（真机实测 2026-11-03，MK87/USB fw1.19）：
+#:   * 帧末同步 drain 7 个回包：send ≈ 19.8ms/帧 > 66fps 的 15.15ms 预算，实测掉到 45.96fps；
+#:   * 连写 7 包 + ACK 清道夫线程异步读回包：send ≈ 8.9ms/帧，实测 66.14fps（lateFrames=0）。
+#: 所以 ≥60fps 用「burst + 异步清道夫」，只有在清道夫起不来时才回退帧末同步 drain。
+BURST_SYNC_DRAIN = 7
+
+
+def _clamp_fps(fps) -> int:
+    """帧率归一（start / update 共用）：``max(5, min(66, int(fps)))``。
+
+    * 15/20/30/60/66（前端原生帧率控件）原样保留；
+    * 5..66 内的其它整数也保留（兼容 CLI/手写配置，UI 不提供）；
+    * 越界值钳到 5 / 66；**无法解析为整数**（None / "abc" / nan）回落默认 20。
+    """
+    try:
+        value = int(fps)
+    except (TypeError, ValueError, OverflowError):
+        return DEFAULT_FPS
+    return max(FPS_MIN, min(FPS_MAX, value))
+
+
+def _dt_scale(dt: Optional[float]) -> float:
+    """实际帧间隔（秒）→ 动画时间步长：``dt * 20`` 并钳制到 0.2~3.0。
+
+    ``1.0`` 表示「标准 20fps tick」；66fps 传 ``1/66`` → ≈0.303，即每帧只推进
+    0.303 个基准 tick，累计 1 秒仍是 20 个基准 tick —— 动画速度与帧率解耦。
+    """
+    try:
+        seconds = float(dt)
+    except (TypeError, ValueError):
+        seconds = 1.0 / BASE_FPS
+    return max(DT_SCALE_MIN, min(DT_SCALE_MAX, seconds * BASE_FPS))
+
+
+def _smooth(prev: float, target: float, alpha: float, dt: float) -> float:
+    """一阶低通（AMP attack/decay 平滑）。
+
+    dt=1 时保持原算术顺序 ``prev + (target-prev)*alpha``，保证 20fps 输出逐位一致；
+    dt≠1 时把每 tick 系数换算成等效的指数时间常数，66fps 的平滑速度与 20fps 相同。
+    """
+    if dt == 1.0:
+        return prev + (target - prev) * alpha
+    k = 1.0 - (1.0 - alpha) ** dt
+    return prev + (target - prev) * k
+
+
+def _advance(value: float, step: float, dt: float, wrap: Optional[float] = None) -> float:
+    """相位推进：dt=1 时与原 ``(value + step) % wrap`` 逐位一致。"""
+    result = value + step * dt
+    if wrap is not None:
+        result %= wrap
+    return result
+
+
+def _agc(prev: float, target: float, rate: float, dt: float) -> float:
+    """自适应增益（Analyzer 的 z / 3 段 / 32 段 base）一阶跟踪。
+
+    dt=1 时保留原算术顺序 ``prev*(1-rate) + target*rate``（逐位一致）；dt≠1 时按
+    指数时间常数换算，66fps 的 AGC attack/decay 速度与 20fps 相同。
+    """
+    if dt == 1.0:
+        return prev * (1 - rate) + target * rate
+    k = 1.0 - (1.0 - rate) ** dt
+    return prev * (1 - k) + target * k
 
 
 def _clamp(v: float, lo: float, hi: float) -> float:
@@ -145,6 +241,109 @@ def _hsv(hue: float, saturation: float = 1.0, value: float = 1.0) -> RGB:
     else:
         o, s, c = r, 0.0, i
     return (_rnd((o + a) * 255), _rnd((s + a) * 255), _rnd((c + a) * 255))
+
+
+# ----------------------------------------------------------------------
+# LED 颜色覆盖（本工具增强；「官方方案」的第三个下拉）
+# ----------------------------------------------------------------------
+#: 颜色方案表：id → stops（#RRGGBB）。**id 与色值必须与前端 web/js/data/music.js
+#: 的 OFFICIAL_COLOR_SCHEMES 完全一致**（前端按同一张表画下拉与预览条）。
+#: default = 不覆盖（走官方采样配色，输出与改动前逐字节一致）。
+COLOR_SCHEMES = (
+    ("default", ()),
+    ("ice", ("#00E5FF",)),
+    ("violet", ("#B36CFF",)),
+    ("pink", ("#FF2E88",)),
+    ("lime", ("#A8FF3E",)),
+    ("amber", ("#FF6A00",)),
+    ("sakura", ("#FF7AB6", "#B36CFF")),
+    ("aurora", ("#3EFF9A", "#00E5FF", "#7A5CFF")),
+    ("sunset", ("#FFC400", "#FF6A00", "#FF2E88")),
+    ("icefire", ("#00E5FF", "#FEFEFE", "#FF6A00")),
+)
+COLOR_IDS = tuple(cid for cid, _stops in COLOR_SCHEMES)
+DEFAULT_COLOR = "default"
+#: 颜色覆盖只作用于**动态多色**模式：
+#:   1 = 绿黄红分行 / 2 = 彩虹六色横条 / 4 = 径向色相 / 5 = 旋转单色 / 13 = 同心环。
+#: 纯色模式 6~11（官方采样色）与自研模式 14~22（自带配色）保持原样；
+#: 背景（backmode）永远不受影响。
+COLOR_OVERLAY_MODES = frozenset({1, 2, 4, 5, 13})
+
+
+def _hex_rgb(value: str) -> RGB:
+    """``#RRGGBB`` → (r, g, b)。"""
+    s = value.lstrip("#")
+    return (int(s[0:2], 16), int(s[2:4], 16), int(s[4:6], 16))
+
+
+def normalize_color_id(color) -> str:
+    """颜色 id 归一化：未知/空值回落 default（未知值打 debug 日志，不抛错）。"""
+    cid = str(color or "").strip().lower()
+    if cid in COLOR_IDS:
+        return cid
+    if cid:
+        log.debug("未知 LED 颜色方案 %r，回落 %s", color, DEFAULT_COLOR)
+    return DEFAULT_COLOR
+
+
+class Palette:
+    """用户调色板：把「原始配色位置」t∈[0,1] 映射到 stops 上的插值颜色。
+
+    颜色覆盖层只替换**色相来源**：各渲染器仍按原动画推进（mode 4 的径向色相
+    旋转、mode 5 的相位推进、mode 13 的环相位…），算法本身不变，只把
+    ``_hsv(hue, 1, 1)`` 换成 ``Palette.at(hue / 360)``。于是 t 天然就是「原始
+    调色板位置」，动画相位与径向角度一点不丢。
+    """
+
+    __slots__ = ("id", "stops", "_rgb")
+
+    def __init__(self, color_id: str) -> None:
+        for cid, stops in COLOR_SCHEMES:
+            if cid == color_id:
+                if not stops:
+                    raise ValueError("default 没有调色板（不覆盖，请用 palette_for）")
+                self.id = cid
+                self.stops = stops
+                self._rgb = tuple(_hex_rgb(s) for s in stops)
+                return
+        raise ValueError(f"未知颜色方案: {color_id}")
+
+    def at(self, t: float) -> RGB:
+        """在 stops 上按位置 t（0..1，sRGB 线性插值）取样；单色 id 恒定。"""
+        rgb = self._rgb
+        if len(rgb) == 1:
+            return rgb[0]
+        pos = _clamp(float(t), 0.0, 1.0) * (len(rgb) - 1)
+        i = int(math.floor(pos))
+        if i >= len(rgb) - 1:
+            return rgb[-1]
+        f = pos - i
+        a, b = rgb[i], rgb[i + 1]
+        return (_rnd(a[0] + (b[0] - a[0]) * f),
+                _rnd(a[1] + (b[1] - a[1]) * f),
+                _rnd(a[2] + (b[2] - a[2]) * f))
+
+
+def palette_for(color) -> Optional[Palette]:
+    """颜色 id → Palette；default 返回 None（= 不覆盖，走官方原路径）。"""
+    cid = normalize_color_id(color)
+    if cid == DEFAULT_COLOR:
+        return None
+    return Palette(cid)
+
+
+def _hue_color(hue: float, pal: Optional[Palette] = None) -> RGB:
+    """色相 → RGB：默认走官方 kV 色环；有用户调色板时按 hue/360 在 stops 上取样。"""
+    hue = float(hue) % 360.0
+    if pal is None:
+        return _hsv(hue, 1.0, 1.0)
+    return pal.at(hue / 360.0)
+
+
+def _scaled_rgb(color: RGB, scale: int) -> RGB:
+    """按官方亮度系数缩放一个 RGB（与 _fill_solid/_fill_row_bands 同一公式）。"""
+    return (_scale_channel(color[0], scale), _scale_channel(color[1], scale),
+            _scale_channel(color[2], scale))
 
 
 # ----------------------------------------------------------------------
@@ -231,7 +430,14 @@ def _fill_solid(grid, color: RGB, brightness_pct: float) -> None:
             row[i] = c
 
 
-def _fill_row_bands(grid, colors: List[RGB], brightness_pct: float) -> None:
+def _fill_row_bands(grid, colors: List[RGB], brightness_pct: float,
+                    pal: Optional[Palette] = None) -> None:
+    """横向分段（显示模式 1/2 与背景模式 1/2 共用）。
+
+    pal 不为 None 时不再逐段用官方色，而是按「该行在原调色板里的纵向位置」
+    （row_idx / (rows-1)）在新调色板上取样：单色 id → 整屏统一色（保留官方
+    亮度缩放），渐变 id → 上下铺开的渐变。默认档（pal=None）走原逻辑不变。
+    """
     n = _brightness_scale(brightness_pct)
     rows = len(grid)
     per = rows // len(colors)
@@ -239,16 +445,20 @@ def _fill_row_bands(grid, colors: List[RGB], brightness_pct: float) -> None:
     row_idx = 0
     for ci, color in enumerate(colors):
         cnt = per + (1 if ci < extra else 0)
-        c = (_scale_channel(color[0], n), _scale_channel(color[1], n), _scale_channel(color[2], n))
         for _ in range(cnt):
             if row_idx >= rows:
                 break
+            if pal is None:
+                c = _scaled_rgb(color, n)
+            else:
+                c = _scaled_rgb(pal.at(row_idx / (rows - 1) if rows > 1 else 0.0), n)
             for col in range(len(grid[row_idx])):
                 grid[row_idx][col] = c
             row_idx += 1
 
 
-def _fill_radial_hue(grid, center_row: int, center_col: int, hue_phase: float) -> None:
+def _fill_radial_hue(grid, center_row: int, center_col: int, hue_phase: float,
+                     pal: Optional[Palette] = None) -> None:
     rows, cols = len(grid), len(grid[0])
     for r in range(rows):
         for c in range(cols):
@@ -258,29 +468,42 @@ def _fill_radial_hue(grid, center_row: int, center_col: int, hue_phase: float) -
                 hue += 360
             if hue >= 360:
                 hue -= 360
-            grid[r][c] = _hsv(hue, 1.0, 1.0)
+            # 径向色相是「按角度取色」：有用户调色板时按同一角度位置在 stops 上取样，
+            # huePhase 推进（色相旋转）原样保留。
+            grid[r][c] = _hue_color(hue, pal)
 
 
-def _fill_solid_hue(grid, hue_phase: float, brightness_pct: float) -> None:
+def _fill_solid_hue(grid, hue_phase: float, brightness_pct: float,
+                    pal: Optional[Palette] = None) -> None:
     """整屏单色，色相随时间旋转（官方 v1 显示模式 5 / 背景模式 5「频谱循环」）。
 
     hue_phase 是 0..1 的相位（引擎每 tick +0.01 → 5s 转一圈）：
     采样里同一段内整帧只有一种颜色、颜色逐帧走完整个色环（AA00FF → 006AFF → …），
     且饱和色最大通道是 FF（满值），故 value = bb/100。
+    有用户调色板时：整屏颜色 = 在 stops 上按 hue 位置取样后乘同一个亮度 value，
+    相位推进（颜色循环）不变。
     """
     hue = (float(hue_phase) * 360.0) % 360.0
     value = _clamp(float(brightness_pct) / 100.0, 0.0, 1.0)
-    c = _hsv(hue, 1.0, value)
+    if pal is None:
+        c = _hsv(hue, 1.0, value)
+    else:
+        src = pal.at(hue / 360.0)
+        c = (_rnd(src[0] * value), _rnd(src[1] * value), _rnd(src[2] * value))
     for row in grid:
         for i in range(len(row)):
             row[i] = c
 
 
-def _apply_background(grid, backmode: int, brightness_pct: float, st: dict) -> None:
+def _apply_background(grid, backmode: int, brightness_pct: float, st: dict,
+                      pal: Optional[Palette] = None) -> None:
     """官方 _e：调色板（背景模式与「曲率频阶」显示模式的共用颜色方案）。
 
     backmode：0 = 不画、6..11 纯色、1/2 横向分段、4 径向色相、5 旋转纯色。
-    显示模式 1/2/4/5/6..11 也把显示模式号当调色板 id 传进来（官方同一个函数）。
+    显示模式 1/2/5/6..11 也把显示模式号当调色板 id 传进来（官方同一个函数）。
+
+    pal 只在「显示模式把模式号当调色板」时由 `_render_mode_steps` 传入（颜色覆盖）；
+    真正的背景调用永远不传 pal —— 纯色 6..11、背景配色都不受颜色覆盖影响。
     """
     if backmode == 6:
         _fill_solid(grid, (255, 255, 255), brightness_pct)
@@ -295,16 +518,17 @@ def _apply_background(grid, backmode: int, brightness_pct: float, st: dict) -> N
     elif backmode == 11:
         _fill_solid(grid, (0, 255, 0), brightness_pct)
     elif backmode == 1:
-        _fill_row_bands(grid, [(0, 255, 0), (255, 255, 0), (255, 0, 0)], brightness_pct)
+        _fill_row_bands(grid, [(0, 255, 0), (255, 255, 0), (255, 0, 0)],
+                        brightness_pct, pal)
     elif backmode == 2:
         _fill_row_bands(grid, [
             (255, 0, 255), (0, 0, 255), (0, 255, 255),
             (0, 255, 0), (255, 255, 0), (255, 0, 0),
-        ], brightness_pct)
+        ], brightness_pct, pal)
     elif backmode == 4:
-        _fill_radial_hue(grid, st["centerRow"], st["centerCol"], st["huePhase"])
+        _fill_radial_hue(grid, st["centerRow"], st["centerCol"], st["huePhase"], pal)
     elif backmode == 5:
-        _fill_solid_hue(grid, st["huePhase"], brightness_pct)
+        _fill_solid_hue(grid, st["huePhase"], brightness_pct, pal)
     # 0 / 3 等 = 不画背景
 
 
@@ -340,21 +564,27 @@ def _build_rings(lay: dict) -> List[List[Tuple[int, int]]]:
     return rings
 
 
-def _render_mode_steps(grid, mode: int, lay: dict, st: dict) -> None:
+def _render_mode_steps(grid, mode: int, lay: dict, st: dict,
+                       pal: Optional[Palette] = None) -> None:
     """官方 Fe（曲率频阶柱状）+ 调色板 = 显示模式号。
 
-    官方 v1 的 1/2/4/5/6/7/8/9/10/11 共用这一种几何：包络柱状只在柱高范围内点亮，
+    官方 v1 的 1/2/5/6/7/8/9/10/11 共用这一种几何：包络柱状只在柱高范围内点亮，
     柱子颜色由「显示模式号」当调色板 id 决定（同一个调色板函数也用于背景模式）：
-      1 绿黄红分行 / 2 六色横条 / 4 中心径向色相 / 5 旋转单色 / 6..11 纯色。
+      1 绿黄红分行 / 2 六色横条 / 5 旋转单色 / 6..11 纯色。
     采样证据（capture/official_music_colors3.jsonl）：这些模式每帧只有单一颜色族、
     覆盖率随振幅在 10%~50% 波动、6..11 的主色与背景同号纯色完全一致（FE0000…）。
+    注意：显示模式 4 已单独实现（`_render_mode_4`，官方 v1 真值是频谱柱，不是这条合成包络）。
+
+    pal：颜色覆盖（本工具增强）。只作用于「模式号当调色板」的分支（1/2/5），
+    纯色 6..11 走 `_fill_solid`，天然不受影响。
     """
     n = st["amplitudeUI"] / 100.0
-    st["smoothAmp"] += (st["amp"] - st["smoothAmp"]) * n
+    dt = float(st.get("dt", 1.0))
+    st["smoothAmp"] = _smooth(st["smoothAmp"], st["amp"], n, dt)
     bg = _zeros(lay["F"], lay["P"])
     # 注意：这里的 palette 参数就是「显示模式号」，不是背景模式
-    _apply_background(bg, mode, st["backmodeBrightness"], st)
-    st["phase"] += st["amplitudeUI"] / 1000.0
+    _apply_background(bg, mode, st["backmodeBrightness"], st, pal)
+    st["phase"] = _advance(st["phase"], st["amplitudeUI"] / 1000.0, dt)
     i = min(st["smoothAmp"], 1.0)
     bars: List[int] = []
     for e in range(lay["P"]):
@@ -377,15 +607,101 @@ def _render_mode_steps(grid, mode: int, lay: dict, st: dict) -> None:
                 grid[row][col] = bg[row][col]
 
 
-#: 兼容旧名字（1 与 4 曾被认为是「同一渲染器」）
+#: 兼容旧名字（1 与 4 曾被认为是「同一渲染器」；4 现已单独实现为频谱柱）
 _render_mode_1or4 = _render_mode_steps
+
+
+# ----------------------------------------------------------------------
+# 显示模式 4「曲率频阶」—— 官方 v1 真值（2026-11-03 重新采样）
+# ----------------------------------------------------------------------
+#: 17 根柱子（= 官方 102 键网格的 17 列，底部对齐）。
+_MODE4_COLS = 17
+#: 调色板色相每 tick 前进的圈数（20fps → 0.8 圈/s）。
+#: 采样：同一格色相每 100ms 前进约 28°（capture/official_v1_mode4_silence.jsonl）。
+_MODE4_HUE_STEP = 0.04
+#: 「曲率」兜底轮廓：没有频谱输入时（例如直接 tick(amp) 的单测/外部调用）
+#: 用这条左高右低的曲线代替频谱，保证模式 4 不会全黑。
+#: 数值来自官方静音采样 amp=30 的柱高归一化
+#: [3.8,3.1,3.7,2.4,1.8,1.4,2.1,1.5,1.4,1.0,1.4,1.2,1.2,0.7,0.7,0.9,0.6]。
+_MODE4_CURVATURE = (
+    1.00, 0.82, 0.97, 0.63, 0.47, 0.37, 0.55, 0.39, 0.37,
+    0.26, 0.37, 0.32, 0.32, 0.18, 0.18, 0.24, 0.16,
+)
+
+
+def _bands32_to_17(bands32) -> List[float]:
+    """把 Analyzer 的 32 段对数频谱压成模式 4 的 17 根柱子（左低右高）。
+
+    官方列↔频率映射（采样推断）：阶梯扫频 200/400/800/1600/3200/6400 Hz
+    （capture/official_v1_mode4_sweep.jsonl）的柱峰逐级右移，拟合出的对数区间约
+    110 Hz(第 0 列) … 12 kHz(第 16 列)，对应 bands32（20 Hz…20 kHz 对数 32 段）
+    的下标 7.9 … 29.6。单音只点亮 1~3 列，与采样一致。
+    """
+    src = [float(x) for x in (bands32 or []) if x is not None]
+    n = len(src)
+    if n < 8:
+        return [0.0] * _MODE4_COLS
+    lo = 0.247 * (n - 1)
+    hi = 0.926 * (n - 1)
+    step = (hi - lo) / _MODE4_COLS
+    out: List[float] = []
+    for i in range(_MODE4_COLS):
+        a = lo + step * i
+        b = a + step
+        j0 = max(0, int(math.floor(a)))
+        j1 = min(n - 1, int(math.ceil(b)))
+        # 取区间内最大值：单音在它的那一列得到满幅，相邻列按频段边界衰减
+        out.append(_clamp(max(src[j0:j1 + 1]), 0.0, 1.0))
+    return out
+
+
+def _render_mode_4(grid, lay: dict, st: dict,
+                   pal: Optional[Palette] = None) -> None:
+    """官方 v1 显示模式 4「曲率频阶」：17 列频谱柱（底部对齐）+ 旋转径向色相。
+
+    重新采样真值（probe/capture_official_v1_mode4.py → capture/official_v1_mode4_*.jsonl，
+    440Hz/100Hz/2k/4k/8k 单音 + 阶梯扫频 + 静音，均为官方 MusicPlug.exe 自己算的颜色）：
+      * 柱子**底部对齐**，17 列 = 频率（左低右高，对数）；200 Hz 只点亮最左 1~3 列，
+        6.4 kHz 只点亮最右几列 —— 旧的合成包络（任何声音都点满左半边）与真值不符；
+      * 每列柱高 = 该频段能量（Analyzer 的 32 段对数频谱压成 17 段）× amplitude 增益，
+        没有频谱输入时才退化成 _MODE4_CURVATURE 轮廓（单测/外部直接 tick(amp) 的场景）；
+      * 颜色 = 以 (centerRow,centerCol) 为原点的径向色相（满饱和），
+        左右半屏相差 180°；整个调色板约 0.8 圈/s 旋转；
+      * 柱高随 amplitude 增长：amp=30 时单音峰值约 4/6 行，amp=100 时顶到 6/6。
+
+    pal：颜色覆盖（本工具增强）——只把「色相 → RGB」换成在新调色板 hue/360 处取样，
+    hue0 的旋转（约 275°/s）与径向角度原样保留。
+    """
+    F, P = lay["F"], lay["P"]
+    cols = min(_MODE4_COLS, P)
+    dt = float(st.get("dt", 1.0))
+    st["mode4Hue"] = _advance(st.get("mode4Hue", 0.0), _MODE4_HUE_STEP, dt, 1.0)
+    hue0 = st["mode4Hue"] * 360.0
+    bands = st.get("spectrum17") or []
+    if not any(bands):
+        # 没有频谱输入（单测/外部直接 tick(amp)）：退化成随振幅伸缩的「曲率」轮廓
+        amp = _clamp(st["amp"] * 2.0, 0.0, 1.0)
+        bands = [_MODE4_CURVATURE[c] * amp for c in range(_MODE4_COLS)]
+    # 柱高 = 该频段能量 × amplitude 增益：amp=30 时单音峰值约 4/6 行、amp=100 时顶到 6/6
+    # （采样：capture/official_v1_mode4_tone100.jsonl / _sweep.jsonl）
+    gain = st["amplitudeUI"] / 42.0
+    for c in range(cols):
+        lv = float(bands[c]) if c < len(bands) else 0.0
+        h = int(math.floor(_clamp(lv * gain, 0.0, 1.0) * F))
+        for k in range(max(0, h)):
+            row = F - 1 - k
+            angle = math.atan2(row - st["centerRow"], c - st["centerCol"])
+            hue = (hue0 + 180.0 + math.degrees(angle)) % 360.0
+            # 颜色覆盖：只替换「色相 → RGB」，hue0 的旋转与径向角度都不动
+            grid[row][c] = _hue_color(hue, pal)
 
 
 def _render_mode_14(grid, lay: dict, st: dict) -> None:
     """官方 Ce：中心 4 色射线旋转。"""
     t = st["amplitudeUI"] / 100.0
-    st["smoothAmp"] += (st["amp"] - st["smoothAmp"]) * t
-    st["rotate"] = (st["rotate"] + 4) % 360
+    dt = float(st.get("dt", 1.0))
+    st["smoothAmp"] = _smooth(st["smoothAmp"], st["amp"], t, dt)
+    st["rotate"] = _advance(st["rotate"], 4, dt, 360)
     F, P = lay["F"], lay["P"]
     max_dist = 0.0
     for r in range(F):
@@ -416,10 +732,11 @@ def _render_mode_14(grid, lay: dict, st: dict) -> None:
 def _render_mode_17(grid, lay: dict, st: dict) -> None:
     """官方 je：中心行正弦波 + 拖尾。"""
     t = min(st["amp"], 1.0)
-    st["phase"] += 0.5
+    dt = float(st.get("dt", 1.0))
+    st["phase"] = _advance(st["phase"], 0.5, dt)
     if st["phase"] >= math.pi * 2:
         st["phase"] -= math.pi * 2
-    st["huePhase"] = (st["huePhase"] + 0.02) % 1.0
+    st["huePhase"] = _advance(st["huePhase"], 0.02, dt, 1.0)
     F, P = lay["F"], lay["P"]
     centers = [F // 2 - 1, F // 2] if F % 2 == 0 else [F // 2]
     for n in range(P):
@@ -443,13 +760,19 @@ def _render_mode_17(grid, lay: dict, st: dict) -> None:
                                    _rnd(color[2] * f * 0.6))
 
 
-def _render_mode_13(grid, lay: dict, st: dict) -> None:
-    """官方 Se：中心同心环扩散（默认模式）。"""
+def _render_mode_13(grid, lay: dict, st: dict,
+                    pal: Optional[Palette] = None) -> None:
+    """官方 Se：中心同心环扩散（默认模式）。
+
+    pal：颜色覆盖（本工具增强）——中心/各环仍按原相位算色相，只把「色相 → RGB」
+    换成在新调色板 hue/360 处取样；环相位推进（扩散动画）不变。
+    """
     rings = _build_rings(lay)
     center_cells = rings[0] if rings else []
     ring_list = rings[1:]
-    st["phase"] = (st["phase"] + 0.005) % 1.0
-    st["huePhase"] = (st["huePhase"] + 0.005) % 1.0
+    dt = float(st.get("dt", 1.0))
+    st["phase"] = _advance(st["phase"], 0.005, dt, 1.0)
+    st["huePhase"] = _advance(st["huePhase"], 0.005, dt, 1.0)
     ring_count = len(ring_list)
     phases = []
     for e in range(ring_count):
@@ -458,9 +781,9 @@ def _render_mode_13(grid, lay: dict, st: dict) -> None:
     threshold = max(0.01, 0.06 - amp * 0.05)
     lit = 0 if amp < threshold else max(1, min(ring_count, _rnd(st["amp"] * ring_count)))
     k = st["amplitudeUI"] / 100.0
-    st["smoothValue"] += (lit - st["smoothValue"]) * k
+    st["smoothValue"] = _smooth(st["smoothValue"], lit, k, dt)
     active = _rnd(st["smoothValue"])
-    center_color = _hsv((st["huePhase"] * 360) % 360, 1.0, 1.0)
+    center_color = _hue_color((st["huePhase"] * 360) % 360, pal)
     F, P = lay["F"], lay["P"]
     for (r, c) in center_cells:
         if 0 <= r < F and 0 <= c < P:
@@ -469,7 +792,7 @@ def _render_mode_13(grid, lay: dict, st: dict) -> None:
         if e >= len(ring_list):
             break
         ring = ring_list[e]
-        color = _hsv(((phases[e] + st["huePhase"]) * 360) % 360, 1.0, 1.0)
+        color = _hue_color(((phases[e] + st["huePhase"]) * 360) % 360, pal)
         for (r, c) in ring:
             if 0 <= r < F and 0 <= c < P:
                 grid[r][c] = color
@@ -483,7 +806,8 @@ def _render_mode_15(grid, lay: dict, st: dict) -> None:
     中塔是以中间列为轴逐层收窄的梯形。高度用 0/±1 的爬山滞回（官方 we/Te）。
     官方"有 volcanoKeyPositions 坐标表"的分支未移植（MK87 无该配置，不可达）。
     """
-    st["huePhase"] = (st["huePhase"] + 0.01) % 1.0
+    dt = float(st.get("dt", 1.0))
+    st["huePhase"] = _advance(st["huePhase"], 0.01, dt, 1.0)
     n = (st["huePhase"] * 360.0) % 360.0
     F, P = lay["F"], lay["P"]
     left_widths: List[int] = [3, 3, 2, 2, 2, 1]
@@ -500,16 +824,26 @@ def _render_mode_15(grid, lay: dict, st: dict) -> None:
     # 官方 d：目标高度；we/Te 为当前高度/剩余步数（爬升或回落都每 tick 只走 1 层）
     target = min(F, int(math.floor((st["amp"] + st["amplitudeUI"] / 100.0 * 0.5) * F)))
     height = st["volcanoHeight"]
-    if st["volcanoDir"] > 0:
-        st["volcanoDir"] -= 1
-        height = min(F, st["volcanoHeight"] + 1)
-        st["volcanoHeight"] = height
-    elif st["volcanoDir"] < 0:
-        st["volcanoDir"] += 1
-        height = max(0, st["volcanoHeight"] - 1)
-        st["volcanoHeight"] = height
+    # 时间归一：每「基准 tick」爬 1 层。dt=1 时恰好 1 步（与原实现逐位一致），
+    # 66fps 下用累计器攒够 1 个基准 tick 才走一步，不会快 3.3 倍。
+    if dt == 1.0:
+        moves = 1
+        st["volcanoStep"] = 0.0
     else:
-        st["volcanoDir"] = target - st["volcanoHeight"]
+        pending = float(st.get("volcanoStep", 0.0)) + dt
+        moves = int(pending)
+        st["volcanoStep"] = pending - moves
+    for _ in range(moves):
+        if st["volcanoDir"] > 0:
+            st["volcanoDir"] -= 1
+            height = min(F, st["volcanoHeight"] + 1)
+            st["volcanoHeight"] = height
+        elif st["volcanoDir"] < 0:
+            st["volcanoDir"] += 1
+            height = max(0, st["volcanoHeight"] - 1)
+            st["volcanoHeight"] = height
+        else:
+            st["volcanoDir"] = target - st["volcanoHeight"]
     rows = min(height, F)
     if rows <= 0:
         return
@@ -573,10 +907,11 @@ _ARROW_CELLS_MID = (
 
 def _render_mode_16(grid, lay: dict, st: dict) -> None:
     """官方 De：光箭穿刺（中心两行从右侧铺光条 + 固定箭形点阵随振幅放大）。"""
-    st["smoothAmp"] += (st["amp"] - st["smoothAmp"]) * (st["amplitudeUI"] / 100.0)
+    dt = float(st.get("dt", 1.0))
+    st["smoothAmp"] = _smooth(st["smoothAmp"], st["amp"], st["amplitudeUI"] / 100.0, dt)
     n = min(st["smoothAmp"], 1.0)
     scale = 1 + n * 0.2
-    st["huePhase"] = (st["huePhase"] + 0.005) % 1.0
+    st["huePhase"] = _advance(st["huePhase"], 0.005, dt, 1.0)
     hue = (st["huePhase"] * 360.0) % 360.0
     main = _hsv(hue, 1.0, 1.0)
     back = _hsv((hue + 180.0) % 360.0, 1.0, 1.0)
@@ -607,11 +942,12 @@ def _render_mode_16(grid, lay: dict, st: dict) -> None:
 
 def _render_mode_18(grid, lay: dict, st: dict) -> None:
     """官方 Oe：光茧共鸣（顶部横条 + 右列竖条 + 对角光带，随振幅扩张）。"""
-    st["smoothAmp"] += (st["amp"] - st["smoothAmp"]) * (st["amplitudeUI"] / 100.0)
+    dt = float(st.get("dt", 1.0))
+    st["smoothAmp"] = _smooth(st["smoothAmp"], st["amp"], st["amplitudeUI"] / 100.0, dt)
     n = st["smoothAmp"]
     F, P = lay["F"], lay["P"]
     length = int(math.ceil(P * n))
-    st["huePhase"] = (st["huePhase"] + 0.005) % 1.0
+    st["huePhase"] = _advance(st["huePhase"], 0.005, dt, 1.0)
     base_hue = st["huePhase"] * 360.0
     cache: Dict[int, RGB] = {}
 
@@ -652,13 +988,15 @@ def _render_mode_18(grid, lay: dict, st: dict) -> None:
 def _render_mode_19(grid, lay: dict, st: dict) -> None:
     """官方 Ae：音叉振动（左右两条触须，波形上下抖动 + 暗色余晖拖尾）。"""
     F, P = lay["F"], lay["P"]
-    st["smoothAmp"] += (st["amp"] - st["smoothAmp"]) * (st["amplitudeUI"] / 100.0)
+    dt = float(st.get("dt", 1.0))
+    st["smoothAmp"] = _smooth(st["smoothAmp"], st["amp"], st["amplitudeUI"] / 100.0, dt)
     st["smoothAmp"] = _clamp(st["smoothAmp"], 0.0, 1.0)
     n = st["smoothAmp"]
-    st["tuningPhase"] += 0.1
+    st["tuningPhase"] = _advance(st["tuningPhase"], 0.1, dt)
     if st["tuningPhase"] >= math.pi * 2:
         st["tuningPhase"] = 0.0
-    st["huePhase"] = (st["huePhase"] + 0.005 + n * 0.01) % 1.0
+    # 保持原加法顺序（dt=1 时逐位一致）：(hue + 0.005*dt) + n*0.01*dt
+    st["huePhase"] = (st["huePhase"] + 0.005 * dt + n * 0.01 * dt) % 1.0
     hue = st["huePhase"] * 360.0
     cache: Dict[int, RGB] = {}
 
@@ -723,12 +1061,13 @@ def _render_mode_19(grid, lay: dict, st: dict) -> None:
 def _render_mode_20(grid, lay: dict, st: dict) -> None:
     """官方 Ne：曲率传承轨迹（右半区弯曲波形，从右向左推进并按列变细）。"""
     F, P = lay["F"], lay["P"]
-    st["smoothAmp"] += (st["amp"] - st["smoothAmp"]) * 0.2
+    dt = float(st.get("dt", 1.0))
+    st["smoothAmp"] = _smooth(st["smoothAmp"], st["amp"], 0.2, dt)
     n = min(st["smoothAmp"], 1.0)
-    st["phase"] += 0.5
+    st["phase"] = _advance(st["phase"], 0.5, dt)
     if st["phase"] >= math.pi * 2:  # 官方 ie：越界直接归零（不是取模）
         st["phase"] = 0.0
-    st["huePhase"] = (st["huePhase"] + 0.02) % 1.0
+    st["huePhase"] = _advance(st["huePhase"], 0.02, dt, 1.0)
     centers = [F // 2 - 1, F // 2] if F % 2 == 0 else [F // 2]
     thickness = max(2.0, math.floor(F / 2.5))
     quarter = int(math.floor(P / 4))
@@ -762,12 +1101,14 @@ def _render_mode_20(grid, lay: dict, st: dict) -> None:
 def _render_mode_21(grid, lay: dict, st: dict) -> None:
     """官方 Pe：行波浪节奏（逐行伪随机哈希波决定柱长，色相逐行渐变）。"""
     F, P = lay["F"], lay["P"]
-    st["smoothAmp"] += (st["amp"] - st["smoothAmp"]) * (st["amplitudeUI"] / 100.0 * 0.8)
+    dt = float(st.get("dt", 1.0))
+    st["smoothAmp"] = _smooth(st["smoothAmp"], st["amp"],
+                              st["amplitudeUI"] / 100.0 * 0.8, dt)
     n = min(st["smoothAmp"], 1.0)
-    st["phase"] += 0.02
+    st["phase"] = _advance(st["phase"], 0.02, dt)
     if st["phase"] >= math.pi * 2:  # 官方 ie：越界直接归零（不是取模）
         st["phase"] = 0.0
-    st["huePhase"] = (st["huePhase"] + 0.01) % 1.0
+    st["huePhase"] = _advance(st["huePhase"], 0.01, dt, 1.0)
     for row in range(F):
         seed = row * 123.456 + st["phase"] * 10
         v1 = math.sin(seed) * 0.5 + 0.5
@@ -923,17 +1264,18 @@ def _render_mode_22(grid, lay: dict, st: dict) -> None:
     else:
         left, right = _DUAL_HEART_TABLES[4]
     layers = int(math.ceil((len(left) + len(right)) / 2.0))
-    st["phase"] += 0.005
+    dt = float(st.get("dt", 1.0))
+    st["phase"] = _advance(st["phase"], 0.005, dt)
     if st["phase"] >= 1.0:  # 官方 ie：越界直接归零（不是取模）
         st["phase"] = 0.0
-    st["huePhase"] += 0.005
+    st["huePhase"] = _advance(st["huePhase"], 0.005, dt)
     if st["huePhase"] >= 1.0:
         st["huePhase"] = 0.0
     phases = [(st["phase"] - e / layers + 1) % 1.0 for e in range(layers)]
     amp = min(st["amp"], 1.0)
     threshold = max(0.01, 0.06 - amp * 0.05)
     lit = 0 if amp < threshold else max(1, min(layers, _rnd(st["amp"] * layers)))
-    st["smoothValue"] += (lit - st["smoothValue"]) * (st["amplitudeUI"] / 100.0)
+    st["smoothValue"] = _smooth(st["smoothValue"], lit, st["amplitudeUI"] / 100.0, dt)
     active = int(math.ceil(st["smoothValue"]))
     for e in range(active):
         if e >= len(left):
@@ -955,11 +1297,17 @@ def _render_mode_22(grid, lay: dict, st: dict) -> None:
 def _render_frame(lay: dict, st: dict, mode: int) -> List[List[RGB]]:
     grid = _zeros(lay["F"], lay["width"])
     if st["backmode"]:
+        # 背景永远用官方配色：颜色覆盖层只作用于前景调色板，不传 pal
         _apply_background(grid, st["backmode"], st["backmodeBrightness"], st)
-    if mode in V1_STEP_MODES:
-        _render_mode_steps(grid, mode, lay, st)
+    # ---- 颜色覆盖层的唯一入口（本工具增强）----
+    # 只有「动态多色」模式消费用户调色板；纯色 6~11、自研 14~22、未实现的 100 都传 None。
+    pal = st.get("palette") if mode in COLOR_OVERLAY_MODES else None
+    if mode == 4:
+        _render_mode_4(grid, lay, st, pal)  # 官方 v1 真值：频谱柱 + 旋转径向色相
+    elif mode in V1_STEP_MODES:
+        _render_mode_steps(grid, mode, lay, st, pal)
     elif mode == 13:
-        _render_mode_13(grid, lay, st)
+        _render_mode_13(grid, lay, st, pal)
     elif mode == 14:
         _render_mode_14(grid, lay, st)
     elif mode == 15:
@@ -984,14 +1332,23 @@ def _render_frame(lay: dict, st: dict, mode: int) -> List[List[RGB]]:
 
 
 class MusicEngine:
-    """官方音乐引擎：每个 20fps tick 把振幅变成 87 键 4B 载荷。"""
+    """官方音乐引擎：每个 20fps 基准 tick 把振幅变成 87 键 4B 载荷。
+
+    动画速度与真实帧率解耦：``tick(..., dt_scale=N)`` 里 N 表示「本帧相当于几个
+    20fps 基准 tick」（20fps → 1.0，66fps → 0.303，见 :func:`_dt_scale`）。
+    所有随时间推进的相位/旋转/环扩散/AMP 平滑都乘 ``dt_scale``；振幅、频谱柱高
+    这类「当帧量」不缩放。
+    """
 
     def __init__(self, mode: int = 13, amplitude_ui: int = 50,
-                 backmode: int = 0, backmode_brightness: int = 100) -> None:
+                 backmode: int = 0, backmode_brightness: int = 100,
+                 color: str = DEFAULT_COLOR) -> None:
         mode = int(mode)
         if mode not in IMPLEMENTED_MODES:
             mode = 13
         self.mode = mode
+        #: LED 颜色覆盖 id（本工具增强）：default = 不覆盖，走官方采样配色
+        self.color = normalize_color_id(color)
         self.lay = layout()
         self.st = {
             "mode": mode,
@@ -1004,15 +1361,23 @@ class MusicEngine:
             "huePhase": 0.0,
             "smoothValue": 0.0,
             "rotate": 0.0,
-            # 模式 15（官方 we/Te）：火山当前高度、剩余爬升/回落步数
+            # 动画时间步长（1.0 = 标准 20fps tick），由 tick() 每帧写入
+            "dt": 1.0,
+            # 模式 15（官方 we/Te）：火山当前高度、剩余爬升/回落步数、不足一步的累计
             "volcanoHeight": 0,
             "volcanoDir": 0,
+            "volcanoStep": 0.0,
             # 模式 19（官方 ke）：音叉的波形相位
             "tuningPhase": 0.0,
+            # 模式 4（官方 v1「曲率频阶」）：17 段频谱 + 径向色相相位
+            "spectrum17": [0.0] * _MODE4_COLS,
+            "mode4Hue": 0.0,
+            # 颜色覆盖调色板（None = default/不覆盖）：渲染层唯一消费点
+            "palette": palette_for(self.color),
             "centerRow": self.lay["centerRow"],
             "centerCol": self.lay["centerCol"],
         }
-        self._silence = 0
+        self._silence = 0.0
         #: 最近一帧的逐键颜色 {keyValue: (r,g,b)}（供前端「官方方案」预览回放；
         #: 与设备实际收到的 348B 载荷同源，保证屏幕预览和键盘同步）
         self.last_colors: Dict[int, RGB] = {}
@@ -1022,6 +1387,12 @@ class MusicEngine:
         self.mode = mode if mode in IMPLEMENTED_MODES else 13
         self.st["mode"] = self.mode
 
+    def set_color(self, color) -> str:
+        """热更新 LED 颜色覆盖（未知 id 回落 default）；返回生效的 id。"""
+        self.color = normalize_color_id(color)
+        self.st["palette"] = palette_for(self.color)
+        return self.color
+
     def set_amplitude(self, amplitude_ui: int) -> None:
         self.st["amplitudeUI"] = _clamp(int(amplitude_ui), 1, 100)
 
@@ -1030,16 +1401,36 @@ class MusicEngine:
         self.st["backmode"] = int(_clamp(int(backmode), 0, 11))
         self.st["backmodeBrightness"] = int(_clamp(int(brightness), 1, 100))
 
-    def tick(self, amp1000: int) -> bytes:
-        """喂当前总振幅（0..1000），返回 348 字节逐键载荷。"""
+    def tick(self, amp1000: int, bands32: Optional[List[float]] = None,
+             dt_scale: float = 1.0) -> bytes:
+        """喂当前总振幅（0..1000），返回 348 字节逐键载荷。
+
+        bands32：Analyzer 的 32 段对数频谱（0..1）。只有显示模式 4「曲率频阶」
+        用它画 17 根柱子；其余模式完全忽略这个参数（默认 None → 模式 4 退化成
+        纯「曲率」轮廓，不影响任何其它模式）。
+
+        dt_scale：本帧相当于几个标准 20fps tick（默认 1.0，保持旧调用逐位一致）。
+        MusicPlayer 按实际帧间隔传入 ``dt * 20``；渲染器只缩放随时间推进的动画量。
+        """
+        try:
+            dt = float(dt_scale)
+        except (TypeError, ValueError):
+            dt = 1.0
+        if not math.isfinite(dt) or dt <= 0:
+            dt = 1.0
         if amp1000 > 0:
-            self._silence = 0
+            self._silence = 0.0
             self.st["amp"] = min(1.0, amp1000 / 1000.0)
         else:
-            self._silence += 1
-            if self._silence >= 5:  # 官方 C=5：连续 5 tick 静音才归零
+            # 官方 C=5：连续 5 个基准 tick（250ms）静音才归零；按时间归一，
+            # 66fps 下是 ~16.5 帧而不是 5 帧，避免静音闪烁变快。
+            self._silence += dt
+            if self._silence >= 5:
                 self.st["amp"] = 0.0
-        self.st["huePhase"] = (self.st["huePhase"] + 0.01) % 1.0
+        if bands32 is not None:
+            self.st["spectrum17"] = _bands32_to_17(bands32)
+        self.st["dt"] = dt
+        self.st["huePhase"] = _advance(self.st["huePhase"], 0.01, dt, 1.0)
         grid = _render_frame(self.lay, self.st, self.mode)
         colors: Dict[int, RGB] = {}
         for cell in self.lay["visible"]:
@@ -1075,21 +1466,32 @@ class Analyzer:
         self._base32 = [_AMP_FLOOR] * self.n_bands32
         self.bands32 = [0.0] * self.n_bands32
 
-    def _norm32(self, spectrum: np.ndarray) -> list:
+    def _norm32(self, spectrum: np.ndarray, dt: float = 1.0) -> list:
         out = []
         for i, rng in enumerate(self._bands32_ranges):
             seg = spectrum[rng]
             e = float(np.sqrt(np.mean(seg * seg))) if seg.size else 0.0
             base = self._base32[i]
             r = _AMP_ATTACK if e > base else _AMP_DECAY
-            base = max(base * (1 - r) + e * r, _AMP_FLOOR)
+            base = max(_agc(base, e, r, dt), _AMP_FLOOR)
             self._base32[i] = base
             v = min(1000, int(round(e / base * 1000)))
             out.append(0.0 if v <= 5 else v / 1000.0)
         self.bands32 = out
         return out
 
-    def analyze(self, samples: np.ndarray) -> dict:
+    def analyze(self, samples: np.ndarray, dt_scale: float = 1.0) -> dict:
+        """分析一帧音频；``dt_scale`` 用于把 AGC 的 attack/decay 按时间归一。
+
+        默认 1.0 = 标准 20fps tick（输出与旧实现逐位一致）；66fps 传 ``20/66`` 时
+        z / 3 段 / 32 段 base 的等效时间常数与 20fps 相同，避免高频下增益跟得太快。
+        """
+        try:
+            dt = float(dt_scale)
+        except (TypeError, ValueError):
+            dt = 1.0
+        if not math.isfinite(dt) or dt <= 0:
+            dt = 1.0
         x = np.asarray(samples, dtype=np.float32).reshape(-1)
         if x.size < self.n_fft:
             x = np.pad(x, (0, self.n_fft - x.size))
@@ -1099,9 +1501,9 @@ class Analyzer:
         rms = float(np.sqrt(np.mean(x * x))) if x.size else 0.0
         raw = 0.6 * peak + 0.4 * rms
         if raw > self.z:
-            self.z = self.z * 0.7 + raw * 0.3
+            self.z = _agc(self.z, raw, _AMP_ATTACK, dt)
         else:
-            self.z = self.z * 0.992 + raw * 0.008
+            self.z = _agc(self.z, raw, _AMP_DECAY, dt)
         self.z = max(self.z, _AMP_FLOOR)
         amp = min(1000, int(round(raw / self.z * 1000)))
         if amp <= _AMP_GATE:
@@ -1113,11 +1515,11 @@ class Analyzer:
             e = float(np.sqrt(np.mean(seg * seg))) if seg.size else 0.0
             base = self.bases[i]
             r = _AMP_ATTACK if e > base else _AMP_DECAY
-            base = max(base * (1 - r) + e * r, _AMP_FLOOR)
+            base = max(_agc(base, e, r, dt), _AMP_FLOOR)
             self.bases[i] = base
             v = min(1000, int(round(e / base * 1000)))
             bands.append(0.0 if v <= 5 else v / 1000.0)
-        bands32 = self._norm32(spectrum)
+        bands32 = self._norm32(spectrum, dt)
         return {
             "amp": amp / 1000.0,
             "amp1000": amp,
@@ -1313,35 +1715,56 @@ def list_devices() -> List[dict]:
 
 
 # ----------------------------------------------------------------------
-# ACK 清道夫：音乐帧流 140 包/秒的 ACK 必须被读走，否则固件输入缓冲满后
-# 连 WriteFile 都会被拖慢（真机实测：不读 ACK 时帧率掉到 6fps 且越来越慢）。
+# ACK 清道夫：音乐帧流 140 包/秒（66fps 时 462 包/秒）的 ACK 必须被读走，否则固件
+# 输入缓冲满后连 WriteFile 都会被拖慢（真机实测：不读 ACK 时帧率掉到 6fps 且越来越慢）。
 # 但 hidapi 的 read(timeout) 在空队列上会卡 50~400ms（CancelIoEx 延迟），
 # 所以用独立线程持续阻塞读并丢弃，绝不阻塞发送线程。
+#
+# 平时不需要它：≤30fps 逐包 ACK；≥60fps 帧末 drain（同一线程读走本帧回包）。
+# 只有「≥60fps 且帧末 drain 连续多帧一个回包都没读到」才会启用本兜底。
 # ----------------------------------------------------------------------
 class AckDrainer:
-    def __init__(self, device):
+    def __init__(self, device=None, read=None, name: str = "mk87-ack-drain"):
         self.device = device
+        #: 读函数 ``read(timeout) -> bytes | None``；None → 读设备协议接口（hidapi）
+        self._read = read
+        self._name = name
         self.count = 0
         self._stop = threading.Event()
         self._thread: Optional[threading.Thread] = None
+
+    def _reader(self):
+        if self._read is not None:
+            return self._read
+        iface = self.device.protocol.iface
+        return iface.read_report
 
     def start(self) -> None:
         if self._thread is not None and self._thread.is_alive():
             return
         self._stop.clear()
         self.count = 0
-        self._thread = threading.Thread(target=self._run, name="mk87-ack-drain", daemon=True)
+        self._thread = threading.Thread(target=self._run, name=self._name, daemon=True)
         self._thread.start()
 
+    def is_alive(self) -> bool:
+        return self._thread is not None and self._thread.is_alive()
+
     def _run(self) -> None:
-        iface = self.device.protocol.iface
+        try:
+            read = self._reader()
+        except Exception:  # noqa: BLE001
+            return
         while not self._stop.is_set():
             try:
-                r = iface.read_report(timeout=0.1)
+                r = read(timeout=0.1)
             except Exception:  # noqa: BLE001
                 break
             if r:
                 self.count += 1
+            else:
+                # 真机读超时是 0.1s；这里只在「无回包」时让出一点 CPU（单测假读立即返回）
+                time.sleep(0.002)
 
     def stop(self) -> None:
         self._stop.set()
@@ -1353,6 +1776,23 @@ class AckDrainer:
 # ----------------------------------------------------------------------
 # 播放器
 # ----------------------------------------------------------------------
+def _send_strategy(fps: int, packet_count: int = 7) -> Tuple[bool, int]:
+    """按目标帧率选发送策略：返回 ``(wait_ack, drain)``。
+
+    * 低于 60fps（UI 档位 15/20/30）：逐包等 ACK（``wait_ack=True``）。真机实测 7 包
+      平均 **15.5ms**、最大 20.06ms（docs/spec-lighting.md §4.3），30fps 的 33.3ms
+      预算有 ~13ms 余量，可靠性优先，20fps 行为与改动前完全一致；
+    * ≥60fps（UI 档位 60/66）：连续写 7 包后帧末 drain 本帧的 7 个回包
+      （``wait_ack=False``）。66fps 每帧预算只有 15.15ms < 逐包 ACK 的平均 15.5ms，
+      逐包等 ACK 必然掉帧；而 7 个写操作背靠背完成时 ACK 通常已排队，帧末 drain
+      读的是现成数据。
+    """
+    target = _clamp_fps(fps)
+    if target >= BURST_MIN_FPS:
+        return False, 0
+    return True, 0
+
+
 class MusicPlayer:
     def __init__(self, device):
         self.device = device
@@ -1364,7 +1804,10 @@ class MusicPlayer:
         self.sensitivity = 1.0
         self.backmode = 0
         self.backmode_brightness = 100
-        self.fps = 20
+        #: LED 颜色覆盖 id（本工具增强；default = 官方采样配色）
+        self.color = DEFAULT_COLOR
+        #: 目标帧率（配置值）；实测值走 :attr:`measured_fps`
+        self.fps = DEFAULT_FPS
         self.device_id: Optional[str] = None
         self.level = 0.0
         self.bands: List[float] = [0.0, 0.0, 0.0]
@@ -1378,21 +1821,84 @@ class MusicPlayer:
         self._snapshot: Optional[dict] = None
         self._engine: Optional[MusicEngine] = None
         self._drainer: Optional[AckDrainer] = None
+        self._drainer_failed = False
         self._sender = None
-        #: ACK 处理方式：none=不读（依赖独立清道夫）、drainer=独立线程、sync=每帧同步读 2 个
-        self.ack_mode = "none"
+        #: 当前发送策略：ack（<60fps 逐包等）/ burst（≥60fps 帧末 drain）/ burst+drainer
+        self.send_mode = "ack"
         self.timing = {"read": 0.0, "analyze": 0.0, "send": 0.0, "frames": 0}
         self._ready = threading.Event()
         self._start_error: Optional[str] = None
+        # ---- 实测帧率（最近 ~2s 的帧时间戳；线程安全） ----
+        self._fps_lock = threading.Lock()
+        self._frame_ts: deque = deque()
+        # ---- 节奏 / 健康度（单测可注入假时钟） ----
+        self._clock = time.perf_counter
+        self._sleep = time.sleep
+        self._pace_fps = 0
+        self._late_frames = 0
+        self._ack_miss_streak = 0
 
     @property
     def running(self) -> bool:
         return self._thread is not None and self._thread.is_alive()
 
+    # ------------------------------------------------------------------ 实测帧率
+    def _reset_measured_fps(self) -> None:
+        with self._fps_lock:
+            self._frame_ts.clear()
+
+    def _record_frame_time(self, ts: float) -> None:
+        """记录一帧实际下发完成的单调时钟时间戳（滚动 2s 窗口）。"""
+        with self._fps_lock:
+            dq = self._frame_ts
+            dq.append(float(ts))
+            cutoff = float(ts) - MEASURED_FPS_WINDOW
+            # 至少保留 2 个样本，避免窗口清空后没有可算的跨度
+            while len(dq) > 2 and dq[0] < cutoff:
+                dq.popleft()
+
+    @property
+    def measured_fps(self) -> Optional[float]:
+        """最近 ~2s 的实测帧率（1 位小数）；样本不足时 None（不拿配置值充数）。"""
+        with self._fps_lock:
+            dq = self._frame_ts
+            if len(dq) < 2:
+                return None
+            span = dq[-1] - dq[0]
+            if span < MEASURED_FPS_MIN_SPAN:
+                return None
+            return round((len(dq) - 1) / span, 1)
+
+    def _ensure_drainer(self) -> bool:
+        """确保 ≥60fps 的 ACK 清道夫线程在跑（异步读走回包）。
+
+        真机实测：清道夫在跑时 send ≈ 8.9ms/帧（66fps 稳定）；起不来时调用方回退
+        帧末同步 drain（≈19.8ms/帧，只能跑到 ~45fps）。
+        """
+        d = self._drainer
+        if d is not None and d.is_alive():
+            return True
+        if d is not None:
+            d.stop()
+            self._drainer = None
+        if self._drainer_failed or self._sender is None:
+            return False
+        try:
+            # 只读 FrameSender 的原生句柄：不碰协议接口，避免偷走其它命令的回包
+            d = AckDrainer(read=self._sender.read_ack)
+            d.start()
+            if d.is_alive():
+                self._drainer = d
+                return True
+        except Exception as exc:  # noqa: BLE001
+            log.warning("ACK 清道夫启动失败，回退帧末同步 drain: %s", exc)
+        self._drainer_failed = True
+        return False
+
     def start(self, device_id: Optional[str] = None, mode: Optional[int] = None,
               style: Optional[str] = None, sensitivity: float = 1.0,
-              fps: int = 20, backmode: int = 0, backmode_brightness: int = 100,
-              amplitude: Optional[int] = None) -> dict:
+              fps: int = DEFAULT_FPS, backmode: int = 0, backmode_brightness: int = 100,
+              amplitude: Optional[int] = None, color: Optional[str] = None) -> dict:
         if self.device.transport != "usb":
             raise MK87Error("音乐律动仅支持 USB 有线连接（2.4G 官方不支持）")
         self.stop()
@@ -1409,7 +1915,10 @@ class MusicPlayer:
         # 官方背景参数：backmode(0..11) / backmodeBrightness(10..100)
         self.backmode = int(_clamp(int(backmode or 0), 0, 11))
         self.backmode_brightness = int(_clamp(int(backmode_brightness or 100), 1, 100))
-        self.fps = max(5, min(40, int(fps)))
+        # LED 颜色覆盖（本工具增强）：缺省/default = 不覆盖；未知 id 回落 default
+        self.color = normalize_color_id(color)
+        # 原生帧率：15/20/30/60/66（5..66 兼容；越界钳制到 5/66，无法解析回落 20）
+        self.fps = _clamp_fps(fps)
         self.device_id = device_id
         self.errors = 0
         self.last_error = ""
@@ -1420,11 +1929,19 @@ class MusicPlayer:
         self._ready = threading.Event()
         self._start_error = None
         self.timing = {"read": 0.0, "analyze": 0.0, "send": 0.0, "frames": 0}
+        self.send_mode = "burst" if self.fps >= BURST_MIN_FPS else "ack"
+        self._pace_fps = 0
+        self._late_frames = 0
+        self._drainer_failed = False
+        self._reset_measured_fps()
         self._thread = threading.Thread(target=self._loop, name="mk87-music", daemon=True)
         self._thread.start()
-        log.info("音乐律动启动: mode=%s(请求 %s) amplitude=%s backmode=%s bb=%s fps=%s device=%s",
+        log.info("音乐律动启动: mode=%s(请求 %s) amplitude=%s backmode=%s bb=%s color=%s "
+                 "targetFps=%s send=%s device=%s",
                  self.mode, self.requested_mode, self.amplitude_ui,
-                 self.backmode, self.backmode_brightness, self.fps, device_id or "默认输出")
+                 self.backmode, self.backmode_brightness, self.color,
+                 self.fps, "burst" if self.fps >= BURST_MIN_FPS else "ack",
+                 device_id or "默认输出")
         # 等音频引擎真正打开再返回：失败要立刻报错，不能"假装成功"
         if not self._ready.wait(timeout=5.0):
             self._stop.set()
@@ -1450,7 +1967,8 @@ class MusicPlayer:
             analyzer = Analyzer(capture.samplerate)
             self._engine = MusicEngine(self.mode, amplitude_ui=self.amplitude_ui,
                                        backmode=self.backmode,
-                                       backmode_brightness=self.backmode_brightness)
+                                       backmode_brightness=self.backmode_brightness,
+                                       color=self.color)
             self._snapshot = lighting.ensure_frame_mode(self.device)
             # 帧流走原生通道（Windows）：hidapi 逐包 ACK 只能到 ~10fps，原生通道实测 20fps
             self._sender = lighting.FrameSender(self.device)
@@ -1466,26 +1984,55 @@ class MusicPlayer:
                 except Exception:
                     pass
             return
-        next_t = time.time()
+        next_t = self._clock()
+        last_frame: Optional[float] = None
         self.timing = {"read": 0.0, "analyze": 0.0, "send": 0.0, "frames": 0}
         try:
             while not self._stop.is_set():
+                frame_start = self._clock()
+                target_fps = _clamp_fps(self.fps)
+                period = 1.0 / target_fps
+                # 动画时间步长 = 实际帧间隔 × 20（20fps → 1.0；66fps → ≈0.303）
+                dt = period if last_frame is None else frame_start - last_frame
+                last_frame = frame_start
+                dt_scale = _dt_scale(dt)
+                wait_ack, _ = _send_strategy(target_fps)
+                if wait_ack:
+                    if self._drainer is not None:
+                        # 热更新回 ≤30fps：先停清道夫，避免两个线程同时读同一句柄
+                        self._drainer.stop()
+                        self._drainer = None
+                    drain_now = 0
+                else:
+                    # ≥60fps：连写 7 包，回包交给清道夫异步读；起不来才回退同步 drain
+                    drain_now = 0 if self._ensure_drainer() else BURST_SYNC_DRAIN
+                self.send_mode = ("ack" if wait_ack
+                                  else ("burst+drainer" if self._drainer is not None
+                                        else "burst+drain"))
                 try:
                     t_a = time.perf_counter()
                     samples = capture.read(2048)
                     t_b = time.perf_counter()
-                    analysis = analyzer.analyze(samples)
+                    analysis = analyzer.analyze(samples, dt_scale=dt_scale)
                     t_c = time.perf_counter()
                     self.level = analysis["amp"]
                     self.bands = analysis["bands"]
                     self.levels32 = analysis.get("bands32") or []
-                    payload = self._engine.tick(analysis["amp1000"]) if self._engine else b""
+                    payload = (self._engine.tick(analysis["amp1000"], analysis.get("bands32"),
+                                                 dt_scale=dt_scale)
+                               if self._engine else b"")
                     # 记录本帧逐键颜色：前端「官方方案」预览直接回放（与设备实发帧同源）
                     self.last_colors = self._engine.last_colors if self._engine else {}
-                    # 音乐帧流 20fps：原生通道逐包等 ACK（单包 0.5~3ms），不再走 hidapi
+                    drained = 0
                     if self._sender is not None:
-                        self._sender.send(payload, self.frames & 0xFF, wait_ack=True,
-                                          ack_timeout=0.006)
+                        # ≤30fps 逐包 ACK；≥60fps 连写 7 包（回包由清道夫线程读走；
+                        # 清道夫起不来时才在帧末同步 drain）
+                        self._sender.send(
+                            payload, self.frames & 0xFF,
+                            wait_ack=wait_ack,
+                            ack_timeout=0.006,
+                            drain=drain_now,
+                        )
                     t_d = time.perf_counter()
                     tm = self.timing
                     tm["read"] += t_b - t_a
@@ -1494,11 +2041,15 @@ class MusicPlayer:
                     tm["frames"] += 1
                     self.last_payload = payload
                     self.frames += 1
+                    # 实测帧率用单调时钟的「发送完成」时间戳（可注入假时钟做单测）
+                    self._record_frame_time(self._clock())
                     if self.frames % 200 == 0:
                         n = max(1, self.timing.get("frames", 1))
-                        log.debug("音乐帧流: %d 帧, 平均 send=%.1fms analyze=%.1fms, amp=%.2f",
+                        log.debug("音乐帧流: %d 帧, 平均 send=%.1fms analyze=%.1fms, "
+                                  "target=%sfps measured=%sfps dtScale=%.3f, amp=%.2f",
                                   self.frames, self.timing["send"] / n * 1000,
-                                  self.timing["analyze"] / n * 1000, self.level)
+                                  self.timing["analyze"] / n * 1000, target_fps,
+                                  self.measured_fps, dt_scale, self.level)
                 except MK87Error:
                     raise
                 except Exception as exc:  # noqa: BLE001
@@ -1507,19 +2058,31 @@ class MusicPlayer:
                     log.warning("音乐帧发送异常 #%d: %s", self.errors, exc)
                     if self.errors > 50:
                         break
-                # 周期每帧重算：支持运行中热更新 fps
-                period = 1.0 / max(5, min(40, int(self.fps or 20)))
-                next_t += period
-                sleep = next_t - time.time()
-                if sleep < -period:
-                    next_t = time.time()
-                elif sleep > 0:
-                    time.sleep(sleep)
+                # ----------------------------------------------------------
+                # 节奏：按目标 period 用单调时钟排绝对 deadline。
+                # * 周期每帧重算 → 运行中热更新 fps 立即生效；
+                # * 滞后超过 1 个 period 时重置 next_t（不补发、不突发）；
+                # * fps 档位变化时从本帧起重新排期，不背旧周期的欠账。
+                # ----------------------------------------------------------
+                now = self._clock()
+                target_now = _clamp_fps(self.fps)
+                period_now = 1.0 / target_now
+                if target_now != self._pace_fps or self._pace_fps == 0:
+                    self._pace_fps = target_now
+                    next_t = frame_start + period_now
+                else:
+                    next_t += period_now
+                if now - next_t > period_now:
+                    self._late_frames += 1
+                    next_t = now
+                elif next_t > now:
+                    self._sleep(next_t - now)
         except Exception as exc:  # noqa: BLE001
             self.errors += 1
             self.last_error = str(exc)
         finally:
             self.last_colors = {}
+            self._reset_measured_fps()
             try:
                 capture.close()
             except Exception:
@@ -1536,8 +2099,10 @@ class MusicPlayer:
 
     def update(self, mode: Optional[int] = None, amplitude: Optional[int] = None,
                backmode: Optional[int] = None, backmode_brightness: Optional[int] = None,
-               fps: Optional[int] = None) -> dict:
-        """运行中热更新参数（显示模式 / 背景模式 / 背景亮度 / 振幅 / 帧率），不打断音频采集。"""
+               fps: Optional[int] = None, color: Optional[str] = None) -> dict:
+        """运行中热更新参数（显示模式 / 背景模式 / 背景亮度 / 振幅 / 帧率 / LED 颜色），
+        不打断音频采集。color=None 表示本次不改（显式传 "default" 才会恢复官方配色）。
+        """
         engine = self._engine
         if engine is None or not self.running:
             raise MK87Error("音乐律动未在运行，无法热更新参数")
@@ -1545,6 +2110,8 @@ class MusicPlayer:
             self.requested_mode = int(mode)
             engine.set_mode(int(mode))
             self.mode = engine.mode
+        if color is not None:
+            self.color = engine.set_color(color)
         if amplitude is not None:
             self.amplitude_ui = int(_clamp(int(amplitude), 1, 100))
             engine.set_amplitude(self.amplitude_ui)
@@ -1556,10 +2123,16 @@ class MusicPlayer:
             self.backmode = int(engine.st["backmode"])
             self.backmode_brightness = int(engine.st["backmodeBrightness"])
         if fps is not None:
-            self.fps = max(5, min(40, int(fps)))
-        log.info("音乐律动热更新: mode=%s(请求 %s) backmode=%s bb=%s amp=%s fps=%s",
+            target = _clamp_fps(fps)
+            if target != self.fps:
+                self.fps = target
+                # 换档后旧窗口的样本会把实测值拖在旧档位附近 ~2s，直接清空重测
+                self._reset_measured_fps()
+                self._pace_fps = 0
+                self._late_frames = 0
+        log.info("音乐律动热更新: mode=%s(请求 %s) backmode=%s bb=%s amp=%s color=%s targetFps=%s",
                  self.mode, self.requested_mode, self.backmode,
-                 self.backmode_brightness, self.amplitude_ui, self.fps)
+                 self.backmode_brightness, self.amplitude_ui, self.color, self.fps)
         return self.status()
 
     def stop(self) -> dict:
@@ -1569,6 +2142,7 @@ class MusicPlayer:
         if self._thread is not None:
             self._thread.join(timeout=2.0)
             self._thread = None
+        self._reset_measured_fps()
         return self.status()
 
     def status(self) -> dict:
@@ -1582,12 +2156,20 @@ class MusicPlayer:
             "amplitude": self.amplitude_ui,
             "backmode": self.backmode,
             "backmodeBrightness": self.backmode_brightness,
+            # LED 颜色覆盖 id（本工具增强）；default = 官方采样配色
+            "color": self.color,
             "implementedModes": sorted(IMPLEMENTED_MODES),
-            # 「官方方案」下拉只列 v1 的 12 个；这里是其中主机侧已实现渲染器的模式
+            # 「官方方案」下拉：21 项（官方 v1 的 12 个 + 补回的 14~22 + 100）；这里是其中
+            # 主机侧已实现渲染器的 20 个（100 屏光联动未移植）
             "officialModes": list(V1_DISPLAY_MODES),
             "officialImplementedModes": list(V1_IMPLEMENTED_MODES),
             "sensitivity": self.sensitivity,
-            "fps": self.fps,
+            # 契约：fps = 运行时实测值（float，未运行/样本不足 → None）；
+            # targetFps = 用户配置的目标档位（int，前端原生帧率控件回填用）。
+            "fps": self.measured_fps if self.running else None,
+            "targetFps": int(self.fps),
+            # 发送策略诊断：ack / burst / burst+drainer（真机验证用，前端忽略）
+            "sendMode": self.send_mode,
             "deviceId": self.device_id,
             "level": round(float(self.level), 3),
             "bands": [round(float(b), 3) for b in self.bands],
@@ -1602,6 +2184,8 @@ class MusicPlayer:
                 "readMs": round(tm.get("read", 0.0) / n * 1000, 2),
                 "analyzeMs": round(tm.get("analyze", 0.0) / n * 1000, 2),
                 "sendMs": round(tm.get("send", 0.0) / n * 1000, 2),
+                # 排期滞后超过 1 个 period 而被重置的次数（66fps 真机调优用）
+                "lateFrames": int(self._late_frames),
             },
             "supported": self.device.transport == "usb",
         }

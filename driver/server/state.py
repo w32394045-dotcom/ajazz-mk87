@@ -207,6 +207,25 @@ class TftJob:
 
 
 # ----------------------------------------------------------------------
+# 音乐律动预览事件限速
+# ----------------------------------------------------------------------
+#: 键盘发包可以到 66fps，但 ``music_frame`` 每帧要带 87 键 × 4B 的 JSON
+#: （~1.5KB），66Hz 会给浏览器和 WS 造成不必要负担；预览是「看个大概」，
+#: 30Hz 已足够流畅（官方 UI 本身也只有 20fps 预览）。实测帧率仍按 30Hz 回传。
+MUSIC_PREVIEW_MAX_FPS = 30
+
+
+def _music_preview_period(target_fps) -> float:
+    """预览事件的发送周期（秒）：目标帧率上限 66，预览上限 30fps。"""
+    try:
+        fps = float(target_fps)
+    except (TypeError, ValueError):
+        fps = float(music.DEFAULT_FPS)
+    fps = max(float(music.FPS_MIN), min(float(music.FPS_MAX), fps))
+    return 1.0 / min(fps, float(MUSIC_PREVIEW_MAX_FPS))
+
+
+# ----------------------------------------------------------------------
 # 设备管理器
 # ----------------------------------------------------------------------
 class DeviceManager:
@@ -291,8 +310,9 @@ class DeviceManager:
         """音乐律动运行时推送两类事件：
 
         * ``music_level``（10fps）：总振幅 + 32 段频谱，给电平条/频谱条用；
-        * ``music_frame``（跟随引擎 fps，默认 20fps）：后端**实际发给键盘那一帧**的
-          逐键颜色，前端「官方方案」预览直接回放它，保证屏幕预览与键盘逐键一致。
+        * ``music_frame``（跟随目标帧率、预览上限 30fps）：后端**实际发给键盘那一帧**的
+          逐键颜色，前端「官方方案」预览直接回放它，保证屏幕预览与键盘逐键一致；
+          事件里的 ``fps`` 是后端实测帧率（float），与 ``/api/music/status`` 同源。
         """
         level_due = 0.0
         frame_due = 0.0
@@ -310,7 +330,8 @@ class DeviceManager:
                             },
                         })
                     if now >= frame_due:
-                        frame_due = now + 1.0 / max(5, min(40, int(self.music.fps or 20)))
+                        frame_due = now + _music_preview_period(
+                            getattr(self.music, "fps", music.DEFAULT_FPS))
                         frame = self._music_frame_event()
                         if frame is not None:
                             self.emit(frame)
@@ -323,7 +344,11 @@ class DeviceManager:
             time.sleep(0.1)
 
     def _music_frame_event(self) -> Optional[dict]:
-        """把 MusicPlayer 最近一帧的逐键颜色转成 WS 事件（还没出帧时返回 None）。"""
+        """把 MusicPlayer 最近一帧的逐键颜色转成 WS 事件（还没出帧时返回 None）。
+
+        ``fps`` 用实测值（``MusicPlayer.measured_fps``，float，样本不足为 None），
+        不再用配置值冒充实测。
+        """
         colors = self.music.last_colors
         if not colors:
             return None
@@ -332,7 +357,7 @@ class DeviceManager:
             "data": {
                 "mode": int(self.music.mode),
                 "frame": int(self.music.frames),
-                "fps": int(self.music.fps),
+                "fps": getattr(self.music, "measured_fps", None),
                 "colors": {str(int(slot)): [int(rgb[0]), int(rgb[1]), int(rgb[2])]
                            for slot, rgb in colors.items()},
             },
@@ -548,7 +573,7 @@ class DeviceManager:
         st = self.device.status.to_dict()
         st["mock"] = False
         st["shell"] = bool(getattr(self, "shell_mode", False))
-        st["webVersion"] = "0.1.2"
+        st["webVersion"] = "0.1.3"
         st["recentNotifications"] = [
             e for e in self.device.recent_events if e.get("type") == "notification"
         ][-10:]

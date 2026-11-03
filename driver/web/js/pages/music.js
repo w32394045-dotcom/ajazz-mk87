@@ -1,13 +1,16 @@
 /* pages/music.js — 音乐律动（仅 USB）：两种方案
    * 当前方案：本工具参数（官方渲染器模式 13/14/17/4 + 灵敏度 + 帧率），键盘可视化为本地频谱动画
-   * 官方方案：设置项与官方 v1 插件完全一致（显示模式 12 种 / 背景模式 11 种 / 背景亮度 / 振幅），
-     键盘可视化回放后端实发帧（官方渲染器逐键颜色，与键盘同步）
+   * 官方方案：官方 v1 同款设置项（显示模式 21 种（含 100 屏光联动）/ 背景模式 11 种 / 背景亮度 / 振幅）
+     + 本工具增强（LED 颜色覆盖、原生帧率 20/60/66，默认 66）；键盘可视化回放后端实发帧。
    两套参数表见 data/music.js（官方 v1 真值，来源 docs/music-v1-config.json +
    capture/official_music_colors3.jsonl 采样）；后端标注哪些 v1 模式已移植见 status.officialImplementedModes。
-   引擎在 Python 后端（WASAPI loopback / PipeWire monitor → FFT → 20fps 逐键帧流 0x32）。
+   引擎在 Python 后端（WASAPI loopback / PipeWire monitor → FFT → 逐键帧流 0x32）。
    仅 USB 支持：2.4G 下官方明确不支持（spec-lighting.md §4.6）。 */
 import { KEY_LAYOUT } from '../data/keyboard.js';
-import { OFFICIAL_MUSIC_MODES, OFFICIAL_BACKGROUND_MODES, OFFICIAL_LIMITS } from '../data/music.js';
+import {
+  OFFICIAL_MUSIC_MODES, OFFICIAL_BACKGROUND_MODES, OFFICIAL_LIMITS,
+  OFFICIAL_COLOR_SCHEMES, OFFICIAL_FRAME_RATES, OFFICIAL_DEFAULT_FRAME_RATE,
+} from '../data/music.js';
 import { icon } from '../icons.js';
 import { h, clamp, store } from '../util.js';
 import { Keyboard } from '../components/keyboard.js';
@@ -22,8 +25,10 @@ const DEFAULT_MODES = [
   { mode: 17, name: '萤火轨迹', nameEn: 'Firefly Trail' },
   { mode: 4, name: '曲率频谱', nameEn: 'Curvature Frequency Steps' },
 ];
-/** 后端已移植的官方 v1 渲染器（后端 status.officialImplementedModes 可用时以它为准） */
-const IMPLEMENTED_FALLBACK = [1, 2, 4, 5, 6, 7, 8, 9, 10, 11, 13];
+/** 后端已移植的官方渲染器（21 项里除 100 屏光联动以外的 20 项；status.officialImplementedModes 可用时以它为准） */
+const IMPLEMENTED_FALLBACK = [1, 2, 13, 4, 5, 6, 7, 8, 9, 11, 10, 14, 15, 16, 17, 18, 19, 20, 21, 22];
+/** 已用官方采样逐项校验过的渲染器（14–22 为自研实现，不在其中） */
+const VERIFIED_MODES = new Set([1, 2, 4, 5, 6, 7, 8, 9, 10, 11, 13]);
 
 function hslToRgb(hue, s = 95, l = 55) {
   hue = ((hue % 360) + 360) % 360;
@@ -61,18 +66,23 @@ export default {
     let fps = 20;
     let statusModes = null;
 
-    /* 官方方案参数（与官方 v1 插件 UI 完全一致） */
+    /* 官方方案参数（与官方 v1 插件 UI 一致） */
     let offMode = OFFICIAL_MUSIC_MODES[0].value;
     let offBackmode = 0;
     let offBackBright = OFFICIAL_LIMITS.backBrightness.default;
     let offAmplitude = OFFICIAL_LIMITS.amplitude.default;
+    /* 本工具增强：LED 颜色覆盖 / 原生帧率（仅官方方案使用） */
+    let offColor = 'default';
+    let offFps = OFFICIAL_DEFAULT_FRAME_RATE;
 
     /* 后端实时状态 */
     let backendMode = null;        // 实际渲染模式（未移植的模式会回落到 13）
     let backendRequested = null;   // 请求的模式
-    let backendFps = null;
+    let backendFps = null;         // 后端回传的帧率（官方方案为实测值，可能是浮点）
+    let measuredFps = null;        // 官方方案页面上显示的「实测」帧率；null → 显示 —
     let implementedModes = IMPLEMENTED_FALLBACK.slice();
     let officialColors = null;     // Map<slot, [r,g,b]> 后端最近一帧
+    let statusTimer = null;
     let levels = new Array(BAND_COUNT).fill(0);
     let targetLevels = new Array(BAND_COUNT).fill(0);
     const offs = [];
@@ -102,10 +112,19 @@ export default {
         if (st.mode != null) backendMode = Number(st.mode);
         if (st.requestedMode != null) backendRequested = Number(st.requestedMode);
         if (st.fps != null) backendFps = Number(st.fps);
+        if (running && st.fps != null) measuredFps = Number(st.fps);
         // 官方参数回填（刷新页面 / 从别处启动时保持一致）
         if (st.amplitude != null) offAmplitude = Number(st.amplitude);
         if (st.backmode != null) offBackmode = Number(st.backmode);
         if (st.backmodeBrightness != null) offBackBright = Number(st.backmodeBrightness);
+        /* 新增字段向后兼容：老后端没有 color/fps 时保持 default / 66 */
+        if (typeof st.color === 'string' && OFFICIAL_COLOR_SCHEMES.some((c) => c.id === st.color)) {
+          offColor = st.color;
+        }
+        /* 原生帧率：status.targetFps 是后端配置值（20/60/66）；status.fps 是实测值，不能用于回填 */
+        if (OFFICIAL_FRAME_RATES.includes(Number(st.targetFps))) {
+          offFps = Number(st.targetFps);
+        }
         const req = st.requestedMode != null ? Number(st.requestedMode) : Number(st.mode);
         if (OFFICIAL_MUSIC_MODES.some((m) => m.value === req)) offMode = req;
         if (st.colors && typeof st.colors === 'object') officialColors = officialFrameMap(st.colors);
@@ -158,10 +177,15 @@ export default {
       h('div', { style: { marginTop: '14px' } }, sensSlider.el),
     );
 
-    /* ---------------- 官方方案控件（官方 v1 同款设置项） ---------------- */
+    /* ---------------- 官方方案控件（官方 v1 同款设置项 + 本工具增强） ---------------- */
     const offLabel = (o) => (LANG_EN ? o.en : o.zh);
     const implementedSet = () => new Set(implementedModes);
     const isPorted = (value) => implementedSet().has(Number(value));
+    const colorById = (id) => OFFICIAL_COLOR_SCHEMES.find((c) => c.id === id) || OFFICIAL_COLOR_SCHEMES[0];
+    const colorPreviewBackground = (id) => {
+      const s = colorById(id);
+      return s.colors.length ? `linear-gradient(90deg, ${s.colors.join(', ')})` : 'rgba(127,127,127,.28)';
+    };
 
     const officialModeSelect = h('select', { class: 'select' });
     for (const m of OFFICIAL_MUSIC_MODES) {
@@ -175,6 +199,7 @@ export default {
       if (m) {
         if (m.renderer === 'plugin') text = '屏光联动由官方 Music.exe 读取屏幕内容；本工具的自研屏幕同步待做，会回落到「随曲起舞」';
         else if (!isPorted(m.value)) text = '该模式渲染器尚未移植，会回落到「随曲起舞」';
+        else if (!VERIFIED_MODES.has(Number(m.value))) text = '该模式渲染器已移植（自研实现，未做官方采样校验）';
         else text = '官方渲染器已移植（颜色/调色板已用官方采样校验）';
       }
       officialModeHint.textContent = text;
@@ -206,6 +231,48 @@ export default {
       onInput: () => scheduleLiveUpdate(),
     });
 
+    /* LED 颜色覆盖（本工具增强；default = 不覆盖，与官方完全一致） */
+    const officialColorSelect = h('select', { class: 'select' });
+    for (const c of OFFICIAL_COLOR_SCHEMES) {
+      officialColorSelect.append(h('option', { value: c.id }, offLabel(c)));
+    }
+    officialColorSelect.value = offColor;
+    const colorPreview = h('div', {
+      class: 'music-color-preview', 'aria-hidden': 'true',
+      style: {
+        height: '6px', borderRadius: '999px', marginTop: '8px',
+        background: colorPreviewBackground(offColor),
+        boxShadow: 'inset 0 0 0 1px rgba(127,127,127,.18)',
+      },
+    });
+    const colorHint = h('div', { class: 'field-hint', style: { marginTop: '6px' } },
+      'LED 颜色覆盖只对动态多色模式（1/2/4/5/13）生效；纯色模式 6/7/8/9/10/11 仍使用官方采样色。');
+    officialColorSelect.addEventListener('change', () => {
+      offColor = officialColorSelect.value;
+      colorPreview.style.background = colorPreviewBackground(offColor);
+      scheduleLiveUpdate();
+    });
+
+    /* 原生帧率（本工具增强；官方 v1 固定 20fps） */
+    const officialFpsSeg = createSegmented({
+      options: OFFICIAL_FRAME_RATES.map((v) => ({ value: v, label: String(v) })),
+      value: offFps, small: true,
+      onChange: (v) => { offFps = Number(v); scheduleLiveUpdate(); },
+    });
+    const fpsReadout = h('span', { class: 'mono tiny' }, '—');
+    function updateFpsReadout() {
+      fpsReadout.textContent = measuredFps == null || !Number.isFinite(Number(measuredFps))
+        ? '—'
+        : Number(measuredFps).toFixed(1);
+    }
+    const fpsReadoutRow = h('div', { class: 'row', style: { gap: '8px', marginTop: '6px', alignItems: 'baseline' } },
+      h('span', { class: 'tiny muted' }, '实测帧率'),
+      fpsReadout,
+      h('span', { class: 'tiny muted' }, 'fps'),
+    );
+    const fpsHint = h('div', { class: 'field-hint', style: { marginTop: '6px' } },
+      '自研增强：官方方案默认 66 fps（不是官方 UI 的设置项）');
+
     const officialParams = h('div', {},
       h('div', { class: 'field' },
         h('div', { class: 'field-label' }, '显示模式'), officialModeSelect, officialModeHint),
@@ -213,8 +280,14 @@ export default {
         h('div', { class: 'field-label' }, '背景模式'), officialBgSelect),
       h('div', { style: { marginTop: '14px' } }, offBrightSlider.el),
       h('div', { style: { marginTop: '8px' } }, offAmpSlider.el),
+      h('div', { class: 'field', style: { marginTop: '14px' } },
+        h('div', { class: 'field-label' }, 'LED 颜色', h('span', { class: 'badge' }, '自研增强')),
+        officialColorSelect, colorPreview, colorHint),
+      h('div', { class: 'field', style: { marginTop: '12px' } },
+        h('div', { class: 'field-label' }, '原生帧率', h('span', { class: 'badge' }, '自研增强')),
+        officialFpsSeg.el, fpsReadoutRow, fpsHint),
       h('div', { class: 'tiny muted mt-12' },
-        '与官方 v1 插件完全相同的设置项：显示模式 12 种 / 背景模式 11 种 / 背景亮度 / 振幅'),
+        '官方 v1 设置项：显示模式 21 种（含屏光联动）/ 背景模式 11 种 / 背景亮度 / 振幅；LED 颜色与原生帧率为本工具增强'),
     );
 
     function syncOfficialControls() {
@@ -222,6 +295,10 @@ export default {
       officialBgSelect.value = String(offBackmode);
       offBrightSlider.set(offBackBright);
       offAmpSlider.set(offAmplitude);
+      officialColorSelect.value = offColor;
+      colorPreview.style.background = colorPreviewBackground(offColor);
+      officialFpsSeg.set(offFps);
+      updateFpsReadout();
       refreshOfficialModeHint();
     }
 
@@ -234,7 +311,8 @@ export default {
           backmode: offBackmode,
           backmodeBrightness: offBackBright,
           amplitude: offAmplitude,
-          fps: 20,
+          color: offColor,
+          fps: offFps,
         };
       }
       return {
@@ -249,13 +327,42 @@ export default {
       if (!st) return;
       if (st.mode != null) backendMode = Number(st.mode);
       if (st.requestedMode != null) backendRequested = Number(st.requestedMode);
-      if (st.fps != null) backendFps = Number(st.fps);
+      if (st.fps != null) {
+        const v = Number(st.fps);
+        if (Number.isFinite(v)) { backendFps = v; measuredFps = v; }
+      }
+      if (OFFICIAL_FRAME_RATES.includes(Number(st.targetFps))) offFps = Number(st.targetFps);
       if (Array.isArray(st.officialImplementedModes) && st.officialImplementedModes.length) {
         implementedModes = st.officialImplementedModes.map(Number);
       } else if (Array.isArray(st.implementedModes) && st.implementedModes.length) {
         implementedModes = st.implementedModes.map(Number);
       }
       if (st.colors && typeof st.colors === 'object') officialColors = officialFrameMap(st.colors);
+      updateFpsReadout();
+      refreshOfficialModeHint();
+    }
+    /* 实测帧率：status.fps 是后端回传的实测值（可能是浮点），运行中每 3s 刷新一次 */
+    async function pollStatusFps() {
+      if (!running) return;
+      try {
+        const st = await api.get('/api/music/status');
+        if (!st) return;
+        if (st.fps != null) {
+          const v = Number(st.fps);
+          if (Number.isFinite(v)) { backendFps = v; measuredFps = v; }
+        } else {
+          measuredFps = null;
+        }
+        updateFpsReadout();
+        refreshPreviewNote();
+      } catch { /* 轮询失败不影响律动 */ }
+    }
+    function startStatusPoll() {
+      if (statusTimer) return;
+      statusTimer = setInterval(pollStatusFps, 3000);
+    }
+    function stopStatusPoll() {
+      if (statusTimer) { clearInterval(statusTimer); statusTimer = null; }
     }
     async function liveUpdate() {
       if (!running) return;
@@ -337,7 +444,10 @@ export default {
       previewNoteState.textContent = running
         ? (officialColors ? '实时回放中' : '等待首帧…')
         : '开始律动后显示实时回放';
-      previewNoteFps.textContent = `${backendFps || 20} fps`;
+      const shownFps = measuredFps != null
+        ? Number(measuredFps).toFixed(1)
+        : (backendFps != null ? Number(backendFps).toFixed(1) : null);
+      previewNoteFps.textContent = shownFps ? `${shownFps} fps` : (running ? '— fps' : `${offFps} fps`);
     }
 
     function applyScheme(clear = false) {
@@ -346,7 +456,7 @@ export default {
       currentParams.style.display = official ? 'none' : '';
       officialParams.style.display = official ? '' : 'none';
       schemeHint.textContent = official
-        ? '官方同款设置项（显示模式 / 背景模式 / 背景亮度 / 振幅）'
+        ? '官方同款设置项 + 本工具增强（LED 颜色 / 原生帧率）'
         : '本工具参数（模式 / 帧率 / 灵敏度），预览为本地频谱动画';
       previewHint.textContent = official ? '设备实发帧（官方渲染器）' : '本地频谱预览（非设备输出）';
       refreshPreviewNote();
@@ -408,7 +518,18 @@ export default {
       if (!d) return;
       const firstFrame = !officialColors || !officialColors.size;
       if (d.mode != null) backendMode = Number(d.mode);
-      if (d.fps != null) backendFps = Number(d.fps);
+      if (d.fps != null) {
+        const v = Number(d.fps);
+        if (Number.isFinite(v)) {
+          const changed = backendFps !== v;
+          backendFps = v;
+          measuredFps = v;
+          if (changed) {
+            updateFpsReadout();
+            if (scheme === 'official') refreshPreviewNote();
+          }
+        }
+      }
       officialColors = officialFrameMap(d.colors);
       if (firstFrame && officialColors.size) refreshPreviewNote();
     }));
@@ -422,8 +543,12 @@ export default {
       idleHint.style.display = on ? 'none' : '';
       levelBarWrap.style.opacity = on ? '1' : '.55';
       if (on) {
+        startStatusPoll();
         if (!raf) loop();
       } else {
+        stopStatusPoll();
+        measuredFps = null;
+        updateFpsReadout();
         keyboard.clearColors();
         officialColors = null;
         targetLevels = new Array(BAND_COUNT).fill(0);
@@ -494,7 +619,8 @@ export default {
           }
           body = {
             deviceId: selectedDevice,
-            fps: 20,
+            fps: offFps,
+            color: offColor,
             mode: offMode,
             backmode: offBackmode,
             backmodeBrightness: offBackBright,
@@ -533,7 +659,7 @@ export default {
     const controlCard = h('section', { class: 'card' },
       h('div', { class: 'card-head' },
         h('div', {}, h('div', { class: 'card-title' }, '音乐律动'),
-          h('div', { class: 'card-desc' }, '系统音频 → 官方渲染器 → 20fps 逐键 RGB 帧流（USB 0x32）')),
+          h('div', { class: 'card-desc' }, '系统音频 → 官方渲染器 → 逐键 RGB 帧流（USB 0x32）')),
         h('div', { class: 'spacer' }),
         statusBadge,
       ),
@@ -588,6 +714,7 @@ export default {
           ['主循环', '50 ms tick（20 fps）'],
           ['帧载荷', '87 键 × 4B = 348B / 帧（7 包）'],
           ['官方参数', '显示模式 / 背景模式 / 背景亮度 / 振幅（与官方 v1 同款）'],
+          ['自研增强', 'LED 颜色覆盖 · 原生帧率 20 / 60 / 66（默认 66）'],
           ['激活条件', 'LED mode ∈ {20,21,128}，停帧约 5s 回落'],
           ['2.4G', '不支持（官方确认）'],
           ['当前连接', supported ? 'USB · 可用' : '2.4G · 不可用'],
@@ -600,8 +727,8 @@ export default {
       h('div', { class: 'card-body' },
         h('div', { class: 'tiny muted', style: { lineHeight: '1.8' } },
           h('p', {}, '官方 v1 音乐律动把参数交给 Windows 专有的 Music.exe，由它用原生 HID 驱动键盘；浏览器也不发帧，所以跨平台不可用。'),
-          h('p', {}, '本工具的「官方方案」使用与官方 v1 插件完全相同的设置项：显示模式（12 种）、背景模式（11 种）、背景亮度、振幅；由本地移植的官方渲染器计算逐键帧并发送（cmd 0x32）。'),
-          h('p', {}, '其中 1/2/4/5/6/7/8/9/10/11 是官方「曲率频阶柱状」的不同调色板（模式号即调色板），13 是同心环；颜色、覆盖率与亮度缩放都用官方采样（capture/official_music_colors3.jsonl）逐项校验过。'),
+          h('p', {}, '本工具的「官方方案」使用与官方 v1 插件相同的设置项：显示模式（21 种，含 100 屏光联动）、背景模式（11 种）、背景亮度、振幅，并增加本工具自研的 LED 颜色覆盖与原生帧率（20/60/66，默认 66）；由本地移植的官方渲染器计算逐键帧并发送（cmd 0x32）。'),
+          h('p', {}, '其中 1/2/4/5/6/7/8/9/10/11 是官方「曲率频阶柱状」的不同调色板（模式号即调色板），13 是同心环，14–22 是扩展模式（自研渲染器）；1/2/4/5/6/7/8/9/10/11/13 的颜色、覆盖率与亮度缩放都用官方采样（capture/official_music_colors3.jsonl）逐项校验过。'),
           h('p', {}, '显示模式 100「屏光联动」由官方 Music.exe 读屏计算，本工具的自研屏幕同步待做，当前会回落到 13。'),
           h('p', {}, '「当前方案」保留本工具自己的参数（模式 / 帧率 / 灵敏度）与本地频谱预览动画，用于对比调试。'),
           h('p', {}, '因此音乐律动完全在本地、跨平台可用，且不需要安装任何插件。'),
@@ -627,6 +754,7 @@ export default {
     return () => {
       offs.forEach((off) => off?.());
       clearTimeout(liveTimer);
+      stopStatusPoll();
       cancelAnimationFrame(raf);
       keyboard.destroy();
     };

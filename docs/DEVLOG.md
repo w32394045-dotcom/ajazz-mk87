@@ -624,5 +624,102 @@ C:\Users\ptfm\Documents\ajazz-re\driver\dist-packages\MK87Studio-0.1.1-win64-por
 - 需要用户配合的实验：E1 重启后电量时间线（新日志已加）；E2 写回 mode=11 后断电/重启验证持久性（需用户同意写一次设备）；E4 禁用 MusicPlug 自启对照（需改系统设置）。
 - 屏光联动（100）与 LED 颜色第三下拉框：尚未实现（下一步）。
 
+---
 
+## 19 2026-11-03：官方音乐方案 v0.1.3（21 模式 / mode 4 真值 / LED 颜色 / 原生 66fps）
 
+### 19.1 用户诉求（原话要点）
+
+- 「那四个音效有问题……官方方案这边重新采样，不要按旧方案；旧方案保留在当前方案标签」
+- 「只改这个第 10 个……model 4，其他你给我改回去」（复核后：其余 9 个官方效果零改动）
+- 「弄一个第三个下拉框……设置灯柱具体的颜色……默认情况跟现在一模一样……多给几套预设」
+- 「官方的针到底发 20 帧还是 30 帧还是 60 帧」→「按官方那种发包模式走，也不写死」；
+  「有必要做动态波动吗」→ 结论：**不复刻逐帧抖动**，用高精度目标帧率 + 自适应追赶 + 实测值回显
+- 「之前研究出来的模式补回来」；「E（自研屏光联动 / 实验）先不做，ABCDF 做完先发布」
+- 流程要求：先用子代理研究/实现、Lead 检验；上下文有限、少浪费 token
+
+### 19.2 官方 v1「显示模式 4」重新采样（子代理；全程只读 HTTP，不碰 HID）
+
+- 方法：官方 MusicPlug.exe（127.0.0.1:9191）`GET /api/keyboard/layout/base64` → `musiceffect?param=` →
+  100ms 轮询 `musiceffect/`；音源 = 48kHz 正弦单音（100/440/2k/4k/8kHz）、200→6400Hz 阶梯扫频、
+  静音；amplitude 10/30/50/70/100 扫描。原始数据 `capture/official_v1_mode4*.jsonl`（gitignore，10 个文件），
+  工具 [probe/capture_official_v1_mode4.py](../probe/capture_official_v1_mode4.py)、
+  [probe/analyze_official_v1_mode4.py](../probe/analyze_official_v1_mode4.py)、`probe/play_tone_loop.ps1`
+- 真值（稳定段 2.5s 后，102 键）：
+  - 几何 = **17 列频谱柱、100% 底部对齐**（1200/1200 帧；对照 mode 1 也底部对齐，mode 13 不是）
+  - 列 = 频率（左低右高、对数，约 110Hz–12kHz）：100Hz 单音只点最左 3 列，2k/4k/8k 峰值落在第 6~11 /
+    10~12 / 15~16 列；阶梯扫频柱峰逐级右移
+  - 颜色 = 以 (2,8) 为原点的径向色相（满饱和、最大通道 255；左右半屏差约 180°），
+    **整块调色板以 ~275°/s 旋转**（与 amplitude 无关；100ms 采样每格前进 27~28°）
+  - 柱高随 amplitude 增大：amp=30 单音峰值约 4/6 行，amp=100 顶到 6/6
+- 旧实现 vs 真值：旧 `_render_mode_steps(mode=4)` 用合成正弦包络（与音频无关）/ `/8` 增益让 amp=30
+  基本铺满 / `huePhase`(0..1) 当度数用导致几乎不转 → 这就是「四个音效不对」的根因
+- 改动（只碰 mode 4）：`music.py` 新增 `_MODE4_*` 常量、`_bands32_to_17()`、`_render_mode_4()`；
+  `_render_frame` 单独路由 `if mode == 4`；`V1_STEP_MODES` 去掉 4；`tick(amp1000, bands32=None)` 与
+  `MusicPlayer._loop` 传入 Analyzer 的 32 段频谱
+- 未确定（代码注释已标注）：列↔频率边界由 5 个单音+扫频反推（相邻列有 1 列扩散误差）；柱高-振幅只标定
+  amp=30/100 两点；官方静音也有柱（可能采到设备噪声），静音场景用 `_MODE4_CURVATURE` 兜底轮廓近似
+
+### 19.3 官方显示模式补回 9 个（下拉 12 → 21 项）
+
+- `V1_DISPLAY_MODES = [1,2,13,4,5,6,7,8,9,11,10,14,15,16,17,18,19,20,21,22,100]`
+- 补回：14 光尘螺旋 / 15 休眠火山 / 16 光箭穿刺 / 17 萤火轨迹 / 18 光茧共鸣 / 19 音叉振动 /
+  20 曲率传承 / 21 行波节奏 / 22 双心共舞（后端渲染器在 v0.1.1 已移植，这次只暴露到 UI）
+- `V1_IMPLEMENTED_MODES` = 除 100 外 20 项；100 仍回落 13（自研屏幕同步后置到下一批）
+- 同步：`data/music.js`、`pages/music.js`、`mock.js`、`i18n-en-dom.js`、`ui_shots.py`、status 列表、测试
+
+### 19.4 第三个下拉「LED 颜色」（本工具自研增强）
+
+- 表：`default`（官方配色）+ ice 冰蓝 #00E5FF / violet 紫罗兰 #B36CFF / pink 热粉 #FF2E88 /
+  lime 青柠 #A8FF3E / amber 暖橙 #FF6A00 / sakura 樱花渐变 #FF7AB6→#B36CFF /
+  aurora 极光渐变 #3EFF9A→#00E5FF→#7A5CFF / sunset 落日渐变 #FFC400→#FF6A00→#FF2E88 /
+  icefire 冰火渐变 #00E5FF→#FEFEFE→#FF6A00
+- 覆盖范围：只有动态多色模式 1/2/4/5/13；按「原调色板位置/行位置/角度/相位」在新渐变上 sRGB 插值采样，
+  保留原有动画（mode 4 的 275°/s 旋转、mode 5 相位推进等）；**纯色 6–11 与背景模式完全不消费调色板**
+- 默认档零差异：改动前先落 `driver/tests/fixtures/music_default_snapshot.json`（20 模式 × 11 背景
+  × 16 tick = 220 个 SHA-256），改后「缺省 / 显式 default」440 个 digest 逐条命中
+- 唯一入口：`_render_frame` 里 `pal = st.get("palette") if mode in COLOR_OVERLAY_MODES else None`；
+  渲染器只在调色板查表处替换（`_hue_color` / `_fill_row_bands` / `_fill_solid_hue`）
+
+### 19.5 原生帧率 20/60/66（默认 66）
+
+- 依据：官方 v1 实测 **530.5 包/s ÷ 8 包/帧 ≈ 66.3fps**（无逐帧时间戳，属平均推断）；官方 v2 浏览器
+  50ms 循环（20fps）不是 v1 原生帧率。决定：不做逐帧抖动复刻
+- 实现：`FPS_CHOICES=(15,20,30,60,66)`、`_clamp_fps`、`_dt_scale`；`MusicEngine.tick(..., dt_scale)`，
+  **所有随时间推进的动画量按 dt 缩放**（dt=1 时原算术不变 → 默认快照仍逐字节一致），频谱/亮度的当帧量不缩放
+- 发包策略（真机 A/B 决定）：
+  - ≤30fps：逐包 ACK（20fps 路径与旧版一致；60fps 以下预算充足）
+  - ≥60fps：连写 7 包 + **ACK 清道夫线程异步读回包**；帧末同步 drain 实测 send 19.8ms/帧 > 66fps 的
+    15.15ms 预算 → 只有 **45.96fps**；异步后 send **8.85ms/帧** → **65.8~66.1fps**（清道夫起不来才回退
+    帧末同步 drain，status.sendMode 会显示 `burst+drain`）
+  - 排期用 perf_counter 绝对 deadline；滞后 >1 period 重置不补发；running 中热更新 fps 立即生效
+- 实测契约：`status.fps` = 最近 2s 滚动实测 float|null，`status.targetFps` = 配置 int；WS `music_frame.fps`
+  用实测值；`timing.lateFrames`、`sendMode` 为诊断字段；WS 预览限速 30Hz
+- 真机实测（USB fw1.19，2026-11-03）：
+  | 项目 | 结果 |
+  |---|---|
+  | 66fps 连续 100s | 65.86 / 65.89 / 65.87 fps（send 8.85ms、lateFrames 0/2/6、0 错误） |
+  | 60fps | 60.06 fps（send 8.84ms、late 0） |
+  | 20fps | 19.97 fps（逐包 ACK、send 9.22ms、late 0） |
+  | 21 个模式逐个 1s | 全 ≥63.4fps、0 错误（100 回落 13） |
+  | 10 种颜色逐个 1s | 回读 id 全对、0 错误 |
+  | 停止恢复 | mode=11 / brightness=6 / speed=3，raw `0bffffffff000000010603000000aa55`（与原快照一致） |
+
+### 19.6 合入本版的电量/灯效健壮性
+
+- 即 §18 的全部修复（电量每次刷新+日志、2.4G 电量路径、绝不写 mode 128、快照校验、退出顺序、
+  isCustom 兜底）。v0.1.3 是这些修复的**首次正式发版**。
+
+### 19.7 验证与交付
+
+- 单元测试：`cd driver; .\.venv\Scripts\python.exe -m unittest discover -s tests -q` → **Ran 152 tests / OK**
+  （v0.1.2 基线 92；本批新增 mode4、颜色、fps 三组测试与 220 组合快照回归）
+- UI 自检：`python tools/ui_shots.py`（headless Chrome + mock）→ **17/17 PASS**：21 模式顺序/3 个下拉/
+  10 个颜色项/3 档帧率/热切换/停止清屏/英文无 CJK/console 0 错误
+- 打包冒烟：`dist\MK87Config\MK87Config.exe` FileVersion **0.1.3.0**；`--tray` 启动后
+  `/api/status.webVersion=0.1.3`、`/api/music/status.officialModes` 21 项、`/api/quit` 正常退出
+- 本地包：`driver\dist-packages\MK87Studio-0.1.3-win64-portable.zip`（39,945,250 B），
+  SHA256 `9425EBFD19E464448DD3444945F2969EADE650EB11CCFBA00E2F348EA69E43BF`
+- 发布：commit → push main → CI 测试/打包 → tag `v0.1.3` → CI 自动 GitHub Release（正文
+  `.github/release-notes.md`，附件 Win 便携/安装包 + Linux deb/rpm + SHA256SUMS）
+- 本批明确未做（后置）：mode 100 自研屏幕同步；E2/E4 硬件实验；自定义 HEX 输入

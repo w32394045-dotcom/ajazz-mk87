@@ -142,6 +142,21 @@ STOP_ENABLED = ("(() => { const b=[...document.querySelectorAll('button')]"
                 ".find(x=>x.textContent.trim()==='停止' || x.textContent.trim()==='Stop');"
                 " return !!b && !b.disabled; })()")
 
+# 官方方案新增控件（21 项显示模式 / 3 个下拉 / 原生帧率 3 档 / 实测 fps）
+FIELD_INFO = ("(() => {{ const lab=[...document.querySelectorAll('.field-label')]"
+              ".find(x=>x.textContent.includes('{label}')); if(!lab) return null;"
+              " const field=lab.parentElement;"
+              " const sel=field.querySelector('select');"
+              " return {{options: sel?sel.options.length:0, value: sel?sel.value:null}}; }})()")
+NATIVE_FPS_BUTTONS = ("(() => { const lab=[...document.querySelectorAll('.field-label')]"
+                      ".find(x=>x.textContent.includes('原生帧率')); if(!lab) return 0;"
+                      " const seg=lab.parentElement.querySelector('.segmented');"
+                      " return seg?seg.querySelectorAll('button').length:0; })()")
+FPS_READOUT = ("(() => { const lab=[...document.querySelectorAll('.field-label')]"
+               ".find(x=>x.textContent.includes('原生帧率')); if(!lab) return null;"
+               " const el=lab.parentElement.querySelector('.mono');"
+               " return el?el.textContent.trim():null; })()")
+
 
 def tab_active(match: str) -> str:
     return ("(() => { const tabs=[...document.querySelectorAll('.tabs button')];"
@@ -196,6 +211,33 @@ async def run(url: str, out_dir: pathlib.Path) -> int:
             report["tabs"] = await cdp.eval(
                 "Array.from(document.querySelectorAll('.tabs button')).map(b=>b.textContent.trim())")
             report["defaultOfficial"] = await cdp.eval(tab_active("官方"))
+            # 1b) 官方方案新增控件：21 项显示模式 / 3 个下拉 / 原生帧率 3 档 / LED 颜色 10 项
+            mode_info = await cdp.eval(FIELD_INFO.format(label="显示模式"))
+            bg_info = await cdp.eval(FIELD_INFO.format(label="背景模式"))
+            color_info = await cdp.eval(
+                "(() => { const lab=[...document.querySelectorAll('.field-label')]"
+                ".find(x=>x.textContent.includes('LED 颜色')); if(!lab) return null;"
+                " const sel=lab.parentElement.querySelector('select');"
+                " return sel?{options:sel.options.length,value:sel.value}:null; })()")
+            select_count = await cdp.eval("document.querySelectorAll('select.select').length")
+            fps_buttons = await cdp.eval(NATIVE_FPS_BUTTONS)
+            mode_values = await cdp.eval(
+                "Array.from(document.querySelectorAll('select.select')[0]?.options || [])"
+                ".map(o=>Number(o.value))")
+            report["officialModeSelect"] = mode_info
+            report["officialBackgroundSelect"] = bg_info
+            report["officialColorSelect"] = color_info
+            report["officialSelectCount"] = select_count
+            report["nativeFpsButtons"] = fps_buttons
+            report["officialModeValues"] = mode_values
+            report["checks"]["official-display-modes-21"] = bool(mode_info and mode_info.get("options") == 21)
+            report["checks"]["official-mode-order"] = mode_values == [
+                1, 2, 13, 4, 5, 6, 7, 8, 9, 11, 10, 14, 15, 16, 17, 18, 19, 20, 21, 22, 100]
+            report["checks"]["official-background-modes-11"] = bool(bg_info and bg_info.get("options") == 11)
+            report["checks"]["official-led-colors-10"] = bool(
+                color_info and color_info.get("options") == 10 and color_info.get("value") == "default")
+            report["checks"]["official-selects-3"] = select_count == 3
+            report["checks"]["native-fps-3-options"] = fps_buttons == 3
             await asyncio.sleep(0.4)
             await cdp.shot(out_dir / "01-music-official-idle.png")
 
@@ -208,6 +250,25 @@ async def run(url: str, out_dir: pathlib.Path) -> int:
             painted = await cdp.wait_for(f"({PAINTED})>60", timeout=10)
             report["checks"]["official-preview-painted"] = bool(painted)
             report["officialPainted"] = await cdp.eval(PAINTED)
+            # 2b) 热更新 LED 颜色 / 原生帧率（不停止律动），并显示后端实测 fps
+            await cdp.eval(
+                "(() => {"
+                " const clab=[...document.querySelectorAll('.field-label')]"
+                ".find(x=>x.textContent.includes('LED 颜色'));"
+                " if(clab){ const sel=clab.parentElement.querySelector('select');"
+                "  if(sel){ sel.value='aurora'; sel.dispatchEvent(new Event('change',{bubbles:true})); } }"
+                " const flab=[...document.querySelectorAll('.field-label')]"
+                ".find(x=>x.textContent.includes('原生帧率'));"
+                " if(flab){ const b=[...flab.parentElement.querySelectorAll('.segmented button')]"
+                ".find(x=>x.textContent.trim()==='60'); if(b) b.click(); }"
+                " return true; })()")
+            await asyncio.sleep(0.8)
+            fps_readout = await cdp.eval(FPS_READOUT)
+            report["officialFpsReadout"] = fps_readout
+            try:
+                report["checks"]["official-fps-readout"] = float(fps_readout) >= 20
+            except (TypeError, ValueError):
+                report["checks"]["official-fps-readout"] = False
             await asyncio.sleep(0.8)
             await cdp.eval("document.querySelector('.kb-deck')?.scrollIntoView({block:'center'}); true")
             await asyncio.sleep(0.4)
