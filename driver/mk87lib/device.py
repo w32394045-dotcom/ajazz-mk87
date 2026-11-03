@@ -5,6 +5,8 @@
 """
 from __future__ import annotations
 
+import logging
+import platform
 import threading
 import time
 from contextlib import contextmanager
@@ -15,6 +17,8 @@ from . import const
 from .errors import DeviceDisconnected, DeviceNotFound, MK87Error
 from .protocol import Protocol
 from .transport import HidInterface, IfaceInfo, enumerate_ifaces
+
+log = logging.getLogger("mk87.device")
 
 EventCallback = Callable[[dict], None]
 
@@ -126,6 +130,13 @@ class MK87Device:
         self.close()
         infos = enumerate_ifaces(const.VID)
         self._ifaces = infos
+        for i in infos:
+            log.debug("HID 接口: product=%r pid=0x%04X usagePage=0x%04X usage=0x%04X "
+                      "iface=%s payload=%d path=%s",
+                      i.product, i.pid, i.usage_page, i.usage,
+                      i.interface_number, i.payload_len,
+                      (i.path.decode("utf-8", "replace")
+                       if isinstance(i.path, (bytes, bytearray)) else i.path))
         usb_proto = next(
             (i for i in infos if i.pid == const.PID_USB and i.usage_page == const.USAGE_PAGE_PROTOCOL),
             None,
@@ -158,8 +169,21 @@ class MK87Device:
                     wake=HidInterface(g_wake).open() if g_wake else None,
                 )
             else:
+                hint = ""
+                if platform.system() == "Linux":
+                    hint = (
+                        "；Linux 需要 udev 规则并重新插拔键盘："
+                        "sudo cp packaging/udev/99-ajazz-mk87.rules /etc/udev/rules.d/ && "
+                        "sudo udevadm control --reload-rules && sudo udevadm trigger"
+                    )
+                    if infos and all(i.usage_page == 0 for i in infos):
+                        hint += (
+                            "；已枚举到 AJAZZ 设备但读不到 usage_page —— 通常是 /dev/hidraw* "
+                            "权限不足或 report descriptor 不可读，请检查 udev 规则是否生效、"
+                            "重新插拔后再试（日志里会列出枚举到的接口）"
+                        )
                 raise DeviceNotFound(
-                    "未找到可用的 MK87 协议接口。请确认键盘已连接（USB 线或 2.4G 接收器）。"
+                    "未找到可用的 MK87 协议接口。请确认键盘已连接（USB 线或 2.4G 接收器）" + hint
                 )
         except DeviceDisconnected:
             self._close_channels()

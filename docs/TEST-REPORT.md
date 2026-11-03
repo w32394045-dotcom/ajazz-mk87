@@ -465,3 +465,22 @@
 
 已知问题：该键盘的宏目录在本次修复前已损坏（目录内容不像合法偏移，固件也拒绝写回），
 已备份原始宏区字节并将目录清零；宏功能需重新录制（读写路径已验证正常）。
+
+---
+
+## 17 v0.1.5 Linux HID 识别修复（2026-11-03 夜）
+
+> 触发：Linux 上 app 识别不到设备。根因：hidapi 的 Linux hidraw 后端 `hid.enumerate()` 返回
+> `usage_page = 0`，而本工具按 usage page（0xFF68/0xFF67/0xFF60/0xFFFF）选择接口。
+
+| 测试项 | 结果 |
+|---|---|
+| descriptor 解析 | `0xFF68/0xFF67/0xFF60/0xFFFF` 各构造 descriptor 解析正确；首个 Usage Page 优先；截断/空输入不崩溃 |
+| Linux 接口补齐 | 4 个接口 usagePage/payload 补齐为 64/4104/32/4；已有 usagePage 的接口不重复读 descriptor |
+| 读取路径 | hidapi `get_report_descriptor()` 优先；失败回退 sysfs `report_descriptor` |
+| Windows 回归 | `enumerate_ifaces` 在 Windows 上不触发 Linux 补齐（不读 descriptor） |
+| 全量单测 | **215 tests OK**（新增 9 个 Linux 传输测试） |
+| Windows 打包冒烟 | v0.1.5 exe `--tray` → `connected=True`、`webVersion=0.1.5`、officialModes=21、`/api/quit` 正常 |
+| Linux 真机 | **待用户执行** `python3 probe/linux_hid_check.py` + app；失败时附 `~/.local/state/mk87/logs/mk87.log` |
+
+诊断工具：`probe/linux_hid_check.py`（列出枚举接口、/dev/hidraw 权限、descriptor 解析与结论）。

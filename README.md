@@ -8,7 +8,7 @@
 - **Device**: USB `VID 0x0C45 / PID 0x8047`; 2.4G receiver `VID 0x0C45 / PID 0xFEFE`
 - **Official web driver** (reverse-engineered): `https://ajazz.driveall.cn`
 - **Everything local**: no network access, no telemetry, no vendor driver required
-- **Latest release**: [v0.1.4](https://github.com/w32394045-dotcom/ajazz-mk87/releases/latest)
+- **Latest release**: [v0.1.5](https://github.com/w32394045-dotcom/ajazz-mk87/releases/latest)
 
 ## Screenshots
 
@@ -40,7 +40,31 @@
 Linux packages ship the udev rules (root-free HID access); replug the keyboard after install.
 Releases are built by GitHub Actions and come with a `SHA256SUMS.txt`.
 
-## What's new in v0.1.4
+If the app does not detect the keyboard on Linux: replug after install, then check
+`ls -l /dev/hidraw*` (the keyboard's hidraw nodes must be readable by your user) and
+`~/.local/state/mk87/logs/mk87.log` (it lists every enumerated HID interface). Since v0.1.5 the app reads
+HID usage pages from the report descriptor itself, because hidapi's Linux hidraw backend always reports
+`usage_page = 0`.
+
+## What's new in v0.1.5
+
+- **Fixed: the keyboard was not detected on Linux** — `hid.enumerate()` with hidapi's hidraw backend returns
+  `usage_page = 0` for every interface on Linux
+  ([known hidapi limitation](https://sourceforge.net/p/libusb/mailman/message/36968076/)), while the tool
+  identifies its protocol / TFT / 2.4G interfaces by usage page (`0xFF68 / 0xFF67 / 0xFF60 / 0xFFFF`), so the
+  device could never be found on Linux. The app now reads the HID report descriptor of each enumerated
+  interface (hidapi `get_report_descriptor()`, falling back to
+  `/sys/class/hidraw/hidrawN/device/report_descriptor`) and parses the first Usage Page / Usage to rebuild
+  interface identity and payload sizes. Windows behaviour is unchanged (usage pages are already present).
+- Diagnostics: the device log now lists every enumerated interface (`product / pid / usagePage / usage /
+  interface / payload / path`), and the Linux "not found" error mentions the udev rules and the
+  report-descriptor/permission hint. `probe/linux_hid_check.py` prints the same information plus descriptor
+  parses for quick support reports.
+- Tests: **215 unit tests green** (9 new Linux transport tests: descriptor parser, enrichment, hidapi/sysfs
+  fallback, Windows no-op). Linux real-hardware verification: run `probe/linux_hid_check.py` and the app; if
+  the keyboard still does not show up, attach `~/.local/state/mk87/logs/mk87.log`.
+
+### v0.1.4
 
 - **Fixed: key remapping / macro bindings could not be saved** — the keymap page sent `key` / `fn` / `combo`
   wire types while the backend encoder only accepted `keyboard` / `func` / `combo (mods + key)`, so every

@@ -17,9 +17,12 @@
 """
 from __future__ import annotations
 
+import os
+import platform
+import re
 import time
 from dataclasses import dataclass
-from typing import List, Optional
+from typing import List, Optional, Tuple
 
 from . import const
 from .errors import DeviceDisconnected, DeviceNotFound
@@ -85,6 +88,97 @@ def payload_len_for(pid: int, usage_page: int) -> int:
     return const.PAYLOAD_LEN.get((pid, usage_page), const.DEFAULT_PAYLOAD_LEN)
 
 
+# ----------------------------------------------------------------------
+# Linux：hidapi(hidraw) 不填 usage_page，需要自己读 report descriptor
+# ----------------------------------------------------------------------
+def parse_report_descriptor_usage(desc) -> Tuple[Optional[int], Optional[int]]:
+    """从 HID report descriptor 解析**第一个** Usage Page / Usage。
+
+    背景：hidapi 的 Linux hidraw 后端在 ``hid.enumerate()`` 里不填 usage_page/usage
+    （社区已知限制，恒为 0），而本工具靠 usagePage 区分主协议/TFT/2.4G/唤醒接口，
+    否则 Linux 上永远「找不到设备」。这里按 HID short item 格式解析：
+    前缀 = tag(4bit)<<4 | type(2bit)<<2 | size(2bit)，type 1=Global（Usage Page）、
+    type 2=Local（Usage）；遇到第一个 Collection(type 0, tag 0xA) 即停止。
+    """
+    b = bytes(desc or b"")
+    n = len(b)
+    i = 0
+    usage_page: Optional[int] = None
+    usage: Optional[int] = None
+    while i < n:
+        prefix = b[i]
+        i += 1
+        size = prefix & 0x03
+        if size == 3:
+            size = 4
+        typ = (prefix >> 2) & 0x03
+        tag = (prefix >> 4) & 0x0F
+        if i + size > n:
+            break
+        value = int.from_bytes(b[i:i + size], "little") if size else None
+        i += size
+        if typ == 1 and tag == 0 and usage_page is None and value is not None:
+            usage_page = value
+        elif typ == 2 and tag == 0 and usage is None and value is not None:
+            usage = value
+        elif typ == 0 and tag == 0xA:  # Collection：顶层集合开始，后面的 usage page 可能属于子集合
+            break
+    return usage_page, usage
+
+
+def _read_report_descriptor(info: IfaceInfo) -> Optional[bytes]:
+    """读取一个 hidraw 接口的 report descriptor（hidapi API 优先，sysfs 兜底）。"""
+    # A) hidapi >= 0.14 暴露 get_report_descriptor()（内部走 hidraw ioctl）
+    if hid is not None:
+        try:
+            dev = hid.device()
+            dev.open_path(info.path)
+            try:
+                desc = dev.get_report_descriptor()
+            finally:
+                try:
+                    dev.close()
+                except Exception:  # noqa: BLE001
+                    pass
+            if desc:
+                return bytes(bytearray(desc))
+        except Exception:  # noqa: BLE001 - 权限/内核不支持时走 sysfs
+            pass
+    # B) sysfs：/sys/class/hidraw/hidrawN/device/report_descriptor
+    try:
+        path = info.path.decode("utf-8", "ignore") if isinstance(info.path, (bytes, bytearray)) else str(info.path)
+        m = re.search(r"hidraw(\d+)\s*$", path)
+        if m:
+            with open(f"/sys/class/hidraw/hidraw{m.group(1)}/device/report_descriptor", "rb") as f:
+                data = f.read(4096)
+            if data:
+                return data
+    except Exception:  # noqa: BLE001
+        pass
+    return None
+
+
+def _enrich_linux_usage(ifaces: List[IfaceInfo]) -> List[IfaceInfo]:
+    """Linux：为 usage_page=0 的接口补齐 usage_page/usage/payload_len。
+
+    只对缺 usage_page 的接口做（Windows 上 enumerate 已带 usage_page，不受影响）。
+    失败时保持 0，由上层给出 Linux 权限/udev 提示。
+    """
+    for info in ifaces:
+        if info.usage_page:
+            continue
+        desc = _read_report_descriptor(info)
+        if not desc:
+            continue
+        usage_page, usage = parse_report_descriptor_usage(desc)
+        if usage_page is None:
+            continue
+        info.usage_page = int(usage_page)
+        info.usage = int(usage or 0)
+        info.payload_len = payload_len_for(info.pid, info.usage_page)
+    return ifaces
+
+
 def enumerate_ifaces(vid: int = const.VID) -> List[IfaceInfo]:
     """枚举所有 AJAZZ HID 接口（键盘 USB + 2.4G 接收器）。"""
     if hid is None:
@@ -111,6 +205,8 @@ def enumerate_ifaces(vid: int = const.VID) -> List[IfaceInfo]:
                 payload_len=payload_len_for(pid, usage_page),
             )
         )
+    if platform.system() == "Linux":
+        ifaces = _enrich_linux_usage(ifaces)
     return ifaces
 
 

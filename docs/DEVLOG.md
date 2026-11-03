@@ -791,3 +791,54 @@ C:\Users\ptfm\Documents\ajazz-re\driver\dist-packages\MK87Studio-0.1.1-win64-por
     `webVersion=0.1.4`、`officialModes=21`、`GET /api/macros` 276ms、`/api/quit` 正常退出
 - 本版共修复 7 项（§20.2 表），仍未做：mode 100 自研屏光同步、E2/E4 硬件实验、自定义 HEX、振幅按官方
   真值重标定。
+
+---
+
+## 21 2026-11-03（更晚）：v0.1.5 修 Linux 识别不到设备
+
+### 21.1 用户反馈
+
+- 「Linux 识别不到设备」（v0.1.4 的 deb/rpm 装上后 app 一直没有设备）
+
+### 21.2 根因（代码 + 上游资料确认）
+
+- 本工具用 **HID usage page** 区分接口：主协议 `0xFF68`、TFT `0xFF67`、2.4G 协议 `0xFF60`、
+  2.4G 唤醒 `0xFFFF`（见 [transport.py](../driver/mk87lib/transport.py) 文件头）。
+- 但 **hidapi 的 Linux hidraw 后端在 `hid.enumerate()` 里不填 `usage_page`/`usage`，恒为 0**
+  （hidapi 上游已知限制：<https://sourceforge.net/p/libusb/mailman/message/36968076/>，
+  StackOverflow 同样结论）。Windows 的 hidapi 正常填。
+- 结果：`MK87Device.connect()` 里 `i.usage_page == const.USAGE_PAGE_*` 永远不匹配 →
+  `DeviceNotFound("未找到可用的 MK87 协议接口")` → Linux 永远找不到设备。
+  （v0.1.2–v0.1.4 一直如此；Windows 不受影响，所以此前 Windows 真机测试未暴露。）
+- 另：udev/permissions 是第二层问题——即使接口枚举到，`/dev/hidraw*` 无权限也会让
+  report descriptor/open 失败。
+
+### 21.3 修复（`transport.py` / `device.py`）
+
+- 新增 `parse_report_descriptor_usage(desc)`：解析 HID report descriptor 的 short item，
+  取**第一个** Usage Page（Global tag 0）与 Usage（Local tag 0），遇到第一个 Collection 停止。
+- 新增 `_read_report_descriptor(info)`：优先 hidapi 0.14+ 的 `device.get_report_descriptor()`
+  （内部 hidraw ioctl），失败回退 `/sys/class/hidraw/hidrawN/device/report_descriptor`。
+- 新增 `_enrich_linux_usage(ifaces)`：Linux 上仅对 `usage_page == 0` 的接口补 descriptor 解析结果，
+  并重算 payload_len（64 / 4104 / 32 / 4）；已有 usage page 的接口不读 descriptor。
+  Windows 上 `enumerate_ifaces()` 不触发该逻辑（行为零变化）。
+- `device.py`：连接时 DEBUG 记录每个枚举接口（product/pid/usagePage/usage/iface/payload/path）；
+  找不到时在 Linux 错误里追加 udev 规则、`/dev/hidraw*` 权限、report descriptor 可读性提示。
+- 新增 `probe/linux_hid_check.py`：Linux 一键诊断（枚举、权限、descriptor 解析、结论 + 修复建议）。
+
+### 21.4 验证
+
+- 新增 `driver/tests/test_transport_linux.py`（9 tests）：descriptor 解析（0xFF68/0xFF67/0xFF60/0xFFFF、
+  首 page 优先、截断不崩）、`_enrich_linux_usage` 补齐与 payload 计算、已知 page 不重复读、
+  `enumerate_ifaces` 仅 Linux 触发、hidapi get_report_descriptor 路径、sysfs fallback、Windows 不触发。
+- 全量：`cd driver; .\.venv\Scripts\python.exe -m unittest discover -s tests -q` → **215 tests OK**。
+- Windows 侧回归：打包 v0.1.5 exe `--tray` 启动后 `connected=True`、21 模式、正常退出（见 §21.5）。
+- **Linux 真机验证待用户执行**：装 v0.1.5 deb/rpm → 重新插拔 → 运行 `python3 probe/linux_hid_check.py`
+  与 app；若仍失败，日志会列出枚举接口/usagePage，可据此判断是权限还是枚举问题。
+
+### 21.5 交付（v0.1.5）
+
+- 版本 0.1.5（7 处），README/release-notes/TEST-REPORT 同步；tag `v0.1.5` → CI 自动 Release。
+- 风险/边界：若 hidraw 只读权限都没有（udev 未装/未生效），descriptor 与 open 都会失败，
+  此时仍是「找不到设备」，但错误信息会明确提示；2.4G 唤醒接口 payload=4 依据 usage page 0xFFFF 还原。
+- 未做：Linux 上 TFT 接口如果是 hidraw 权限拒绝则无法补齐（会打印提示），mode 100 自研屏同步等仍后置。

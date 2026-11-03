@@ -11,6 +11,29 @@ Screenshots and the full feature list live in the repository README:
 **[README.md (English)](https://github.com/w32394045-dotcom/ajazz-mk87/blob/main/README.md)** ·
 **[README.zh-CN.md (简体中文)](https://github.com/w32394045-dotcom/ajazz-mk87/blob/main/README.zh-CN.md)**
 
+## What's new in v0.1.5
+
+> v0.1.5 is a Linux hot-fix built on v0.1.4.
+
+- **Fixed: the keyboard was not detected on Linux** — hidapi's Linux hidraw backend returns
+  `usage_page = 0` from `hid.enumerate()` for every interface
+  ([known hidapi limitation](https://sourceforge.net/p/libusb/mailman/message/36968076/)), but the tool
+  identifies its interfaces by usage page (`0xFF68` main protocol, `0xFF67` TFT, `0xFF60` 2.4G, `0xFFFF` wake).
+  As a result the device was never found on Linux. The app now reads each interface's HID report descriptor
+  (hidapi `get_report_descriptor()`, with a sysfs
+  `/sys/class/hidraw/hidrawN/device/report_descriptor` fallback) and parses the first Usage Page / Usage to
+  restore interface identity and payload sizes. Windows behaviour is unchanged (usage pages are already
+  reported there).
+- **Better Linux diagnostics** — the device log lists every enumerated interface
+  (`product / pid / usagePage / usage / interface / payload / path`), the "device not found" error now
+  mentions the udev rules and permission/descriptor hints, and `probe/linux_hid_check.py` prints the same
+  information for support reports.
+- **Tests**: 215 unit tests green (9 new Linux transport tests: descriptor parser, interface enrichment,
+  hidapi/sysfs fallback, Windows no-op).
+- **Linux users**: after installing the deb/rpm, replug the keyboard. If it is still not detected, run
+  `python3 probe/linux_hid_check.py` (or paste `~/.local/state/mk87/logs/mk87.log`) and open an issue —
+  the log now contains everything needed to pinpoint udev/permission vs. enumeration problems.
+
 ## What's new in v0.1.4
 
 > v0.1.4 is a bug-fix release on top of v0.1.3 (official music scheme). Everything below was reproduced
