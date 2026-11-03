@@ -842,3 +842,17 @@ C:\Users\ptfm\Documents\ajazz-re\driver\dist-packages\MK87Studio-0.1.1-win64-por
 - 风险/边界：若 hidraw 只读权限都没有（udev 未装/未生效），descriptor 与 open 都会失败，
   此时仍是「找不到设备」，但错误信息会明确提示；2.4G 唤醒接口 payload=4 依据 usage page 0xFFFF 还原。
 - 未做：Linux 上 TFT 接口如果是 hidraw 权限拒绝则无法补齐（会打印提示），mode 100 自研屏同步等仍后置。
+
+### 21.6 发布记录
+
+- 提交 `614ff4c` → main CI 运行
+  [#30](https://github.com/w32394045-dotcom/ajazz-mk87/actions/runs/41639557646) 全绿 →
+  tag `v0.1.5` → CI 运行
+  [#31](https://github.com/w32394045-dotcom/ajazz-mk87/actions/runs/41640309540) 全绿 →
+  Release 2026-11-03 21:05 发布：<https://github.com/w32394045-dotcom/ajazz-mk87/releases/tag/v0.1.5>
+  - 附件（SHA256SUMS 已复算校验）：`MK87Studio-0.1.5-win64-portable.zip` 39,037,258 B
+    （`f6e91d77…7a4bb`）/ `MK87Studio-0.1.5-win64-setup.exe` 30,180,259 B / `mk87-0.1.5-1.x86_64.rpm`
+    248,582,012 B / `mk87_0.1.5_amd64.deb` 208,099,872 B
+  - 本地冒烟：exe FileVersion 0.1.5.0，`--tray` → `connected=True`、`webVersion=0.1.5`、quit 正常
+- 待办：等用户 Linux 真机反馈；若 `probe/linux_hid_check.py` 显示接口 usagePage 已补齐但 app 仍不连，
+  重点查 `/dev/hidraw*` 权限与后端 open 错误（日志已记录）。
