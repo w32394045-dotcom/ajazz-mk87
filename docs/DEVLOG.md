@@ -1171,3 +1171,40 @@ error: [pywebview] GTK cannot be loaded: No module named 'gi'
 - **Wayland 装完扩展必须注销重登**（GNOME 不支持热加载），卡片与提示文案已写明；
   X11 可 `Alt+F2` → `r`。
 - Linux 真机验证由用户执行：无终端窗口、右键菜单可用、设置页状态正确、GNOME 一键安装生效。
+
+
+### 24.8 发布记录（v0.1.8）
+
+- 提交：`d52ce4c`（Qt 托盘 + 终端修复）、`f61a46f`（GNOME 扩展检测/安装 + 设置页卡片）、
+  `f34c120`（版本号与文档）、`ed32ec5`（design.md 接口编号）
+  → main CI 运行 [#39](https://github.com/w32394045-dotcom/ajazz-mk87/actions/runs/41849587327)
+  全绿（ubuntu/windows 单测 **277**、Linux deb+rpm、Windows portable+setup）；
+  随后文档提交的运行 [#40](https://github.com/w32394045-dotcom/ajazz-mk87/actions/runs/41849694286)
+  也全绿。
+- tag `v0.1.8` → CI 运行
+  [#41](https://github.com/w32394045-dotcom/ajazz-mk87/actions/runs/41851737175) 全绿 →
+  Release 2026-11-04 23:01 发布：
+  <https://github.com/w32394045-dotcom/ajazz-mk87/releases/tag/v0.1.8>
+  - 附件（SHA256SUMS 与 GitHub asset digest 一致；portable 已下载复算一致，39,091,617 B 实测同哈希）：
+    - `MK87Studio-0.1.8-win64-portable.zip` 39,091,617 B
+      （`b193f1872b085a9e18ddd32796a6a750ad458547780de2de37869de617ba9824`）
+    - `MK87Studio-0.1.8-win64-setup.exe` 30,236,827 B（`4915f65e…d1bb`）
+    - `mk87-0.1.8-1.x86_64.rpm` 196,309,647 B（`af1e84ab…f7c6`）
+    - `mk87_0.1.8_amd64.deb` 210,360,910 B（`89a9e246…8285`）
+    - `SHA256SUMS.txt` 378 B
+  - 本次只有 **5 个资产**：`%global debug_package %{nil}` 生效，不再生成 `mk87-debuginfo` 子包。
+  - 本地 portable zip 40,019,081 B（与 CI 资产大小不同属正常：CI 为 Windows Server runner、
+    依赖缓存与压缩时序不同；两个包都可运行，发布以 CI 产物为准）。
+- 本地冒烟（`dist/MK87Config/MK87Config.exe`）：
+  - FileVersion / ProductVersion = **0.1.8.0**；
+  - `--tray` 启动 → `/api/version` = `{"version":"0.1.8",...}`；
+    `/api/status` = `shell=true tray={"available":true,"backend":"pystray"}`；
+    `/api/tray/status` = `platform=windows shellMode=true backend=pystray advice=windows-ok`；
+  - `/api/quit` 正常退出，无残留进程。
+- **待用户验证（Linux 真机）**：装 v0.1.8（rpm/deb）→ ①从应用菜单启动不弹终端；
+  ②左键显示窗口、右键菜单可用；③设置 → 系统托盘卡片状态正确（后端 Qt / 桌面环境 / 扩展）；
+  ④GNOME 缺扩展时一键安装 → 注销重登 → 托盘出现。若托盘仍不出现，日志里会有
+  「Qt 托盘不可用（...）」/「系统托盘不可用，关闭窗口 = 退出程序」，设置页卡片也会显示
+  advice 与安装命令，可直接贴回来定位。
+- 风险：Qt 托盘分支无法在 Windows 本地冒烟覆盖，只能靠 Linux CI 构建通过 + 用户真机验证；
+  pkexec/polkit 依赖桌面认证代理，失败时前端回退为复制命令。
