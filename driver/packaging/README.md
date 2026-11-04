@@ -68,6 +68,15 @@ sudo rpm -e mk87
 安装时 postinst/postun 会自动 `udevadm control --reload-rules && udevadm trigger`。
 如果按键测试读不到 `/dev/input/event*`，执行 `sudo usermod -aG input $USER` 后注销重登。
 
+### 托盘与 GNOME 扩展（v0.1.8）
+
+- `mk87.desktop` 使用 `Terminal=false`：从应用菜单启动不会再弹出终端窗口。
+- Linux 托盘走 Qt `QSystemTrayIcon`（左键显示窗口、右键原生菜单），KDE / XFCE / Cinnamon /
+  MATE / Ubuntu GNOME 开箱可用；**GNOME Shell 原生不显示托盘图标**，需要
+  `gnome-shell-extension-appindicator` 扩展。设置页「系统托盘」卡片会检测状态，并提供一键安装
+  （发行版包 + 一次 `pkexec` 管理员密码），装完注销重登（Wayland）或 `Alt+F2` → `r`（X11）。
+- 没有托盘宿主时，关闭窗口 = 退出程序（不会留下看不见的后台进程）。
+
 ## CI（推荐用于产出 rpm/deb）
 
 Windows 机器上没有 rpmbuild/dpkg，**rpm/deb 通过 GitHub Actions 的 Linux runner 构建**：

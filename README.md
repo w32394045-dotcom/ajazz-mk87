@@ -8,7 +8,7 @@
 - **Device**: USB `VID 0x0C45 / PID 0x8047`; 2.4G receiver `VID 0x0C45 / PID 0xFEFE`
 - **Official web driver** (reverse-engineered): `https://ajazz.driveall.cn`
 - **Everything local**: no network access, no telemetry, no vendor driver required
-- **Latest release**: [v0.1.7](https://github.com/w32394045-dotcom/ajazz-mk87/releases/latest)
+- **Latest release**: [v0.1.8](https://github.com/w32394045-dotcom/ajazz-mk87/releases/latest)
 
 ## Screenshots
 
@@ -51,7 +51,40 @@ backend on Linux (module `hidraw`, paths `/dev/hidrawN`); the `hid` module bundl
 **libusb** backend and cannot be used for this keyboard (wrong device paths, no usage pages, USB-device
 permissions and kernel-driver conflicts). See "What's new in v0.1.6".
 
-## What's new in v0.1.7
+### Linux tray icon
+
+Launching from the app menu no longer opens a terminal window (v0.1.8: `Terminal=false` in the `.desktop`
+file). The tray icon uses Qt's `QSystemTrayIcon`, which renders the native StatusNotifierItem/dbusmenu on
+KDE, XFCE, Cinnamon, MATE and Ubuntu GNOME: **left-click shows the window, right-click opens the menu**
+(Show window / Launch at start-up / Quit). **GNOME Shell shows no tray icons at all** without the
+`gnome-shell-extension-appindicator` extension; open **Settings → System tray** and use the one-click
+install (one admin password, distro package) if the status card says the extension is missing. After
+installing on Wayland, log out and back in (on X11 you can also press `Alt+F2` and run `r`).
+
+## What's new in v0.1.8
+
+- **Fixed: a terminal window no longer opens on Linux** — the packaged `.desktop` file had `Terminal=true`,
+  so starting MK87 Studio from the app menu spawned a terminal that hosted the app. It is now
+  `Terminal=false` (the autostart entry already was).
+- **Fixed: right-clicking the Linux tray icon did nothing** — the tray used `pystray`, which in our bundle has
+  neither the AppIndicator nor the GTK backend available, so it always fell back to its X11 backend. That
+  backend sets `HAS_MENU = False` and only handles left-click activate, so an icon appeared but the context
+  menu was impossible to implement. Linux now uses **Qt `QSystemTrayIcon` + `QMenu`** (PyQt6 is already
+  bundled by `pywebview[qt]`, no new runtime dependency): left-click shows the window, right-click shows the
+  native menu on KDE / XFCE / Cinnamon / MATE / Ubuntu GNOME. Windows keeps pystray unchanged.
+- **New: "System tray" settings card + one-click GNOME extension install** — `GET /api/tray/status` reports
+  the real tray backend and host availability, desktop environment, session type (Wayland/X11), GNOME Shell
+  version, and whether the AppIndicator extension is installed/enabled. On plain GNOME the card offers
+  **one-click install** (distro package, one `pkexec` password prompt; `dnf` / `apt` / `zypper` / `pacman` /
+  `rpm-ostree` are auto-detected) plus a "copy commands" fallback and an "enable extension" action when it is
+  installed but disabled. Windows/non-GNOME desktops simply report "no extension needed".
+- **No zombie windows** — if the desktop really has no tray host, closing the window now quits the program
+  (before, the window hid into nowhere); the main window shows a banner explaining it during that session.
+- **Tests**: **277 unit tests green** (32 new tray environment tests). The settings card and both languages
+  were smoke-tested with a linkedom DOM harness (16 assertions). Linux tray/extension behaviour still needs
+  real-device verification on the user's machine.
+
+### v0.1.7
 
 - **Fixed: music rhythm could not start on Linux (HTTP 400)** — audio capture relied on the external `parec`
   command (`pulseaudio-utils`), which PipeWire desktops (Fedora, current Debian/Ubuntu) do not install by

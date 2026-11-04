@@ -8,7 +8,7 @@ USB / 2.4G 协议的完整逆向实现，全部功能**离线本地运行**。
 - **设备**：USB `VID 0x0C45 / PID 0x8047`；2.4G 接收器 `VID 0x0C45 / PID 0xFEFE`
 - **官方网页驱动**（已逆向）：`https://ajazz.driveall.cn`
 - **全程本地**：不访问外网、不上传数据、不依赖官方驱动
-- **最新版本**：[v0.1.7](https://github.com/w32394045-dotcom/ajazz-mk87/releases/latest)
+- **最新版本**：[v0.1.8](https://github.com/w32394045-dotcom/ajazz-mk87/releases/latest)
 
 ## 界面截图
 
@@ -51,7 +51,35 @@ mk87 --diagnose     # 打印 hidapi 后端、hidraw 节点、usage page、权限
 这把键盘（设备路径不对、没有 usage page、需要 /dev/bus/usb 权限还会和内核 HID 驱动抢接口）。详见
 下方 v0.1.6 更新说明。
 
-## v0.1.7 更新
+### Linux 托盘与终端窗口
+
+从应用菜单启动不再弹终端窗口（v0.1.8：`.desktop` 里的 `Terminal=false`）。托盘图标改为 Qt 的
+`QSystemTrayIcon`，在 KDE / XFCE / Cinnamon / MATE / Ubuntu GNOME 上走原生 StatusNotifierItem +
+dbusmenu：**左键显示主窗口，右键打开菜单**（显示主窗口 / 开机自启 / 退出）。**GNOME Shell 原生不显示
+任何托盘图标**，必须安装 `gnome-shell-extension-appindicator` 扩展；如果设置页「系统托盘」卡片提示
+缺少扩展，可直接「一键安装」（需要一次管理员密码，装的是发行版包）。Wayland 下装完请注销重新登录，
+X11 下也可以按 `Alt+F2` 输入 `r`。
+
+## v0.1.8 更新
+
+- **修复：Linux 启动时弹出终端窗口** —— 安装包里的 `.desktop` 写的是 `Terminal=true`，从应用菜单
+  启动时桌面环境会开一个终端来承载程序；现改为 `Terminal=false`（开机自启项本来就是对的不受影响）。
+- **修复：Linux 托盘图标右键没有菜单** —— 原来用 `pystray`，打包体里既没有 AppIndicator 也没有 GTK
+  的 gi 绑定，Linux 上总是回退到 X11 后端；该后端 `HAS_MENU = False`，只处理左键 activate，所以图标
+  能出现但右键菜单根本无法实现。现在 Linux 改用 **Qt `QSystemTrayIcon` + `QMenu`**（PyQt6 已由
+  `pywebview[qt]` 打进安装包，不新增运行时依赖）：左键显示窗口、右键弹出原生菜单，
+  KDE / XFCE / Cinnamon / MATE / Ubuntu GNOME 都可用；Windows 仍用原来的 pystray，行为不变。
+- **新增：设置页「系统托盘」卡片 + GNOME 扩展一键安装** —— 新接口 `GET /api/tray/status` 会报告真实
+  托盘后端与宿主可用性、桌面环境、会话类型（Wayland/X11）、GNOME Shell 版本、AppIndicator 扩展是否
+  已安装/已启用。纯 GNOME 上卡片提供**一键安装**（发行版包，弹一次 `pkexec` 管理员密码；自动识别
+  `dnf` / `apt` / `zypper` / `pacman` / `rpm-ostree`），还会在扩展已装未启用时提供「启用扩展」按钮，
+  并始终保留「复制安装命令」兜底。Windows / 非 GNOME 桌面直接显示「无需额外组件」。
+- **不再有“藏起来找不回”的窗口** —— 如果桌面确实没有托盘宿主，点窗口 X 现在直接退出程序（原来会隐藏
+  到一个找不回来的地方）；该会话期间主窗口顶部会有横幅说明原因。
+- **测试**：**277 个单元测试全绿**（新增 32 个托盘环境测试）；设置页卡片与中英双语用 linkedom DOM
+  做了 16 项冒烟校验。Linux 托盘与扩展安装仍需在你的机器上真机验证。
+
+### v0.1.7
 
 - **修复：Linux 上音乐律动无法启动（HTTP 400）** —— 音频采集原来依赖外部命令 `parec`
   （`pulseaudio-utils`），而 PipeWire 桌面（Fedora、现在的 Debian/Ubuntu）默认不装，

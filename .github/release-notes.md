@@ -11,7 +11,35 @@ Screenshots and the full feature list live in the repository README:
 **[README.md (English)](https://github.com/w32394045-dotcom/ajazz-mk87/blob/main/README.md)** ·
 **[README.zh-CN.md (简体中文)](https://github.com/w32394045-dotcom/ajazz-mk87/blob/main/README.zh-CN.md)**
 
-## What's new in v0.1.7
+## What's new in v0.1.8
+
+> v0.1.8 fixes the two Linux desktop-integration bugs (terminal window on launch, tray icon with no
+> right-click menu) and adds a "System tray" diagnostics card with one-click GNOME extension install.
+
+- **Fixed: a terminal window no longer opens on Linux** — the packaged `.desktop` file had
+  `Terminal=true`, so launching MK87 Studio from the app menu spawned a terminal that hosted the app.
+  It is now `Terminal=false` (the autostart entry already was correct).
+- **Fixed: right-clicking the Linux tray icon did nothing** — the tray used `pystray`, which in our
+  bundle has neither the AppIndicator nor the GTK backend available, so it always fell back to its X11
+  backend. That backend sets `HAS_MENU = False` and only handles left-click activate, so an icon
+  appeared but a context menu was impossible to implement. Linux now uses **Qt `QSystemTrayIcon` +
+  `QMenu`** (PyQt6 is already bundled by `pywebview[qt]`, no new runtime dependency): left-click shows
+  the window, right-click opens the native menu (Show window / Launch at start-up / Quit) on KDE,
+  XFCE, Cinnamon, MATE and Ubuntu GNOME. Windows keeps pystray unchanged.
+- **New: "System tray" settings card + one-click GNOME extension install** — `GET /api/tray/status`
+  reports the real tray backend and host availability, desktop environment, session type
+  (Wayland/X11), GNOME Shell version, and whether the AppIndicator extension is installed/enabled. On
+  plain GNOME the card offers **one-click install** (distro package via one `pkexec` password prompt;
+  `dnf` / `apt` / `zypper` / `pacman` / `rpm-ostree` auto-detected), an "enable extension" action when
+  it is installed but disabled, and a "copy commands" fallback. Windows/non-GNOME desktops report
+  "no extension needed". After installing on Wayland, log out and back in (or `Alt+F2` → `r` on X11).
+- **No zombie windows** — if the desktop really has no tray host, closing the window now quits the
+  program instead of hiding it into nowhere; a banner in the main window explains this.
+- **Tests**: **277 unit tests green** (32 new tray environment tests); the settings card was
+  smoke-tested in both languages with a linkedom DOM harness (16 assertions). Linux tray/extension
+  behaviour still needs verification on a real desktop.
+
+### v0.1.7
 
 > v0.1.7 fixes music rhythm on Linux and makes every device operation much faster.
 

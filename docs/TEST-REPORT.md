@@ -524,3 +524,28 @@ udev 规则 / 结论；源码环境同一套逻辑在 `probe/linux_hid_check.py`
 | 卡顿探针 | watchdog 记录 >2s 无采样；等锁 >0.3s / HID 写 >0.5s / 读超 3x 记 WARNING；HTTP 400 记录 MK87Error message |
 | 全量单测 | **245 tests OK**（226 → 245） |
 | Linux 真机音乐 | **待用户执行**：装 v0.1.7 → 开音乐律动；失败时日志新增「音频采集后端: ...」与「音乐律动启动失败: ...」两行 |
+
+
+## 20 v0.1.8 Linux 托盘 Qt 化 + 启动终端修复 + GNOME 扩展一键安装（2026-11-05）
+
+> 触发：用户 v0.1.7 反馈「Linux 启动后会出现一个终端」「右击小图标不管用」。
+> 结论：`.desktop` 的 `Terminal=true`；pystray 在 Linux 只能回退 xorg（`HAS_MENU = False`）。
+> 方案经用户确认：托盘刚需；一键安装用发行版包 + 一次提权；真没托盘则点 X 直接退出。
+
+| 测试项 | 结果 |
+|---|---|
+| 终端窗口 | 静态检查：`driver/packaging/linux/mk87.desktop` 为 `Terminal=false`；deb/rpm 打包脚本直接安装该文件（`install -m 644` / `cp`）；开机自启模板本来就是 false |
+| 桌面环境解析 | `GNOME` / `ubuntu:GNOME`（显示名 GNOME）/ `KDE` / `XFCE` / `X-Cinnamon` / `MATE` / `LXQt` / 空值 → gnome/kde/xfce/cinnamon/mate/lxqt/unknown；无 XDG_SESSION_TYPE 时按 WAYLAND_DISPLAY/DISPLAY 推断 wayland/x11 |
+| os-release | `NAME="Fedora Linux"` / `VERSION_ID=43` / `ID=fedora` 正确解析；文件不存在返回 {} |
+| 扩展状态 | 用户级/系统级目录都能发现（含 Ubuntu `ubuntu-appindicators@ubuntu.com`）；gsettings enabled 列表 → 已启用；disabled 列表 → 未启用；装了但不在 enabled → 未启用；gsettings 不可用时回退 `gnome-extensions info` 的 State |
+| 包管理器/提权 | dnf / apt / zypper / pacman / rpm-ostree（`/run/ostree-booted`）识别；pkexec 优先于 sudo；都缺失时 reason=no-elevation；无包管理器 reason=no-package-manager |
+| 安装计划 | 非 GNOME → not-gnome；已装已启用 → already-enabled；已装未启用 → needsEnable（引导启用而非重装）；Fedora 生成 `pkexec /usr/bin/dnf install -y gnome-shell-extension-appindicator`；手动命令含 `sudo apt update && sudo apt install ...` 与 `gnome-extensions enable <uuid>` |
+| 一键安装 | 成功路径：命令返回 0 → 自动 enable → 返回 needsLogout（Wayland）；失败路径：返回退出码/输出/manualCommands 供复制；浏览器模式（非外壳）接口 400 拒绝 |
+| 启用扩展 | `gnome-extensions enable` 成功路径；Shell 未扫描到时报错 → 回退 `gsettings set org.gnome.shell enabled-extensions`（并在需要时从 disabled-extensions 移除） |
+| 汇总状态分支 | Windows → windows-ok；浏览器模式 → browser；GNOME 缺扩展 → gnome-missing-extension；已装未启用 → gnome-extension-disabled；已装启用但托盘不可用 → gnome-needs-relogin；非 GNOME 无托盘 → no-tray-host；托盘可用 → ok |
+| 无托盘点 X | `_on_closing()`：pystray 无图标 → quit() 且不 hide；托盘可用 → hide + 提示；Qt STATE.available=False → quit() |
+| 前端卡片 | bun 解析通过；linkedom + bun 冒烟 16 项：中文标题/行/按钮/建议文案、英文对应项、中→英热切换重渲染、Windows 形态不显示「一键安装」按钮、Windows 建议文案 |
+| 接口实测（源码 run.py） | `/api/status` 含 `tray: {available, backend}`；`/api/tray/status` 返回完整结构（Windows 本机 → windows-ok / 无需扩展）；浏览器模式 `POST /api/tray/install-extension` 400 |
+| 全量单测 | **277 tests OK**（245 → 277，新增 `tests/test_trayenv.py` 32 项） |
+| Windows 打包冒烟 | 见发布记录（exe FileVersion 0.1.8.0、`--tray` 启动、`/api/version`、`/api/tray/status`） |
+| Linux 真机 | **待用户执行**：装 v0.1.8 → 从应用菜单启动（不弹终端）→ 左键/右键托盘图标 → 设置 → 系统托盘（状态是否正确；GNOME 缺扩展则一键安装 → 注销重登 → 托盘出现） |

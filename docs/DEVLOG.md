@@ -1068,3 +1068,106 @@ error: [pywebview] GTK cannot be loaded: No module named 'gi'
 - 待办：用户 Linux 装 v0.1.7 后验证音乐律动；若失败，日志里新增的
   「音频采集后端: ...」「音乐律动启动失败: ...」两行会直接给出原因。卡顿窗口（2~9s）由新增
   watchdog/等锁/HID 慢调用 WARNING 负责定位。
+
+
+## 24 2026-11-05：v0.1.8 Linux 托盘改 Qt + 启动弹终端修复 + GNOME 扩展一键安装
+
+> 用户反馈（v0.1.7 安装后）：①「Linux 端启动后会出现一个终端，能不能让他不出现」；
+> ②「右击小图标在 Linux 中好像不管用」。讨论后用户拍板：托盘是刚需；一键安装 GNOME 扩展
+> 可以用一次提权；真的没有托盘就点 X 直接关闭；做完把资料上传 GitHub 并打包发布到 Release。
+
+### 24.1 讨论结论（先对齐再动手）
+
+- 托盘在 Linux 上有两套互不兼容的机制：
+  - **StatusNotifierItem / AppIndicator**（D-Bus + dbusmenu）：KDE / XFCE / Cinnamon / MATE / LXQt
+    原生支持；GNOME 必须装 `gnome-shell-extension-appindicator`（Ubuntu 预装了同源分支，
+    uuid 是 `ubuntu-appindicators@ubuntu.com`）；这是 Qt / 现代应用走的路。
+  - **XEmbed 旧式托盘**：GNOME 从来不支持；XFCE/MATE 有兼容层时能显示，但菜单要靠应用自己实现。
+- 本项目的 pystray 在 Linux 打包体里没有 `gi`/GTK，也没有 AppIndicator 绑定，所以总是回退
+  `_xorg` 后端；`pystray/_xorg.py` 里 `HAS_MENU = False`（注释 “Menus are not supported on X”），
+  只处理左键 activate → **图标能出现但右键没有任何反应**，与用户现象完全吻合。
+- 用户坚持「别的应用有右键」也成立：那些应用本身就是 SNI 应用，或用户装了 AppIndicator 扩展 /
+  在 Ubuntu 这类预装扩展的系统上；与 pystray 无关。
+
+### 24.2 根因 1：启动弹终端（`Terminal=true`）
+
+- `driver/packaging/linux/mk87.desktop` 里 `Exec=mk87` + **`Terminal=true`**：从应用菜单启动时
+  桌面环境按这个字段开终端承载程序 → 用户看到的那个终端窗口。
+- 开机自启文件（`mk87lib/autostart.py` 的 `LINUX_DESKTOP`）本来就是 `Terminal=false`，无此问题，
+  这也解释了「只有手动启动会弹」。
+- 修复：改为 `Terminal=false`；deb/rpm 打包脚本是直接 `install`/`cp` 这个文件，重新打包即生效。
+
+### 24.3 根因 2：Linux 托盘右键无菜单（pystray xorg 后端 `HAS_MENU = False`）
+
+- 方案：Linux 改用 **Qt `QSystemTrayIcon` + `QMenu`**（PyQt6 已由 `pywebview[qt]` 打进包，
+  不新增运行时依赖）；Windows 继续用 pystray，行为不变。
+- 新增 `driver/mk87lib/tray_linux.py`：
+  - 菜单保持三项：显示主窗口 / 开机自启（勾选状态在 `QMenu.aboutToShow` 时刷新）/ 退出；
+  - `activated(Trigger/DoubleClick)` → 显示窗口；右键菜单由 Qt 的 `setContextMenu` 提供；
+  - **线程模型**：Qt 控件只能在 GUI 线程创建。`webview.start(func=...)` 的 func 跑在子线程，
+    此时主线程的 `QApplication` 可能还没创建 → 子线程轮询 `QApplication.instance()`；
+    就绪后建一个 QObject 持有者 `moveToThread(app.thread())`，再用
+    `QMetaObject.invokeMethod(..., QueuedConnection)` 把创建任务投递到 GUI 线程
+    （与 pywebview 处理 js_api 的方式一致）。
+  - 可用性写入模块级 `STATE`；`Qt` 导入失败（源码运行没装 Qt）时回退 pystray 兜底。
+- `shell.py`：
+  - Linux 走 `webview.start(..., func=self._linux_tray_bootstrap)`；Windows 走 `_start_pystray()`；
+  - 无托盘宿主时（`QSystemTrayIcon.isSystemTrayAvailable() == False`）**点窗口 X 直接退出程序**，
+    不再隐藏到找不到的地方；有托盘时保持原来的「隐藏 + 托盘提示」；
+  - `server.app.tray_status_callback` 注入真实托盘状态（同 activate/quit callback 模式）。
+
+### 24.4 GNOME 一键安装（`trayenv.py` + `/api/tray/*`）
+
+- 新增 `driver/mk87lib/trayenv.py`（纯标准库，Windows 可 import/单测）：
+  - 解析 `XDG_CURRENT_DESKTOP` / `XDG_SESSION_TYPE` / `WAYLAND_DISPLAY` / `DISPLAY`、
+    `/etc/os-release`；`ubuntu:GNOME` 这类复合值取已知桌面名（显示 GNOME）；
+  - GNOME 扩展状态：检查用户级/系统级扩展目录（含 Ubuntu 的 uuid），用
+    `gsettings get org.gnome.shell enabled-extensions / disabled-extensions` 判断启用，
+    读不到时回退 `gnome-extensions info` 的 `State:`；
+  - 包管理器识别：`rpm-ostree`（原子化优先）/ `dnf` / `apt-get` / `zypper` / `pacman`；
+    提权工具优先 `pkexec`（图形密码框）再 `sudo`；
+  - `install_plan()` 生成「发行版包 + 一次提权」命令与失败原因（非 GNOME / 已启用 /
+    已装未启用 / 无包管理器 / 无提权工具）；无论哪条路径都附带可复制的手动命令。
+- 新增接口：
+  - `GET /api/tray/status`：托盘后端/宿主可用性、桌面、会话、GNOME 版本、扩展状态、
+    安装计划、建议文案（zh/en 两份，沿用 conflictItems 的双语模式）；
+  - `POST /api/tray/install-extension`（必须 `confirm: true`，仅外壳模式）：
+    `pkexec <包管理器> install -y gnome-shell-extension-appindicator`，捕获输出；
+    成功后自动启用扩展（先 `gnome-extensions enable`，Shell 还没扫描到时退化为
+    直接写 `gsettings enabled-extensions`），返回 `needsLogout` / `rebootRequired`；
+  - `POST /api/tray/enable-extension`：已装未启用时免提权启用；
+  - 浏览器模式（`run.py`）调用安装接口返回 400，避免任意本地网页触发提权。
+- `/api/status` 增加 `tray` 摘要（available/backend），供主窗口横幅判断。
+
+### 24.5 前端：设置页「系统托盘」卡片 + 横幅 + mock
+
+- `pages/settings.js`：新增卡片，展示托盘后端/宿主、桌面环境、扩展状态、GNOME 版本、
+  发行版；按检测结果显示「一键安装扩展（需管理员密码）」/「启用扩展（无需提权）」/
+  「复制安装命令」/「查看·复制安装命令」/「重新检测」；确认框说明 Wayland 需注销重登、
+  X11 可 Alt+F2 → r；中英文案在卡片内自带（语言切换时 `i18n.onChange` 重渲染），
+  另加 `TXT` 本地字典使英文模式不再混入中文。
+- `app.js`：`/api/status.tray.available === false` 时顶部横幅提示「关闭窗口将直接退出程序」，
+  可关闭，动作按钮跳设置页。
+- `api.js`：`/api/tray/install-extension` 超时放宽到 300s（pkexec 密码 + 包管理器下载）。
+- `mock.js`：补 `/api/tray/status`、安装/启用接口的演示数据。
+
+### 24.6 验证
+
+- 全量单测：**277 tests OK**（245 → 277，新增 `tests/test_trayenv.py` 32 项：桌面环境解析、
+  os-release、扩展安装/启用判定（gsettings + gnome-extensions 回退）、包管理器/提权识别、
+  安装计划、汇总状态分支、安装成功/失败路径、无托盘点 X 逻辑）。
+- 前端：`bun build` 解析通过；用 linkedom + bun 跑了 16 项 DOM 冒烟（中文/英文/热切换/
+  Windows 形态无安装按钮），全部通过（脚本为本地临时验证，不入库）。
+- 只读接口实测（源码 `run.py --no-browser` 8491 端口）：
+  `/api/status` 带 `tray` 摘要；`/api/tray/status` 返回完整结构；
+  浏览器模式 `POST /api/tray/install-extension` 返回 400（预期拒绝）。
+- Windows 打包冒烟与 Linux 真机验证见发布记录。
+
+### 24.7 风险与待办
+
+- **Qt 托盘跨桌面兼容性只能真机验证**：`isSystemTrayAvailable()` 在 GNOME（无扩展）应为 false；
+  KDE/XFCE/Cinnamon/MATE 应原生显示且右键菜单可用。若某桌面 Qt 仍显示不出，再按该桌面补兼容。
+- **pkexec 依赖 polkit 认证代理**：GNOME/KDE 桌面都自带；无 pkexec 时回退 sudo/手动命令。
+- **Wayland 装完扩展必须注销重登**（GNOME 不支持热加载），卡片与提示文案已写明；
+  X11 可 `Alt+F2` → `r`。
+- Linux 真机验证由用户执行：无终端窗口、右键菜单可用、设置页状态正确、GNOME 一键安装生效。
