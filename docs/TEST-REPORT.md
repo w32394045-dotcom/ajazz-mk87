@@ -504,3 +504,23 @@
 
 诊断入口：`--diagnose` 打印 hidapi 后端 / 原始枚举 / 解析接口 / `/sys/class/hidraw` 节点 + 权限 /
 udev 规则 / 结论；源码环境同一套逻辑在 `probe/linux_hid_check.py`。
+
+## 19 v0.1.7 Linux 音乐律动 + 设备命令延迟（2026-11-04 晚）
+
+> 触发：用户 v0.1.6 Linux 日志包（`E:\mk87-logs-20261104-210220.zip`）。
+> Linux 设备识别已正常（hidraw 后端、fw1.19、battery 100）；音乐律动 `POST /api/music/start` 两次 400。
+
+| 测试项 | 结果 |
+|---|---|
+| 日志证据 | 400 前一行「音乐律动启动: ... send=ack」，4ms 后失败 → 音频采集打开阶段；Linux 用外部 `parec`，Fedora/PipeWire 默认未安装 |
+| libpulse 假库 | `pa_simple_new/read/free` 参数正确（float32le/48000/2ch）；读取 2ch 取均值；`pa_strerror` 原因带进错误信息；缺库提示安装包；关闭后再读报错 |
+| Linux 采集后端顺序 | libpulse 优先；失败后用 `pactl get-default-sink` 的 `<sink>.monitor` 重试；再失败回退 parec；两者都失败时错误同时含「libpulse / parec / pipewire-pulse」 |
+| parec EOF | parec 退出后不再返回「静音」而是报错中断（避免"看起来在跑但没数据"） |
+| 音频设备列表 | pactl 正常解析 monitor 源；pactl 缺失时返回默认输出回环兜底项（id=None） |
+| 非阻塞读 | `read_report_nonblocking()` 用 set_nonblocking(1)+read(len)（`read(len,0)` 在 cython-hidapi 里是阻塞的）；有数据返回 64B 帧，无数据返回 None |
+| 监听线程 | 持锁时间降至微秒级；读不到先释放锁再 sleep 20ms；抢不到锁 sleep 5ms |
+| 真机延迟（Windows MK87 fw1.19，中位数） | keymap 矩阵 15.2ms（原经 API ~325ms）、FN 矩阵 22.0ms、逐键灯 24.1ms（原 93~245ms）、设备信息 2.0ms |
+| 音乐回归 | 20fps：4s 内 80 帧、实测 20.0fps、errors=0（监听线程不偷 ACK） |
+| 卡顿探针 | watchdog 记录 >2s 无采样；等锁 >0.3s / HID 写 >0.5s / 读超 3x 记 WARNING；HTTP 400 记录 MK87Error message |
+| 全量单测 | **245 tests OK**（226 → 245） |
+| Linux 真机音乐 | **待用户执行**：装 v0.1.7 → 开音乐律动；失败时日志新增「音频采集后端: ...」与「音乐律动启动失败: ...」两行 |

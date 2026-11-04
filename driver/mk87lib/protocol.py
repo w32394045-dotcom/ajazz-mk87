@@ -288,10 +288,16 @@ class Protocol:
     def read_event(self, timeout: float = 0.05) -> Optional[bytes]:
         """读取一条非请求响应（通知帧 / 异步 ACK），原样返回 payload。
 
+        ``timeout <= 0`` 走非阻塞读（监听线程用：读不到立刻返回，释放设备锁后再睡），
+        其它值走带超时的阻塞读。
+
         高频回包（音乐 ACK / 短 ACK）不逐条写日志；其它通知按 cmd 聚合并限速，
         避免 66fps 播放时每秒数百条 DEBUG 拖慢磁盘。
         """
-        r = self.iface.read_normalized(timeout)
+        if timeout is None or timeout <= 0:
+            r = self.iface.read_normalized_nonblocking()
+        else:
+            r = self.iface.read_normalized(timeout)
         if r is None:
             return None
         if not _is_quiet_frame(r):

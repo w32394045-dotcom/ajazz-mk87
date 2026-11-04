@@ -408,7 +408,13 @@ class HidInterface:
         if len(report) < want:
             report = bytes(report) + b"\x00" * (want - len(report))
         try:
+            t0 = time.perf_counter()
             n = int(self._dev.write(list(report)))
+            elapsed = time.perf_counter() - t0
+            if elapsed > 0.5:
+                # 卡顿探针：hidraw 普通写通常 <1ms，>0.5s 说明 USB/内核层卡住了
+                log.warning("HID 写入耗时 %.2fs（%d 字节 usagePage=0x%04X）",
+                            elapsed, len(report), self.info.usage_page)
         except Exception as exc:
             raise DeviceDisconnected(f"HID 写入失败: {exc}") from exc
         if n < 0:
@@ -423,7 +429,35 @@ class HidInterface:
         if self._dev is None:
             raise DeviceDisconnected("接口未打开")
         try:
+            t0 = time.perf_counter()
             data = self._dev.read(self.info.read_max_len, max(1, int(timeout * 1000)))
+            elapsed = time.perf_counter() - t0
+            # 读超时是预期路径（timeout 到点返回空），只在明显超出时记一笔
+            if elapsed > max(0.5, timeout * 3):
+                log.warning("HID 读取耗时 %.2fs（请求 %.0fms usagePage=0x%04X）",
+                            elapsed, timeout * 1000, self.info.usage_page)
+        except Exception as exc:
+            raise DeviceDisconnected(f"HID 读取失败: {exc}") from exc
+        if not data:
+            return None
+        return bytes(data)
+
+    def read_report_nonblocking(self) -> Optional[bytes]:
+        """非阻塞读一条 input report（没有数据立即返回 None）。
+
+        注意：cython-hidapi 的 ``dev.read(length, 0)`` **不是**非阻塞 —— 它的
+        ``timeout_ms == 0`` 分支调用的是阻塞的 ``hid_read()``。必须用
+        ``set_nonblocking(1)`` + ``read(length)``（此时 hid_read 才走 0ms 轮询）。
+        读完立刻恢复阻塞模式，不影响请求路径的带超时读。
+        """
+        if self._dev is None:
+            raise DeviceDisconnected("接口未打开")
+        try:
+            self._dev.set_nonblocking(1)
+            try:
+                data = self._dev.read(self.info.read_max_len)
+            finally:
+                self._dev.set_nonblocking(0)
         except Exception as exc:
             raise DeviceDisconnected(f"HID 读取失败: {exc}") from exc
         if not data:
@@ -432,6 +466,10 @@ class HidInterface:
 
     def read_normalized(self, timeout: float = 0.1) -> Optional[bytes]:
         r = self.read_report(timeout)
+        return normalize_report(r) if r else None
+
+    def read_normalized_nonblocking(self) -> Optional[bytes]:
+        r = self.read_report_nonblocking()
         return normalize_report(r) if r else None
 
     def drain(self, duration: float = 0.02) -> None:

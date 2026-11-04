@@ -8,7 +8,7 @@
 - **Device**: USB `VID 0x0C45 / PID 0x8047`; 2.4G receiver `VID 0x0C45 / PID 0xFEFE`
 - **Official web driver** (reverse-engineered): `https://ajazz.driveall.cn`
 - **Everything local**: no network access, no telemetry, no vendor driver required
-- **Latest release**: [v0.1.6](https://github.com/w32394045-dotcom/ajazz-mk87/releases/latest)
+- **Latest release**: [v0.1.7](https://github.com/w32394045-dotcom/ajazz-mk87/releases/latest)
 
 ## Screenshots
 
@@ -51,7 +51,34 @@ backend on Linux (module `hidraw`, paths `/dev/hidrawN`); the `hid` module bundl
 **libusb** backend and cannot be used for this keyboard (wrong device paths, no usage pages, USB-device
 permissions and kernel-driver conflicts). See "What's new in v0.1.6".
 
-## What's new in v0.1.6
+## What's new in v0.1.7
+
+- **Fixed: music rhythm could not start on Linux (HTTP 400)** — audio capture relied on the external `parec`
+  command (`pulseaudio-utils`), which PipeWire desktops (Fedora, current Debian/Ubuntu) do not install by
+  default, so `POST /api/music/start` failed instantly with "音频采集打开失败". Linux capture now uses
+  **libpulse-simple** directly (part of `libpulse0` / `pulseaudio-libs`, already a package dependency;
+  works with both PulseAudio and PipeWire's pulse compatibility layer) via `@DEFAULT_MONITOR@`, retries with
+  the real `<default sink>.monitor` name from `pactl get-default-sink` when the special name is not resolved,
+  and still falls back to `parec` if the library is unavailable. The audio-device list no longer depends on
+  `pactl` either (falls back to "默认输出回环"), the chosen backend is exposed as
+  `audioBackend` in `/api/music/status`, and the exact failure reason is written to the log
+  (`MK87Error ... : message`).
+- **Fixed: device commands were needlessly slow** — the notification listener held the device lock while
+  doing a *timed* HID read every cycle. On Windows each such read costs 50~400 ms to return (hidapi
+  CancelIoEx cancellation), so every keymap / macro / LED request waited ~0.3 s; on Linux it was 50 ms, and
+  a continuous notification stream could even starve request threads. The listener now does a **nonblocking
+  read and sleeps outside the lock** (`timeout <= 0` path; note cython-hidapi's `read(len, 0)` is actually
+  blocking, so it uses `set_nonblocking(1)` + `read(len)`). Measured on a real MK87 (Windows): keymap read
+  **15 ms** (was ~325 ms via the API), LED custom read **24 ms** (was 100–250 ms), device info **2 ms**;
+  music streaming still holds 20.0 fps.
+- **Better stall diagnostics** — a process watchdog logs gaps >2 s (whole process frozen / suspended vs. a
+  single blocked thread), device-lock waits >0.3 s and slow HID writes/reads are logged, and HTTP 400s now
+  record the actual `MK87Error` message. These come from the 2026-11-04 user log, which contained several
+  2–9 s windows with no log lines at all — next report will show whether the process was frozen or a device
+  operation stalled.
+- **Tests**: **245 unit tests green** (12 new Linux audio tests + nonblocking-listener/read tests).
+  Linux real-device verification for the music fix still needs the user's machine.
+### v0.1.6
 
 - **Fixed: Linux still could not detect the keyboard (root cause of the v0.1.5 report)** — the PyPI `hidapi`
   wheel ships **two** extension modules on Linux: `hid` (built against **libusb**) and `hidraw` (built

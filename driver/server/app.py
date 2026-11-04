@@ -34,7 +34,7 @@ from mk87lib.errors import (
 from server import state
 
 WEB_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "web")
-VERSION = "0.1.6"
+VERSION = "0.1.7"
 
 manager = state.manager
 log = logging.getLogger("mk87.http")
@@ -124,6 +124,9 @@ async def _h_unsupported(request: Request, exc: UnsupportedFeature):
 
 @app.exception_handler(MK87Error)
 async def _h_mk87(request: Request, exc: MK87Error):
+    # HTTP 中间件只记录状态码；这里补一行 message，否则音乐律动这类 400
+    # 在支持日志里只剩「POST /api/music/start -> 400」，看不出具体原因。
+    log.warning("MK87Error %s %s: %s", request.method, request.url.path, exc)
     return JSONResponse(status_code=400, content={"error": "mk87_error", "message": str(exc)})
 
 

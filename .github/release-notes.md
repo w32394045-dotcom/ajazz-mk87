@@ -11,7 +11,29 @@ Screenshots and the full feature list live in the repository README:
 **[README.md (English)](https://github.com/w32394045-dotcom/ajazz-mk87/blob/main/README.md)** ·
 **[README.zh-CN.md (简体中文)](https://github.com/w32394045-dotcom/ajazz-mk87/blob/main/README.zh-CN.md)**
 
-## What's new in v0.1.6
+## What's new in v0.1.7
+
+> v0.1.7 fixes music rhythm on Linux and makes every device operation much faster.
+
+- **Fixed: music rhythm could not start on Linux** (`POST /api/music/start` → HTTP 400). Audio capture
+  relied on the external `parec` command (`pulseaudio-utils`), which PipeWire desktops do not install by
+  default. Linux capture now uses **libpulse-simple** directly (`libpulse0` / `pulseaudio-libs`, already a
+  package dependency) with `@DEFAULT_MONITOR@`, retries with the real `<default sink>.monitor` name from
+  `pactl get-default-sink` when needed, and still falls back to `parec` if the library is missing. The audio
+  device list no longer depends on `pactl`; the active backend is reported as `audioBackend` in
+  `/api/music/status`; failures now log the real reason instead of just a 400.
+- **Fixed: slow device commands** — the notification listener held the device lock during timed HID reads
+  (Windows: 50–400 ms per read due to hidapi CancelIoEx; Linux: 50 ms, and continuous notifications could
+  starve request threads). It now uses a **nonblocking read and sleeps outside the lock**. Real MK87
+  (Windows) measurements: keymap matrix read **15 ms** (was ~325 ms via API), per-key LED read **24 ms**
+  (was 100–250 ms), device info **2 ms**; music streaming stays at 20.0 fps.
+- **Stall diagnostics** — process watchdog (logs gaps >2 s, i.e. whole-process freezes), device-lock waits
+  >0.3 s, slow HID writes/reads, and `MK87Error` messages for HTTP 400s. This addresses the 2026-11-04 log,
+  which had several 2–9 s windows with no log lines at all.
+- **Tests**: 245 unit tests green (12 new Linux audio tests + nonblocking listener/read tests).
+- **Linux users**: install the deb/rpm, then start music rhythm again; `mk87 --diagnose` remains available
+  for device issues.
+### v0.1.6
 
 > v0.1.6 fixes the real Linux root cause behind the v0.1.5 "device not detected" report.
 
@@ -37,7 +59,7 @@ Screenshots and the full feature list live in the repository README:
 - **Linux users**: install the deb/rpm (the udev rules are included), then run
   `mk87 --diagnose` if anything still looks wrong and attach the output.
 
-## What's new in v0.1.5
+### v0.1.5
 
 > v0.1.5 was a Linux hot-fix attempt built on v0.1.4. Its assumption (hidraw backend reporting
 > `usage_page = 0`) turned out to be wrong — see v0.1.6. The report-descriptor parser added there is still
@@ -54,7 +76,7 @@ Screenshots and the full feature list live in the repository README:
 - **Tests**: 215 unit tests green (9 new Linux transport tests: descriptor parser, interface enrichment,
   hidapi/sysfs fallback, Windows no-op).
 
-## What's new in v0.1.4
+### v0.1.4
 
 > v0.1.4 is a bug-fix release on top of v0.1.3 (official music scheme). Everything below was reproduced
 > from the reports, fixed, and re-verified on a real MK87 (USB, fw 1.19).

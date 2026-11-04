@@ -324,22 +324,34 @@ class MK87Device:
             t.start()
 
     def _listen_proto(self) -> None:
-        """空闲时读主协议通道，解析设备主动上报（55 FC xx）。"""
+        """空闲时读主协议通道，解析设备主动上报（55 FC xx）。
+
+        2026-11-04：改成**非阻塞读 + 锁外 sleep**。原因：
+        * Windows hidapi 带超时的读在超时路径要走 CancelIoEx，实测 50~400ms 才返回，
+          期间一直占着设备锁 → 其它命令每个都白等几百毫秒；
+        * Linux 上若通知帧连续到达，旧代码读完立刻重抢锁，可能把请求线程饿住数秒
+          （用户日志里有 2~9 秒「没有任何 HID 日志」的窗口）。
+        """
+        idle = 0.02
         while not self._stop.is_set():
             acquired = self._lock.acquire(timeout=0.05)
             if not acquired:
+                time.sleep(0.005)
                 continue
             try:
-                r = self.protocol.read_event(0.05) if self.protocol else None
+                r = self.protocol.read_event(0) if self.protocol else None
             except DeviceDisconnected:
                 self._on_disconnect("HID 句柄失效")
                 return
-            except Exception:
+            except Exception:  # noqa: BLE001
                 r = None
             finally:
                 self._lock.release()
             if r:
                 self._handle_raw_event(r, source="proto")
+            else:
+                # 锁已释放后再睡，绝不占着设备锁空等
+                time.sleep(idle)
 
     def _listen_wake(self) -> None:
         """2.4G 唤醒帧通道（report ID 5 上的 A6 FF 01）。"""
@@ -384,6 +396,15 @@ class MK87Device:
     # ==================================================================
     # 底层请求（带锁）
     # ==================================================================
+    def _acquire_device_lock(self, cmd: int) -> None:
+        """获取设备锁，并记录异常等待（排障用：卡顿时能看出是等锁还是进程冻结）。"""
+        t0 = time.perf_counter()
+        self._lock.acquire()
+        waited = time.perf_counter() - t0
+        if waited > 0.3:
+            log.warning("设备锁等待 %.2fs（cmd=0x%02X），设备可能被其它操作占用",
+                        waited, cmd)
+
     def request(
         self,
         cmd: int,
@@ -398,20 +419,22 @@ class MK87Device:
             raise DeviceNotFound("设备未连接")
         if self._tft_busy.is_set() and threading.get_ident() != self._tft_busy_owner:
             raise MK87Error("TFT 上传进行中，设备忙；请等待上传完成后再操作")
-        with self._lock:
-            try:
-                return self.protocol.request(
-                    cmd,
-                    payload,
-                    addr_start=addr_start,
-                    timeout=timeout,
-                    retries=retries,
-                    content_size=content_size,
-                    need_response=need_response,
-                )
-            except DeviceDisconnected:
-                self._on_disconnect("设备断开")
-                raise
+        self._acquire_device_lock(cmd)
+        try:
+            return self.protocol.request(
+                cmd,
+                payload,
+                addr_start=addr_start,
+                timeout=timeout,
+                retries=retries,
+                content_size=content_size,
+                need_response=need_response,
+            )
+        except DeviceDisconnected:
+            self._on_disconnect("设备断开")
+            raise
+        finally:
+            self._lock.release()
 
     def request_custom(
         self,
@@ -434,7 +457,8 @@ class MK87Device:
         if payload:
             pkt[1 + len(header):1 + len(header) + len(payload)] = payload
         want = content_size if content_size is not None else len(payload)
-        with self._lock:
+        self._acquire_device_lock(cmd)
+        try:
             for _ in range(retries + 1):
                 iface.write_report(bytes(pkt))
                 deadline = time.time() + timeout
@@ -445,7 +469,8 @@ class MK87Device:
                     if len(r) >= 9 and r[0] == 0x55 and r[1] == (cmd & 0xFF):
                         return bytes(r[8:8 + want]) if want else bytes(r[8:])
             raise MK87Error(f"命令 0x{cmd:02X} 无响应")
-        return b""
+        finally:
+            self._lock.release()
 
     # ==================================================================
     # 设备信息 / 设置

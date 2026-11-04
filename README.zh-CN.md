@@ -8,7 +8,7 @@ USB / 2.4G 协议的完整逆向实现，全部功能**离线本地运行**。
 - **设备**：USB `VID 0x0C45 / PID 0x8047`；2.4G 接收器 `VID 0x0C45 / PID 0xFEFE`
 - **官方网页驱动**（已逆向）：`https://ajazz.driveall.cn`
 - **全程本地**：不访问外网、不上传数据、不依赖官方驱动
-- **最新版本**：[v0.1.6](https://github.com/w32394045-dotcom/ajazz-mk87/releases/latest)
+- **最新版本**：[v0.1.7](https://github.com/w32394045-dotcom/ajazz-mk87/releases/latest)
 
 ## 界面截图
 
@@ -51,7 +51,31 @@ mk87 --diagnose     # 打印 hidapi 后端、hidraw 节点、usage page、权限
 这把键盘（设备路径不对、没有 usage page、需要 /dev/bus/usb 权限还会和内核 HID 驱动抢接口）。详见
 下方 v0.1.6 更新说明。
 
-## v0.1.6 更新
+## v0.1.7 更新
+
+- **修复：Linux 上音乐律动无法启动（HTTP 400）** —— 音频采集原来依赖外部命令 `parec`
+  （`pulseaudio-utils`），而 PipeWire 桌面（Fedora、现在的 Debian/Ubuntu）默认不装，
+  于是 `POST /api/music/start` 立刻失败并提示「音频采集打开失败」。现在 Linux 直接调用
+  **libpulse-simple**（`libpulse0` / `pulseaudio-libs` 自带，安装包已声明依赖，PulseAudio 和
+  PipeWire 的 pulse 兼容层都能用）打开 `@DEFAULT_MONITOR@`；若系统不认这个特殊源名，会用
+  `pactl get-default-sink` 得到真实名 `<默认 sink>.monitor` 再试一次；库缺失时仍回退 `parec`。
+  音频设备列表也不再依赖 `pactl`（缺失时回落到「默认输出回环」）；当前使用的后端通过
+  `/api/music/status` 的 `audioBackend` 字段暴露，失败原因会写进日志（`MK87Error ...: message`），
+  不再只有一个 400。
+- **修复：设备命令无谓变慢（主要是 Windows）** —— 通知监听线程每次都在**持有设备锁**的情况下做
+  「带超时的 HID 读」。Windows 上这个读在超时路径要走 CancelIoEx，实测要 50~400ms 才返回，
+  于是改键 / 宏 / 灯效每个请求都白等约 0.3 秒；Linux 上是 50ms，通知帧连续时甚至会把请求线程饿住。
+  现在监听线程改为**非阻塞读 + 释放锁后再 sleep**（`timeout<=0` 路径；注意 cython-hidapi 的
+  `read(len, 0)` 其实是阻塞的，所以用 `set_nonblocking(1)` + `read(len)`）。真机 MK87（Windows）
+  实测：改键矩阵读取 **15ms**（原来经 API 约 325ms）、逐键灯读取 **24ms**（原来 100~250ms）、
+  设备信息 **2ms**；音乐帧流仍稳定 20.0fps。
+- **卡顿诊断增强** —— 新增进程级看门狗：每 0.5s 采样，间隔 >2s 说明**整个进程被冻结/挂起**
+  （与「某个线程等锁」区分开）；设备锁等待 >0.3s、HID 写 >0.5s、读明显超时都会写 WARNING；
+  HTTP 400 现在会记录 `MK87Error` 的具体 reason。这些来自 2026-11-04 的用户日志——里面有多次
+  2~9 秒「完全没有日志」的窗口，下一份日志就能判断是进程被挂起还是设备操作卡住。
+- **测试**：**245 个单元测试全绿**（新增 12 个 Linux 音频测试 + 非阻塞监听/读取测试）。
+  Linux 真机验证（音乐律动）仍需你在你的机器上装包确认。
+### v0.1.6
 
 - **修复：Linux 上仍然识别不到键盘（v0.1.5 反馈的真正根因）** —— PyPI 的 `hidapi` wheel 在 Linux 上
   打包了**两个**扩展模块：`hid`（libusb 后端）和 `hidraw`（hidraw 后端）。cython-hidapi 的构建默认把

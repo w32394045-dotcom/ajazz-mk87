@@ -39,6 +39,8 @@ LED 颜色覆盖（本工具增强）：COLOR_SCHEMES 的 color id 只替换**�
 """
 from __future__ import annotations
 
+import ctypes
+import ctypes.util
 import logging
 import math
 import platform
@@ -1602,8 +1604,151 @@ class Analyzer:
 # ----------------------------------------------------------------------
 # 音频采集
 # ----------------------------------------------------------------------
+#: PulseAudio/PipeWire 采样格式：PA_SAMPLE_FLOAT32LE（pa_sample_format_t 枚举值 5）
+PA_SAMPLE_FLOAT32LE = 5
+#: pa_stream_direction_t：PA_STREAM_RECORD
+PA_STREAM_RECORD = 2
+#: PulseAudio 特殊源名：默认输出的 monitor（PipeWire 的 pulse 兼容层同样支持；
+#: Chromium 的 loopback 采集也是用这个名字）
+DEFAULT_MONITOR = "@DEFAULT_MONITOR@"
+
+
+class _PaSampleSpec(ctypes.Structure):
+    """libpulse ``pa_sample_spec``（format 是枚举 = int，结构体有 3 字节对齐填充）。"""
+
+    _fields_ = [
+        ("format", ctypes.c_int),
+        ("rate", ctypes.c_uint32),
+        ("channels", ctypes.c_uint8),
+    ]
+
+
+class PulseSimpleRecorder:
+    """Linux：用 libpulse-simple 直接采集系统输出回环（PulseAudio / PipeWire 通用）。
+
+    为什么不再依赖 ``parec``：parec 属于 pulseaudio-utils，Fedora/Debian 的
+    PipeWire 桌面默认不装，于是音乐律动会直接报「音频采集打开失败」。
+    ``libpulse-simple.so.0`` 则是 libpulse0 / pulseaudio-libs 的一部分（安装包已
+    声明依赖），PipeWire 的 pulse 兼容层同样可用，不需要任何外部命令。
+    """
+
+    CHANNELS = 2
+
+    def __init__(self, device_id: Optional[str] = None, samplerate: int = 48000):
+        self.samplerate = int(samplerate)
+        self.device = str(device_id) if device_id else DEFAULT_MONITOR
+        self._handle = None
+        self._pulse = None
+        self._ps = self._load_libpulse_simple()
+        self._configure()
+        spec = _PaSampleSpec(PA_SAMPLE_FLOAT32LE, self.samplerate, self.CHANNELS)
+        error = ctypes.c_int(0)
+        self._handle = self._ps.pa_simple_new(
+            None,
+            b"MK87 Studio",
+            PA_STREAM_RECORD,
+            self.device.encode("utf-8"),
+            b"music",
+            ctypes.byref(spec),
+            None,
+            None,
+            ctypes.byref(error),
+        )
+        if not self._handle:
+            raise MK87Error(
+                f"打开系统输出采集失败（源: {self.device}）: {self._strerror(error.value)}"
+            )
+
+    # ------------------------------------------------------------ 加载 / 配置
+    @staticmethod
+    def _load_libpulse_simple():
+        try:
+            return ctypes.CDLL("libpulse-simple.so.0")
+        except OSError:
+            pass
+        name = ctypes.util.find_library("pulse-simple")
+        if not name:
+            raise MK87Error(
+                "找不到 libpulse-simple.so.0（PulseAudio/PipeWire 客户端库缺失；"
+                "Debian/Ubuntu 装 libpulse0，Fedora 装 pulseaudio-libs）"
+            )
+        return ctypes.CDLL(name)
+
+    def _configure(self) -> None:
+        self._ps.pa_simple_new.restype = ctypes.c_void_p
+        self._ps.pa_simple_new.argtypes = [
+            ctypes.c_char_p, ctypes.c_char_p, ctypes.c_int, ctypes.c_char_p,
+            ctypes.c_char_p, ctypes.POINTER(_PaSampleSpec), ctypes.c_void_p,
+            ctypes.c_void_p, ctypes.POINTER(ctypes.c_int),
+        ]
+        self._ps.pa_simple_read.restype = ctypes.c_int
+        self._ps.pa_simple_read.argtypes = [
+            ctypes.c_void_p, ctypes.c_void_p, ctypes.c_size_t,
+            ctypes.POINTER(ctypes.c_int),
+        ]
+        self._ps.pa_simple_free.restype = None
+        self._ps.pa_simple_free.argtypes = [ctypes.c_void_p]
+        try:
+            self._pulse = ctypes.CDLL("libpulse.so.0")
+            self._pulse.pa_strerror.restype = ctypes.c_char_p
+            self._pulse.pa_strerror.argtypes = [ctypes.c_int]
+        except OSError:
+            self._pulse = None
+
+    def _strerror(self, code: int) -> str:
+        try:
+            if self._pulse is not None:
+                msg = self._pulse.pa_strerror(int(code))
+                if msg:
+                    return msg.decode("utf-8", "replace")
+        except Exception:  # noqa: BLE001
+            pass
+        return f"错误码 {code}"
+
+    # ------------------------------------------------------------ 读写
+    def read(self, frames: int) -> np.ndarray:
+        if self._handle is None:
+            raise MK87Error("音频采集已关闭")
+        frames = max(1, int(frames))
+        nbytes = frames * self.CHANNELS * 4  # float32 × 声道
+        buf = ctypes.create_string_buffer(nbytes)
+        error = ctypes.c_int(0)
+        rc = self._ps.pa_simple_read(self._handle, buf, nbytes, ctypes.byref(error))
+        if rc < 0:
+            raise MK87Error(f"系统音频采集失败: {self._strerror(error.value)}")
+        data = np.frombuffer(buf.raw, dtype="<f4")
+        if data.size == 0:
+            return np.zeros(frames, dtype=np.float32)
+        return data.reshape(-1, self.CHANNELS).mean(axis=1).astype(np.float32)
+
+    def close(self) -> None:
+        if self._handle is not None:
+            try:
+                self._ps.pa_simple_free(self._handle)
+            except Exception:  # noqa: BLE001
+                pass
+            self._handle = None
+
+
+def _pactl_default_monitor() -> Optional[str]:
+    """用 ``pactl get-default-sink`` 拼默认输出的 monitor 源名（不可用返回 None）。
+
+    某些 PipeWire 版本不解析 PulseAudio 的 ``@DEFAULT_MONITOR@`` 特殊源名，
+    这时用真实源名 ``<默认 sink>.monitor`` 再打开一次。
+    """
+    try:
+        res = subprocess.run(["pactl", "get-default-sink"], capture_output=True,
+                             text=True, timeout=2)
+    except Exception:  # noqa: BLE001 - pactl 未安装 / 无 pulse 服务
+        return None
+    sink = (res.stdout or "").strip().splitlines()
+    if not sink or not sink[0].strip():
+        return None
+    return f"{sink[0].strip()}.monitor"
+
+
 class AudioCapture:
-    """系统输出回环采集（Windows: soundcard WASAPI / Linux: parec）。
+    """系统输出回环采集（Windows: soundcard WASAPI / Linux: libpulse-simple，parec 兜底）。
 
     关键：采集在**独立线程**里持续读取小片段（默认 512 帧 ≈ 10.7ms）写入环形缓冲，
     主循环每 50ms 取最新 2048 帧做 FFT。否则主循环里同步 record(2048) 一次就要 43ms，
@@ -1616,7 +1761,9 @@ class AudioCapture:
         self.samplerate = int(samplerate)
         self.chunk = max(128, int(chunk))
         self._impl = None
+        self._pulse = None
         self._proc = None
+        self._backend = ""
         self.system = platform.system()
         self._buf = np.zeros(0, dtype=np.float32)
         self._lock = threading.Lock()
@@ -1639,14 +1786,51 @@ class AudioCapture:
             rec.__enter__()
             self._impl = rec
         elif self.system == "Linux":
-            device = self.device_id or "@DEFAULT_MONITOR@"
+            self._open_linux()
+        else:
+            raise MK87Error(f"当前平台不支持系统音频采集: {self.system}")
+
+    def _open_linux(self) -> None:
+        """Linux 采集后端：libpulse-simple（系统自带库）→ parec（外部命令兜底）。"""
+        errors: List[str] = []
+        candidates: List[Optional[str]] = [self.device_id]
+        if self.device_id is None:
+            # 个别 PipeWire 版本不认 @DEFAULT_MONITOR@ 特殊源名，
+            # 再用 pactl 查到的真实 "<默认 sink>.monitor" 试一次。
+            monitor_name = _pactl_default_monitor()
+            if monitor_name:
+                candidates.append(monitor_name)
+        for dev in candidates:
+            try:
+                self._pulse = PulseSimpleRecorder(dev, self.samplerate)
+                self._backend = "libpulse"
+                log.info("音频采集后端: libpulse-simple（源: %s）", self._pulse.device)
+                return
+            except Exception as exc:  # noqa: BLE001
+                errors.append(f"libpulse({dev or DEFAULT_MONITOR}): {exc}")
+                self._pulse = None
+        device = self.device_id or DEFAULT_MONITOR
+        try:
             self._proc = subprocess.Popen(
                 ["parec", "--format=float32le", f"--rate={self.samplerate}",
                  "--channels=2", f"--device={device}"],
                 stdout=subprocess.PIPE, stderr=subprocess.DEVNULL,
             )
-        else:
-            raise MK87Error(f"当前平台不支持系统音频采集: {self.system}")
+            self._backend = "parec"
+            log.info("音频采集后端: parec（源: %s）", device)
+            return
+        except Exception as exc:  # noqa: BLE001
+            if isinstance(exc, FileNotFoundError):
+                errors.append("parec 未安装（Debian/Ubuntu: pulseaudio-utils，"
+                              "Fedora: pulseaudio-utils）")
+            else:
+                errors.append(f"parec: {exc}")
+            self._proc = None
+        raise MK87Error(
+            "Linux 音频采集不可用 —— " + "；".join(errors)
+            + "。请确认 PipeWire / PulseAudio 正在运行："
+              "systemctl --user status pipewire-pulse"
+        )
 
     def _read_impl(self, frames: int) -> np.ndarray:
         if self.system == "Windows":
@@ -1654,9 +1838,16 @@ class AudioCapture:
             if getattr(data, "ndim", 1) > 1:
                 data = data.mean(axis=1)
             return np.asarray(data, dtype=np.float32)
+        if self._pulse is not None:
+            return self._pulse.read(frames)
+        if self._proc is None or self._proc.stdout is None:
+            return np.zeros(frames, dtype=np.float32)
         need = frames * 2 * 4  # 2ch float32
-        buf = self._proc.stdout.read(need) if self._proc.stdout else b""
+        buf = self._proc.stdout.read(need)
         if not buf:
+            code = self._proc.poll()
+            if code is not None:
+                raise MK87Error(f"parec 已退出（code={code}），音频采集中断")
             return np.zeros(frames, dtype=np.float32)
         return np.frombuffer(buf, dtype="<f4").reshape(-1, 2).mean(axis=1).astype(np.float32)
 
@@ -1667,6 +1858,12 @@ class AudioCapture:
             except Exception:
                 pass
             self._impl = None
+        if self._pulse is not None:
+            try:
+                self._pulse.close()
+            except Exception:
+                pass
+            self._pulse = None
         if self._proc is not None:
             try:
                 self._proc.terminate()
@@ -1762,10 +1959,10 @@ def list_devices() -> List[dict]:
         except Exception as exc:  # noqa: BLE001
             return [{"id": None, "name": f"(音频设备不可用: {exc})", "loopback": False, "default": True}]
     if system == "Linux":
+        out: List[dict] = []
         try:
             res = subprocess.run(["pactl", "list", "short", "sources"],
                                  capture_output=True, text=True, timeout=3)
-            out = []
             for line in res.stdout.splitlines():
                 parts = line.split("\t")
                 if len(parts) >= 2:
@@ -1776,9 +1973,16 @@ def list_devices() -> List[dict]:
                         "loopback": name.endswith(".monitor"),
                         "default": name.startswith("@DEFAULT") or ".monitor" in name,
                     })
-            return out
+        except FileNotFoundError:
+            log.debug("pactl 未安装（pulseaudio-utils），音频设备列表回落到默认输出回环")
         except Exception as exc:  # noqa: BLE001
-            return [{"id": None, "name": f"(pactl 不可用: {exc})", "loopback": False, "default": True}]
+            log.debug("pactl 枚举音频源失败: %s", exc)
+        if not out:
+            # pactl 缺失时仍可用：采集直接连 PulseAudio/PipeWire 的默认 monitor
+            # （libpulse 支持 @DEFAULT_MONITOR@ 特殊源名）
+            out = [{"id": None, "name": "默认输出回环（PulseAudio / PipeWire）",
+                    "loopback": True, "default": True}]
+        return out
     return []
 
 
@@ -1883,6 +2087,8 @@ class MusicPlayer:
         self.frames = 0
         self.errors = 0
         self.last_error = ""
+        #: 实际使用的音频采集后端（Linux: libpulse / parec；Windows 空字符串）
+        self.audio_backend = ""
         self.last_payload: bytes = b""
         #: 最近一帧逐键颜色（与 last_payload 同源，供前端官方方案预览）
         self.last_colors: Dict[int, RGB] = {}
@@ -1990,6 +2196,7 @@ class MusicPlayer:
         self.device_id = device_id
         self.errors = 0
         self.last_error = ""
+        self.audio_backend = ""
         self.frames = 0
         self.levels32 = [0.0] * 32
         self.last_colors = {}
@@ -2032,6 +2239,7 @@ class MusicPlayer:
                     pass
             capture = AudioCapture(self.device_id)
             capture.open()
+            self.audio_backend = getattr(capture, "_backend", "")
             analyzer = Analyzer(capture.samplerate)
             self._engine = MusicEngine(self.mode, amplitude_ui=self.amplitude_ui,
                                        backmode=self.backmode,
@@ -2045,6 +2253,8 @@ class MusicPlayer:
             self._start_error = str(exc)
             self.errors += 1
             self.last_error = f"音频采集打开失败: {exc}"
+            # 关键：把具体原因写进日志，否则只剩 HTTP 400，支持包看不出是哪个后端失败
+            log.error("音乐律动启动失败: %s", exc)
             self._ready.set()
             if capture is not None:
                 try:
@@ -2239,6 +2449,8 @@ class MusicPlayer:
             # 发送策略诊断：ack / burst / burst+drainer（真机验证用，前端忽略）
             "sendMode": self.send_mode,
             "deviceId": self.device_id,
+            # 实际音频采集后端（Linux: libpulse / parec；Windows 为空），排障用
+            "audioBackend": self.audio_backend,
             "level": round(float(self.level), 3),
             "bands": [round(float(b), 3) for b in self.bands],
             "bands32": [round(float(b), 3) for b in self.levels32],

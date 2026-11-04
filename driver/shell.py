@@ -316,6 +316,27 @@ class Shell:
         os._exit(0)
 
     # ---------------------------------------------------------- 主流程
+    def _start_stall_watchdog(self) -> None:
+        """进程级卡顿探针（不影响功能，只写日志）。
+
+        2026-11-04 用户 Linux 日志里有多次 2~9 秒的「整段时间没有任何日志」窗口，
+        HTTP 请求耗时随之变大，但看不出是哪个线程卡住。这里每 0.5s 采样一次
+        单调时钟：采样间隔远大于 0.5s 说明**整个进程被冻结**（OS 挂起 / 长 GIL
+        占用 / 磁盘 IO 卡住），可与「某个线程在等设备锁」区分开。
+        """
+
+        def _loop() -> None:
+            last = time.monotonic()
+            while not self._quitting:
+                time.sleep(0.5)
+                now = time.monotonic()
+                gap = now - last
+                last = now
+                if gap > 2.0:
+                    log.warning("进程卡顿：%.1fs 内 watchdog 无采样（正常 0.5s）", gap)
+
+        threading.Thread(target=_loop, name="mk87-watchdog", daemon=True).start()
+
     def run(self) -> int:
         self.start_server()
         from server import app as server_app  # noqa: PLC0415
@@ -325,6 +346,7 @@ class Shell:
         self.manager.shell_mode = True
         self.wait_ready()
         SingleInstance().write_port(self.port)
+        self._start_stall_watchdog()
 
         import webview  # noqa: PLC0415
 

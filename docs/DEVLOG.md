@@ -968,3 +968,80 @@ error: [pywebview] GTK cannot be loaded: No module named 'gi'
   （`hiddenimports += ["hidraw"]`）；这是本次修复能否生效的前提。
 - 待办：用户装 v0.1.6 后 Linux 真机验证；若仍有问题，`mk87 --diagnose` 的输出足以定位
   （后端名、hidraw 节点、usage page、权限、udev 规则）。
+
+## 23 2026-11-04（晚）：v0.1.7 修 Linux 音乐律动 + 设备命令延迟 10~20 倍 + 卡顿探针
+
+> 用户反馈：Linux（v0.1.6 已能识别设备）上「音乐律动又不行了」，附日志包
+> `E:\mk87-logs-20261104-210220.zip`；另外让「再看看日志里还有什么问题」。
+
+### 23.1 日志里的确定结论
+
+- **v0.1.6 的 Linux 识别修复生效**：`hidapi 后端: hidraw`，接口 list 带
+  `product='AJAZZ KEYBOARD'`、`usagePage=0xFF68/0xFF67`，`connected=true fw=1.19 battery=100`；
+  `errors.log` 没有新增错误（旧的 GTK 报错都是 v0.1.4/0.1.5 会话留下的）。
+- **音乐律动失败**：两次 `POST /api/music/start -> 400`，前一行都是
+  「音乐律动启动: mode=13 ... targetFps=20 send=ack」，4ms 后返回 → 在音频采集打开阶段立刻失败。
+  v0.1.6 的 Linux 采集只走外部命令 `parec`（`subprocess.Popen(["parec", ...])`），用户是
+  Fedora/PipeWire 桌面，默认不装 `pulseaudio-utils` → `FileNotFoundError` → 400。
+  `/api/music/devices` 返回 200 但内容应是 `(pactl 不可用: ...)` 兜底项。
+- **另一类问题（用户没提，但日志很明显）**：多个接口耗时异常
+  （` GET /api/keymap` 3911/4748ms、`/api/lighting/custom` 4242/1511ms、`/api/macros` 2570/2818ms、
+  `/api/wireless` 3565ms、`/api/backup` 1115ms），且日志里有 **2~9 秒完全没有任何行**的窗口
+  （最大 8.7s，期间连 2s 一次的电量轮询 HID TX 也没有）。TFT 上传 2215 包 / 9.07MB / 316s /
+  28.0KB/s —— 与 Windows 基线（2136 包 / 8.75MB / 311s ≈ 28.8KB/s）一致，**不是 Linux 独有问题**。
+
+### 23.2 根因 1：Linux 音频采集依赖 parec（已修）
+
+- 修复（`music.py`）：
+  - 新增 `PulseSimpleRecorder`：ctypes 直连 `libpulse-simple.so.0`（`pa_simple_new/read/free`，
+    `PA_SAMPLE_FLOAT32LE`、2ch、48000Hz），默认源名 `@DEFAULT_MONITOR@`（PulseAudio 特殊源名，
+    PipeWire 的 pulse 兼容层支持；Chromium loopback 同款做法）。该库属 `libpulse0`（deb 已依赖）/
+    `pulseaudio-libs`（rpm 已 Requires），不需要额外装包。
+  - 若特殊源名打不开：`_pactl_default_monitor()` 用 `pactl get-default-sink` 拿到真实
+    `<默认 sink>.monitor` 再试；仍失败才回退 `parec`（并检测 parec 退出码，不再把 EOF 当静音）。
+  - `list_devices()` Linux：pactl 缺失/无输出时返回「默认输出回环（PulseAudio / PipeWire）」兜底项，
+    不再显示 `(pactl 不可用: ...)`。
+  - `MusicPlayer` 新增 `audioBackend`（`/api/music/status` 暴露），`_loop` 失败时
+    `log.error("音乐律动启动失败: %s", exc)`；`app.py` 的 `MK87Error` 处理器补记 message —— 以后
+    HTTP 400 在日志里直接看到原因。
+- 单测：`driver/tests/test_music_audio_linux.py` 12 项（ctypes 假库成功读/错误码/缺库、
+  libpulse 优先、parec 回退、EOF 报错、pactl 默认 monitor 解析、设备列表回退等）。
+
+### 23.3 根因 2：通知监听线程持锁做「带超时读」（已修，性能提升 10~20 倍）
+
+- 现状：`MK87Device._listen_proto` 每轮 `self._lock.acquire()` → `protocol.read_event(0.05)` →
+  `release()`。问题：
+  - Windows hidapi 的带超时读在超时路径要走 **CancelIoEx**，实测单次 50~400ms 才返回，
+    期间一直占着设备锁 → 每个改键/宏/灯效请求都要白等约 0.3s（这解释了 Windows 上
+    keymap 324~445ms、custom LED 93~245ms）；
+  - Linux 上若通知帧连续到达，读完立刻重抢锁，可能把请求线程饿住数秒（与 23.1 的无日志窗口吻合）。
+- 修复：
+  - `transport.py` 新增 `read_report_nonblocking()/read_normalized_nonblocking()`：
+    **不能用 `dev.read(len, 0)`** —— cython-hidapi 的 `timeout_ms==0` 分支调用的是阻塞的
+    `hid_read()`（一开始就踩了这个坑：监听线程直接卡死，`read_normal_matrix` 永久挂起）；
+    正确做法是 `set_nonblocking(1)` + `read(len)`，读完恢复 `set_nonblocking(0)`。
+  - `protocol.read_event(timeout<=0)` 走非阻塞读。
+  - `_listen_proto`：持锁时间降到微秒级，读不到就**先释放锁再 sleep 20ms**；抢不到锁时 sleep 5ms。
+  - `device.request/request_custom` 改为显式 acquire/release，并记录 >0.3s 的等锁 WARNING。
+- 真机（Windows，MK87 fw1.19）实测（源码直连 HID，7 次中位数）：
+  | 操作 | 修复前（经 API） | 修复后 |
+  |---|---|---|
+  | `keymap.read_normal_matrix` | ~325 ms | **15.2 ms** |
+  | `keymap.read_fn_matrix` | — | **22.0 ms** |
+  | `lighting.get_custom` | 93~245 ms | **24.1 ms** |
+  | `dev.get_device_info` | ~50 ms | **2.0 ms** |
+  音乐帧流复测：20fps 下 4s / 80 帧 / 实测 20.0fps / errors=0（监听线程没有偷帧问题）。
+
+### 23.4 卡顿探针（为「2~9 秒无日志」留证据）
+
+- `shell.py` 新增进程级 watchdog：每 0.5s 采样 monotonic；间隔 >2s 记 WARNING
+  「进程卡顿：X s 内 watchdog 无采样」→ 区分「整进程被冻结/挂起」与「单线程等锁」。
+- `transport.py`：HID 写 >0.5s、读明显超过请求超时 3 倍时记 WARNING；
+  `device.py` 等锁 >0.3s 记 WARNING。下次用户日志可直接定位。
+
+### 23.5 验证
+
+- 全量单测：**245 tests OK**（226 → 245：+12 Linux 音频，+2 非阻塞读，+5 监听/杂项）。
+- Windows 真机：connect / keymap / custom / device_info 延迟表见 §23.3；音乐 20.0fps 4 秒 0 错误。
+- **Linux 真机音乐验证待用户**：装 v0.1.7 后开音乐律动；若仍失败，日志里会有
+  `音乐律动启动失败: ...` 与 `音频采集后端: ...` 两行，直接能看出是库缺失、源名不对还是服务未运行。

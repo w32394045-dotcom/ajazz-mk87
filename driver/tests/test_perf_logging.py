@@ -47,6 +47,10 @@ class _RepeatIface:
     def read_normalized(self, timeout: float = 0.1):
         return self.frame
 
+    def read_normalized_nonblocking(self):
+        # 监听线程用非阻塞读；fake 复用固定帧逻辑
+        return self.read_normalized(0)
+
 
 class _QueueIface(_RepeatIface):
     """按顺序返回队列中的帧，用完后返回 None。"""

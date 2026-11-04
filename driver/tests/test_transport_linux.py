@@ -260,5 +260,46 @@ class TestSysfsFallback(unittest.TestCase):
         m.assert_called_once_with(0x8047, 2)
 
 
+class TestReadReportTimeout(unittest.TestCase):
+    """通知监听线程用非阻塞读；普通请求用毫秒超时。
+
+    注意 cython-hidapi 的 ``dev.read(len, 0)`` 其实是阻塞的（走 hid_read），
+    非阻塞必须 ``set_nonblocking(1)`` + ``read(len)``。
+    """
+
+    def _iface_obj(self):
+        return transport.HidInterface(_iface(b"/dev/hidraw1"))
+
+    def test_nonblocking_read_toggles_mode(self):
+        fake_dev = mock.Mock()
+        fake_dev.read.return_value = []
+        h = self._iface_obj()
+        h._dev = fake_dev
+        self.assertIsNone(h.read_report_nonblocking())
+        self.assertEqual(
+            fake_dev.set_nonblocking.call_args_list,
+            [mock.call(1), mock.call(0)],
+        )
+        fake_dev.read.assert_called_once_with(65)  # payload 64 + 1
+
+    def test_nonblocking_read_returns_report(self):
+        fake_dev = mock.Mock()
+        fake_dev.read.return_value = list(b"\x55\xfa" + b"\x00" * 62)
+        h = self._iface_obj()
+        h._dev = fake_dev
+        data = h.read_report_nonblocking()
+        self.assertEqual(data[0], 0x55)
+        self.assertEqual(len(data), 64)
+
+    def test_positive_timeout_passes_milliseconds(self):
+        fake_dev = mock.Mock()
+        fake_dev.read.return_value = list(bytes([0x55]) + b"\x00" * 63)
+        h = self._iface_obj()
+        h._dev = fake_dev
+        data = h.read_report(0.05)
+        fake_dev.read.assert_called_once_with(65, 50)
+        self.assertEqual(data[0], 0x55)
+
+
 if __name__ == "__main__":
     unittest.main(verbosity=2)
