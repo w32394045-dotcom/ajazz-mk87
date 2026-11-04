@@ -22,7 +22,7 @@ from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 
 from mk87lib import backup as backup_mod
-from mk87lib import keymap, lighting, logsetup, macro, music, tft, wireless
+from mk87lib import keymap, lighting, logsetup, macro, music, tft, trayenv, wireless
 from mk87lib import const
 from mk87lib.errors import (
     DeviceDisconnected,
@@ -34,7 +34,7 @@ from mk87lib.errors import (
 from server import state
 
 WEB_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "web")
-VERSION = "0.1.7"
+VERSION = "0.1.8"
 
 manager = state.manager
 log = logging.getLogger("mk87.http")
@@ -144,6 +144,20 @@ def api_version():
 activate_callback = None
 #: 由原生外壳注入：完全退出程序（托盘「退出」同一路径）
 quit_callback = None
+#: 由原生外壳注入：托盘实际状态（可用性 / 后端 / 错误）
+tray_status_callback = None
+
+
+def _tray_state() -> Optional[dict]:
+    """读取外壳注入的托盘状态；浏览器模式下返回 None。"""
+    if not callable(tray_status_callback):
+        return None
+    try:
+        state = tray_status_callback()
+    except Exception:  # noqa: BLE001
+        log.exception("读取托盘状态失败")
+        return None
+    return state if isinstance(state, dict) else None
 
 
 @app.post("/api/activate")
@@ -187,7 +201,56 @@ def api_autostart_set(payload: dict = Body(...)):
 
 @app.get("/api/status")
 def api_status():
-    return manager.status()
+    st = manager.status()
+    # 前端横幅（托盘不可用时提示「关闭窗口将退出程序」）需要托盘可用性；
+    # 只放摘要，完整的桌面环境/扩展检测走 /api/tray/status。
+    state = _tray_state()
+    st["tray"] = {
+        "available": None if state is None else state.get("available"),
+        "backend": None if state is None else state.get("backend"),
+    }
+    return st
+
+
+# ----------------------------------------------------------------------
+# 系统托盘（v0.1.8）：环境检测 + GNOME AppIndicator 扩展一键安装
+# ----------------------------------------------------------------------
+@app.get("/api/tray/status")
+def api_tray_status(refresh: bool = False):
+    """托盘环境：后端/可用性、桌面环境、GNOME 扩展状态、安装方式与建议文案。"""
+    state = _tray_state()
+    shell_mode = bool(getattr(manager, "shell_mode", False))
+    return trayenv.status(state, shell_mode=shell_mode, refresh=bool(refresh))
+
+
+@app.post("/api/tray/install-extension")
+def api_tray_install_extension(payload: dict = Body(default={})):
+    """一键安装 GNOME AppIndicator 扩展（发行版包 + pkexec 一次提权）。
+
+    仅桌面外壳模式可用（浏览器模式下没有提权入口，也避免任意本地网页触发提权）；
+    必须带 confirm=true（前端已弹确认框）。
+    """
+    if not getattr(manager, "shell_mode", False):
+        raise ValueError("一键安装仅在桌面版（原生外壳）中可用")
+    if payload.get("confirm") is not True:
+        raise ValueError("缺少 confirm=true（需要用户确认）")
+    log.info("托盘：开始一键安装 AppIndicator 扩展")
+    result = trayenv.install_extension()
+    trayenv.reset_cache()
+    log.info("托盘：一键安装结果 ok=%s message=%s", result.get("ok"), result.get("message"))
+    return result
+
+
+@app.post("/api/tray/enable-extension")
+def api_tray_enable_extension():
+    """启用已安装的 AppIndicator 扩展（免提权，写 gsettings）。"""
+    if not getattr(manager, "shell_mode", False):
+        raise ValueError("启用扩展仅在桌面版（原生外壳）中可用")
+    log.info("托盘：启用 AppIndicator 扩展")
+    result = trayenv.enable_extension()
+    trayenv.reset_cache()
+    log.info("托盘：启用结果 ok=%s message=%s", result.get("ok"), result.get("message"))
+    return result
 
 
 # ----------------------------------------------------------------------

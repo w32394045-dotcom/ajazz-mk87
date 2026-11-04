@@ -1,6 +1,6 @@
 /* pages/settings.js — 设置：主题（浅色/深色/跟随系统）、语言、关于、演示模式控制 */
 import { icon, brandLogo } from '../icons.js';
-import { h } from '../util.js';
+import { h, copyText } from '../util.js';
 import { badge, kvList } from '../components/widgets.js';
 import { confirmDialog } from '../components/dialog.js';
 
@@ -342,6 +342,256 @@ export default {
       ),
     );
 
+    /* ---------------- 系统托盘（v0.1.8：Qt 托盘 + GNOME 扩展一键安装） ---------------- */
+    const TXT = {
+      title: ['系统托盘', 'System tray'],
+      desc: ['托盘图标、右键菜单与 GNOME AppIndicator 扩展（Linux）；一键安装需要一次管理员密码',
+        'Tray icon, right-click menu and the GNOME AppIndicator extension (Linux). One-click install asks for an admin password once'],
+      backend: ['托盘后端', 'Tray backend'],
+      host: ['托盘宿主', 'Tray host'],
+      desktop: ['桌面环境', 'Desktop'],
+      extension: ['GNOME 扩展', 'GNOME extension'],
+      system: ['系统', 'System'],
+      ok: ['正常', 'OK'],
+      needsWork: ['需要处理', 'Needs attention'],
+      browserMode: ['浏览器模式', 'Browser mode'],
+      reading: ['读取中…', 'Reading…'],
+      readFailed: ['读取失败', 'Read failed'],
+      unknownHost: ['检测中 / 未知', 'Detecting / unknown'],
+      available: ['可用', 'Available'],
+      unavailable: ['不可用', 'Unavailable'],
+      backendQt: ['Qt QSystemTrayIcon（右键菜单可用）', 'Qt QSystemTrayIcon (right-click menu works)'],
+      backendPystray: ['pystray（Linux 下无右键菜单）', 'pystray (no right-click menu on Linux)'],
+      extNoNeedWindows: ['不需要（Windows 通知区域）', 'Not needed (Windows notification area)'],
+      extNotApplicable: ['不适用（当前桌面不是 GNOME）', 'Not applicable (desktop is not GNOME)'],
+      extInstalledEnabled: ['已安装并启用', 'Installed and enabled'],
+      extInstalledDisabled: ['已安装，未启用', 'Installed, not enabled'],
+      extMissing: ['未安装', 'Not installed'],
+      install: ['一键安装扩展（需管理员密码）', 'Install extension (asks for admin password)'],
+      enable: ['启用扩展（无需提权）', 'Enable extension (no root needed)'],
+      copyCommands: ['复制安装命令', 'Copy install commands'],
+      showCommands: ['查看/复制安装命令', 'Show / copy install commands'],
+      refresh: ['重新检测', 'Re-check'],
+      installTitle: ['安装 GNOME 托盘扩展', 'Install the GNOME tray extension'],
+      installMessage: [
+        '将通过系统包管理器安装 gnome-shell-extension-appindicator，需要一次管理员密码（pkexec）。'
+        + '安装完成后需要注销重新登录（Wayland）或按 Alt+F2 → r（X11）才能显示托盘图标。',
+        'The system package manager will install gnome-shell-extension-appindicator; this asks for an admin '
+        + 'password once (pkexec). After installing, log out and back in (Wayland) or press Alt+F2 → r (X11) '
+        + 'for the tray icon to appear.',
+      ],
+      installConfirm: ['开始安装', 'Install'],
+      installing: ['正在安装…如弹出管理员密码窗口请输入密码',
+        'Installing… enter your password if an admin prompt appears'],
+      installFailed: ['安装失败：', 'Install failed: '],
+      enableFailed: ['启用失败：', 'Enable failed: '],
+      copied: ['安装命令已复制到剪贴板', 'Install commands copied to clipboard'],
+      copyFailed: ['复制失败，请手动选择命令文本', 'Copy failed; please select the command text manually'],
+      badResult: ['操作未成功', 'Operation failed'],
+    };
+    const tx = (pair) => (i18n.lang === 'en' ? pair[1] : pair[0]);
+
+    const trayBadge = badge(tx(TXT.reading), '');
+    const trayDetail = h('div', { class: 'mt-12' });
+    const trayAdvice = h('div', { class: 'tiny muted mt-12', style: { lineHeight: '1.8' } });
+    const trayActions = h('div', { class: 'row mt-12', style: { gap: '8px', flexWrap: 'wrap' } });
+    const trayCommands = h('pre', {
+      class: 'code-block tiny mono',
+      style: {
+        display: 'none', marginTop: '10px', whiteSpace: 'pre-wrap', wordBreak: 'break-all',
+        maxHeight: '220px', overflow: 'auto', lineHeight: '1.7',
+      },
+    });
+    const trayState = { loading: true, data: null, busy: false };
+
+    function trayBadgeState(data) {
+      if (!data) return [tx(TXT.readFailed), 'warn'];
+      const code = data?.advice?.code;
+      if (code === 'ok' || code === 'windows-ok') return [tx(TXT.ok), 'ok'];
+      if (code === 'browser') return [tx(TXT.browserMode), 'violet'];
+      return [tx(TXT.needsWork), 'danger'];
+    }
+    function trayBackendLabel(data) {
+      const backend = data?.tray?.backend;
+      if (!backend) return '—';
+      if (backend === 'qt') return tx(TXT.backendQt);
+      if (backend === 'pystray') return tx(TXT.backendPystray);
+      return String(backend);
+    }
+    function trayHostLabel(data) {
+      const v = data?.tray?.available;
+      return v === true ? tx(TXT.available) : v === false ? tx(TXT.unavailable) : tx(TXT.unknownHost);
+    }
+    function trayExtLabel(data) {
+      if (data?.platform === 'windows') return tx(TXT.extNoNeedWindows);
+      if (!data?.gnome?.detected) return tx(TXT.extNotApplicable);
+      const ext = data?.extension || {};
+      if (ext.installed && ext.enabled) return tx(TXT.extInstalledEnabled);
+      if (ext.installed) return tx(TXT.extInstalledDisabled);
+      return tx(TXT.extMissing);
+    }
+    function trayAdviceText(data) {
+      const advice = data?.advice;
+      if (!advice) return '';
+      return i18n.lang === 'en' ? (advice.en || advice.zh || '') : (advice.zh || advice.en || '');
+    }
+    function trayCommandText(data) {
+      const parts = [];
+      const command = data?.install?.commandText;
+      if (command) parts.push(`$ ${command}`);
+      const cmds = data?.install?.manualCommands || [];
+      if (cmds.length) parts.push(cmds.join('\n'));
+      return parts.join('\n\n');
+    }
+    function trayOutput(res) {
+      const parts = [];
+      if (res?.message) parts.push(res.message);
+      if (res?.commandText) parts.push(`$ ${res.commandText}`);
+      if (res?.output) parts.push(res.output);
+      if ((res?.manualCommands || []).length) parts.push(res.manualCommands.join('\n'));
+      if (!parts.length) return;
+      trayCommands.textContent = parts.join('\n\n');
+      trayCommands.style.display = '';
+    }
+
+    function renderTray() {
+      const data = trayState.data;
+      trayTitleEl.textContent = tx(TXT.title);
+      trayDescEl.textContent = tx(TXT.desc);
+      const [label, kind] = trayState.loading ? [tx(TXT.reading), ''] : trayBadgeState(data);
+      trayBadge.className = 'badge';
+      if (kind) trayBadge.classList.add(kind);
+      trayBadge.textContent = label;
+
+      trayDetail.innerHTML = '';
+      if (data && !trayState.loading) {
+        const rows = [
+          [tx(TXT.backend), trayBackendLabel(data)],
+          [tx(TXT.host), trayHostLabel(data)],
+          [tx(TXT.desktop), `${data.desktop?.currentDesktop || '—'}${data.desktop?.sessionType ? ' · ' + String(data.desktop.sessionType).toUpperCase() : ''}`],
+          [tx(TXT.extension), trayExtLabel(data)],
+        ];
+        if (data.gnome?.shellVersion) rows.push(['GNOME Shell', String(data.gnome.shellVersion)]);
+        if (data.os?.name) rows.push([tx(TXT.system), `${data.os.name}${data.os.version ? ' ' + data.os.version : ''}`]);
+        trayDetail.append(kvList(rows));
+      }
+
+      trayAdvice.textContent = trayState.loading ? '' : trayAdviceText(data);
+
+      trayActions.innerHTML = '';
+      if (!trayState.loading && data) {
+        const install = data.install || {};
+        if (install.needsEnable) {
+          trayActions.append(h('button', {
+            class: 'btn primary sm', disabled: trayState.busy,
+            html: `${icon('power', { size: 14 })}<span>${tx(TXT.enable)}</span>`,
+            onclick: enableTrayExtension,
+          }));
+        } else if (install.supported) {
+          trayActions.append(h('button', {
+            class: 'btn primary sm', disabled: trayState.busy,
+            html: `${icon('download', { size: 14 })}<span>${tx(TXT.install)}</span>`,
+            onclick: installTrayExtension,
+          }));
+        }
+        const cmdText = trayCommandText(data);
+        if (cmdText) {
+          trayActions.append(h('button', {
+            class: 'btn sm ghost',
+            html: `${icon('copy', { size: 14 })}<span>${tx(TXT.copyCommands)}</span>`,
+            onclick: async () => {
+              const ok = await copyText(trayCommandText(trayState.data) || '');
+              if (ok) ctx.toast(tx(TXT.copied), { timeout: 2200 });
+              else ctx.toastWarn(tx(TXT.copyFailed));
+            },
+          }));
+          trayActions.append(h('button', {
+            class: 'btn sm ghost',
+            html: `${icon('list', { size: 14 })}<span>${tx(TXT.showCommands)}</span>`,
+            onclick: () => {
+              trayCommands.textContent = trayCommandText(trayState.data) || '';
+              trayCommands.style.display = trayCommands.style.display === 'none' ? '' : 'none';
+            },
+          }));
+        }
+        trayActions.append(h('button', {
+          class: 'btn sm ghost', disabled: trayState.busy,
+          html: `${icon('refresh', { size: 14 })}<span>${tx(TXT.refresh)}</span>`,
+          onclick: () => loadTray(true),
+        }));
+      }
+    }
+
+    async function installTrayExtension() {
+      const ok = await confirmDialog({
+        title: tx(TXT.installTitle),
+        message: tx(TXT.installMessage),
+        confirmText: tx(TXT.installConfirm),
+      });
+      if (!ok) return;
+      trayState.busy = true;
+      renderTray();
+      ctx.toastInfo(tx(TXT.installing), { timeout: 6000 });
+      try {
+        const res = await api.post('/api/tray/install-extension', { confirm: true });
+        trayOutput(res);
+        if (res?.ok) ctx.toastSuccess(res.message || tx(TXT.ok));
+        else ctx.toastWarn(res?.message || tx(TXT.badResult));
+      } catch (err) {
+        ctx.toastError(tx(TXT.installFailed) + (err.message || err));
+      } finally {
+        trayState.busy = false;
+        await loadTray(true);
+      }
+    }
+
+    async function enableTrayExtension() {
+      trayState.busy = true;
+      renderTray();
+      try {
+        const res = await api.post('/api/tray/enable-extension');
+        trayOutput(res);
+        if (res?.ok) ctx.toastSuccess(res.message || tx(TXT.ok));
+        else ctx.toastWarn(res?.message || tx(TXT.badResult));
+      } catch (err) {
+        ctx.toastError(tx(TXT.enableFailed) + (err.message || err));
+      } finally {
+        trayState.busy = false;
+        await loadTray(true);
+      }
+    }
+
+    async function loadTray(refresh = false) {
+      trayState.loading = true;
+      renderTray();
+      try {
+        const data = await api.get(`/api/tray/status${refresh ? '?refresh=true' : ''}`);
+        trayState.data = data || null;
+      } catch (err) {
+        trayState.data = null;
+        console.warn('[settings] 读取托盘状态失败', err);
+      } finally {
+        trayState.loading = false;
+        renderTray();
+      }
+    }
+
+    const trayTitleEl = h('div', { class: 'card-title' }, tx(TXT.title));
+    const trayDescEl = h('div', { class: 'card-desc' }, tx(TXT.desc));
+    const trayCard = h('section', { class: 'card' },
+      h('div', { class: 'card-head' },
+        h('div', {}, trayTitleEl, trayDescEl),
+        h('div', { class: 'spacer' }),
+        trayBadge,
+      ),
+      h('div', { class: 'card-body' },
+        trayDetail,
+        trayAdvice,
+        trayActions,
+        trayCommands,
+      ),
+    );
+
     /* ---------------- 日志与诊断 ---------------- */
     const logBadge = badge('读取中…', '');
     const logDirEl = h('div', { class: 'tiny muted mono', style: { wordBreak: 'break-all' } }, '—');
@@ -448,11 +698,16 @@ export default {
     /* ---------------- 布局 ---------------- */
     root.append(prefCard);
     root.append(h('div', { class: 'grid grid-2 mt-16' }, autostartCard, mockCard));
+    root.append(h('div', { class: 'mt-16' }, trayCard));
     root.append(h('div', { class: 'mt-16' }, logsCard));
     root.append(h('div', { class: 'mt-16' }, aboutCard));
     updateQuitVisibility();
     ctx.onStatus?.(() => updateQuitVisibility());
     loadAutostart();
     loadLogs();
+    loadTray();
+    // 语言切换时重渲染托盘卡片（后端建议文案有中英两份）
+    const offLang = i18n.onChange(() => renderTray());
+    return () => offLang();
   },
 };

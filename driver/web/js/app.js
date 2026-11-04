@@ -31,6 +31,7 @@ const NAV_GROUPS = [
 const THEME_KEY = 'mk87.theme';
 const LANG_KEY = 'mk87.lang';
 const MOCK_BANNER_KEY = 'mk87.mockBannerDismissed';
+const TRAY_BANNER_KEY = 'mk87.trayBannerDismissed';
 
 /* ---------------------------------------------------------------- 全局状态 */
 const api = new Api();
@@ -356,6 +357,19 @@ function renderBanners() {
     for (const msg of st.conflicts) {
       banners.append(bannerEl({ kind: 'warn', iconName: 'alert-triangle', text: t('banner.conflict', { msg }) }));
     }
+  }
+
+  // 托盘不可用（v0.1.8）：没有托盘宿主时关闭窗口会直接退出程序，必须让用户知道
+  if (st?.tray && st.tray.available === false && !store.get(TRAY_BANNER_KEY, false)) {
+    const trayMsg = i18n.lang === 'en'
+      ? 'System tray unavailable: closing the window will quit the app. On GNOME install the AppIndicator extension in Settings → System tray.'
+      : '系统托盘不可用：关闭窗口将直接退出程序。GNOME 请到「设置 → 系统托盘」一键安装 AppIndicator 扩展。';
+    banners.append(bannerEl({
+      kind: 'warn', iconName: 'alert-triangle',
+      text: trayMsg,
+      dismissKey: TRAY_BANNER_KEY,
+      action: { label: t('nav.settings'), kind: 'primary', onClick: () => navigate('settings') },
+    }));
   }
 
   if (state.mode === 'mock' && !store.get(MOCK_BANNER_KEY, false)) {

@@ -64,6 +64,7 @@ export class Api extends Emitter {
   /** 按接口选择超时：转换/上传/备份恢复可能很慢 */
   _timeoutFor(path) {
     if (/\/api\/tft\/(convert|upload_file)/.test(path)) return 180000;
+    if (/\/api\/tray\/install-extension/.test(path)) return 300000; // pkexec 密码 + 包管理器
     if (/\/api\/backup\/restore/.test(path)) return 60000;
     if (/\/api\/lighting\/frames|\/api\/device\/raw/.test(path)) return 30000;
     return 12000;

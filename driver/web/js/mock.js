@@ -888,6 +888,62 @@ export class MockServer {
         },
       },
       {
+        method: 'GET', path: '/api/tray/status', handler: async () => {
+          await this._later(80);
+          return {
+            platform: 'windows',
+            shellMode: !!this.simulateShell,
+            tray: { available: true, backend: 'pystray', error: null },
+            desktop: { currentDesktop: '', family: 'windows', sessionType: '', isWayland: false },
+            os: { id: 'windows', name: 'Windows', version: '' },
+            gnome: { detected: false, shellVersion: null },
+            extension: {
+              uuid: 'appindicatorsupport@rgcjonas.gmail.com',
+              installed: null, enabled: null, systemWide: false, paths: [],
+            },
+            install: {
+              supported: false,
+              reason: 'unsupported-platform',
+              reasonText: {
+                zh: '当前平台没有系统托盘支持。',
+                en: 'System tray is not supported on this platform.',
+              },
+              manager: null, package: 'gnome-shell-extension-appindicator',
+              command: [], commandText: '', needsRoot: false, elevatedVia: null,
+              rebootRequired: false, needsEnable: false, manualCommands: [],
+            },
+            advice: {
+              code: 'windows-ok',
+              zh: 'Windows 使用系统通知区域（pystray 后端），托盘与右键菜单始终可用，无需额外组件。',
+              en: 'Windows uses the native notification area (pystray backend); the tray icon and right-click menu are always available and need no extra component.',
+            },
+          };
+        },
+      },
+      {
+        method: 'POST', path: '/api/tray/install-extension', handler: async () => {
+          await this._later(240);
+          return {
+            ok: false,
+            message: '演示模式（mock）无法安装系统扩展',
+            output: 'mock: package manager not available',
+            needsLogout: false, needsReload: false, rebootRequired: false,
+            manualCommands: [],
+          };
+        },
+      },
+      {
+        method: 'POST', path: '/api/tray/enable-extension', handler: async () => {
+          await this._later(180);
+          return {
+            ok: false,
+            message: '演示模式（mock）无法修改扩展状态',
+            output: 'mock: gsettings not available',
+            manualCommands: [],
+          };
+        },
+      },
+      {
         method: 'POST', path: '/api/quit', handler: async () => {
           await this._later(160);
           if (this.simulateShell) return { ok: true };
