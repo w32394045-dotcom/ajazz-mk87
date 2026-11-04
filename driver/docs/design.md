@@ -186,20 +186,7 @@ driver/
 | GET | `/api/settings` | `{theme:"light"|"dark"|"auto", language:"zh"|"en"}` |
 | PUT | `/api/settings` | 更新设置（服务端持久化到用户配置目录） |
 
-### 4.9 系统托盘（v0.1.8）
-
-| 方法 | 路径 | 说明 |
-|---|---|---|
-| GET | `/api/tray/status?refresh=false` | 托盘环境：`{platform, shellMode, tray:{available,backend,error}, desktop:{currentDesktop,family,sessionType,isWayland}, os:{id,name,version}, gnome:{detected,shellVersion}, extension:{uuid,installed,enabled,systemWide,paths}, install:{supported,reason,reasonText:{zh,en},manager,package,command,commandText,needsRoot,elevatedVia,rebootRequired,needsEnable,manualCommands}, advice:{code,zh,en}}`；探测结果缓存 30s，`refresh=true` 强制重测 |
-| POST | `/api/tray/install-extension` | `{confirm:true}` → 发行版包 + 一次提权（pkexec → sudo）安装 `gnome-shell-extension-appindicator`，成功后自动启用；返回 `{ok,message,command,commandText,output,needsLogout,needsReload,rebootRequired,state,manualCommands}`。仅原生外壳模式可用（浏览器模式 400） |
-| POST | `/api/tray/enable-extension` | 免提权启用已安装的扩展（`gnome-extensions enable`，失败回退写 `gsettings enabled-extensions`）；仅原生外壳模式可用 |
-
-- `/api/status` 额外带 `tray:{available,backend}`（无外壳/未就绪时为 null），主窗口据此显示
-  「托盘不可用，关闭窗口将退出程序」横幅。
-- `advice.code` 取值：`ok` / `windows-ok` / `browser` / `gnome-missing-extension` /
-  `gnome-extension-disabled` / `gnome-needs-relogin` / `no-tray-host` / `unsupported`。
-
-### 4.10 WebSocket `/ws`
+### 4.9 WebSocket `/ws`
 
 服务端 → 客户端事件（`type` 字段）：
 ```json
@@ -217,6 +204,19 @@ driver/
 {"type":"toast", "data":{"level":"info"|"warn"|"error","message":"..."}}
 {"type":"log", "data":{"line":"..."}}             // 调试控制台
 ```
+
+### 4.10 系统托盘（v0.1.8）
+
+| 方法 | 路径 | 说明 |
+|---|---|---|
+| GET | `/api/tray/status?refresh=false` | 托盘环境：`{platform, shellMode, tray:{available,backend,error}, desktop:{currentDesktop,family,sessionType,isWayland}, os:{id,name,version}, gnome:{detected,shellVersion}, extension:{uuid,installed,enabled,systemWide,paths}, install:{supported,reason,reasonText:{zh,en},manager,package,command,commandText,needsRoot,elevatedVia,rebootRequired,needsEnable,manualCommands}, advice:{code,zh,en}}`；探测结果缓存 30s，`refresh=true` 强制重测 |
+| POST | `/api/tray/install-extension` | `{confirm:true}` → 发行版包 + 一次提权（pkexec → sudo）安装 `gnome-shell-extension-appindicator`，成功后自动启用；返回 `{ok,message,command,commandText,output,needsLogout,needsReload,rebootRequired,state,manualCommands}`。仅原生外壳模式可用（浏览器模式 400） |
+| POST | `/api/tray/enable-extension` | 免提权启用已安装的扩展（`gnome-extensions enable`，失败回退写 `gsettings enabled-extensions`）；仅原生外壳模式可用 |
+
+- `/api/status` 额外带 `tray:{available,backend}`（无外壳/未就绪时为 null），主窗口据此显示
+  「托盘不可用，关闭窗口将退出程序」横幅。
+- `advice.code` 取值：`ok` / `windows-ok` / `browser` / `gnome-missing-extension` /
+  `gnome-extension-disabled` / `gnome-needs-relogin` / `no-tray-host` / `unsupported`。
 
 ## 5. 前端要求
 
