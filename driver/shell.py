@@ -3,9 +3,11 @@
 """MK87 Studio 原生桌面外壳（方案 B）。
 
 行为（用户要求）：
-* 独立应用窗口（pywebview + WebView2/WebKitGTK），不打开浏览器、不暴露端口；
+* 独立应用窗口（pywebview + WebView2 / Qt WebEngine），不打开浏览器、不暴露端口；
 * 点窗口 X **不退出**，隐藏到系统托盘继续运行；
-* 托盘：双击显示主窗口；右键菜单 = 显示主窗口 / 开机自启(勾选) / **退出**；
+* 例外（v0.1.8）：当前桌面没有托盘宿主时，点 X 直接退出程序，避免窗口藏起来找不回；
+* 托盘：左键显示主窗口；右键菜单 = 显示主窗口 / 开机自启(勾选) / **退出**；
+  Windows 用 pystray，Linux 用 Qt `QSystemTrayIcon`（pystray 的 Linux xorg 后端没有右键菜单）；
 * 托盘「退出」会完整关闭：停后台任务 → 停服务 → 关窗口/托盘 → 进程退出；
 * 开机自启：`--tray` 参数静默启动到托盘；
 * 单实例：重复启动时唤起已有窗口并退出本进程。
@@ -127,6 +129,7 @@ class Shell:
         self.server_thread: threading.Thread | None = None
         self.window = None
         self.tray = None
+        self._tray_backend = None
         self._quitting = False
 
     # ---------------------------------------------------------- 服务
@@ -171,8 +174,17 @@ class Shell:
 
     # ---------------------------------------------------------- 窗口
     def _on_closing(self):
-        """点窗口 X：隐藏到托盘，不退出。返回 False 取消关闭。"""
+        """点窗口 X：有托盘时隐藏到托盘；没有托盘宿主时直接退出程序。
+
+        Linux（v0.1.8 起）托盘走 Qt：GNOME 没装 AppIndicator 扩展、或桌面本身
+        不提供托盘宿主时，窗口藏起来就再也找不回来了，因此这种环境下点 X
+        等价于「退出程序」，与设置页「系统托盘」卡片的说明一致。
+        """
         if self._quitting:
+            return True
+        if self._tray_available(wait=1.0) is not True:
+            log.warning("系统托盘不可用，关闭窗口 = 退出程序（%s）", self._tray_error() or "无托盘宿主")
+            self.quit()
             return True
         try:
             self.window.hide()
@@ -185,9 +197,14 @@ class Shell:
         if getattr(self, "_tray_tip_shown", False):
             return
         self._tray_tip_shown = True
+        message = "MK87 Studio 仍在系统托盘运行，右键托盘图标可退出。"
         try:
-            if self.tray is not None:
-                self.tray.notify("MK87 Studio 仍在系统托盘运行，右键托盘图标可退出。", "MK87 Studio")
+            if self._tray_backend == "qt":
+                from mk87lib import tray_linux  # noqa: PLC0415
+
+                tray_linux.notify("MK87 Studio", message)
+            elif self.tray is not None:
+                self.tray.notify(message, "MK87 Studio")
         except Exception:  # noqa: BLE001
             pass
 
@@ -231,6 +248,7 @@ class Shell:
             pystray.MenuItem("退出", on_quit),
         )
         self.tray = pystray.Icon("mk87studio", image, APP_NAME, menu)
+        self._tray_backend = "pystray"
 
     def _refresh_tray(self) -> None:
         try:
@@ -238,6 +256,104 @@ class Shell:
                 self.tray.update_menu()
         except Exception:  # noqa: BLE001
             pass
+
+    def _start_pystray(self) -> None:
+        """启动 pystray 托盘（Windows 默认；Linux 仅作 Qt 不可用时的兜底）。"""
+        self._build_tray()
+        threading.Thread(target=self.tray.run, name="mk87-tray", daemon=True).start()
+
+    def _linux_tray_bootstrap(self) -> None:
+        """在 webview.start(func=...) 的子线程里启动 Qt 托盘（v0.1.8）。
+
+        Qt 托盘需要 GUI 线程，tray_linux.start() 内部会等待 QApplication 就绪后
+        用 QueuedConnection 把创建任务投递到主线程。失败时回退 pystray（Linux 下
+        右键菜单不可用），保证至少还有一个图标。
+        """
+        from mk87lib import tray_linux  # noqa: PLC0415
+
+        tray_linux.reset_state()
+        try:
+            started = tray_linux.start(
+                self,
+                icon_path=os.path.join(HERE, "assets", "mk87.png"),
+                app_name=APP_NAME,
+            )
+        except Exception:  # noqa: BLE001
+            log.exception("Qt 托盘启动失败")
+            started = False
+        if started:
+            self._tray_backend = "qt"
+            log.info("Linux 托盘：Qt QSystemTrayIcon（右键菜单可用）")
+            return
+        log.warning("Qt 托盘不可用（%s），回退 pystray：Linux 下没有右键菜单",
+                    tray_linux.state().get("error") or "未知原因")
+        try:
+            self._start_pystray()
+        except Exception:  # noqa: BLE001
+            log.exception("pystray 托盘也启动失败")
+
+    # ---------------------------------------------------- 托盘（外壳接口）
+    def autostart_enabled(self) -> bool:
+        """托盘菜单「开机自启」勾选状态。"""
+        try:
+            return bool(autostart.status().get("enabled"))
+        except Exception:  # noqa: BLE001
+            return False
+
+    def toggle_autostart(self, enabled: bool) -> bool:
+        """切换开机自启，返回切换后的真实状态（失败保持原状）。"""
+        try:
+            actual = bool(autostart.set_enabled(bool(enabled)).get("enabled"))
+        except Exception as exc:  # noqa: BLE001
+            log.warning("切换开机自启失败: %s", exc)
+            return self.autostart_enabled()
+        self._refresh_tray()
+        return actual
+
+    def quit_app(self) -> None:
+        """托盘菜单「退出」入口（与 /api/quit、设置页按钮同一路径）。"""
+        self.quit()
+
+    def _tray_available(self, wait: float = 0.0) -> bool | None:
+        """当前是否有可用的托盘宿主（None = 还不知道/正在创建）。"""
+        if self._tray_backend == "pystray":
+            return self.tray is not None
+        if sys.platform.startswith("linux"):
+            from mk87lib import tray_linux  # noqa: PLC0415
+
+            deadline = time.time() + max(0.0, wait)
+            while True:
+                available = tray_linux.STATE.get("available")
+                if available is not None or time.time() >= deadline:
+                    return available
+                time.sleep(0.05)
+        return True if self.tray is not None else None
+
+    def _tray_error(self) -> str:
+        if sys.platform.startswith("linux"):
+            from mk87lib import tray_linux  # noqa: PLC0415
+
+            return str(tray_linux.STATE.get("error") or "")
+        return ""
+
+    def tray_state(self) -> dict:
+        """注入 server.app 的托盘状态（/api/status 与 /api/tray/status 使用）。"""
+        shell_mode = bool(getattr(getattr(self, "manager", None), "shell_mode", False))
+        if self._tray_backend == "pystray":
+            return {
+                "available": self.tray is not None,
+                "backend": "pystray",
+                "error": None,
+                "shell": shell_mode,
+            }
+        if sys.platform.startswith("linux"):
+            from mk87lib import tray_linux  # noqa: PLC0415
+
+            st = tray_linux.state()
+            st["shell"] = shell_mode
+            return st
+        return {"available": self.tray is not None, "backend": self._tray_backend,
+                "error": None, "shell": shell_mode}
 
     # ---------------------------------------------------------- 退出
     def _stop_music_and_wait(self, timeout: float = 3.0) -> bool:
@@ -294,7 +410,12 @@ class Shell:
             except Exception:  # noqa: BLE001
                 pass
             try:
-                if self.tray is not None:
+                if self._tray_backend == "qt":
+                    # Qt 托盘只能在 GUI 线程隐藏，这里用队列投递（进程马上退出，失败也无妨）
+                    from mk87lib import tray_linux  # noqa: PLC0415
+
+                    tray_linux.hide_async()
+                elif self.tray is not None:
                     self.tray.stop()
             except Exception:  # noqa: BLE001
                 pass
@@ -343,6 +464,8 @@ class Shell:
 
         server_app.activate_callback = self.show_window
         server_app.quit_callback = self.quit
+        # 设置页「系统托盘」卡片 / /api/status 的托盘摘要由此注入（浏览器模式为 None）
+        server_app.tray_status_callback = self.tray_state
         self.manager.shell_mode = True
         self.wait_ready()
         SingleInstance().write_port(self.port)
@@ -360,13 +483,16 @@ class Shell:
         )
         self.window.events.closing += self._on_closing
 
-        self._build_tray()
-        threading.Thread(target=self.tray.run, name="mk87-tray", daemon=True).start()
-
         # Linux 上 pywebview 默认先试 GTK（缺 python3-gi 时先刷一条 ERROR 再回退 Qt）；
         # 打包版只带 Qt，直接指定 qt，避免误导性报错和多余的回退尝试。
         gui = "qt" if sys.platform.startswith("linux") else None
-        webview.start(debug=self.debug, gui=gui)
+        if sys.platform.startswith("linux"):
+            # v0.1.8：Linux 托盘改 Qt（自带右键菜单）。Qt 控件必须在 GUI 线程创建，
+            # 用 start(func=...) 的子线程等 QApplication 就绪后投递（见 tray_linux.py）。
+            webview.start(debug=self.debug, gui=gui, func=self._linux_tray_bootstrap)
+        else:
+            self._start_pystray()
+            webview.start(debug=self.debug, gui=gui)
         # webview.start 返回 = 窗口被销毁（正常退出路径已在 quit() 处理，这里兜底）
         if not self._quitting:
             self.quit()
