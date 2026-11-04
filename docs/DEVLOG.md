@@ -1045,3 +1045,26 @@ error: [pywebview] GTK cannot be loaded: No module named 'gi'
 - Windows 真机：connect / keymap / custom / device_info 延迟表见 §23.3；音乐 20.0fps 4 秒 0 错误。
 - **Linux 真机音乐验证待用户**：装 v0.1.7 后开音乐律动；若仍失败，日志里会有
   `音乐律动启动失败: ...` 与 `音频采集后端: ...` 两行，直接能看出是库缺失、源名不对还是服务未运行。
+
+### 23.6 发布记录（v0.1.7）
+
+- 提交 `7503869` → main CI 运行
+  [#36](https://github.com/w32394045-dotcom/ajazz-mk87/actions/runs/41839779002) 全绿
+  （ubuntu/windows 单测 245、Linux deb+rpm、Windows portable+setup）→
+  tag `v0.1.7` → CI 运行
+  [#37](https://github.com/w32394045-dotcom/ajazz-mk87/actions/runs/41841886719) 全绿 →
+  Release 2026-11-04 21:59 发布：<https://github.com/w32394045-dotcom/ajazz-mk87/releases/tag/v0.1.7>
+  - 附件（SHA256SUMS 已复算：下载 portable 复算 = `5f5b67a6…5a91`，一致）：
+    - `MK87Studio-0.1.7-win64-portable.zip` 39,055,446 B
+      （`5f5b67a6a91ea214fc6a83a7e961f5f3774ac1ec6ad463fe688bc7d15b175a91`）
+    - `MK87Studio-0.1.7-win64-setup.exe` 30,198,189 B（`73e013b5…2cf2`）
+    - `mk87-0.1.7-1.x86_64.rpm` 196,406,773 B（`166d73bd…ce68`）
+    - `mk87_0.1.7_amd64.deb` 210,312,114 B（`da3c6710…65b4`）
+  - 另有一个 7,217B 的 `mk87-debuginfo-0.1.7-1.x86_64.rpm`（rpmbuild 默认产物）。
+    已给 `mk87.spec` 加 `%global debug_package %{nil}`，下个版本不再生成。
+  - 本地冒烟：dist exe FileVersion 0.1.7.0，`--tray` 启动 →
+    `version=0.1.7 webVersion=0.1.7 connected=True fw=1.19`；
+    打包版音乐律动 3 秒 60 帧 / 实测 20.0fps / errors=0（Windows soundcard 路径不受影响）。
+- 待办：用户 Linux 装 v0.1.7 后验证音乐律动；若失败，日志里新增的
+  「音频采集后端: ...」「音乐律动启动失败: ...」两行会直接给出原因。卡顿窗口（2~9s）由新增
+  watchdog/等锁/HID 慢调用 WARNING 负责定位。

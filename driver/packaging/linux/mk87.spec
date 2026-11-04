@@ -1,4 +1,6 @@
 Name:           mk87
+# PyInstaller 产物没有需要拆分的 ELF 调试信息，不需要生成 -debuginfo 子包
+%global debug_package %{nil}
 # 显式版本号；build-rpm.sh 传 --define version_override 时以它为准（避免改了 __version__ 而 spec 忘记同步）
 Version:        %{?version_override}%{!?version_override:0.1.7}
 Release:        1%{?dist}
