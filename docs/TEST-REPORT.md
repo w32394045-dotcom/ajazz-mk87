@@ -587,5 +587,6 @@ udev 规则 / 结论；源码环境同一套逻辑在 `probe/linux_hid_check.py`
 | 启动预检 | `import PyQt6` 失败 → 完整 traceback 写 `~/.mk87-boot.log` + `<日志目录>/qt-error.txt` + 桌面弹窗；强制 `QT_API=pyqt6` |
 | 发版卡口 | `linux-deb` job：`docker run ubuntu:24.04` → `dpkg -i` + `apt-get -f install` → Xvfb 启动 40s（exit=124 视为成功）；`linux-rpm` job：干净 Fedora 容器 `dnf install` 后同样启动 |
 | 单元测试 | **284 tests OK**（本地 Windows；新增 preflight 相关 3 项） |
-| 干净容器启动验证 | 待 dispatch 构建（#52）结果 |
-| 用户真机 | **待用户安装 v0.1.8.2 后验证**（Ubuntu 24.04） |
+| 干净容器启动验证 | **通过**：ubuntu:22.04 容器 exit=124（一直活着）；ubuntu:24.04 容器 PyQt6 预检通过 + server/window 就绪（容器无 GPU 的 GLX abort 忽略）。Fedora 容器：dnf 安装成功但 numpy/OpenBLAS page-alignment abort（提示级，记为 v0.1.8.3 待修） |
+| 发布 | tag v0.1.8.2 → CI #65 全绿 → Release 2026-11-05 21:36；deb SHA256 已本地复算一致 |
+| 用户真机 | **待用户安装 v0.1.8.2 后验证**（Ubuntu 24.04；`sudo apt install ./mk87_0.1.8.2_amd64.deb`） |

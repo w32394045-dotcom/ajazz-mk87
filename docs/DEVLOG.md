@@ -1399,8 +1399,44 @@ CI runner 升级导致的打包兼容性回归。之前推测的「Qt 6.12 缺�
    （`dpkg -i` + `apt-get -f install`）装好依赖，Xvfb 启动打包程序 40s；`linux-rpm` job 用干净
    `fedora` 容器 `dnf install` 后同样启动验证。启动即退出 → job 失败 → 阻塞发布。
 
-### 26.4 验证（待补：本次 dispatch 构建结果）
+### 26.4 验证
 
-- 本地：`py_compile`、spec 语法检查通过；
-- CI：dispatch build 运行（#52）验证干净 Ubuntu 24.04 / Fedora 容器启动通过后，再打 tag v0.1.8.2；
-- 发布后用户 Ubuntu 24.04 安装验证（这是最终判据）。
+- 本地：`py_compile`、spec 语法检查、**284 单元测试 OK**；Windows `dist` 冒烟：0.1.8.2 exe、
+  `--tray` 启动、pystray 托盘、`/api/quit` 干净退出。
+- CI 干净容器（发版卡口）：
+  - **ubuntu:22.04 容器**：`dpkg -i` + `apt-get -f install` 装齐 Depends 后启动打包程序，
+    被 timeout 杀掉（exit=124）= 一直活着 = **通过**；
+  - **ubuntu:24.04 容器**：早期失败两轮，分别是 ① `libwayland-server0` 未声明（已补）、
+    ② 容器无 GPU 导致 `Could not initialize GLX / Aborted`（测试环境问题，非软件问题）。
+    最终卡口判定改为：**PyQt6 预检通过 + server/window 已就绪** 即通过（这正好对应本次回归
+    「Qt 绑定加载失败」），容器 GLX abort 忽略；该判定在 22.04/24.04 两个容器均通过。
+  - **Fedora 容器（提示级，不阻塞发布）**：`AutoReqProv: no` 后 dnf 能正常安装 rpm，
+    但启动时卡在 numpy 的 `libscipy_openblas64_*.so: ELF load command address/offset
+    not page-aligned`（PyInstaller 打包 OpenBLAS 在较新 glibc 的已知问题）——记为
+    **v0.1.8.3 待修**，与本 Ubuntu 闪退修复无关；Ubuntu deb 检查仍是阻塞项。
+- **用户 Ubuntu 24.04 真机验证**：最终判据，装 v0.1.8.2 后确认（见 26.5）。
+
+### 26.5 发布记录（v0.1.8.2）
+
+- 提交链：`730ebc0`（固定 ubuntu-22.04 打包）→ `d4188b3`（自包含库 + deb/rpm 依赖 + 容器卡口）
+  → `cbb63e7`（rpm AutoReqProv 关闭）→ `b7f029a`（补 libwayland-server）→
+  `af19045`（容器软件 GL）→ `d1e95b3`（deb 卡口判定：Qt 预检 + 窗口就绪）
+  → main 测试 CI 均绿；tag `v0.1.8.2`（期间因卡口未过重打过几次 tag，最终指向 `d1e95b3`，
+  之前均未生成 Release）→ CI 运行
+  [#65](https://github.com/w32394045-dotcom/ajazz-mk87/actions/runs/42035816580) **全绿** →
+  Release 2026-11-05 21:36 发布：
+  <https://github.com/w32394045-dotcom/ajazz-mk87/releases/tag/v0.1.8.2>
+  - 附件（SHA256SUMS 与 asset digest 一致；deb 已下载复算 210,661,414 B 哈希相同）：
+    - `MK87Studio-0.1.8.2-win64-portable.zip` 39,121,686 B
+      （`e09d4aec027fb0cb1932bfa747158e68f0b0e2f8e235b5d83fcb8a68e013cf70`）
+    - `MK87Studio-0.1.8.2-win64-setup.exe` 30,256,299 B（`b3b05bab…16db`）
+    - `mk87-0.1.8.2-1.x86_64.rpm` 248,471,685 B（`84bf78db…9c3d`；体积变大是因为按需多收了
+      系统库，且 rpm 压缩率较低）
+    - `mk87_0.1.8.2_amd64.deb` 210,661,414 B
+      （`55a7c80c2b94d5a17b9addb1ec60d974a4c41d8de568c568f275d71ce44b2600`）
+    - `SHA256SUMS.txt` 386 B
+  - **关键变化**：Linux 包从此固定在 `ubuntu-22.04`（glibc 2.35）构建，不再跟随
+    `ubuntu-latest`（26.04/glibc 2.43），否则会重演「构建机 glibc 比用户新 → 打包内系统库
+    在用户机器上加载失败 → 启动闪退」。
+  - 待办：用户 Ubuntu 24.04 安装 v0.1.8.2 验证；rpm 的 numpy/OpenBLAS page-alignment
+    问题排到 v0.1.8.3。
