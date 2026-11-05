@@ -511,9 +511,10 @@ class TestQtPreflight(unittest.TestCase):
                 mock.patch.object(shell.sys, "platform", "linux"), \
                 mock.patch.object(shell, "LOG_DIR", tmp), \
                 mock.patch.object(bootlog, "mark", lambda stage, **kw: marks.append(stage)), \
-                mock.patch.dict(shell.os.environ, {"QT_API": "pyqt6"}):
-            # 场景：打包内 PyQt6 不可用（Windows 测试环境本来就没有 PyQt6），
-            # 系统兜底也失败 → 返回 False 且必须写 preflight-*-failed 标记。
+                mock.patch.dict(shell.os.environ, {"QT_API": "pyqt6"}), \
+                mock.patch.dict(shell.sys.modules, {"PyQt6": None}):
+            # sys.modules["PyQt6"] = None 时 `import PyQt6` 必抛 ImportError（CI 的 Ubuntu 环境
+            # 本身装了 PyQt6，必须显式屏蔽才能覆盖失败分支）。
             ok = shell._preflight_qt()
             self.assertTrue(os.path.exists(os.path.join(tmp, "qt-error.txt")))
         self.assertFalse(ok)
