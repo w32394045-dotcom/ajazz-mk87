@@ -36,7 +36,7 @@ if HERE not in sys.path:
 
 import uvicorn  # noqa: E402
 
-from mk87lib import autostart  # noqa: E402
+from mk87lib import autostart, bootlog  # noqa: E402
 
 APP_NAME = "MK87 Studio"
 LOCK_NAME = "MK87Studio.SingleInstance"
@@ -121,9 +121,14 @@ def _free_port() -> int:
 # 外壳
 # ----------------------------------------------------------------------
 class Shell:
-    def __init__(self, *, silent: bool = False, debug: bool = False) -> None:
+    def __init__(self, *, silent: bool = False, debug: bool = False,
+                 no_tray: bool = False) -> None:
         self.silent = silent
         self.debug = debug
+        #: 完全禁用系统托盘（排查「启动闪退」用：`--no-tray` 或环境变量 MK87_NO_TRAY=1）
+        self.no_tray = bool(no_tray) or os.environ.get("MK87_NO_TRAY", "").strip().lower() in (
+            "1", "true", "yes", "on",
+        )
         self.port = _free_port()
         self.server: uvicorn.Server | None = None
         self.server_thread: threading.Thread | None = None
@@ -182,7 +187,10 @@ class Shell:
         """
         if self._quitting:
             return True
-        if self._tray_available(wait=1.0) is not True:
+        available = self._tray_available(wait=1.0)
+        bootlog.mark("window-closing", available=available, backend=self._tray_backend,
+                     no_tray=self.no_tray)
+        if available is not True:
             log.warning("系统托盘不可用，关闭窗口 = 退出程序（%s）", self._tray_error() or "无托盘宿主")
             self.quit()
             return True
@@ -269,16 +277,38 @@ class Shell:
         用 QueuedConnection 把创建任务投递到主线程。失败时回退 pystray（Linux 下
         右键菜单不可用），保证至少还有一个图标。
         """
-        from mk87lib import tray_linux  # noqa: PLC0415
+        from mk87lib import tray_linux, trayenv  # noqa: PLC0415
 
+        bootlog.mark("tray-bootstrap-start")
         tray_linux.reset_state()
+        # GNOME 且 AppIndicator 扩展不可用：GNOME 根本不会显示任何托盘图标，
+        # 直接跳过 QSystemTrayIcon 创建（v0.1.8 用户「闪退」排查：尽量不碰 Qt 托盘路径）。
+        try:
+            desktop = trayenv.desktop_environment()
+            bootlog.mark("tray-env", desktop=desktop.get("currentDesktop"),
+                         session=desktop.get("sessionType"), family=desktop.get("family"))
+            if desktop.get("family") == "gnome":
+                ext = trayenv.extension_state()
+                bootlog.mark("tray-gnome-ext", installed=ext.get("installed"),
+                             enabled=ext.get("enabled"))
+                if not (ext.get("installed") and ext.get("enabled")):
+                    reason = ("GNOME 未启用 AppIndicator 扩展，托盘图标无法显示"
+                              "（设置 → 系统托盘 可一键安装）")
+                    tray_linux.set_unavailable(reason)
+                    log.warning("跳过 Qt 托盘创建：%s", reason)
+                    return
+        except BaseException:  # noqa: BLE001
+            bootlog.mark("tray-env-check-failed")
+            log.exception("托盘环境检测失败，继续尝试创建 Qt 托盘")
+
         try:
             started = tray_linux.start(
                 self,
                 icon_path=os.path.join(HERE, "assets", "mk87.png"),
                 app_name=APP_NAME,
             )
-        except Exception:  # noqa: BLE001
+            bootlog.mark("tray-start-returned", started=started)
+        except BaseException:  # noqa: BLE001
             log.exception("Qt 托盘启动失败")
             started = False
         if started:
@@ -287,9 +317,10 @@ class Shell:
             return
         log.warning("Qt 托盘不可用（%s），回退 pystray：Linux 下没有右键菜单",
                     tray_linux.state().get("error") or "未知原因")
+        bootlog.mark("tray-fallback-pystray", error=tray_linux.state().get("error"))
         try:
             self._start_pystray()
-        except Exception:  # noqa: BLE001
+        except BaseException:  # noqa: BLE001
             log.exception("pystray 托盘也启动失败")
 
     # ---------------------------------------------------- 托盘（外壳接口）
@@ -316,6 +347,8 @@ class Shell:
 
     def _tray_available(self, wait: float = 0.0) -> bool | None:
         """当前是否有可用的托盘宿主（None = 还不知道/正在创建）。"""
+        if self.no_tray:
+            return False
         if self._tray_backend == "pystray":
             return self.tray is not None
         if sys.platform.startswith("linux"):
@@ -386,6 +419,7 @@ class Shell:
         if self._quitting:
             return
         self._quitting = True
+        bootlog.mark("quit-begin")
         log.info("开始退出…")
 
         def _cleanup() -> None:
@@ -459,7 +493,10 @@ class Shell:
         threading.Thread(target=_loop, name="mk87-watchdog", daemon=True).start()
 
     def run(self) -> int:
+        bootlog.mark("shell-run-start", silent=self.silent, no_tray=self.no_tray,
+                     debug=self.debug, platform=sys.platform)
         self.start_server()
+        bootlog.mark("server-started", port=self.port)
         from server import app as server_app  # noqa: PLC0415
 
         server_app.activate_callback = self.show_window
@@ -470,6 +507,7 @@ class Shell:
         self.wait_ready()
         SingleInstance().write_port(self.port)
         self._start_stall_watchdog()
+        bootlog.mark("server-ready")
 
         import webview  # noqa: PLC0415
 
@@ -482,17 +520,27 @@ class Shell:
             confirm_close=False,
         )
         self.window.events.closing += self._on_closing
+        bootlog.mark("window-created", hidden=self.silent)
 
         # Linux 上 pywebview 默认先试 GTK（缺 python3-gi 时先刷一条 ERROR 再回退 Qt）；
         # 打包版只带 Qt，直接指定 qt，避免误导性报错和多余的回退尝试。
         gui = "qt" if sys.platform.startswith("linux") else None
-        if sys.platform.startswith("linux"):
+        linux = sys.platform.startswith("linux")
+        if self.no_tray:
+            # 排查「启动闪退」用的安全模式：完全不创建托盘，关闭窗口 = 退出程序
+            bootlog.mark("tray-disabled")
+            log.info("已禁用系统托盘（--no-tray / MK87_NO_TRAY）")
+            webview.start(debug=self.debug, gui=gui)
+        elif linux:
             # v0.1.8：Linux 托盘改 Qt（自带右键菜单）。Qt 控件必须在 GUI 线程创建，
             # 用 start(func=...) 的子线程等 QApplication 就绪后投递（见 tray_linux.py）。
+            bootlog.mark("webview-start-begin", tray="qt")
             webview.start(debug=self.debug, gui=gui, func=self._linux_tray_bootstrap)
         else:
             self._start_pystray()
+            bootlog.mark("webview-start-begin", tray="pystray")
             webview.start(debug=self.debug, gui=gui)
+        bootlog.mark("webview-start-returned")
         # webview.start 返回 = 窗口被销毁（正常退出路径已在 quit() 处理，这里兜底）
         if not self._quitting:
             self.quit()
@@ -556,28 +604,37 @@ def _run_diagnose() -> int:
 
 
 def main() -> int:
+    bootlog.mark("main-start", argv=sys.argv[1:], frozen=getattr(sys, "frozen", False),
+                 exec=sys.executable)
     ap = argparse.ArgumentParser(description="MK87 Studio 桌面外壳")
     ap.add_argument("--tray", action="store_true", help="静默启动到系统托盘（开机自启用）")
     ap.add_argument("--debug", action="store_true", help="打开 WebView 开发者工具")
     ap.add_argument("--no-single-instance", action="store_true", help="跳过单实例检查（调试用）")
     ap.add_argument("--diagnose", action="store_true", help="打印设备/HID 自检信息后退出")
+    ap.add_argument("--no-tray", action="store_true",
+                    help="不创建系统托盘（排查启动闪退用；也可设 MK87_NO_TRAY=1）")
     args = ap.parse_args()
     setup_logging()
+    bootlog.mark("logging-ready", log_dir=LOG_DIR)
 
     if args.diagnose:
         return _run_diagnose()
 
     if not args.no_single_instance:
         if not SingleInstance().acquire():
+            bootlog.mark("single-instance-existing")
             log.info("已有实例在运行，尝试唤起…")
             if _activate_existing():
                 return 0
             log.warning("未找到已有实例端口，继续启动新实例")
+        else:
+            bootlog.mark("single-instance-acquired")
 
-    shell = Shell(silent=args.tray, debug=args.debug)
+    shell = Shell(silent=args.tray, debug=args.debug, no_tray=args.no_tray)
     try:
         return shell.run()
-    except Exception:  # noqa: BLE001
+    except BaseException:  # noqa: BLE001
+        bootlog.mark("shell-run-failed")
         log.exception("外壳启动失败")
         raise
 

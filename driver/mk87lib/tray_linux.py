@@ -33,6 +33,8 @@ import os
 import time
 from typing import Dict, List, Optional
 
+from . import bootlog
+
 #: 托盘状态：available=False 表示没有托盘宿主（GNOME 缺扩展 / 桌面无托盘），
 #: 外壳会因此在点窗口 X 时直接退出程序，避免窗口藏起来找不回。
 STATE: Dict[str, object] = {"available": None, "backend": None, "error": None, "holder": None}
@@ -52,6 +54,12 @@ def state() -> Dict[str, object]:
 
 def _set(**kwargs) -> None:
     STATE.update(kwargs)
+
+
+def set_unavailable(reason: str) -> None:
+    """外部（外壳）判定当前环境不需要/无法创建托盘时调用，直接标记不可用。"""
+    _set(available=False, backend="qt", error=str(reason))
+    bootlog.mark("qt-tray-set-unavailable", reason=reason)
 
 
 def _import_qt():
@@ -75,6 +83,20 @@ def _make_holder(QtCore, QtGui, QtWidgets, host, icon_path: str, app_name: str):
             self.tray = None
             self.menu = None
             self.actions: Dict[str, object] = {}
+
+        def _safe(self, fn, *args) -> None:
+            """Qt 回调里绝不向外抛：PyQt6 槽函数异常会 qFatal() 结束进程。"""
+            try:
+                fn(*args)
+            except BaseException as exc:  # noqa: BLE001
+                bootlog.mark("qt-tray-callback-error", fn=getattr(fn, "__name__", repr(fn)),
+                             error=exc)
+                try:
+                    import logging
+
+                    logging.getLogger("mk87.tray").warning("托盘回调异常（已忽略）: %s", exc)
+                except Exception:  # noqa: BLE001
+                    pass
 
         # ---------------------------------------------------------- GUI 线程
         def _icon(self):
@@ -127,21 +149,23 @@ def _make_holder(QtCore, QtGui, QtWidgets, host, icon_path: str, app_name: str):
         @QtCore.Slot()
         def install(self) -> None:
             """在 GUI 线程创建托盘图标与菜单（由 start() 通过 QueuedConnection 投递）。"""
+            bootlog.mark("qt-tray-install-start")
             try:
                 available = bool(QtWidgets.QSystemTrayIcon.isSystemTrayAvailable())
+                bootlog.mark("qt-tray-is-available", available=available)
                 tray = QtWidgets.QSystemTrayIcon()
                 tray.setIcon(self._icon())
                 tray.setToolTip(app_name)
                 menu = QtWidgets.QMenu()
 
                 act_show = menu.addAction("显示主窗口")
-                act_show.triggered.connect(lambda *_: host.show_window())
+                act_show.triggered.connect(lambda *_: self._safe(host.show_window))
                 act_auto = menu.addAction("开机自启")
                 act_auto.setCheckable(True)
                 act_auto.triggered.connect(self._toggle_autostart)
                 menu.addSeparator()
                 act_quit = menu.addAction("退出")
-                act_quit.triggered.connect(lambda *_: host.quit_app())
+                act_quit.triggered.connect(lambda *_: self._safe(host.quit_app))
 
                 tray.setContextMenu(menu)
                 tray.activated.connect(self._on_activated)
@@ -151,15 +175,28 @@ def _make_holder(QtCore, QtGui, QtWidgets, host, icon_path: str, app_name: str):
                 self.menu = menu
                 if available:
                     tray.show()
+                    bootlog.mark("qt-tray-shown")
                 else:
                     _set(available=False, backend="qt",
                          error="当前桌面没有托盘宿主（GNOME 需要 AppIndicator 扩展）")
+                    bootlog.mark("qt-tray-no-host")
                     return
                 _set(available=True, backend="qt", error=None, holder=self)
                 self._refresh_autostart()
-            except Exception as exc:  # noqa: BLE001
+                bootlog.mark("qt-tray-install-ok")
+            except BaseException as exc:  # noqa: BLE001
+                # PyQt6：槽函数里未捕获的异常会走 qFatal() 直接结束进程（用户看到的「闪退」），
+                # 所以这里绝不能再 raise，只记录并降级为「无托盘」，让主窗口继续可用。
                 _set(available=False, backend="qt", error=f"创建托盘失败: {exc}")
-                raise
+                bootlog.mark("qt-tray-install-error", error=exc)
+                try:
+                    import logging
+
+                    logging.getLogger("mk87.shell").exception(
+                        "创建 Qt 托盘失败（已降级为无托盘，关闭窗口将退出程序）")
+                except Exception:  # noqa: BLE001
+                    pass
+
 
         # ---------------------------------------------------------- 跨线程入口
         def notify(self, title: str, message: str) -> None:
@@ -199,10 +236,13 @@ def start(
     必须在 ``webview.start(func=...)`` 的子线程里调用（不能阻塞 GUI 主线程）。
     返回 True 表示创建工作已成功投递到 GUI 线程；是否真的显示要看 ``STATE``。
     """
+    bootlog.mark("qt-tray-start-enter")
     try:
         QtCore, QtGui, QtWidgets = _import_qt()
-    except Exception as exc:  # noqa: BLE001
+        bootlog.mark("qt-tray-import-ok", qt=QtCore.__version__)
+    except BaseException as exc:  # noqa: BLE001
         _set(available=False, backend="qt", error=f"Qt 不可用: {exc}")
+        bootlog.mark("qt-tray-import-error", error=exc)
         return False
 
     app = None
@@ -212,24 +252,29 @@ def start(
             app = QtWidgets.QApplication.instance()
         except Exception as exc:  # noqa: BLE001
             _set(available=False, backend="qt", error=f"读取 QApplication 失败: {exc}")
+            bootlog.mark("qt-tray-qapp-error", error=exc)
             return False
         if app is not None:
             break
         time.sleep(0.05)
     if app is None:
         _set(available=False, backend="qt", error="等待 QApplication 超时")
+        bootlog.mark("qt-tray-qapp-timeout", timeout=timeout)
         return False
+    bootlog.mark("qt-tray-qapp-ready")
 
     try:
         holder = _make_holder(QtCore, QtGui, QtWidgets, host, icon_path, app_name)
         holder.moveToThread(app.thread())
-        QtCore.QMetaObject.invokeMethod(
+        posted = bool(QtCore.QMetaObject.invokeMethod(
             holder, "install", QtCore.Qt.ConnectionType.QueuedConnection
-        )
+        ))
         _set(holder=holder, backend="qt")
-        return True
-    except Exception as exc:  # noqa: BLE001
+        bootlog.mark("qt-tray-invoke-posted", posted=posted)
+        return posted
+    except BaseException as exc:  # noqa: BLE001
         _set(available=False, backend="qt", error=f"投递托盘创建任务失败: {exc}")
+        bootlog.mark("qt-tray-invoke-error", error=exc)
         return False
 
 

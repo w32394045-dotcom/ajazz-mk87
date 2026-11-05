@@ -1,0 +1,108 @@
+name: linux-smoke
+
+# 单独的 Linux 冒烟/排查工作流（手动触发）：
+#   * 在一台全新的 Ubuntu runner 上构建 PyInstaller 产物；
+#   * 用 Xvfb 真正启动打包后的 MK87Config（可选 --tray / --no-tray）；
+#   * 把 stderr、~/.mk87-boot.log、~/.local/state/mk87/logs 全部打进 job 输出与 artifact。
+#
+# 用途：不发布版本也能快速验证「Linux 上启动是否闪退」，并拿到崩溃现场。
+# 用法（GitHub UI：Actions -> linux-smoke -> Run workflow）：
+#   target_ref = main / v0.1.8 / 某个分支
+#   args       = 额外参数，例如 "--no-tray --tray"，留空则默认 "--tray"
+
+on:
+  workflow_dispatch:
+    inputs:
+      target_ref:
+        description: "要测试的 git ref（分支 / tag / commit）"
+        required: true
+        default: main
+      args:
+        description: "传给 MK87Config 的参数（默认 --tray）"
+        required: false
+        default: "--tray"
+
+jobs:
+  smoke:
+    name: build + run under Xvfb (${{ github.event.inputs.target_ref }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.target_ref }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: driver/packaging/requirements.txt
+      - name: System dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y xvfb libegl1 libgl1 libnss3 libasound2t64 \
+            libxkbcommon-x11-0 libxcb-cursor0 libxcb-icccm4 libxcb-image0 \
+            libxcb-keysyms1 libxcb-randr0 libxcb-render-util0 libxcb-shape0 \
+            libxcb-xinerama0 libudev-dev
+      - name: Python dependencies
+        working-directory: driver
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r packaging/requirements.txt pyinstaller
+      - name: Unit tests
+        working-directory: driver
+        run: python -m unittest discover -s tests
+      - name: Build PyInstaller app
+        working-directory: driver
+        run: python -m PyInstaller packaging/mk87.spec --noconfirm --clean
+      - name: Run packaged app under Xvfb
+        id: run
+        working-directory: driver
+        continue-on-error: true
+        run: |
+          set +e
+          APP="./dist/MK87Config/MK87Config"
+          echo "target_ref=${{ github.event.inputs.target_ref }}"
+          echo "args=${{ github.event.inputs.args }}"
+          echo "--- app --version (should print nothing / quick exit) ---"
+          timeout 10 "$APP" --diagnose 2>&1 | tail -40
+          echo "diagnose_exit=$?"
+          echo "--- run app ---"
+          export QTWEBENGINE_CHROMIUM_FLAGS="--disable-gpu --no-sandbox --disable-dev-shm-usage"
+          export QT_QPA_PLATFORM=xcb
+          ARGS="${{ github.event.inputs.args }}"
+          [ -z "$ARGS" ] && ARGS="--tray"
+          timeout 45 xvfb-run -a -s "-screen 0 1280x800x24" "$APP" $ARGS > /tmp/mk87-app.log 2>&1
+          code=$?
+          echo "app_exit_code=$code"
+          echo "----- app stdout/stderr (last 150 lines) -----"
+          tail -150 /tmp/mk87-app.log || true
+          cp /tmp/mk87-app.log "$RUNNER_TEMP/mk87-app.log" 2>/dev/null || true
+          echo "----- boot log (~/.mk87-boot.log) -----"
+          cat "$HOME/.mk87-boot.log" 2>/dev/null || echo "(no ~/.mk87-boot.log)"
+          cp "$HOME/.mk87-boot.log" "$RUNNER_TEMP/mk87-boot.log" 2>/dev/null || true
+          echo "----- app dirs -----"
+          ls -la "$HOME/.local/state/mk87" 2>/dev/null || true
+          ls -la "$HOME/.local/state/mk87/logs" 2>/dev/null || true
+          ls -la "$HOME/.cache/mk87" 2>/dev/null || true
+          mkdir -p "$RUNNER_TEMP/mk87-logs"
+          cp -a "$HOME/.local/state/mk87/logs/." "$RUNNER_TEMP/mk87-logs/" 2>/dev/null || true
+          echo "----- session logs (tail) -----"
+          tail -150 "$HOME/.local/state/mk87/logs"/*.log 2>/dev/null || true
+          # 124 = 被 timeout 杀掉 → 说明进程一直活着（对 GUI 应用就是「没崩」）
+          if [ "$code" = "124" ]; then
+            echo "RESULT=alive_after_45s (no crash)"
+          elif [ "$code" = "0" ]; then
+            echo "RESULT=exited_cleanly"
+          else
+            echo "RESULT=crash_or_error (exit=$code)"
+          fi
+      - name: Upload crash artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: linux-smoke-${{ github.run_id }}
+          path: |
+            ${{ runner.temp }}/mk87-app.log
+            ${{ runner.temp }}/mk87-boot.log
+            ${{ runner.temp }}/mk87-logs
+          if-no-files-found: warn
