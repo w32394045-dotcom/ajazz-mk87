@@ -1284,4 +1284,30 @@ error: [pywebview] GTK cannot be loaded: No module named 'gi'
 
 ### 25.6 发布记录（v0.1.8.1）
 
-（发布后补：tag / CI 链接 / 资产大小与 SHA256 / 本地 Windows 冒烟）
+- 提交：`ddbad72`（boot 日志 / --no-tray / GNOME 守卫 / CI 拆分 + linux-smoke）、
+  `b42ed40`（版本号与文档）、`3a2b122`（打包 job 与测试并行、旧 run 自动取消）
+  → main 仅测试 CI：[#44](https://github.com/w32394045-dotcom/ajazz-mk87/actions/runs/42020176580)、
+  [#46](https://github.com/w32394045-dotcom/ajazz-mk87/actions/runs/42020257449) 均全绿（约 2 分钟/次）。
+- tag `v0.1.8.1` → CI 运行
+  [#45](https://github.com/w32394045-dotcom/ajazz-mk87/actions/runs/42020194735) 全绿（测试 281、
+  linux-deb、linux-rpm、windows portable+setup 四个 job）→
+  Release 2026-11-05 19:42 发布：<https://github.com/w32394045-dotcom/ajazz-mk87/releases/tag/v0.1.8.1>
+  - 附件（SHA256SUMS 与 asset digest 一致；portable 已下载复算 39,118,642 B 哈希相同）：
+    - `MK87Studio-0.1.8.1-win64-portable.zip` 39,118,642 B
+      （`564759337828eac621bd18cb1267c8ed7e7b94c56ca822ef4ebf16dff2dff2e4`）
+    - `MK87Studio-0.1.8.1-win64-setup.exe` 30,255,710 B（`24bbedf3…936a`）
+    - `mk87-0.1.8.1-1.x86_64.rpm` 196,337,562 B（`dd0c413e…436f`）
+    - `mk87_0.1.8.1_amd64.deb` 210,380,908 B（`47396427…3f68`）
+    - `SHA256SUMS.txt` 386 B
+- 本地 Windows 冒烟（`dist/MK87Config/MK87Config.exe`）：
+  - FileVersion / ProductVersion = **0.1.8.1**；
+  - `--tray` 启动 → `/api/version` = `0.1.8.1`、`/api/status.tray = {"available":true,"backend":"pystray"}`；
+    `~/.mk87-boot.log` 记录 `main-start → logging-ready → single-instance-acquired →
+    shell-run-start → server-started → server-ready → window-created → webview-start-begin`；
+  - `--no-tray --tray` → boot log 记 `tray-disabled`，`/api/status.tray.available=false`，进程正常退出；
+  - `/api/quit` 退出后无残留进程。
+- **下一步（等用户反馈）**：用户装 v0.1.8.1 后执行 `mk87`（终端输出）+ `mk87 --no-tray`（能否正常用）
+  + 提供 `~/.mk87-boot.log` 与 `echo $XDG_CURRENT_DESKTOP $XDG_SESSION_TYPE`；
+  boot log 停在哪个 `qt-tray-*` 阶段即可定位是 Qt 托盘创建、QApplication 等待还是更早的环节。
+- CI 进一步优化（`3a2b122`，下次 tag 生效）：三个打包 job 不再 `needs: test`，与测试并行；
+  `release` 仍等待 `test`，关键路径再缩短约 2 分钟；同一 ref 的旧 run 自动取消（tag 不取消）。
