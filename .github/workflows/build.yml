@@ -6,10 +6,10 @@ on:
     tags: ["v*"]
   workflow_dispatch:
 
-# 同一分支的旧 run 自动取消（tag 不取消，避免发布中断）
+# 同一分支的旧 push run 自动取消（tag / 手动 dispatch 不取消，避免发布或验证被中断）
 concurrency:
-  group: build-${{ github.ref }}${{ github.ref_type == 'tag' && '-release' || '' }}
-  cancel-in-progress: ${{ github.ref_type != 'tag' }}
+  group: build-${{ github.event_name }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'push' && github.ref_type != 'tag' }}
 
 jobs:
   # ---------------------------------------------------------------- 测试（每次 push 都跑，约 1-2 分钟）
