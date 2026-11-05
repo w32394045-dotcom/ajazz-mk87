@@ -1208,3 +1208,80 @@ error: [pywebview] GTK cannot be loaded: No module named 'gi'
   advice 与安装命令，可直接贴回来定位。
 - 风险：Qt 托盘分支无法在 Windows 本地冒烟覆盖，只能靠 Linux CI 构建通过 + 用户真机验证；
   pkexec/polkit 依赖桌面认证代理，失败时前端回退为复制命令。
+
+
+## 25 2026-11-05：v0.1.8 Linux 启动闪退排查（v0.1.8.1：启动日志 / 安全模式 / CI 提速）
+
+> 用户反馈：Linux 装 v0.1.8 后「闪退了，直接日志都拿不到」；并要求 CI 别再让单次等待那么久
+> （单独机器打包 rpm / 立刻开一台机子跑测试）。
+
+### 25.1 现场信息与初步判断
+
+- v0.1.7 能正常启动（用户此前日志可证），v0.1.8 新增的**唯一启动期原生代码**是 Linux Qt 托盘
+  （`tray_linux.py`：`QSystemTrayIcon` + `QMenu`，在 `webview.start(func=...)` 子线程里等
+  `QApplication` 就绪后投递到 GUI 线程创建）。窗口本体、WebEngine、后端均沿用 v0.1.7。
+- 因此第一嫌疑是「Qt 托盘创建路径」。其中两个已知风险点：
+  1. **PyQt6 的槽函数异常会走 `qFatal()`（abort）**：v0.1.8 的 `install` 槽 `except` 后仍然
+     `raise`，一旦创建托盘时抛异常，进程会立即 abort，外观就是「闪退」，且 Python 层日志可能
+     来不及写 → 完美符合用户描述。
+  2. **GNOME 没有 AppIndicator 扩展时本来就无法显示托盘图标**，此时创建 Qt 托盘没有意义，
+     却踩在最可疑的路径上。
+- 用户机器上日志「拿不到」还可能是：打包程序 `console=False`，stderr 直接丢弃；崩溃发生在日志
+  初始化之前或原生 abort 时，常规 session 日志可能来不及落盘。
+
+### 25.2 用 CI 新机子复现（用户要求「再开个机子跑测试」）
+
+- 新增手动工作流 `.github/workflows/linux-smoke.yml`：
+  - 在全新 Ubuntu runner 上 `pip install -r packaging/requirements.txt pyinstaller` →
+    PyInstaller 构建 → **Xvfb 里真正启动打包后的 `MK87Config`**（可传 `--tray` / `--no-tray`）；
+  - 自动收集 `stderr`、`~/.mk87-boot.log`、`~/.local/state/mk87/logs`、`~/.cache/mk87/logs`
+    并上传 artifact；`exit_code=124`（被 timeout 杀掉）判定为「进程一直活着 = 没崩」。
+- 第一次运行（`target_ref=v0.1.8`）：**app_exit_code=124，alive 45s，无崩溃**，crash.log 0 字节。
+  → 说明**打包产物本身在普通 X11/Linux 上能正常启动**，用户遇到的闪退与具体桌面会话
+  （Wayland / GNOME 托盘环境）相关，而不是 PyInstaller 打包坏了。
+- 第二次运行（`target_ref=main`，参数 `--no-tray --tray`）：`RESULT=alive_after_45s`，
+  boot log 完整出现 `main-start → logging-ready → single-instance-acquired → shell-run-start
+  (no_tray=True) → server-started → server-ready → window-created → tray-disabled`。
+
+### 25.3 v0.1.8.1 的修复/诊断措施
+
+- `mk87lib/bootlog.py`：固定路径 `~/.mk87-boot.log`，每条 `open(append)+flush+fsync`，
+  超过 256KB 自动轮转；`shell.py` 在 main 入口、日志就绪、单实例、服务就绪、窗口创建、
+  webview 启动、托盘各阶段都打标记；`quit`、`_on_closing` 也记录。
+- `tray_linux.py`：
+  - `install` 槽改为**绝不向外抛**（捕获 `BaseException`，写 bootlog + `logging.exception`，
+    降级为「无托盘」）；Qt 信号回调（显示/退出/开机自启）统一走 `_safe()`；
+  - 增加 `set_unavailable(reason)`；各阶段（import / QApplication 就绪 / 投递 / 安装开始 /
+    isSystemTrayAvailable / shown / no-host / error）写 bootlog。
+- `shell.py`：
+  - 新增 `--no-tray` 参数与 `MK87_NO_TRAY=1` 环境变量：完全不创建托盘，关闭窗口 = 退出程序，
+    用于排查与应急；
+  - **GNOME 守卫**：启动托盘前用 `trayenv` 检测桌面与扩展；GNOME 且扩展未安装/未启用时
+    直接 `set_unavailable(...)` 跳过 Qt 托盘创建（GNOME 本来就显示不了），把最可疑路径绕开；
+  - 托盘 bootstrap 的所有异常改为 `BaseException` + bootlog，回退 pystray 也加保护。
+- 诊断路径说明（写进 release notes/README）：崩溃时看 `~/.mk87-boot.log` 停在哪一步；
+  终端运行 `mk87` 可直接看到 abort 前的 Python/Qt 输出。
+
+### 25.4 CI 提速（用户要求「专门打包 rpm 的机子」）
+
+- `.github/workflows/build.yml` 拆分：
+  - `main` 的每次 push **只跑单测**（ubuntu + windows 两台并行，约 2 分钟；此前每次 ~8-10 分钟）；
+  - 安装包只在 `v*` tag 或手动 `workflow_dispatch` 时构建；
+  - 原 `linux-packages` 拆成 **`linux-deb` 与 `linux-rpm` 两台并行 runner**（各自构建
+    PyInstaller 产物后打对应包），tag 发布关键路径由 ~8.5 分钟降到 ~6-7 分钟；
+  - `release` 改为 `needs: [linux-deb, linux-rpm, windows-package]`；
+  - test/打包 job 都加 `actions/setup-python` 的 `cache: pip`。
+- 效果实测：main 提交 `ddbad72` 的 CI #43 测试 job **约 2 分钟完成**。
+
+### 25.5 验证
+
+- 本地：`py_compile` + 全量 **277 tests OK**；Windows 构建冒烟见发布记录。
+- CI：`linux-smoke` #1（v0.1.8）alive 45s；#2（main + `--no-tray`）alive 45s 且 boot log 完整；
+  main push CI #43 仅测试、约 2 分钟。
+- **仍需用户配合**：`mk87` 终端输出 + `~/.mk87-boot.log`（v0.1.8.1 生成）+ 桌面环境
+  （`echo $XDG_CURRENT_DESKTOP $XDG_SESSION_TYPE`）；如果 `mk87 --no-tray` 能启动，
+  说明确定是托盘路径问题，可先这样使用。
+
+### 25.6 发布记录（v0.1.8.1）
+
+（发布后补：tag / CI 链接 / 资产大小与 SHA256 / 本地 Windows 冒烟）

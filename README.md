@@ -8,7 +8,7 @@
 - **Device**: USB `VID 0x0C45 / PID 0x8047`; 2.4G receiver `VID 0x0C45 / PID 0xFEFE`
 - **Official web driver** (reverse-engineered): `https://ajazz.driveall.cn`
 - **Everything local**: no network access, no telemetry, no vendor driver required
-- **Latest release**: [v0.1.8](https://github.com/w32394045-dotcom/ajazz-mk87/releases/latest)
+- **Latest release**: [v0.1.8.1](https://github.com/w32394045-dotcom/ajazz-mk87/releases/latest)
 
 ## Screenshots
 
@@ -61,7 +61,23 @@ KDE, XFCE, Cinnamon, MATE and Ubuntu GNOME: **left-click shows the window, right
 install (one admin password, distro package) if the status card says the extension is missing. After
 installing on Wayland, log out and back in (on X11 you can also press `Alt+F2` and run `r`).
 
-## What's new in v0.1.8
+## What's new in v0.1.8.1
+
+- **Boot-stage log `~/.mk87-boot.log`** — timestamped markers from the very start of the program to
+  tray creation (`main-start` → `logging-ready` → `server-started` → `window-created` → `qt-tray-*`),
+  flushed immediately, so a startup crash can be located even when the normal log folder looks empty.
+  Run `mk87` in a terminal to also capture the Python traceback if the app exits before the GUI shows.
+- **`--no-tray` safety mode** — `mk87 --no-tray` (or `MK87_NO_TRAY=1`) starts without any system tray;
+  closing the window then quits the app. Use it to keep working if the tray path is what crashes.
+- **Hardened Qt tray** — unhandled exceptions in Qt slots make PyQt6 call `qFatal()` (instant abort that
+  looks like a crash). Tray/menu callbacks now never throw, log the error and fall back to "no tray";
+  on GNOME without the AppIndicator extension the Qt tray is not even created (it could never show).
+- **CI (faster)** — `main` pushes now only run unit tests on two runners (~2 min); `.deb`/`.rpm` are
+  built on two **parallel** runners and packages are only produced for `v*` tags or manual runs. A new
+  manual `linux-smoke` workflow builds the packaged app and runs it under Xvfb, uploading the boot log,
+  stderr and session logs for quick Linux checks without publishing a release.
+
+### v0.1.8
 
 - **Fixed: a terminal window no longer opens on Linux** — the packaged `.desktop` file had `Terminal=true`,
   so starting MK87 Studio from the app menu spawned a terminal that hosted the app. It is now

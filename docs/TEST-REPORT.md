@@ -549,3 +549,21 @@ udev 规则 / 结论；源码环境同一套逻辑在 `probe/linux_hid_check.py`
 | 全量单测 | **277 tests OK**（245 → 277，新增 `tests/test_trayenv.py` 32 项） |
 | Windows 打包冒烟 | 见发布记录（exe FileVersion 0.1.8.0、`--tray` 启动、`/api/version`、`/api/tray/status`） |
 | Linux 真机 | **待用户执行**：装 v0.1.8 → 从应用菜单启动（不弹终端）→ 左键/右键托盘图标 → 设置 → 系统托盘（状态是否正确；GNOME 缺扩展则一键安装 → 注销重登 → 托盘出现） |
+
+
+## 21 v0.1.8.1 Linux 启动闪退诊断与 CI 提速（2026-11-05）
+
+> 触发：用户 v0.1.8 Linux 启动「闪退且拿不到日志」；同时要求 CI 提速（单独机器打 rpm / 随时开机器测试）。
+
+| 测试项 | 结果 |
+|---|---|
+| CI 复现（v0.1.8 原版） | `linux-smoke` #1（Ubuntu 26.04 Xvfb/xcb）：PyInstaller 构建成功，打包程序 `--tray` 运行 **45s 后被 timeout 杀掉（exit=124）= 未崩溃**；crash.log 0 字节 → 说明打包产物在普通 X11 上可启动，闪退与具体桌面会话（Wayland/GNOME 托盘）相关 |
+| CI 复现（v0.1.8.1） | `linux-smoke` #2（main + `--no-tray --tray`）：`RESULT=alive_after_45s`；`~/.mk87-boot.log` 记录 `main-start → logging-ready → single-instance-acquired → shell-run-start(no_tray=True) → server-started → server-ready → window-created → tray-disabled` |
+| boot 阶段日志 | 固定路径 `~/.mk87-boot.log`，逐条 flush+fsync；main / 日志 / 单实例 / 服务 / 窗口 / webview / 托盘各阶段 + quit + closing 均有标记；>256KB 自动轮转 |
+| Qt 托盘加固 | `install` 槽与所有信号回调不再向外抛异常（PyQt6 槽异常 = `qFatal()` abort，外观即闪退）；异常写 bootlog + logging 并降级「无托盘」；import/QApplication/投递/安装/是否可用/shown/no-host/error 全阶段 bootlog |
+| 安全模式 | `--no-tray` / `MK87_NO_TRAY=1`：不创建托盘，关闭窗口 = 退出程序；CI 验证可正常启动并保持运行 45s |
+| GNOME 守卫 | 启动前用 `trayenv` 检测：GNOME 且 AppIndicator 扩展未安装/未启用 → 直接跳过 Qt 托盘创建（GNOME 无法显示托盘），设置页一键安装不受影响 |
+| CI 提速 | main push 只跑单测（实测 CI #43 约 2 分钟，原来 ~8-10 分钟）；deb/rpm 拆成两台并行 runner；仅 `v*` tag / 手动触发构建安装包；pip 缓存 |
+| linux-smoke 工作流 | 手动触发（可指定 ref 与运行参数），构建打包产物后 Xvfb 启动，上传 boot log / stderr / session logs artifact，用于无需发版的 Linux 验证 |
+| 全量单测 | **277 tests OK**（本地 + CI ubuntu/windows） |
+| 用户真机 | **待用户执行**：`mk87` 看终端输出；提供 `~/.mk87-boot.log`；`echo $XDG_CURRENT_DESKTOP $XDG_SESSION_TYPE`；试 `mk87 --no-tray` 判断是否托盘路径 |

@@ -8,7 +8,7 @@ USB / 2.4G 协议的完整逆向实现，全部功能**离线本地运行**。
 - **设备**：USB `VID 0x0C45 / PID 0x8047`；2.4G 接收器 `VID 0x0C45 / PID 0xFEFE`
 - **官方网页驱动**（已逆向）：`https://ajazz.driveall.cn`
 - **全程本地**：不访问外网、不上传数据、不依赖官方驱动
-- **最新版本**：[v0.1.8](https://github.com/w32394045-dotcom/ajazz-mk87/releases/latest)
+- **最新版本**：[v0.1.8.1](https://github.com/w32394045-dotcom/ajazz-mk87/releases/latest)
 
 ## 界面截图
 
@@ -60,7 +60,23 @@ dbusmenu：**左键显示主窗口，右键打开菜单**（显示主窗口 / �
 缺少扩展，可直接「一键安装」（需要一次管理员密码，装的是发行版包）。Wayland 下装完请注销重新登录，
 X11 下也可以按 `Alt+F2` 输入 `r`。
 
-## v0.1.8 更新
+## v0.1.8.1 更新
+
+- **新增启动阶段日志 `~/.mk87-boot.log`** —— 从程序启动第一行到托盘创建，每一步都写一条带时间戳的记录
+  并立即落盘（`main-start` → `logging-ready` → `server-started` → `window-created` → `qt-tray-*`）。
+  即使闪退发生在日志初始化之前、或常规日志目录看起来是空的，也能看出卡在哪一步；在终端里运行 `mk87`
+  还能直接看到 Python 报错。
+- **新增安全模式 `--no-tray`** —— `mk87 --no-tray`（或环境变量 `MK87_NO_TRAY=1`）完全不创建系统托盘；
+  该模式下关闭窗口 = 退出程序。如果闪退是托盘路径引起的，可以先用它正常使用其它功能。
+- **Qt 托盘加固** —— PyQt6 里槽函数抛出未捕获异常会走 `qFatal()` 直接 abort（外观就是「闪退」）。
+  托盘与菜单回调现在全部捕获异常、只记日志并降级为「无托盘」；检测到 GNOME 且 AppIndicator 扩展
+  未安装/未启用时**直接不创建 Qt 托盘**（GNOME 本来也显示不了），避开最可疑的启动路径。
+- **CI 提速** —— `main` 的每次 push 只跑单测（两台 runner 并行，约 2 分钟）；`.deb` / `.rpm` 拆到
+  **两台并行 runner**，只有打 `v*` tag 或手动触发才构建安装包；另新增手动 `linux-smoke` 工作流：
+  在全新 Ubuntu runner 上构建打包产物并用 Xvfb 启动，自动上传启动日志与 stderr，用于快速验证 Linux
+  启动问题而不必发版。
+
+### v0.1.8
 
 - **修复：Linux 启动时弹出终端窗口** —— 安装包里的 `.desktop` 写的是 `Terminal=true`，从应用菜单
   启动时桌面环境会开一个终端来承载程序；现改为 `Terminal=false`（开机自启项本来就是对的不受影响）。

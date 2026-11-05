@@ -441,6 +441,50 @@ class TestShellClosingWithoutTray(unittest.TestCase):
             self.assertTrue(shell._on_closing())
         shell.quit.assert_called_once()
 
+    def test_no_tray_mode_quits_on_close(self):
+        """--no-tray / MK87_NO_TRAY=1：完全不创建托盘，关闭窗口 = 退出程序。"""
+        shell = self._make_shell()
+        shell.no_tray = True
+        shell.tray = mock.MagicMock()  # 即使有残留对象也应按 no_tray 处理
+        shell.quit = mock.MagicMock()
+        self.assertFalse(shell._tray_available())
+        self.assertTrue(shell._on_closing())
+        shell.quit.assert_called_once()
+        shell.window.hide.assert_not_called()
+
+    def test_no_tray_env(self):
+        from shell import Shell
+
+        with mock.patch.dict("os.environ", {"MK87_NO_TRAY": "1"}):
+            self.assertTrue(Shell(silent=False).no_tray)
+        with mock.patch.dict("os.environ", {"MK87_NO_TRAY": ""}):
+            self.assertFalse(Shell(silent=False).no_tray)
+
+
+class TestBootlog(unittest.TestCase):
+    """启动阶段日志：固定路径、立即 flush，崩溃排查用。"""
+
+    def test_mark_writes_line(self):
+        from mk87lib import bootlog
+
+        with tempfile.TemporaryDirectory() as tmp:
+            path = os.path.join(tmp, "boot.log")
+            with mock.patch.object(bootlog, "path", lambda: path):
+                bootlog.mark("unit-test-stage", foo=1, bar="x")
+                bootlog.mark("second-stage")
+            with open(path, encoding="utf-8") as f:
+                text = f.read()
+            self.assertIn("[unit-test-stage]", text)
+            self.assertIn("foo=1", text)
+            self.assertIn("[second-stage]", text)
+            self.assertIn("pid=", text)
+
+    def test_mark_never_raises(self):
+        from mk87lib import bootlog
+
+        with mock.patch.object(bootlog, "path", lambda: "/nonexistent-dir/x/boot.log"):
+            bootlog.mark("should-not-raise")
+
 
 if __name__ == "__main__":
     unittest.main()

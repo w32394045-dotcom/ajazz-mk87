@@ -11,7 +11,33 @@ Screenshots and the full feature list live in the repository README:
 **[README.md (English)](https://github.com/w32394045-dotcom/ajazz-mk87/blob/main/README.md)** ·
 **[README.zh-CN.md (简体中文)](https://github.com/w32394045-dotcom/ajazz-mk87/blob/main/README.zh-CN.md)**
 
-## What's new in v0.1.8
+## What's new in v0.1.8.1
+
+> v0.1.8.1 is a diagnostic/hotfix release for a Linux startup crash reported on v0.1.8.
+
+- **New: boot-stage log `~/.mk87-boot.log`** — the packaged app now writes timestamped stage markers
+  (main start → logging ready → server started → window created → tray import/QApplication/queued
+  install/shown/no-host) with immediate `fsync`. If the app crashes before or during tray setup, this
+  file shows exactly how far it got even when the normal log directory looks empty.
+- **New: `--no-tray` / `MK87_NO_TRAY=1` safety mode** — skips system-tray creation entirely, so the app
+  can still be used when the crash is tray-related (closing the window then quits the app instead of
+  hiding it). Useful for testing and as an emergency workaround.
+- **Hardened Qt tray** — exceptions raised inside Qt slots no longer escape. PyQt6 turns an unhandled
+  exception in a slot into `qFatal()` (an instant abort that looks exactly like a crash); tray and
+  menu callbacks now catch everything, log it and degrade to "no tray". Every tray-creation stage is
+  recorded in the boot log.
+- **GNOME guard** — if GNOME is detected and the AppIndicator extension is not installed/enabled, Qt
+  tray creation is skipped entirely (GNOME cannot display tray icons without it anyway), avoiding the
+  riskiest startup path. Settings → System tray still offers the one-click installer.
+- **CI speed-up (user request)** — `main` pushes now only run the offline unit tests on two runners
+  (~2 min instead of ~10); `.deb` and `.rpm` are built on two **parallel** runners; packages are only
+  built for `v*` tags or manual runs. New manual `linux-smoke` workflow builds the packaged app and
+  runs it under Xvfb on a fresh Ubuntu runner, uploading `~/.mk87-boot.log`, stderr and session logs.
+- **If v0.1.8 crashes on startup for you**: run `mk87` in a terminal (that prints the traceback), and
+  send `~/.mk87-boot.log`. With v0.1.8.1 you can also start `mk87 --no-tray` to keep using the app
+  while we fix the tray path.
+
+### v0.1.8
 
 > v0.1.8 fixes the two Linux desktop-integration bugs (terminal window on launch, tray icon with no
 > right-click menu) and adds a "System tray" diagnostics card with one-click GNOME extension install.
