@@ -41,10 +41,16 @@ jobs:
   # ---------------------------------------------------------------- 打包（只在 tag / 手动触发时跑）
   # 2026-11-05 用户要求：main 的每次 push 不再构建安装包，只跑测试；
   # deb / rpm 拆到两台不同 runner 并行，tag 发布总等待时间从 ~8.5 分钟降到 ~6-7 分钟。
+  #
+  # ⚠ 2026-11-05 闪退回归根因：GitHub 的 `ubuntu-latest` 在 11-03→11-04 之间从 24.04 切到了
+  # 26.04（glibc 2.43）。PyInstaller 会把构建机上的系统库（libglib 等）打进包，结果 v0.1.7/
+  # v0.1.8 的包在 Ubuntu 24.04（glibc 2.39）上加载时直接报
+  # `GLIBC_2.43 not found` → PyQt6 导入失败 → 启动闪退。v0.1.6（构建于 ubuntu-24.04）正常。
+  # 修复：Linux 包固定在 **ubuntu-22.04**（glibc 2.35）构建，兼容 22.04 及更新版本。
   linux-deb:
     name: linux deb (Debian/Ubuntu)
     if: startsWith(github.ref, 'refs/tags/v') || github.event_name == 'workflow_dispatch'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -70,28 +76,31 @@ jobs:
       # 2026-11-05 用户 Ubuntu 闪退：PyQt6 在打包程序里导入失败（缺系统库）。
       # 这里在**干净的 Ubuntu 24.04 容器**里按 deb 自己声明的 Depends 安装后启动打包程序，
       # app 被 timeout 杀掉（exit=124）= 一直活着 = 启动成功；否则阻塞发布。
-      - name: Runtime check in clean Ubuntu 24.04 container
+      - name: Runtime check in clean Ubuntu 22.04 + 24.04 containers
         working-directory: driver
         run: |
-          docker run --rm -v "$PWD/dist-packages:/pkg:ro" ubuntu:24.04 bash -euc '
-            apt-get update -qq
-            DEB=$(ls /pkg/*.deb | head -1)
-            apt-get install -y -qq --no-install-recommends xvfb ca-certificates dpkg > /dev/null
-            # 用真实安装流程解析 Depends（含 `a | b` 备选、t64 重命名），等价于用户
-            # `sudo apt install ./mk87_*.deb`；装不齐依赖这里会直接失败。
-            dpkg -i "$DEB" || true
-            apt-get -f install -y -qq > /dev/null
-            dpkg -s mk87 > /dev/null
-            export QT_QPA_PLATFORM=xcb
-            export QTWEBENGINE_CHROMIUM_FLAGS="--disable-gpu --no-sandbox --disable-dev-shm-usage"
-            code=0
-            timeout 40 xvfb-run -a /opt/mk87/MK87Config --tray > /tmp/app.log 2>&1 || code=$?
-            echo "app_exit_code=$code"
-            tail -100 /tmp/app.log || true
-            cat "$HOME/.mk87-boot.log" 2>/dev/null || true
-            if [ "$code" = "124" ]; then echo "OK: app stayed alive 40s"; exit 0; fi
-            echo "FAIL: app exited early"; exit 1
-          '
+          for IMG in ubuntu:22.04 ubuntu:24.04; do
+            echo "===================== $IMG ====================="
+            docker run --rm -v "$PWD/dist-packages:/pkg:ro" "$IMG" bash -euc '
+              apt-get update -qq
+              DEB=$(ls /pkg/*.deb | head -1)
+              apt-get install -y -qq --no-install-recommends xvfb ca-certificates dpkg > /dev/null
+              # 真实安装流程解析 Depends（含 `a | b` 备选、t64 重命名），等价于用户
+              # `sudo apt install ./mk87_*.deb`；装不齐依赖这里会直接失败。
+              dpkg -i "$DEB" || true
+              apt-get -f install -y -qq > /dev/null
+              dpkg -s mk87 > /dev/null
+              export QT_QPA_PLATFORM=xcb
+              export QTWEBENGINE_CHROMIUM_FLAGS="--disable-gpu --no-sandbox --disable-dev-shm-usage"
+              code=0
+              timeout 40 xvfb-run -a /opt/mk87/MK87Config --tray > /tmp/app.log 2>&1 || code=$?
+              echo "app_exit_code=$code"
+              tail -100 /tmp/app.log || true
+              cat "$HOME/.mk87-boot.log" 2>/dev/null || true
+              if [ "$code" = "124" ]; then echo "OK: app stayed alive 40s"; exit 0; fi
+              echo "FAIL: app exited early"; exit 1
+            '
+          done
       - uses: actions/upload-artifact@v4
         with:
           name: linux-deb
@@ -101,7 +110,7 @@ jobs:
   linux-rpm:
     name: linux rpm (Fedora/RHEL/openSUSE)
     if: startsWith(github.ref, 'refs/tags/v') || github.event_name == 'workflow_dispatch'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
