@@ -8,7 +8,7 @@
 - **Device**: USB `VID 0x0C45 / PID 0x8047`; 2.4G receiver `VID 0x0C45 / PID 0xFEFE`
 - **Official web driver** (reverse-engineered): `https://ajazz.driveall.cn`
 - **Everything local**: no network access, no telemetry, no vendor driver required
-- **Latest release**: [v0.1.8.1](https://github.com/w32394045-dotcom/ajazz-mk87/releases/latest)
+- **Latest release**: [v0.1.8.2](https://github.com/w32394045-dotcom/ajazz-mk87/releases/latest)
 
 ## Screenshots
 
@@ -61,7 +61,32 @@ KDE, XFCE, Cinnamon, MATE and Ubuntu GNOME: **left-click shows the window, right
 install (one admin password, distro package) if the status card says the extension is missing. After
 installing on Wayland, log out and back in (on X11 you can also press `Alt+F2` and run `r`).
 
-## What's new in v0.1.8.1
+## What's new in v0.1.8.2
+
+> **The real fix for the Ubuntu startup crash (v0.1.7/v0.1.8)**: the app exited before showing a window
+> because the bundled **PyQt6 failed to import**. PyInstaller bundles system libraries from the build
+> machine, and GitHub moved its `ubuntu-latest` runner from 24.04 to **26.04 (glibc 2.43)** between the
+> v0.1.6 and v0.1.7 builds — on Ubuntu 24.04 (glibc 2.39) those libs fail with `GLIBC_2.43 not found`,
+> so Qt disappeared and the app crashed silently. (v0.1.6 worked because it was built on Ubuntu 24.04.)
+
+- **Linux packages are now built on Ubuntu 22.04 (glibc 2.35)** — the packaging runner is pinned, so
+  bundled system libraries stay compatible with Ubuntu 22.04 and newer; a runner upgrade can no longer
+  produce packages that crash on users' machines.
+- **Extra Qt 6.12 libraries are bundled** (PyInstaller spec collects `libpcre2-16`, `libdouble-conversion`,
+  `libb2`, `libmd4c` and the missing `libxcb`/`libwayland` pieces), so the package is self-contained and
+  also survives a `dpkg -i` force-install that skips dependencies.
+- **deb/rpm dependencies completed** — `Depends` covers the Qt 6.12 runtime and X11/Wayland/GTK runtime
+  with `t64 | plain` alternatives (Ubuntu 22.04 + 24.04); RPM `Requires` lists the Fedora equivalents.
+  `sudo apt install ./mk87_*.deb` / `sudo dnf install ./mk87*.rpm` installs everything in one go.
+- **New CI gate** — each release installs the built `.deb` in a clean `ubuntu:24.04` container (and the
+  `.rpm` in a clean `fedora` container), starts the packaged app under Xvfb and fails the release if it
+  exits early. This kind of packaging bug can no longer be released.
+- **Startup preflight** — if PyQt6 still fails to import, the **full traceback** is written to
+  `~/.mk87-boot.log` and `<log dir>/qt-error.txt` and a desktop error dialog points at it, instead of the
+  opaque pywebview "No Qt bindings could be found". `QT_API` is forced to the bundled `pyqt6`.
+- Tests: **284 unit tests green**.
+
+### v0.1.8.1
 
 - **Boot-stage log `~/.mk87-boot.log`** — timestamped markers from the very start of the program to
   tray creation (`main-start` → `logging-ready` → `server-started` → `window-created` → `qt-tray-*`),

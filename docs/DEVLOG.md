@@ -1311,3 +1311,96 @@ error: [pywebview] GTK cannot be loaded: No module named 'gi'
   boot log 停在哪个 `qt-tray-*` 阶段即可定位是 Qt 托盘创建、QApplication 等待还是更早的环节。
 - CI 进一步优化（`3a2b122`，下次 tag 生效）：三个打包 job 不再 `needs: test`，与测试并行；
   `release` 仍等待 `test`，关键路径再缩短约 2 分钟；同一 ref 的旧 run 自动取消（tag 不取消）。
+
+
+## 26 2026-11-05：v0.1.8.2 修 Linux 启动闪退（Qt 6.12 缺系统库）+ 依赖声明/自包含/发版卡口
+
+> 用户提供 `E:\system-info.txt`（Ubuntu 上直接终端运行 `mk87` 的输出），并要求先讨论
+> 「不能安装时把依赖装上吗 / 之前版本没这个问题」，随后确认先做「补依赖」这一项。
+
+### 26.1 真实报错（用户系统信息）
+
+```
+[pywebview] QT cannot be loaded
+  File "webview/platforms/qt.py", line 14, in <module>
+    from qtpy import PYQT6, PYSIDE6, QtCore
+  File "qtpy/__init__.py", line 293, in <module>
+qtpy.QtBindingsNotFoundError: No Qt bindings could be found
+[pywebview] GTK cannot be loaded … No module named 'gi'
+webview.errors.WebViewException: You must have either QT or GTK with Python extensions installed
+[PYI-4672:ERROR] Failed to execute script 'shell'
+```
+
+- `shell.py` 行号 538/635/643 与 v0.1.8.1 完全一致 → 用户装的是 **v0.1.8.1**；
+- 报错发生在 **创建窗口之前**，与托盘/终端/`--no-tray` 无关：打包体里的 **PyQt6 导入失败**，
+  pywebview 再试 GTK（未打包）后抛异常退出。`Terminal=false` 让 stderr 不可见 → 用户看到的就是「闪退、日志都拿不到」。
+- qtpy 把底层 `ImportError` 吞掉了（`raise QtBindingsNotFoundError from None`），只留下一句没有原因的
+  "No Qt bindings could be found" —— 这是排查困难的直接原因。
+
+### 26.2 排查过程
+
+- 检查 v0.1.8.1 的 deb：PyQt6 文件齐全（2624 条，含 QtCore/QtGui/QtWidgets/QtWebEngine + Qt6 库），
+  打包没漏 Qt 本体；
+- 但 PyInstaller 没有递归收全 **libQt6Core/Qt6Gui 的系统依赖**：deb 里带了 glib/gtk3/cairo/pango/
+  harfbuzz/X11 等，**缺** `libpcre2-16.so.0`、`libdouble-conversion.so.3`、`libb2.so.1`、`libmd4c.so.0`
+  （Qt 6.12 新增/强依赖），以及部分 `libxcb`/`libwayland` 运行库；
+- deb 的 `Depends` 从 v0.1.5 起一直没变化（5 个 tag 对比一致），也没有声明这些库 →
+  **干净 Ubuntu 桌面（不装 Qt 生态）就会在 import PyQt6 时失败**；
+- 用新 CI 在干净 `ubuntu:24.04` 容器里只安装 deb 声明依赖后启动，复现同样错误（`libglib-2.0.so.0: cannot open
+  shared object file` 即这一类）；说明依赖声明与打包自包含都不到位。
+- 关于「之前版本没问题」：依赖声明与构建配置在 v0.1.5→v0.1.8.1 完全一致，PyQt6 版本从 v0.1.6 起都是
+  6.12.0，所以**不是 v0.1.8 改坏**；更可能是之前运行的环境（如 Fedora 默认自带 pcre2 16-bit /
+  double-conversion / libb2 / md4c）与这台 Ubuntu 不同。用户表示没有换系统，后续若仍复现再继续挖；
+  本次先把「安装时装齐 + 自包含」做扎实，两条路都能覆盖。
+
+### 26.2b 真正根因（CI 预检实测，2026-11-05 20:51）
+
+我在 CI 里加了 PyQt6 预检后，干净 Ubuntu 24.04 容器第一次跑就打印出了底层 ImportError：
+
+```
+ImportError: /lib/x86_64-linux-gnu/libc.so.6: version `GLIBC_2.43' not found
+(required by /opt/mk87/_internal/libglib-2.0.so.0)
+```
+
+也就是说：**打包时 PyInstaller 从构建机上收进了系统库（libglib 等），而构建机 glibc 比用户的 Ubuntu 新**，
+这些库在用户机器上加载时直接失败 → PyQt6 导入失败 → 启动闪退。核对 CI 构建机镜像：
+
+| 版本 | Linux 构建 runner | glibc | 在 Ubuntu 24.04（glibc 2.39）上 |
+|---|---|---|---|
+| v0.1.6 | `ubuntu-24.04`（2026-11-03） | 2.39 | **正常**（用户实测） |
+| v0.1.7 | `ubuntu-26.04`（2026-11-04） | 2.43 | 会崩（用户装的是 v0.1.8.1，报错完全一致） |
+| v0.1.8 / v0.1.8.1 | `ubuntu-26.04` | 2.43 | 会崩 |
+
+结论：**GitHub 的 `ubuntu-latest` 在 11-03→11-04 之间从 24.04 切到 26.04**，把打包基线从 glibc 2.39
+提到了 2.43 —— 这正是用户说的「之前版本没问题、现在闪退」的原因，**不是 v0.1.8 代码改坏**，而是
+CI runner 升级导致的打包兼容性回归。之前推测的「Qt 6.12 缺系统库」只是次要问题（依赖声明不全），
+主因是构建基线。
+
+### 26.3 修复（按用户要求「直接做 1」：安装时把依赖装上）
+
+0. **固定 Linux 打包基线**（`build.yml`）：`linux-deb` / `linux-rpm` 从 `ubuntu-latest`（26.04）
+   改为 **`ubuntu-22.04`**（glibc 2.35），兼容 Ubuntu 22.04 及更新版本；运行时检查同时覆盖
+   `ubuntu:22.04` 与 `ubuntu:24.04` 容器，防止「构建机 glibc 比用户新」再次发生。
+1. **PyInstaller 自包含**（`driver/packaging/mk87.spec`）：Linux 下显式收集
+   `libpcre2-16.so.0`、`libdouble-conversion.so.3`、`libb2.so.1`、`libmd4c.so.0`、
+   `libxcb.so.1`、`libxcb-present.so.0`、`libxcb-dri3.so.0`、`libxcb-icccm.so.4`、`libxcb-keysyms.so.1`、
+   `libxcb-shape.so.0`、`libXres.so.1`、`libwayland-client/cursor/egl`，已存在的不重复收集。
+   这样即使 `dpkg -i` 强装跳过依赖，程序也能启动。
+2. **deb 依赖补全**（`build-deb.sh`）：`Depends` 增加 Qt 6.12 运行库（pcre2-16/double-conversion/
+   libb2/md4c）、glib/dbus/fontconfig/freetype/harfbuzz/gtk3/cairo/pango/gdk-pixbuf、X11/Wayland
+   运行库；`Recommends` 放更长的可选依赖（atk/atspi/cups/avahi/lcms2/…/jpeg/webp/opus/snappy 等），
+   用 `t64 | 旧名` 兼容 Ubuntu 22.04/24.04。`sudo apt install ./mk87_*.deb` 一次装齐。
+3. **rpm 依赖补全**（`packaging/linux/mk87.spec`）：`Requires` 增加 `pcre2 double-conversion libb2
+   md4c gtk3 glib2 dbus-libs fontconfig freetype harfbuzz … xcb-util-wm xcb-util-keysyms xcb-util
+   wayland-libs-* libXres` 等 Fedora 对应包。
+4. **启动预检**（`shell.py`，v0.1.8.2 已有）：Linux 启动前 `import PyQt6`，失败时把完整 traceback 写入
+   `~/.mk87-boot.log` 和 `<日志目录>/qt-error.txt`，并用 zenity/kdialog 弹出提示；强制 `QT_API=pyqt6`。
+5. **发版卡口**（`build.yml`）：`linux-deb` job 构建后用 `docker run ubuntu:24.04`，按真实安装流程
+   （`dpkg -i` + `apt-get -f install`）装好依赖，Xvfb 启动打包程序 40s；`linux-rpm` job 用干净
+   `fedora` 容器 `dnf install` 后同样启动验证。启动即退出 → job 失败 → 阻塞发布。
+
+### 26.4 验证（待补：本次 dispatch 构建结果）
+
+- 本地：`py_compile`、spec 语法检查通过；
+- CI：dispatch build 运行（#52）验证干净 Ubuntu 24.04 / Fedora 容器启动通过后，再打 tag v0.1.8.2；
+- 发布后用户 Ubuntu 24.04 安装验证（这是最终判据）。

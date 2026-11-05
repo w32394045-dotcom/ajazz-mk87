@@ -11,7 +11,40 @@ Screenshots and the full feature list live in the repository README:
 **[README.md (English)](https://github.com/w32394045-dotcom/ajazz-mk87/blob/main/README.md)** ·
 **[README.zh-CN.md (简体中文)](https://github.com/w32394045-dotcom/ajazz-mk87/blob/main/README.zh-CN.md)**
 
-## What's new in v0.1.8.1
+## What's new in v0.1.8.2
+
+> **This fixes the Linux startup crash reported on Ubuntu (v0.1.7/v0.1.8).** Root cause found: the app died
+> because the packaged **PyQt6 could not be imported** — PyInstaller bundled system libraries
+> (`libglib` etc.) copied from the build machine, and **GitHub switched its `ubuntu-latest` runner from
+> 24.04 to 26.04 (glibc 2.43) between the v0.1.6 and v0.1.7 builds**. On a user's Ubuntu 24.04
+> (glibc 2.39) those bundled libs fail to load: `GLIBC_2.43 not found` → Qt bindings disappear →
+> silent startup crash (v0.1.6 worked because it was built on Ubuntu 24.04).
+
+- **Fixed: Linux packages are now built on Ubuntu 22.04 (glibc 2.35)** — pinning the packaging runner
+  (`ubuntu-22.04` instead of `ubuntu-latest`) means every bundled system library is compatible with
+  Ubuntu 22.04 and newer, so a runner upgrade can no longer break users' machines.
+- **Fixed: extra Qt 6.12 runtime libraries are bundled** — the PyInstaller spec also collects
+  `libpcre2-16.so.0`, `libdouble-conversion.so.3`, `libb2.so.1`, `libmd4c.so.0` plus the missing
+  `libxcb`/`libwayland` pieces, so the package is self-contained and starts even after a `dpkg -i`
+  force-install that skips dependencies.
+- **Fixed: deb/rpm dependency lists are complete** — `Depends` now includes the Qt 6.12 runtime
+  libraries and the X11/Wayland/GTK runtime pieces (`libglib2.0-0`, `libgtk-3-0`, `libcairo2`,
+  `libpango-1.0-0`, `libxcb-icccm4`, `libwayland-*`, …) with `t64 | plain` alternatives so both
+  Ubuntu 22.04 and 24.04 resolve them. RPM `Requires` lists the Fedora equivalents (`pcre2`,
+  `double-conversion`, `libb2`, `md4c`, `gtk3`, `xcb-util*`, `wayland-libs-*`, …). `sudo apt install
+  ./mk87_*.deb` / `sudo dnf install ./mk87*.rpm` now installs everything in one go.
+- **New CI gate: clean-container startup check** — every release now installs the freshly built `.deb`
+  in a **clean `ubuntu:24.04` container** (and the `.rpm` in a clean `fedora` container), starts the
+  packaged app under Xvfb and fails the release if it dies. This exact class of bug can no longer slip
+  through.
+- **Startup preflight + diagnostics** — before creating the window the app now imports PyQt6 itself and
+  writes the **full traceback** to `~/.mk87-boot.log` and `<log dir>/qt-error.txt` if it fails (instead
+  of pywebview's opaque "No Qt bindings could be found"); a desktop error dialog points at the report.
+  `QT_API` is forced to `pyqt6` so an unrelated environment variable cannot make qtpy pick a missing
+  binding. The `--no-tray` safety mode and boot-stage log from v0.1.8.1 remain available.
+- **Tests**: 284 unit tests green; release now blocked by the clean-container startup checks.
+
+### v0.1.8.1
 
 > v0.1.8.1 is a diagnostic/hotfix release for a Linux startup crash reported on v0.1.8.
 

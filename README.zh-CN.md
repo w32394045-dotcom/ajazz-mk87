@@ -8,7 +8,7 @@ USB / 2.4G 协议的完整逆向实现，全部功能**离线本地运行**。
 - **设备**：USB `VID 0x0C45 / PID 0x8047`；2.4G 接收器 `VID 0x0C45 / PID 0xFEFE`
 - **官方网页驱动**（已逆向）：`https://ajazz.driveall.cn`
 - **全程本地**：不访问外网、不上传数据、不依赖官方驱动
-- **最新版本**：[v0.1.8.1](https://github.com/w32394045-dotcom/ajazz-mk87/releases/latest)
+- **最新版本**：[v0.1.8.2](https://github.com/w32394045-dotcom/ajazz-mk87/releases/latest)
 
 ## 界面截图
 
@@ -60,7 +60,28 @@ dbusmenu：**左键显示主窗口，右键打开菜单**（显示主窗口 / �
 缺少扩展，可直接「一键安装」（需要一次管理员密码，装的是发行版包）。Wayland 下装完请注销重新登录，
 X11 下也可以按 `Alt+F2` 输入 `r`。
 
-## v0.1.8.1 更新
+## v0.1.8.2 更新
+
+> **Ubuntu 启动闪退的真正修复**：闪退是因为打包进去的 PyQt6 导入失败。PyInstaller 会把构建机上的
+> 系统库（libglib 等）打进包里，而 **GitHub 的 `ubuntu-latest` 在 v0.1.6→v0.1.7 之间从 24.04 升级到了
+> 26.04（glibc 2.43）**；在 Ubuntu 24.04（glibc 2.39）上这些库加载时报 `GLIBC_2.43 not found`，
+> Qt 绑定随之消失、程序在创建窗口前退出（所以「日志都拿不到」）。v0.1.6 正常是因为它构建于 24.04。
+
+- **Linux 打包基线固定为 Ubuntu 22.04（glibc 2.35）**：打包 runner 不再跟随 `ubuntu-latest`，
+  打进包的系统库兼容 Ubuntu 22.04 及更新版本，runner 再升级也不会再弄坏用户的机器。
+- **补打 Qt 6.12 的额外运行库**（PyInstaller spec 显式收集 `libpcre2-16` / `libdouble-conversion` /
+  `libb2` / `libmd4c` 以及缺的 `libxcb`/`libwayland` 库），打包体更自包含；即使用 `dpkg -i` 强装跳过依赖也能启动。
+- **deb/rpm 依赖补全**：`Depends` 覆盖 Qt 6.12 运行库与 X11/Wayland/GTK 运行库（`t64 | 旧名`
+  兼容 Ubuntu 22.04/24.04），rpm `Requires` 列出 Fedora 对应包；`sudo apt install ./mk87_*.deb` /
+  `sudo dnf install ./mk87*.rpm` 一次装齐。
+- **新增 CI 卡口**：每次发版都会把新构建的 deb 装进**干净的 Ubuntu 24.04 容器**（rpm 装进干净 Fedora
+  容器），用 Xvfb 真正启动打包程序；启动即退出就阻塞发布。这类打包问题以后发不出去。
+- **启动预检**：若 PyQt6 仍导入失败，会把**完整 traceback** 写进 `~/.mk87-boot.log` 与
+  `<日志目录>/qt-error.txt`，并弹桌面错误框（不再是 pywebview 那句没有原因的 "No Qt bindings"）；
+  同时强制 `QT_API=pyqt6`，避免外部环境变量带偏。
+- **测试**：284 个单元测试全绿。
+
+### v0.1.8.1
 
 - **新增启动阶段日志 `~/.mk87-boot.log`** —— 从程序启动第一行到托盘创建，每一步都写一条带时间戳的记录
   并立即落盘（`main-start` → `logging-ready` → `server-started` → `window-created` → `qt-tray-*`）。

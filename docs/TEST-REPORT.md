@@ -567,3 +567,25 @@ udev 规则 / 结论；源码环境同一套逻辑在 `probe/linux_hid_check.py`
 | linux-smoke 工作流 | 手动触发（可指定 ref 与运行参数），构建打包产物后 Xvfb 启动，上传 boot log / stderr / session logs artifact，用于无需发版的 Linux 验证 |
 | 全量单测 | **277 tests OK**（本地 + CI ubuntu/windows） |
 | 用户真机 | **待用户执行**：`mk87` 看终端输出；提供 `~/.mk87-boot.log`；`echo $XDG_CURRENT_DESKTOP $XDG_SESSION_TYPE`；试 `mk87 --no-tray` 判断是否托盘路径 |
+
+
+## 22 v0.1.8.2 Ubuntu 闪退修复：Qt 6.12 缺系统库 / 自包含 + 依赖声明 + 发版卡口（2026-11-05）
+
+> 触发：用户 `E:\system-info.txt` 显示 `qtpy.QtBindingsNotFoundError: No Qt bindings could be found`
+> → 打包体内 PyQt6 导入失败（窗口创建前退出）。用户要求「安装时把依赖装上」，先做这一项。
+
+| 测试项 | 结果 |
+|---|---|
+| 用户现场定位 | shell.py 行号 538/635/643 与 v0.1.8.1 一致；报错在 webview.start → Qt 绑定导入，与托盘/终端无关；`Terminal=false` 导致 stderr 不可见 = 「闪退无日志」 |
+| deb 内容核查 | v0.1.8.1 deb 内 PyQt6 文件齐全（2624 条），但缺 Qt 6.12 系统依赖 `libpcre2-16 / libdouble-conversion / libb2 / libmd4c` 及部分 xcb/wayland 库 |
+| 依赖声明历史 | v0.1.5→v0.1.8.1 的 deb `Depends` 完全一致，构建配置/PyQt6 版本（6.12.0）未变 → 不是 v0.1.8 代码回归 |
+| 干净容器复现（真因） | CI 预检打印底层错误：`GLIBC_2.43 not found (required by /opt/mk87/_internal/libglib-2.0.so.0)` → 构建机（v0.1.7+ 的 `ubuntu-latest`=26.04，glibc 2.43）打进包的系统库在用户 Ubuntu 24.04（glibc 2.39）上加载失败；v0.1.6 构建于 `ubuntu-24.04`（glibc 2.39）故正常 |
+| 构建基线修复 | 打包 runner 固定 `ubuntu-22.04`（glibc 2.35）；运行时检查覆盖 ubuntu:22.04 + 24.04 容器（启动 40s 不崩才算通过） |
+| 自包含修复 | spec 显式收集 14 个系统库（Qt 6.12 依赖 + xcb/wayland），减少对用户系统库的依赖 |
+| deb Depends | 增加 Qt 6.12 运行库 + X11/Wayland/GTK 运行库（`t64 | 旧名` 兼容 22.04/24.04）；Recommends 补齐长尾库 |
+| rpm Requires | 增加 Fedora 对应包（pcre2/double-conversion/libb2/md4c/gtk3/xcb-util*/wayland-libs-* 等） |
+| 启动预检 | `import PyQt6` 失败 → 完整 traceback 写 `~/.mk87-boot.log` + `<日志目录>/qt-error.txt` + 桌面弹窗；强制 `QT_API=pyqt6` |
+| 发版卡口 | `linux-deb` job：`docker run ubuntu:24.04` → `dpkg -i` + `apt-get -f install` → Xvfb 启动 40s（exit=124 视为成功）；`linux-rpm` job：干净 Fedora 容器 `dnf install` 后同样启动 |
+| 单元测试 | **284 tests OK**（本地 Windows；新增 preflight 相关 3 项） |
+| 干净容器启动验证 | 待 dispatch 构建（#52）结果 |
+| 用户真机 | **待用户安装 v0.1.8.2 后验证**（Ubuntu 24.04） |
