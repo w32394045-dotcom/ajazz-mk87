@@ -6,6 +6,11 @@ on:
     tags: ["v*"]
   workflow_dispatch:
 
+# 同一分支的旧 run 自动取消（tag 不取消，避免发布中断）
+concurrency:
+  group: build-${{ github.ref }}${{ github.ref_type == 'tag' && '-release' || '' }}
+  cancel-in-progress: ${{ github.ref_type != 'tag' }}
+
 jobs:
   # ---------------------------------------------------------------- 测试（每次 push 都跑，约 1-2 分钟）
   test:
@@ -38,7 +43,6 @@ jobs:
   # deb / rpm 拆到两台不同 runner 并行，tag 发布总等待时间从 ~8.5 分钟降到 ~6-7 分钟。
   linux-deb:
     name: linux deb (Debian/Ubuntu)
-    needs: test
     if: startsWith(github.ref, 'refs/tags/v') || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     steps:
@@ -71,7 +75,6 @@ jobs:
 
   linux-rpm:
     name: linux rpm (Fedora/RHEL/openSUSE)
-    needs: test
     if: startsWith(github.ref, 'refs/tags/v') || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     steps:
@@ -104,7 +107,6 @@ jobs:
 
   windows-package:
     name: windows portable + installer
-    needs: test
     if: startsWith(github.ref, 'refs/tags/v') || github.event_name == 'workflow_dispatch'
     runs-on: windows-latest
     steps:
@@ -143,7 +145,7 @@ jobs:
   release:
     name: publish GitHub Release
     if: startsWith(github.ref, 'refs/tags/v')
-    needs: [linux-deb, linux-rpm, windows-package]
+    needs: [test, linux-deb, linux-rpm, windows-package]
     runs-on: ubuntu-latest
     permissions:
       contents: write
