@@ -34,6 +34,13 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 if HERE not in sys.path:
     sys.path.insert(0, HERE)
 
+# 2026-11-05 用户 Ubuntu 现场：qtpy.QtBindingsNotFoundError: No Qt bindings could be found。
+# 打包体里其实自带 PyQt6，但 qtpy 会参考外部 QT_API 环境变量；若用户环境设置了别的绑定
+# （或只有某个绑定），qtpy 只会尝试那一个并直接报错。这里在任何 Qt 相关 import 之前
+# 强制指定打包内自带的 PyQt6（可用 MK87_KEEP_QT_API=1 跳过，便于排查）。
+if sys.platform.startswith("linux") and os.environ.get("MK87_KEEP_QT_API") != "1":
+    os.environ["QT_API"] = "pyqt6"
+
 import uvicorn  # noqa: E402
 
 from mk87lib import autostart, bootlog  # noqa: E402
@@ -115,6 +122,116 @@ def _free_port() -> int:
     port = s.getsockname()[1]
     s.close()
     return port
+
+
+# ----------------------------------------------------------------------
+# Qt 预检（Linux 打包体）
+# ----------------------------------------------------------------------
+#: 冻结程序默认不加载系统 site-packages；但用户可能装了 python3-pyqt6，
+#: 打包内 PyQt6 若因缺系统库导入失败，可作为兜底。
+_SYSTEM_SITE_PACKAGES = (
+    "/usr/lib/python3/dist-packages",
+    "/usr/lib/python3.12/site-packages",
+    "/usr/lib/python3.11/site-packages",
+    "/usr/lib/python3.13/site-packages",
+    "/usr/local/lib/python3.12/dist-packages",
+    "/usr/local/lib/python3.12/site-packages",
+)
+
+
+def _env_snapshot() -> dict:
+    keys = ("QT_API", "XDG_SESSION_TYPE", "XDG_CURRENT_DESKTOP", "XDG_RUNTIME_DIR",
+            "DISPLAY", "WAYLAND_DISPLAY", "LD_LIBRARY_PATH", "QT_QPA_PLATFORM")
+    return {k: os.environ.get(k) for k in keys}
+
+
+def _preflight_qt() -> bool:
+    """Linux 启动前检查打包体里的 Python Qt 绑定能否导入。
+
+    2026-11-05 用户 Ubuntu 现场：pywebview 启动时报
+    ``qtpy.QtBindingsNotFoundError: No Qt bindings could be found``（闪退、看不到日志）。
+    webview 抛出的异常把底层 ImportError 吞掉了，这里提前 import PyQt6，把**完整 traceback**
+    写进 ``~/.mk87-boot.log`` 与日志目录，便于定位是缺系统库、绑定被环境变量带偏还是打包缺失。
+    打包内失败时再尝试系统 python3-pyqt6 兜底。
+    """
+    import traceback as _tb  # noqa: PLC0415
+
+    if not sys.platform.startswith("linux"):
+        return True
+    bootlog.mark("preflight-pyqt6-start", QT_API=os.environ.get("QT_API"),
+                 frozen=getattr(sys, "frozen", False), env=_env_snapshot())
+    try:
+        import PyQt6  # noqa: PLC0415, F401
+        from PyQt6 import QtCore  # noqa: PLC0415
+
+        bootlog.mark("preflight-pyqt6-ok", qt=QtCore.QT_VERSION_STR,
+                     pyqt=QtCore.PYQT_VERSION_STR)
+        return True
+    except BaseException:  # noqa: BLE001
+        first = _tb.format_exc()
+        bootlog.mark("preflight-pyqt6-failed",
+                     traceback=first.replace("\n", " | ")[:4000])
+        log.error("打包内 PyQt6 导入失败:\n%s", first)
+
+    # 兜底：尝试系统 site-packages 里的 python3-pyqt6
+    for path in _SYSTEM_SITE_PACKAGES:
+        if os.path.isdir(path) and path not in sys.path:
+            sys.path.append(path)
+    try:
+        from PyQt6 import QtCore  # noqa: PLC0415
+
+        bootlog.mark("preflight-pyqt6-system-ok", qt=QtCore.QT_VERSION_STR,
+                     sys_path=[p for p in _SYSTEM_SITE_PACKAGES if p in sys.path])
+        return True
+    except BaseException:  # noqa: BLE001
+        second = _tb.format_exc()
+        bootlog.mark("preflight-pyqt6-system-failed",
+                     traceback=second.replace("\n", " | ")[:4000])
+        log.error("系统 PyQt6 兜底导入也失败:\n%s", second)
+
+    # 写一份独立报告，用户直接就能找到（不需要去翻日志目录）
+    try:
+        os.makedirs(LOG_DIR, exist_ok=True)
+        report = os.path.join(LOG_DIR, "qt-error.txt")
+        with open(report, "w", encoding="utf-8") as f:
+            f.write("MK87 Studio 无法加载 Qt（PyQt6 导入失败）\n")
+            f.write("=" * 60 + "\n\n打包内 PyQt6 traceback:\n")
+            f.write(first + "\n")
+            f.write("\n系统 python3-pyqt6 兜底 traceback:\n")
+            f.write(second + "\n")
+            f.write("\n环境变量:\n")
+            for k, v in _env_snapshot().items():
+                f.write(f"  {k}={v}\n")
+            f.write("\nsys.path:\n" + "\n".join(sys.path) + "\n")
+            f.write(f"\n启动日志: {bootlog.path()}\n")
+        bootlog.mark("preflight-qt-report", path=report)
+        try:
+            print(f"MK87 Studio: Qt 无法加载，详细原因已写入 {report}", file=sys.stderr)
+        except Exception:  # noqa: BLE001
+            pass
+    except Exception:  # noqa: BLE001
+        pass
+    return False
+
+
+def _report_qt_failure() -> None:
+    """GUI 起不来时尽量用桌面通知/对话框告诉用户去哪看错误报告。"""
+    report = os.path.join(LOG_DIR, "qt-error.txt")
+    text = (f"MK87 Studio 无法启动：Qt 组件加载失败。\n\n详细原因请查看：\n{report}\n\n"
+            f"启动日志：{bootlog.path()}")
+    # zenity 在 GNOME / Ubuntu 桌面通常可用
+    for cmd in (["zenity", "--error", "--no-markup", "--text", text],
+                ["kdialog", "--error", text],
+                ["notify-send", "MK87 Studio", "Qt 组件加载失败，详情见 " + report]):
+        try:
+            import shutil
+            import subprocess
+
+            if shutil.which(cmd[0]):
+                subprocess.Popen(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                return
+        except Exception:  # noqa: BLE001
+            continue
 
 
 # ----------------------------------------------------------------------
@@ -494,7 +611,14 @@ class Shell:
 
     def run(self) -> int:
         bootlog.mark("shell-run-start", silent=self.silent, no_tray=self.no_tray,
-                     debug=self.debug, platform=sys.platform)
+                     debug=self.debug, platform=sys.platform, env=_env_snapshot())
+        # Linux：先确认打包体里的 PyQt6 能导入。失败时把完整 traceback 写进
+        # ~/.mk87-boot.log 与 <日志目录>/qt-error.txt，并弹桌面错误提示后退出，
+        # 不再让 pywebview 丢出「No Qt bindings could be found」这种没有原因的错误。
+        if sys.platform.startswith("linux") and not _preflight_qt():
+            bootlog.mark("qt-preflight-failed")
+            _report_qt_failure()
+            return 3
         self.start_server()
         bootlog.mark("server-started", port=self.port)
         from server import app as server_app  # noqa: PLC0415
@@ -526,20 +650,28 @@ class Shell:
         # 打包版只带 Qt，直接指定 qt，避免误导性报错和多余的回退尝试。
         gui = "qt" if sys.platform.startswith("linux") else None
         linux = sys.platform.startswith("linux")
-        if self.no_tray:
-            # 排查「启动闪退」用的安全模式：完全不创建托盘，关闭窗口 = 退出程序
-            bootlog.mark("tray-disabled")
-            log.info("已禁用系统托盘（--no-tray / MK87_NO_TRAY）")
-            webview.start(debug=self.debug, gui=gui)
-        elif linux:
-            # v0.1.8：Linux 托盘改 Qt（自带右键菜单）。Qt 控件必须在 GUI 线程创建，
-            # 用 start(func=...) 的子线程等 QApplication 就绪后投递（见 tray_linux.py）。
-            bootlog.mark("webview-start-begin", tray="qt")
-            webview.start(debug=self.debug, gui=gui, func=self._linux_tray_bootstrap)
-        else:
-            self._start_pystray()
-            bootlog.mark("webview-start-begin", tray="pystray")
-            webview.start(debug=self.debug, gui=gui)
+        try:
+            if self.no_tray:
+                # 排查「启动闪退」用的安全模式：完全不创建托盘，关闭窗口 = 退出程序
+                bootlog.mark("tray-disabled")
+                log.info("已禁用系统托盘（--no-tray / MK87_NO_TRAY）")
+                webview.start(debug=self.debug, gui=gui)
+            elif linux:
+                # v0.1.8：Linux 托盘改 Qt（自带右键菜单）。Qt 控件必须在 GUI 线程创建，
+                # 用 start(func=...) 的子线程等 QApplication 就绪后投递（见 tray_linux.py）。
+                bootlog.mark("webview-start-begin", tray="qt")
+                webview.start(debug=self.debug, gui=gui, func=self._linux_tray_bootstrap)
+            else:
+                self._start_pystray()
+                bootlog.mark("webview-start-begin", tray="pystray")
+                webview.start(debug=self.debug, gui=gui)
+        except BaseException:  # noqa: BLE001
+            import traceback as _tb  # noqa: PLC0415
+
+            bootlog.mark("webview-start-failed",
+                         traceback=_tb.format_exc().replace("\n", " | ")[:4000])
+            log.exception("webview.start 失败（图形环境 / Qt 绑定）")
+            raise
         bootlog.mark("webview-start-returned")
         # webview.start 返回 = 窗口被销毁（正常退出路径已在 quit() 处理，这里兜底）
         if not self._quitting:

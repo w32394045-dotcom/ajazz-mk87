@@ -486,5 +486,41 @@ class TestBootlog(unittest.TestCase):
             bootlog.mark("should-not-raise")
 
 
+class TestQtPreflight(unittest.TestCase):
+    """v0.1.8.2：Linux 启动前 PyQt6 预检（把 webview 吞掉的 ImportError 记进 boot log）。"""
+
+    def test_non_linux_returns_true(self):
+        import shell
+
+        with mock.patch.object(shell.sys, "platform", "win32"):
+            self.assertTrue(shell._preflight_qt())
+
+    def test_env_snapshot_has_expected_keys(self):
+        import shell
+
+        snap = shell._env_snapshot()
+        self.assertIn("QT_API", snap)
+        self.assertIn("XDG_SESSION_TYPE", snap)
+
+    def test_linux_preflight_failure_is_logged_and_reported(self):
+        import shell
+        from mk87lib import bootlog
+
+        marks = []
+        with tempfile.TemporaryDirectory() as tmp, \
+                mock.patch.object(shell.sys, "platform", "linux"), \
+                mock.patch.object(shell, "LOG_DIR", tmp), \
+                mock.patch.object(bootlog, "mark", lambda stage, **kw: marks.append(stage)), \
+                mock.patch.dict(shell.os.environ, {"QT_API": "pyqt6"}):
+            # 场景：打包内 PyQt6 不可用（Windows 测试环境本来就没有 PyQt6），
+            # 系统兜底也失败 → 返回 False 且必须写 preflight-*-failed 标记。
+            ok = shell._preflight_qt()
+            self.assertTrue(os.path.exists(os.path.join(tmp, "qt-error.txt")))
+        self.assertFalse(ok)
+        self.assertIn("preflight-pyqt6-start", marks)
+        self.assertIn("preflight-pyqt6-failed", marks)
+        self.assertIn("preflight-pyqt6-system-failed", marks)
+
+
 if __name__ == "__main__":
     unittest.main()

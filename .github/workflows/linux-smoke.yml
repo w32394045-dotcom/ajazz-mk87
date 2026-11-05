@@ -21,8 +21,74 @@ on:
         description: "传给 MK87Config 的参数（默认 --tray）"
         required: false
         default: "--tray"
+      asset_tag:
+        description: "（可选）在 Ubuntu 24.04 容器里测试已发布 .deb：填 tag，如 v0.1.8.2；留空跳过"
+        required: false
+        default: ""
+      asset_version:
+        description: "（可选）.deb 版本号，如 0.1.8.2（与 asset_tag 配套）"
+        required: false
+        default: ""
 
 jobs:
+  # 在真实的 Ubuntu 24.04 容器里安装**已发布的 .deb** 并启动，复现用户环境
+  # （用于排查「打包产物在用户机器上闪退」这类环境相关问题，不需要重新构建）。
+  released-deb-2404:
+    name: released deb on Ubuntu 24.04 (${{ github.event.inputs.asset_tag }})
+    if: ${{ github.event.inputs.asset_tag != '' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    container: ubuntu:24.04
+    steps:
+      - name: Install runtime deps
+        run: |
+          apt-get update
+          apt-get install -y --no-install-recommends ca-certificates curl xvfb \
+            libgl1 libegl1 libxkbcommon-x11-0 libnss3 libasound2t64 libpulse0 \
+            libxcb-cursor0 libxcb-icccm4 libxcb-image0 libxcb-keysyms1 libxcb-randr0 \
+            libxcb-render-util0 libxcb-shape0 libxcb-xinerama0 libxcb-xfixes0 \
+            libfontconfig1 libdbus-1-3 libusb-1.0-0 libudev1 python3 python3-pip
+      - name: Download and extract released deb
+        run: |
+          TAG="${{ github.event.inputs.asset_tag }}"
+          VER="${{ github.event.inputs.asset_version }}"
+          URL="https://github.com/w32394045-dotcom/ajazz-mk87/releases/download/${TAG}/mk87_${VER}_amd64.deb"
+          echo "URL=$URL"
+          curl -fsSL -o /tmp/mk87.deb "$URL"
+          dpkg -x /tmp/mk87.deb /tmp/root
+          ls -l /tmp/root/opt/mk87 | head
+      - name: ldd - missing shared libraries
+        continue-on-error: true
+        run: |
+          for f in \
+            /tmp/root/opt/mk87/_internal/PyQt6/QtCore.abi3.so \
+            /tmp/root/opt/mk87/_internal/PyQt6/QtGui.abi3.so \
+            /tmp/root/opt/mk87/_internal/PyQt6/QtWidgets.abi3.so \
+            /tmp/root/opt/mk87/_internal/PyQt6/Qt6/lib/libQt6Core.so.6 \
+            /tmp/root/opt/mk87/MK87Config; do
+            echo "===== $f"
+            ldd "$f" 2>&1 | grep -E "not found" || echo "(no missing libraries)"
+          done
+      - name: Python PyQt6 import probe (same version as CI build)
+        continue-on-error: true
+        run: |
+          python3 -m pip install --break-system-packages --quiet "PyQt6==6.12.0" || true
+          python3 -c "import PyQt6.QtCore; print('system pyqt6 OK', PyQt6.QtCore.QT_VERSION_STR)" 2>&1 || true
+      - name: Run released app under Xvfb
+        continue-on-error: true
+        run: |
+          export QT_QPA_PLATFORM=xcb
+          export QTWEBENGINE_CHROMIUM_FLAGS="--disable-gpu --no-sandbox --disable-dev-shm-usage"
+          timeout 40 xvfb-run -a /tmp/root/opt/mk87/MK87Config --tray > /tmp/app.log 2>&1
+          echo "app_exit_code=$?"
+          echo "----- app stdout/stderr -----"
+          tail -150 /tmp/app.log || true
+          echo "----- boot log -----"
+          cat "$HOME/.mk87-boot.log" 2>/dev/null || echo "(no boot log)"
+          echo "----- qt-error report -----"
+          cat "$HOME/.cache/mk87/qt-error.txt" 2>/dev/null || true
+          ls -la "$HOME/.cache/mk87" 2>/dev/null || true
+
   smoke:
     name: build + run under Xvfb (${{ github.event.inputs.target_ref }})
     runs-on: ubuntu-latest
