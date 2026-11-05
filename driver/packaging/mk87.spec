@@ -88,6 +88,7 @@ if sys.platform.startswith("linux"):
         "libwayland-client.so.0",
         "libwayland-cursor.so.0",
         "libwayland-egl.so.1",
+        "libwayland-server.so.0",
     )
     _existing = {os.path.basename(src) for src, _dest in binaries}
     for _name in _LINUX_EXTRA_LIBS:
