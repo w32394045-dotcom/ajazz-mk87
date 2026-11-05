@@ -67,6 +67,31 @@ jobs:
       - name: Build .deb
         working-directory: driver
         run: bash packaging/linux/build-deb.sh
+      # 2026-11-05 用户 Ubuntu 闪退：PyQt6 在打包程序里导入失败（缺系统库）。
+      # 这里在**干净的 Ubuntu 24.04 容器**里按 deb 自己声明的 Depends 安装后启动打包程序，
+      # app 被 timeout 杀掉（exit=124）= 一直活着 = 启动成功；否则阻塞发布。
+      - name: Runtime check in clean Ubuntu 24.04 container
+        working-directory: driver
+        run: |
+          docker run --rm -v "$PWD/dist-packages:/pkg:ro" ubuntu:24.04 bash -euc '
+            apt-get update -qq
+            DEB=$(ls /pkg/*.deb | head -1)
+            apt-get install -y -qq --no-install-recommends xvfb ca-certificates dpkg > /dev/null
+            # 用真实安装流程解析 Depends（含 `a | b` 备选、t64 重命名），等价于用户
+            # `sudo apt install ./mk87_*.deb`；装不齐依赖这里会直接失败。
+            dpkg -i "$DEB" || true
+            apt-get -f install -y -qq > /dev/null
+            dpkg -s mk87 > /dev/null
+            export QT_QPA_PLATFORM=xcb
+            export QTWEBENGINE_CHROMIUM_FLAGS="--disable-gpu --no-sandbox --disable-dev-shm-usage"
+            code=0
+            timeout 40 xvfb-run -a /opt/mk87/MK87Config --tray > /tmp/app.log 2>&1 || code=$?
+            echo "app_exit_code=$code"
+            tail -100 /tmp/app.log || true
+            cat "$HOME/.mk87-boot.log" 2>/dev/null || true
+            if [ "$code" = "124" ]; then echo "OK: app stayed alive 40s"; exit 0; fi
+            echo "FAIL: app exited early"; exit 1
+          '
       - uses: actions/upload-artifact@v4
         with:
           name: linux-deb
@@ -99,6 +124,24 @@ jobs:
       - name: Build .rpm
         working-directory: driver
         run: bash packaging/linux/build-rpm.sh
+      # 同上：在干净的 Fedora 容器里 dnf 安装 rpm（会解析 Requires）后启动，验证依赖声明
+      # 和自包含库都正确，防止「Ubuntu 能跑、Fedora 缺库」这类问题再次发出去。
+      - name: Runtime check in clean Fedora container
+        working-directory: driver
+        run: |
+          docker run --rm -v "$PWD/dist-packages:/pkg:ro" fedora:latest bash -euc '
+            RPM=$(ls /pkg/*.rpm | head -1)
+            dnf install -y -q "$RPM" xorg-x11-server-Xvfb > /dev/null
+            export QT_QPA_PLATFORM=xcb
+            export QTWEBENGINE_CHROMIUM_FLAGS="--disable-gpu --no-sandbox --disable-dev-shm-usage"
+            code=0
+            timeout 40 xvfb-run -a /opt/mk87/MK87Config --tray > /tmp/app.log 2>&1 || code=$?
+            echo "app_exit_code=$code"
+            tail -100 /tmp/app.log || true
+            cat "$HOME/.mk87-boot.log" 2>/dev/null || true
+            if [ "$code" = "124" ]; then echo "OK: app stayed alive 40s"; exit 0; fi
+            echo "FAIL: app exited early"; exit 1
+          '
       - uses: actions/upload-artifact@v4
         with:
           name: linux-rpm

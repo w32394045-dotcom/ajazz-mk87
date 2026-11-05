@@ -33,6 +33,12 @@ install -m 644 "$HERE/mk87.desktop" "$PKG/usr/share/applications/mk87.desktop"
 install -m 644 "$DRIVER/assets/mk87.svg" "$PKG/usr/share/icons/hicolor/scalable/apps/mk87.svg"
 install -m 644 "$DRIVER/packaging/udev/99-ajazz-mk87.rules" "$PKG/usr/lib/udev/rules.d/99-ajazz-mk87.rules"
 
+# Depends 说明（2026-11-05）：PyQt6/Qt 6.12 依赖一批 Ubuntu 桌面默认不一定安装的系统库
+# （libpcre2-16、libdouble-conversion、libb2、libmd4c 等）。这些库现在已经随 PyInstaller
+# 一起打进 /opt/mk87（自包含），但这里仍显式声明，保证：
+#   1) `sudo apt install ./mk87_*.deb` 时由包管理器一次装齐，不依赖用户手动补；
+#   2) 即使某些库在打包机上也缺、没被 PyInstaller 收进去，安装时也能补齐。
+# t64 是 Ubuntu 24.04 起的时间兼容重命名，用 `xxx-t64 | xxx` 兼容 22.04/24.04。
 cat > "$PKG/DEBIAN/control" <<EOF
 Package: mk87
 Version: $VERSION
@@ -41,8 +47,8 @@ Priority: optional
 Architecture: $ARCH
 Maintainer: mk87 studio <noreply@localhost>
 Installed-Size: $(du -sk "$PKG/opt" | cut -f1)
-Depends: libc6, libudev1, libusb-1.0-0, libgl1, libegl1, libxkbcommon-x11-0, libnss3, libasound2, libpulse0, libxcb-cursor0
-Recommends: pulseaudio-utils | pipewire-bin
+Depends: libc6, libudev1, libusb-1.0-0, libgl1, libegl1, libxkbcommon0, libxkbcommon-x11-0, libnss3, libnspr4, libasound2t64 | libasound2 (>= 1.0.16), libpulse0, libxcb-cursor0, libpcre2-16-0, libdouble-conversion3, libb2-1, libmd4c0, libglib2.0-0t64 | libglib2.0-0, libdbus-1-3, libfontconfig1, libfreetype6, libharfbuzz0b, libgtk-3-0t64 | libgtk-3-0, libcairo2, libpango-1.0-0, libgdk-pixbuf-2.0-0t64 | libgdk-pixbuf-2.0-0, libxcb-icccm4, libxcb-keysyms1, libxcb-shape0, libxres1, libxcomposite1, libxdamage1, libxfixes3, libxi6, libxinerama1, libxcursor1, libxtst6, libwayland-client0, libwayland-cursor0, libwayland-egl1
+Recommends: pulseaudio-utils | pipewire-bin, libatk1.0-0t64 | libatk1.0-0, libatk-bridge2.0-0t64 | libatk-bridge2.0-0, libatspi2.0-0t64 | libatspi2.0-0, libcups2t64 | libcups2, libavahi-client3, libavahi-common3, libepoxy0, liblcms2-2, libgraphite2-3, libfribidi0, libthai0, libdatrie1, libexpat1, libzstd1, libpng16-16t64 | libpng16-16, libjpeg-turbo8t64 | libjpeg-turbo8, libwebp7t64 | libwebp7, libopus0t64 | libopus0, libsnappy1v5t64 | libsnappy1v5, libvpx9 | libvpx8 | libvpx7, libatomic1, libtinfo6, libreadline8t64 | libreadline8, libgnutls30t64 | libgnutls30, libssl3t64 | libssl3, libpangocairo-1.0-0
 Homepage: https://github.com/w32394045-dotcom/ajazz-mk87
 Description: AJAZZ MK87 keyboard configuration tool (unofficial)
  MK87 Studio is an unofficial cross-platform configuration tool for the

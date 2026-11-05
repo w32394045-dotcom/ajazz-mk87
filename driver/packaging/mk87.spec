@@ -62,6 +62,44 @@ if sys.platform.startswith("linux"):
 else:
     hiddenimports += ["hid"]
 
+# Linux：PyInstaller 会漏收少量 PyQt6/Qt 6.12 依赖的系统库（它已经收了一部分，
+# 但没有递归收全 libQt6Core/Qt6Gui 的系统依赖）。2026-11-05 用户 Ubuntu 上
+# "No Qt bindings could be found / PyQt6 导入失败" 就是缺这些库（Ubuntu 桌面如果
+# 没装 Qt 生态，默认不带 libpcre2-16 / libdouble-conversion / libb2 / libmd4c）。
+# 这里把必需的库显式打进来，做成自包含（deb/rpm 的 Depends/Requires 仍然会声明，
+# 双保险；这样即使用 dpkg -i 强装跳过依赖也能跑）。
+if sys.platform.startswith("linux"):
+    import glob as _glob
+
+    _LINUX_EXTRA_LIBS = (
+        # Qt 6 核心依赖（QtCore/QtGui 直接链接）
+        "libpcre2-16.so.0",
+        "libdouble-conversion.so.3",
+        "libb2.so.1",
+        "libmd4c.so.0",
+        # X11 / Wayland 运行库（Qt xcb/wayland 插件、WebEngine 会用到）
+        "libxcb.so.1",
+        "libxcb-present.so.0",
+        "libxcb-dri3.so.0",
+        "libxcb-icccm.so.4",
+        "libxcb-keysyms.so.1",
+        "libxcb-shape.so.0",
+        "libXres.so.1",
+        "libwayland-client.so.0",
+        "libwayland-cursor.so.0",
+        "libwayland-egl.so.1",
+    )
+    _existing = {os.path.basename(src) for src, _dest in binaries}
+    for _name in _LINUX_EXTRA_LIBS:
+        if _name in _existing:
+            continue
+        for _root in ("/usr/lib/x86_64-linux-gnu", "/usr/lib64", "/usr/lib"):
+            _matches = _glob.glob(os.path.join(_root, _name))
+            if _matches:
+                binaries.append((_matches[0], "."))
+                _existing.add(_name)
+                break
+
 icon = os.path.join(ROOT, "assets", "mk87.ico")
 version_file = os.path.join(ROOT, "packaging", "windows", "version_info.txt")
 
