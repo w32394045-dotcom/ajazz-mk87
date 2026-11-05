@@ -43,6 +43,10 @@ Screenshots and the full feature list live in the repository README:
   `QT_API` is forced to `pyqt6` so an unrelated environment variable cannot make qtpy pick a missing
   binding. The `--no-tray` safety mode and boot-stage log from v0.1.8.1 remain available.
 - **Tests**: 284 unit tests green; release now blocked by the clean-container startup checks.
+- **Known issue (tracked for v0.1.8.3)**: the Fedora `.rpm` may fail to start on very new Fedora/glibc
+  with `numpy: libscipy_openblas64_*.so: ELF load command address/offset not page-aligned` — a
+  PyInstaller/OpenBLAS packaging problem unrelated to this Ubuntu fix. The Ubuntu `.deb` is the
+  platform verified in this release.
 
 ### v0.1.8.1
 
