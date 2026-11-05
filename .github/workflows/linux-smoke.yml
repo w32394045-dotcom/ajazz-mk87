@@ -45,7 +45,7 @@ jobs:
           apt-get update
           apt-get install -y --no-install-recommends ca-certificates curl xvfb apt-file \
             libc6 libudev1 libusb-1.0-0 libgl1 libegl1 libxkbcommon-x11-0 \
-            libnss3 libasound2 libpulse0 libxcb-cursor0
+            libnss3 libasound2t64 libpulse0 libxcb-cursor0
           apt-file update >/dev/null 2>&1 || true
       - name: Download and extract released deb
         run: |
