@@ -1545,18 +1545,35 @@ GLOzone not found for unknown
 | 脚本语法 | `bash -n check-bundle.sh build-deb.sh`、`sh -n mk87-launcher`、workflow YAML `yaml.safe_load` | 全部通过 | 已实测 |
 | CI 迭代 #1（run [#68](https://github.com/w32394045-dotcom/ajazz-mk87/actions/runs/42165424885)） | deb/rpm job | 过滤生效（打印 205 条 `host:`），但卡口抓到 `libxcb-9065bb12.so.1.1.0` —— Pillow wheel 自带的 auditwheel 改名库被 `libxcb-*` 通配符误伤 → 卡口改为「精确 soname 列表」 | 已实测 |
 | CI 迭代 #2（run [#72](https://github.com/w32394045-dotcom/ajazz-mk87/actions/runs/42165722690)） | deb/rpm job | 打包卡口通过；`Build .deb` 失败：`Depends` 字段出现字面 `\`（bash 赋值里写成双反斜杠 → 未续行）；`Build .rpm` 失败：rpm tag 不支持 `\` 续行 → 改为多行 `Requires:` | 已实测 |
-| CI 迭代 #3（run [#74](https://github.com/w32394045-dotcom/ajazz-mk87/actions/runs/42166080722)） | deb/rpm job | 见 27.5（发布时补记） | 已实测 |
+| CI 迭代 #3（run [#74](https://github.com/w32394045-dotcom/ajazz-mk87/actions/runs/42166080722)） | deb job + rpm job | **全绿**：`check-bundle.sh` 通过；干净 `ubuntu:22.04`/`ubuntu:24.04` 容器按 Depends 安装后 **`ldd` 无 `not found`**、Xvfb 下稳定存活 40s 且进入 WebEngine 初始化；Fedora 容器（提示级）也通过；ubuntu/windows 单测 300 OK；Windows 便携版/安装包构建成功 | 已实测 |
+| 发布资产复核 | 下载 v0.1.8.3 deb 复算哈希 + 解包统计 | 192,317,190 B，sha256 `17a8bbe6…a65d` 与 Release digest/SHA256SUMS 一致；`_internal` 根目录 115 个 `.so`，**宿主系统库 0 个**（逐项检查 glib/libstdc++/wayland/xcb/X11/EGL/GL/nss/ssl/fontconfig/freetype/harfbuzz/gtk3/dbus），`libpython3.12.so.1.0` 已随包 | 已实测 |
+| 已发布 deb 端到端复验 | `linux-smoke` #6（`released-deb-2404`，干净 Ubuntu 24.04 容器） | deb 下载 → `dpkg -i` + `apt-get -f install` → `ldd` 无缺库 → Xvfb 启动存活 40s + 进入 WebEngine 初始化：**全绿** | 已实测 |
 | 用户 Ubuntu 24.04 真机 | 安装 v0.1.8.3 | **待用户验证**（最终判据） | 待真机 |
 
 ### 27.5 发布记录（v0.1.8.3）
 
 - 提交链：`7f7d066`（libfilter + 依赖重写 + 回退启动器 + 严格卡口）→ `312afbb`（修
   ubuntu-latest 上的链接去重断言）→ `6f3697a`（卡口精确匹配 soname，不误伤 Pillow wheel）→
-  `40c05b1`（修 deb `Depends` 续行转义、rpm 多行 `Requires`）。
-- 发布：**待发布后补记**（tag / CI run / Release 时间 / 附件大小与哈希）。
-- 已知问题：
-  - Fedora `.rpm` 在很新的 glibc 上仍可能因 PyInstaller 打包的 numpy/OpenBLAS 报
-    `ELF load command address/offset not page-aligned`（该容器检查为提示级，不阻塞发布，
-    待后续版本处理）。
-  - 本次真机修复以用户 Ubuntu 24.04 的 `.deb` 为准；若仍崩溃，启动器会自动降级并留下
-    `~/.cache/mk87/launcher.log`、`~/.mk87-boot.log`、`~/.local/state/mk87/logs/crash.log`。
+  `40c05b1`（修 deb `Depends` 续行转义、rpm 多行 `Requires`）→ `39012ae`（文档）。
+- 发布：tag `v0.1.8.3`（指向 `39012ae`）→ CI 运行
+  [#76](https://github.com/w32394045-dotcom/ajazz-mk87/actions/runs/42166722401) **全绿** →
+  Release 2026-11-06 13:18 发布：<https://github.com/w32394045-dotcom/ajazz-mk87/releases/tag/v0.1.8.3>
+  - 附件（SHA256SUMS 与 asset digest 一致；deb 已下载复算哈希相同）：
+    - `MK87Studio-0.1.8.3-win64-portable.zip` 39,122,942 B
+      （`e310740997bd0755f4259c5763cbc90d38d6724cec6fe9c25b54966ed53b4ac0`）
+    - `MK87Studio-0.1.8.3-win64-setup.exe` 30,256,265 B
+      （`dc29f88b6f29aabfcc196829d57d7cc7b1769beb7c9ce501404c7eb55be9a3cb`）
+    - `mk87-0.1.8.3-1.x86_64.rpm` 226,904,614 B
+      （`7cc82de54345d59c85115cafdde9061d9c71a28d39359aae3c01b02c69e7c6a6`）
+    - `mk87_0.1.8.3_amd64.deb` 192,317,190 B
+      （`17a8bbe6f67674f3a045d8f8dcb4a9ef6b29aeca26ee0a56f53971ada892a65d`）
+    - `SHA256SUMS.txt` 386 B（`a59b713f…1352`）
+  - **体积对比（宿主系统库不再随包）**：deb 210,661,414 → **192,317,190 B（-18.3MB）**；
+    rpm 248,471,685 → **226,904,614 B（-21.5MB）**。包变小，但启动依赖由 `Depends` 声明齐全。
+  - 已发布 deb 端到端复验：`linux-smoke` #6（干净 Ubuntu 24.04 容器，按用户方式安装 +
+    ldd + 启动 40s）**全绿**。
+  - 待办：用户 Ubuntu 24.04 真机安装 v0.1.8.3 验证（最终判据）；Fedora rpm 的
+    numpy/OpenBLAS page-alignment 问题观察（本次 Fedora 容器已通过，仍保留提示级卡口）。
+  - 若真机仍崩溃：启动器会自动按 XWayland → 软件渲染降级，并留下
+    `~/.cache/mk87/launcher.log`（重试记录）、`~/.mk87-boot.log`（启动阶段）、
+    `~/.local/state/mk87/logs/crash.log`（faulthandler 崩溃栈）。

@@ -611,6 +611,9 @@ udev 规则 / 结论；源码环境同一套逻辑在 `probe/linux_hid_check.py`
 | 脚本语法/配置 | `bash -n check-bundle.sh build-deb.sh`、`sh -n mk87-launcher`、两个 workflow `yaml.safe_load` 均通过；deb `Depends` 展开为单行（0 个残留 `\`） |
 | CI 迭代 #1 | run [#68](https://github.com/w32394045-dotcom/ajazz-mk87/actions/runs/42165424885)：过滤生效（205 条 `host:`），但卡口误伤 Pillow wheel 的 `libxcb-9065bb12.so.1.1.0` → 改为精确 soname 列表 |
 | CI 迭代 #2 | run [#72](https://github.com/w32394045-dotcom/ajazz-mk87/actions/runs/42165722690)：卡口通过；deb 失败于 `Depends` 出现字面 `\`（bash 双反斜杠未续行）；rpm 失败于 tag 行不支持 `\` 续行 → 改多行 `Requires:` |
-| CI 迭代 #3 | run [#74](https://github.com/w32394045-dotcom/ajazz-mk87/actions/runs/42166080722)：**待补**（发布时记录最终结果） |
+| CI 迭代 #3 | run [#74](https://github.com/w32394045-dotcom/ajazz-mk87/actions/runs/42166080722)：**全绿** —— `check-bundle.sh` 通过；干净 `ubuntu:22.04`/`ubuntu:24.04` 容器按 Depends 安装后 **`ldd` 无 `not found`**、Xvfb 下存活 40s 且进入 WebEngine 初始化；Fedora 容器（提示级）通过；ubuntu/windows 单测 300 OK；Windows 打包成功 |
+| 发布资产复核 | v0.1.8.3 deb 192,317,190 B，sha256 `17a8bbe6…a65d` 与 Release digest/SHA256SUMS **一致**（本地下载复算）；`_internal` 根目录 115 个 `.so`，**宿主系统库 0 个**，`libpython3.12.so.1.0` 随包 |
+| 已发布 deb 端到端复验 | `linux-smoke` #6 `released-deb-2404`（干净 Ubuntu 24.04 容器）：下载 Release deb → `dpkg -i` + `apt-get -f install` → `ldd` 无缺库 → Xvfb 启动存活 40s + WebEngine 初始化：**全绿** |
+| 发布 | tag `v0.1.8.3` → CI run [#76](https://github.com/w32394045-dotcom/ajazz-mk87/actions/runs/42166722401) 全绿 → Release 2026-11-06 13:18；deb/rpm 体积 210.7MB→192.3MB、248.5MB→226.9MB |
 | 全量单测 | **300 tests OK**（本地 Windows + CI ubuntu/windows；v0.1.8.2 为 284） |
 | 用户真机 | **待用户安装 v0.1.8.3 后验证**：`sudo apt install ./mk87_0.1.8.3_amd64.deb`；若仍崩溃，附 `~/.mk87-boot.log`、`~/.cache/mk87/launcher.log`、`~/.local/state/mk87/logs/crash.log` |
