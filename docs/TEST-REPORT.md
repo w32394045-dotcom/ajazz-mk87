@@ -639,3 +639,23 @@ udev 规则 / 结论；源码环境同一套逻辑在 `probe/linux_hid_check.py`
 | 覆盖缺口（诚实标注） | ①未在真实键盘上做「长时间播放 + 合盖唤醒」复测（用户机器当前键盘未连接）；②Windows overlapped 写的真实设备路径只做了代码级/单测验证，未真机跑帧流；③Linux 的 systemd-inhibit 只在单测 mock 下验证，未在真实 systemd 会话里验证；④未做 2 小时以上连续运行 soak |
 | 用户真机复测建议 | 安装 v0.1.8.4 后：①正常播放 ≥30 分钟；②合盖 1 分钟后开盖，观察是否自动恢复；③拔插键盘/USB 口；如仍异常，导出日志（设置页「日志与诊断」一键导出）并附 `%LOCALAPPDATA%\mk87\logs` |
 | 发布 | tag `v0.1.8.4`（提交 `b59be72`）→ CI run [#79](https://github.com/w32394045-dotcom/ajazz-mk87/actions/runs/42228765157) **全绿**（ubuntu/windows 单测 339 OK；Windows 便携包+安装包；deb 打包 + 22.04/24.04 干净容器卡口；rpm 打包 + Fedora 容器）→ Release 2026-11-06 21:58。资产：deb 192,255,546 B（sha256 `b6b65847…5e44`）、rpm 226,930,950 B（`eda5b3e9…2999`）、portable 39,144,509 B（`c46ac0a9…98db`）、setup 30,280,447 B（`6e33b7c0…82fa`）；`SHA256SUMS.txt`（386 B）与 GitHub 存储资产 digest **逐项一致** |
+
+
+## 25 v0.1.8.5 Windows 安装包改进：快捷方式可选 / 安装日志 / Error 5 排查（2026-11-06 深夜）
+
+> 触发：用户安装 v0.1.8.4 setup 报 `Error 5`（Temp 目录拒绝访问），实测「以管理员身份运行」可装；
+> 要求安装器增加开始菜单 / 桌面快捷方式选项，并在 README 记录该错误与解决办法。排查见
+> [DEVLOG §29](DEVLOG.md)。
+
+| 测试项 | 结果 |
+|---|---|
+| 安装包完整性 | 用户下载的 `MK87Studio-0.1.8.4-win64-setup.exe` 30,280,447 B，SHA256 `6E33B7C0…82FA`，与 v0.1.8.4 Release asset digest 一致 → 不是包损坏 |
+| 用户环境检查（只读） | `%TEMP%` ACL 系统默认（SYSTEM / Administrators / ptfm 全控）、手动创建 `is-*.tmp` 成功、无残留 `is-*`、C 盘剩 38.7GB、Defender 受控文件夹访问=0、无第三方杀软 → 故障是启动器解压瞬间的环境性拒绝（用户实测管理员身份运行可过，后 `Program Files\MK87 Studio` 出现 0.1.8.4 安装记录佐证） |
+| mk87.iss 变更 | `SetupLogging=yes`；`[Tasks] startmenuicon / desktopicon`（默认勾选）；`[Icons]` 按 Tasks 绑定；`[CustomMessages]` 新增开始菜单文案（英文默认值，因 Inno 不随包提供 `ChineseSimplified.isl`）；版本 0.1.8.5 |
+| 本地安装器编译 | Inno Setup 6.7.4 per-user 安装 + `build-installer.ps1`：`Successful compile`（本地 setup 嵌入旧 dist，仅语法/结构验证，不发布） |
+| 快捷方式默认行为 | 本地 setup `/VERYSILENT /CURRENTUSER`：开始菜单文件夹（应用 + 卸载）与桌面 `.lnk` 均创建，HKCU 卸载项写入；测试后手动清理 |
+| 快捷方式可取消 | `/MERGETASKS=!startmenuicon,!desktopicon`：开始菜单文件夹与桌面 `.lnk` **均未创建**，安装成功 |
+| 本地 setup 日志 | `%TEMP%\mk87-setup-test-*.log` 正常写出，含 `Installation process succeeded` |
+| 全量单测 | **339 tests OK**（本次无 Python 代码改动，回归确认） |
+| 覆盖缺口（诚实标注） | ①未在用户机器上用 v0.1.8.5 新包做「管理员身份安装」复测（本地用 `/CURRENTUSER` 验证了快捷方式行为，避开 UAC）；②CI 用的是 Inno Setup 6.7.1（choco），本地用 6.7.4 编译验证，两者同属 6.x；③中文向导未做（Inno 不随包提供中文 isl，安装器仍为英文 UI） |
+| 发布 | 待回填（tag `v0.1.8.5` → CI → Release，记录并入 [DEVLOG §29](DEVLOG.md)） |

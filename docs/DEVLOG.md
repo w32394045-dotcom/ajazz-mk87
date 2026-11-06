@@ -1710,3 +1710,64 @@ GLOzone not found for unknown
   复算 SHA256）；deb/rpm 干净容器安装/启动卡口在 CI 内通过。
 - 待办：用户 Windows 真机长时间运行 + 合盖唤醒复测（最终判据）；Fedora rpm 的 numpy/OpenBLAS
   page-alignment 提示级问题继续保持观察。
+
+## 29 2026-11-06（深夜）：v0.1.8.5 Windows 安装包 —— 快捷方式可选 / 安装日志 / Error 5 排查说明
+
+> 触发：用户安装 v0.1.8.4 的 Windows setup 时弹
+> `Setup was unable to create the directory "C:\Users\ptfm\AppData\Local\Temp\is-LCATZQBJ6W.tmp".
+> Error 5: 拒绝访问。`；随后用户建议安装器增加「是否创建开始菜单 / 桌面快捷方式」的选项，并反馈
+> 「以管理员身份运行就好了」，要求在 README 写清这种情况与应对方案。
+
+### 29.1 排查（用户机器，只读；未改用户环境）
+
+1. **先排除「安装包坏了」**：用户 `Downloads\MK87Studio-0.1.8.4-win64-setup.exe` 30,280,447 B，
+   SHA256 `6E33B7C0…82FA`，与 v0.1.8.4 Release asset digest / `SHA256SUMS.txt` 完全一致。
+2. **用户 `%TEMP%` 本身正常**：`C:\Users\ptfm\AppData\Local\Temp`，ACL 为系统默认
+   （`SYSTEM` / `Administrators` / `ptfm` 完全控制，均继承自 LocalAppData）；手动创建
+   `is-*.tmp` 成功；无残留 `is-*` 目录；C 盘剩余 38.7GB。
+3. **无第三方杀软**：`root\SecurityCenter2` 仅 Windows Defender；受控文件夹访问 = 0（关闭）；
+   ASR 规则为空；Defender 实时保护开启。
+4. **无安装日志**：v0.1.8.4 的 `[Setup]` 未开 `SetupLogging`，`%TEMP%` 下没有 `Setup Log*.txt`，
+   失败现场只能靠环境状态推断。
+5. 结论：错误发生在 Inno 启动器（SetupLdr）把自身解压到 `%TEMP%\is-*.tmp` 的阶段 —— 这一步在
+   安装 UI/提权之前，和安装目录、安装逻辑无关；属于**本机环境在该瞬间拒绝了目录创建**。用户实测
+   「以管理员身份运行」即可安装成功（其后 `C:\Program Files\MK87 Studio` 出现 v0.1.8.4 安装记录，
+   卸载项版本 0.1.8.4 可佐证）。另观察到用户 `Downloads` 目录 DACL 有第三方软件添加的显式规则
+   （`Everyone` 拒绝 DELETE_CHILD + 一个无法翻译的 SID 允许项），与本次错误无直接因果，但 README
+   中仍建议把安装包移出该目录。
+6. 这不是「所有人都会中」的通病：同一安装包在 CI 干净 Windows runner 上构建/安装流程正常；
+   Error 5 的公开案例基本都是 Temp 权限 / 安全软件 / 受限上下文（README 已引用公开案例）。
+
+### 29.2 变更（仅 Windows 安装包 + 文档；程序本体不变）
+
+1. `driver/packaging/windows/mk87.iss`
+   - `[Tasks]` 新增 `startmenuicon`（开始菜单快捷方式）与 `desktopicon`（桌面快捷方式），二者
+     默认勾选；`[Icons]` 中应用快捷方式与卸载快捷方式绑定 `startmenuicon`，桌面快捷方式绑定
+     `desktopicon` —— 取消开始菜单后不再创建任何开始菜单文件夹。
+   - `SetupLogging=yes`：安装器写 `%TEMP%\Setup Log <日期> #<序号>.txt`，下次失败可直接定位。
+   - `[CustomMessages]` 新增 `CreateStartMenuIcon`（英文默认值）。注意 **Inno Setup 不随包提供
+     `ChineseSimplified.isl`**（本地安装 6.7.4 实测 Languages 目录 29 个 isl，无中文），
+     `build-installer.ps1` 在缺该文件时会删掉 `chinesesimplified` 语言行，因此自定义消息只保留
+     英文默认值，避免「unknown language」编译错误。
+2. 版本号 `0.1.8.5`：`mk87lib/__init__.py`、`server/app.py`、`server/state.py`（webVersion）、
+   `packaging/linux/mk87.spec`、`packaging/windows/mk87.iss`、`packaging/windows/version_info.txt`。
+3. `README.md` / `README.zh-CN.md`
+   - 新增 `### Windows installer troubleshooting` / `### Windows 安装失败怎么办（Error 5）`：现象 →
+     为什么不是安装包损坏 → 处置顺序（① 右键以管理员身份运行（已实测）② 修 Temp ACL ③ Defender
+     排除 ④ 移出 Downloads ⑤ 便携版兜底）→ v0.1.8.5 起附 `Setup Log`。
+   - 下载表中安装版说明改为「可选开始菜单 / 桌面快捷方式」；「最新版本」链接改为 v0.1.8.5；
+     新增 v0.1.8.5 更新段，v0.1.8.4 降为三级标题。
+4. `.github/release-notes.md`：新增 v0.1.8.5 段（英文 + 中文摘要），v0.1.8.4 降为三级标题。
+
+### 29.3 验证
+
+| 项 | 命令 / 方式 | 结果 | 标注 |
+|---|---|---|---|
+| 安装包完整性 | 用户下载文件 SHA256 对比 Release asset digest | `6E33B7C0…82FA` 一致 | 已实测 |
+| 用户 Temp 环境 | `icacls`、手动创建 `is-*.tmp`、Defender 状态 | ACL 默认、创建成功、CFA 关闭、无第三方杀软 | 已实测（只读） |
+| 本地安装器编译 | Inno Setup 6.7.4（per-user 安装）+ `build-installer.ps1` | `Successful compile`，产出 `MK87Studio-0.1.8.5-win64-setup.exe`（嵌入本地旧 dist，仅验证语法/结构，不发布） | 已实测 |
+| 快捷方式默认行为 | 本地 setup `/VERYSILENT /CURRENTUSER` 安装到 `%LOCALAPPDATA%\Programs` | 开始菜单文件夹（应用 + 卸载快捷方式）与桌面 `.lnk` 均创建；HKCU 卸载项写入；测试后手动清理（未运行卸载器，避免其 `[UninstallRun]` 误杀用户正在运行的 MK87Config） | 已实测 |
+| 快捷方式可取消 | `/VERYSILENT /CURRENTUSER /MERGETASKS=!startmenuicon,!desktopicon` | 安装成功，开始菜单文件夹与桌面 `.lnk` 均**未**创建 | 已实测 |
+| 本地 setup 日志 | `[Setup] SetupLogging=yes` | `%TEMP%\mk87-setup-test-*.log` 正常写出，`Installation process succeeded` | 已实测 |
+| 全量单测 | `cd driver && .\.venv\Scripts\python.exe -m unittest discover -s tests` | **339 tests OK** | 已实测 |
+| CI 发布 | tag `v0.1.8.5` → CI run | 待回填 | — |

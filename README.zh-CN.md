@@ -8,7 +8,7 @@ USB / 2.4G 协议的完整逆向实现，全部功能**离线本地运行**。
 - **设备**：USB `VID 0x0C45 / PID 0x8047`；2.4G 接收器 `VID 0x0C45 / PID 0xFEFE`
 - **官方网页驱动**（已逆向）：`https://ajazz.driveall.cn`
 - **全程本地**：不访问外网、不上传数据、不依赖官方驱动
-- **最新版本**：[v0.1.8.4](https://github.com/w32394045-dotcom/ajazz-mk87/releases/latest)
+- **最新版本**：[v0.1.8.5](https://github.com/w32394045-dotcom/ajazz-mk87/releases/latest)
 
 ## 界面截图
 
@@ -33,7 +33,7 @@ USB / 2.4G 协议的完整逆向实现，全部功能**离线本地运行**。
 | 平台 | 文件 | 说明 |
 |---|---|---|
 | Windows | `MK87Studio-*-win64-portable.zip` | 免安装：解压后双击 `MK87Config.exe` |
-| Windows | `MK87Studio-*-win64-setup.exe` | 安装版：快捷方式、可选开机自启 |
+| Windows | `MK87Studio-*-win64-setup.exe` | 安装版：可选开始菜单 / 桌面快捷方式 |
 | Linux · Debian/Ubuntu | `mk87_*_amd64.deb` | `sudo apt install ./mk87_*.deb` |
 | Linux · Fedora/openSUSE | `mk87-*.x86_64.rpm` | `sudo dnf install ./mk87-*.rpm` |
 
@@ -51,6 +51,36 @@ mk87 --diagnose     # 打印 hidapi 后端、hidraw 节点、usage page、权限
 这把键盘（设备路径不对、没有 usage page、需要 /dev/bus/usb 权限还会和内核 HID 驱动抢接口）。详见
 下方 v0.1.6 更新说明。
 
+### Windows 安装失败怎么办（Error 5）
+
+如果 Windows 安装器一开始就弹出：
+
+> Setup was unable to create the directory "C:\Users\<用户名>\AppData\Local\Temp\is-XXXX.tmp".
+> Error 5: 拒绝访问。
+
+**安装包本身没有损坏，程序也没有问题** —— 这是 Windows 不允许安装器把自己解压到当前用户的
+`%TEMP%` 目录。这个错误发生在安装器请求管理员权限**之前**，所以和装到哪个目录无关，也不影响
+便携版。常见原因：安全软件扫描/拦截刚下载的未签名 exe、Temp 目录权限曾被清理/优化工具改过、
+或者安装器被以受限身份启动。
+
+按下面的顺序处理（第 1 条已实测有效）：
+
+1. **右键 `MK87Studio-*-win64-setup.exe` →「以管理员身份运行」。** 这是最快的办法，且已确认
+   有效；如果安装包还在「下载」目录里，也可以先直接重试一次 —— 这类错误往往是瞬时的。
+2. 修复当前用户的 Temp 权限（普通 PowerShell 即可，无需管理员）：
+   ```powershell
+   icacls "$env:LOCALAPPDATA\Temp" /grant "$env:USERDOMAIN\$env:USERNAME:(OI)(CI)F" /T /C
+   ```
+3. 如果 Windows Defender 拦截了未签名的安装器：把它加入排除项（Windows 安全中心 → 病毒和威胁防护 →
+   管理设置 → 排除项），或安装期间临时关闭实时保护，装完再打开。
+4. 把安装包从「下载」目录移到桌面或 `C:\Temp` 再运行（部分安全软件会给「下载」目录加额外的拒绝
+   规则）。
+5. 兜底：直接使用便携版 —— 下载 `MK87Studio-*-win64-portable.zip`，解压到任意位置运行
+   `MK87Config.exe`，完全不解压到 `%TEMP%`，也不安装任何东西。
+
+v0.1.8.5 起安装器会写日志到 `%TEMP%\Setup Log <日期> #<序号>.txt`；如果以上都不行，把该日志和
+`icacls "$env:LOCALAPPDATA\Temp"` 的输出一起发过来。
+
 ### Linux 托盘与终端窗口
 
 从应用菜单启动不再弹终端窗口（v0.1.8：`.desktop` 里的 `Terminal=false`）。托盘图标改为 Qt 的
@@ -60,7 +90,22 @@ dbusmenu：**左键显示主窗口，右键打开菜单**（显示主窗口 / �
 缺少扩展，可直接「一键安装」（需要一次管理员密码，装的是发行版包）。Wayland 下装完请注销重新登录，
 X11 下也可以按 `Alt+F2` 输入 `r`。
 
-## v0.1.8.4 更新
+## v0.1.8.5 更新
+
+> **仅 Windows 安装包与文档更新：快捷方式可选、安装日志、以及 `Error 5` 安装失败的完整解决办法。**
+> 程序本体没有变化。
+
+- **快捷方式可选** —— Windows 安装器「选择附加任务」页新增两个独立勾选项：**创建开始菜单快捷方式**、
+  **创建桌面快捷方式**（默认都勾选）。取消开始菜单后不会创建任何开始菜单文件夹（卸载快捷方式原本
+  在该文件夹里；仍可通过 Windows 设置 → 应用 卸载）。
+- **安装日志** —— 安装器会写 `%TEMP%\Setup Log <日期> #<序号>.txt`；如果安装在任何窗口出现前就失败，
+  这个文件是第一个该看的东西。
+- **README 增加 Windows 安装故障排查** —— 说明
+  `Setup was unable to create the directory ... Error 5: 拒绝访问` 的原因（下载的文件没坏），以及
+  处理顺序：优先右键「以管理员身份运行」（已实测有效），其次修 Temp 权限 / Defender 排除 /
+  把安装包移出「下载」目录，最后用便携版兜底。
+
+### v0.1.8.4
 
 > **修复：音乐律动长时间运行后「键盘停更、界面仍显示律动中」**（Windows + Linux）。用户 Windows 实机
 > 日志（Surface Laptop 2 / Win11 / 键盘 USB fw1.19）显示：`Kernel-Power 506: 系统正在进入连接待机状态

@@ -8,7 +8,7 @@
 - **Device**: USB `VID 0x0C45 / PID 0x8047`; 2.4G receiver `VID 0x0C45 / PID 0xFEFE`
 - **Official web driver** (reverse-engineered): `https://ajazz.driveall.cn`
 - **Everything local**: no network access, no telemetry, no vendor driver required
-- **Latest release**: [v0.1.8.4](https://github.com/w32394045-dotcom/ajazz-mk87/releases/latest)
+- **Latest release**: [v0.1.8.5](https://github.com/w32394045-dotcom/ajazz-mk87/releases/latest)
 
 ## Screenshots
 
@@ -33,7 +33,7 @@
 | Platform | File | Notes |
 |---|---|---|
 | Windows | `MK87Studio-*-win64-portable.zip` | Portable: unzip and run `MK87Config.exe` |
-| Windows | `MK87Studio-*-win64-setup.exe` | Installer: shortcuts, optional autostart |
+| Windows | `MK87Studio-*-win64-setup.exe` | Installer: selectable Start Menu / desktop shortcuts |
 | Linux · Debian/Ubuntu | `mk87_*_amd64.deb` | `sudo apt install ./mk87_*.deb` |
 | Linux · Fedora/openSUSE | `mk87-*.x86_64.rpm` | `sudo dnf install ./mk87-*.rpm` |
 
@@ -51,6 +51,40 @@ backend on Linux (module `hidraw`, paths `/dev/hidrawN`); the `hid` module bundl
 **libusb** backend and cannot be used for this keyboard (wrong device paths, no usage pages, USB-device
 permissions and kernel-driver conflicts). See "What's new in v0.1.6".
 
+### Windows installer troubleshooting
+
+If the Windows installer stops with
+
+> Setup was unable to create the directory "C:\Users\<name>\AppData\Local\Temp\is-XXXX.tmp".
+> Error 5: Access denied.
+
+**the download is not corrupt and the app is not at fault** - Windows refused to let the installer
+unpack itself into the current user's `%TEMP%` folder. This happens *before* the installer asks for
+administrator rights, so it is unrelated to the install location, and it does not affect the
+portable build. Typical causes: security software scanning/intercepting the freshly downloaded
+unsigned exe, a Temp folder whose permissions were changed by a cleanup/optimizer tool, or the
+installer being launched from a restricted context.
+
+Fix it in this order (item 1 has been verified on the user machine):
+
+1. **Right-click `MK87Studio-*-win64-setup.exe` -> "Run as administrator".** This is the quickest
+   fix and the one confirmed to work; if the file is still in `Downloads`, you can also just retry -
+   the error is often transient.
+2. Repair the current user's Temp permissions (normal PowerShell, no admin needed):
+   ```powershell
+   icacls "$env:LOCALAPPDATA\Temp" /grant "$env:USERDOMAIN\$env:USERNAME:(OI)(CI)F" /T /C
+   ```
+3. If Windows Defender is intercepting the unsigned installer, add it as an exclusion
+   (Windows Security -> Virus & threat protection -> Manage settings -> Exclusions), or pause
+   real-time protection for the duration of the install, then turn it back on.
+4. Move the installer out of `Downloads` (some security tools add extra deny rules to that folder)
+   into e.g. the Desktop or `C:\Temp`, and run it again.
+5. Fall back to the portable build: download `MK87Studio-*-win64-portable.zip`, unzip anywhere and
+   run `MK87Config.exe`. It never unpacks to `%TEMP%` and installs nothing.
+
+Since v0.1.8.5 the installer also writes a log to `%TEMP%\Setup Log <date> #<n>.txt`; if none of
+the above helps, attach that log and the output of `icacls "$env:LOCALAPPDATA\Temp"` to your report.
+
 ### Linux tray icon
 
 Launching from the app menu no longer opens a terminal window (v0.1.8: `Terminal=false` in the `.desktop`
@@ -61,7 +95,24 @@ KDE, XFCE, Cinnamon, MATE and Ubuntu GNOME: **left-click shows the window, right
 install (one admin password, distro package) if the status card says the extension is missing. After
 installing on Wayland, log out and back in (on X11 you can also press `Alt+F2` and run `r`).
 
-## What's new in v0.1.8.4
+## What's new in v0.1.8.5
+
+> **Installer-only release (Windows): choose your shortcuts, get a setup log, and a documented fix
+> for the `Error 5` install failure.** The application itself is unchanged.
+
+- **Selectable shortcuts** - the Windows installer's "Select Additional Tasks" page now has two
+  independent check boxes: **Start Menu shortcut** and **Desktop shortcut**, both checked by
+  default. Clearing the Start Menu one creates no Start Menu folder at all (the uninstall
+  shortcut lives there too; uninstall is still available from Windows Settings -> Apps).
+- **Setup log** - the installer writes `%TEMP%\Setup Log <date> #<n>.txt`. On a machine where
+  installation dies before any window appears, that file is the first thing to look at.
+- **README: Windows installer troubleshooting** - documents the
+  `Setup was unable to create the directory ... Error 5: Access denied` failure: why the downloaded
+  file is fine, and the fix order - run the setup **as administrator** first (verified on the user
+  machine), then repair Temp permissions / exclude it in Defender / move it out of `Downloads`,
+  with the portable build as the final fallback.
+
+### v0.1.8.4
 
 > **Fixed: Music Rhythm used to keep showing "running" after the keyboard stream silently stopped**
 > (Windows + Linux). Real-device logs (Surface Laptop 2 · Windows 11 · keyboard USB fw1.19) show

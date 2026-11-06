@@ -11,7 +11,30 @@ Screenshots and the full feature list live in the repository README:
 **[README.md (English)](https://github.com/w32394045-dotcom/ajazz-mk87/blob/main/README.md)** ·
 **[README.zh-CN.md (简体中文)](https://github.com/w32394045-dotcom/ajazz-mk87/blob/main/README.zh-CN.md)**
 
-## What's new in v0.1.8.4
+## What's new in v0.1.8.5
+
+**Installer-only release (Windows): selectable shortcuts, a setup log, and a documented fix for the
+`Error 5` install failure.** The application itself is unchanged.
+
+- **Choose your shortcuts.** The installer's "Select Additional Tasks" page now has two independent
+  check boxes - **Start Menu shortcut** and **Desktop shortcut**, both checked by default. Clearing
+  the Start Menu one creates no Start Menu folder at all (the uninstall shortcut lives there too;
+  uninstall from Windows Settings → Apps still works).
+- **Setup log for troubleshooting.** The installer writes `%TEMP%\Setup Log <date> #<n>.txt`; when
+  setup dies before showing a window, attach that file.
+- **Documented install failure: `Error 5`.** On some machines Windows refuses to let the installer
+  unpack itself into `%TEMP%` and the stub reports
+  `Setup was unable to create the directory "…\Temp\is-XXXX.tmp". Error 5: Access denied.`
+  **The download is not corrupt and the app is not at fault** - the fix is to right-click the setup
+  and **Run as administrator** (verified on the user machine). If that is not enough: repair the
+  Temp ACL, exclude the installer in Windows Defender, move it out of `Downloads`, or use the
+  portable zip. Full instructions: README → "Windows installer troubleshooting".
+
+> 中文摘要：v0.1.8.5 只更新 Windows 安装包与文档 —— 安装时新增「开始菜单 / 桌面快捷方式」两个
+> 勾选项（默认都勾选）；安装器新增 `%TEMP%\Setup Log *.txt` 安装日志；README 增加「Error 5：拒绝访问」
+> 的原因与处置办法（优先右键「以管理员身份运行」，已实测有效）。程序本体无变化。
+
+### v0.1.8.4
 
 **Fixes the "keyboard stream stops but the UI still says running" bug in Music Rhythm after long sessions,
 on Windows and Linux — and adds a keep-awake mechanism plus automatic recovery.**
