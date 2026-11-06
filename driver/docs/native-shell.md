@@ -104,6 +104,20 @@ driver/
 - 接口：`GET /api/tray/status`、`POST /api/tray/install-extension`、`POST /api/tray/enable-extension`；
 - 验证：277 单测全绿（新增 32 项托盘测试）+ linkedom 前端冒烟 16 项；Linux 真机待用户验证。
 
+**S4 Linux 图形栈稳定性（v0.1.8.3，2026-11-06）**
+- 打包策略：**应用库随包（Qt/WebEngine/wheel 自带库），宿主系统库不随包**
+  （`packaging/libfilter.py`）；否则构建机 Ubuntu 22.04 的 glib/libstdc++/wayland/xcb 会在
+  Ubuntu 24.04 上顶掉系统 Mesa/GLib，导致 `EGL not available` → QtWebEngine 段错误。
+- `/usr/bin/mk87` 改为**回退启动器**：仅在进程被信号杀死（exit ≥ 128）时依次重试
+  默认 → XWayland（`QT_QPA_PLATFORM=xcb`）→ 软件渲染（`MK87_SOFTWARE_RENDERING=1`）；
+  正常退出不重试。日志 `~/.cache/mk87/launcher.log`、`~/.cache/mk87/launcher-console.log`。
+- `shell.py`：`_apply_render_env()` 把 `MK87_SOFTWARE_RENDERING=1` 翻译为
+  `LIBGL_ALWAYS_SOFTWARE=1` / `QT_OPENGL=software` / Chromium `--disable-gpu --disable-gpu-compositing`，
+  并把启动方式（`MK87_LAUNCH_MODE`）、渲染环境写入 `~/.mk87-boot.log`（`render-env` 标记）。
+- 排障变量：`MK87_NO_FALLBACK=1`（只启动一次）、`MK87_FORCE_X11=1`、`MK87_SOFTWARE_RENDERING=1`。
+- 验证：300 单测全绿；CI 干净 Ubuntu 22.04/24.04 容器做 `ldd` 缺库检查 + 启动存活 40s。
+  真机最终确认仍以用户 Ubuntu 24.04 为准。
+
 ## 6. 风险与兜底
 
 | 风险 | 兜底 |

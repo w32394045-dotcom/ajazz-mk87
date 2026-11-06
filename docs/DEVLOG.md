@@ -1440,3 +1440,123 @@ CI runner 升级导致的打包兼容性回归。之前推测的「Qt 6.12 缺�
     在用户机器上加载失败 → 启动闪退」。
   - 待办：用户 Ubuntu 24.04 安装 v0.1.8.2 验证；rpm 的 numpy/OpenBLAS page-alignment
     问题排到 v0.1.8.3。
+
+---
+
+## 27 2026-11-06：v0.1.8.3 修 v0.1.8.2 的 Ubuntu 段错误（宿主系统库不再随包）+ 启动回退 + 严格卡口
+
+> 触发：用户第二次贴 `E:\system-info.txt`（同一路径、内容已更新），标题「你看还是有问题」。
+> 这一次 `GLIBC_2.43 not found` 已经没有了（v0.1.8.2 的基线修复生效），但程序在
+> **QtWebEngine 初始化时 `段错误 (核心已转储)`**。
+
+### 27.1 用户现场（2026-11-06 12:29，Ubuntu 24.04 + GNOME Wayland）
+
+关键日志行（原文摘录）：
+
+```text
+/usr/lib/x86_64-linux-gnu/gio/modules/libdconfsettings.so: undefined symbol: g_assertion_message_cmpint
+/usr/lib/x86_64-linux-gnu/gvfs/libgvfscommon.so: undefined symbol: g_task_set_static_name
+qt.qpa.wayland: EGL not available
+QRhiGles2: Failed to create temporary context
+Failed to create RHI for backend: OpenGL
+GBM is not supported with the current configuration. Fallback to Vulkan rendering in Chromium.
+ANGLE Display::initialize error 12289: Failed to get system egl display
+... Initialization of all EGL display types failed.
+libva error: dlopen of /usr/lib/x86_64-linux-gnu/dri/iHD_drv_video.so failed:
+  /opt/mk87/_internal/libstdc++.so.6: version `GLIBCXX_3.4.32' not found (required by /lib/x86_64-linux-gnu/libigdgmm.so.12)
+QQuickWidget: Failed to get a QRhi from the top-level widget's window
+GLOzone not found for unknown
+段错误 (核心已转储)
+```
+
+两条带 `/opt/mk87/_internal/` 的报错是**决定性证据**：系统组件（GIO 模块、DRI 驱动）正在被
+**包里更旧的一份系统库**顶上。
+
+### 27.2 根因：PyInstaller 把「宿主系统库」也打进了包
+
+1. **查 v0.1.8.2 的 deb 内容**（用户装的正是这个包）：解出 `data.tar.zst` 后统计 `_internal/`
+   根目录的共享库 —— 共 227 个 `.so`，其中：
+   - 88 个 Qt6/ICU（PyQt6 wheel 自带，应当随包）；
+   - 21 个 auditwheel 改名库（Pillow/numpy 等 wheel 自带，应当随包）；
+   - **117 个是构建机 Ubuntu 22.04 的宿主系统库**：glib/gio/gobject、libstdc++/libgcc_s、
+     X11/xcb、wayland、Mesa 相关（libgbm）、GTK3/cairo/pango、fontconfig/freetype/harfbuzz、
+     NSS/OpenSSL、dbus、ALSA、CUPS/Avahi、krb5/gnutls…。
+2. **机制**：PyInstaller 冻结程序会把 `_internal/` 放在库搜索路径最前。于是系统里
+   **dlopen/链接系统的**组件（GIO 模块、DRI 驱动、Mesa 的 libEGL/GBM）全部解析到包里那份
+   **更旧**的库：
+   - 系统 GIO 模块（Ubuntu 24.04 glib 2.80）→ 包内 glib 2.72 缺符号
+     `g_assertion_message_cmpint`；
+   - iHD 驱动（需要 GCC 13 的 `GLIBCXX_3.4.32`）→ 包内 GCC 12 的 libstdc++ 没有该符号版本；
+   - Mesa 的 EGL 初始化被包内 wayland/xcb/gbm 顶掉 → `EGL not available` → Qt RHI 创建失败
+     → QtWebEngine（`QWebEngineView` 内部就是 `QQuickWidget`）拿不到 RHI → **段错误**。
+3. **为什么 v0.1.6 正常**：v0.1.6 构建于 `ubuntu-24.04`，打进包的系统库与用户系统**同版本**，
+   所以不冲突；v0.1.7 起 `ubuntu-latest` 变成 26.04，v0.1.8.2 又固定回 22.04（解决 glibc），
+   但「把系统库打进去」这件事本身一直是定时炸弹。
+4. **认知订正**：v0.1.8.2 把方向定为「自包含（连系统库一起打）」是错的。正确边界是：
+   **应用库可以随包（Qt/WebEngine、Python 运行时、wheel 自带库），宿主 ABI 层（编译器运行库、
+   GLib/GTK、X11/Wayland、显卡栈、NSS/OpenSSL、字体栈）必须由发行版提供**，和系统里其它
+   程序用同一份，版本才匹配。
+
+### 27.3 修复
+
+1. **打包过滤（核心）**
+   - 新增 `driver/packaging/libfilter.py`：PyInstaller `a.binaries` 中凡是从 `/usr/lib`、
+     `/lib`、`/lib64` 等发行版系统库目录来的共享库一律剔除；`libpython3*` 例外（冻结程序
+     必须自带解释器共享库）；Python 扩展模块（`_ssl.cpython-*.so` 等）不受影响。
+   - `driver/packaging/mk87.spec` 在 `Analysis()` 之后调用过滤器，并把「交给系统」的库名打印到
+     构建日志；同时删掉 v0.1.8.2 手工加 `_LINUX_EXTRA_LIBS` 的补丁（方向已反转）和
+     `collect_all("PySide6")` 死代码（Linux 实际用 PyQt6）。
+2. **依赖声明重写**（系统库不随包，`Depends` 少一个用户就启动不了）
+   - `packaging/linux/build-deb.sh`：`Depends` 覆盖 Qt/WebEngine 需要的全部宿主库
+     （编译器运行库、glib/dbus、X11/xcb/wayland、Mesa/GLVND/libdrm/libgbm、GTK3 栈、
+     fontconfig/freetype/harfbuzz/brotli、NSS/OpenSSL/gnutls/krb5、ALSA/Pulse/CUPS/Avahi、
+     zlib/bz2/lzma/zstd/ffi/sqlite/readline/tinfo/uuid/cap/selinux/blkid/mount/systemd…），
+     全部用 `t64 | 旧名` 兼容 Ubuntu 22.04/24.04；`Recommends` 只留可选件
+     （mesa-dri、pipewire/pulse 工具、字体、zenity 等）。
+   - `packaging/linux/mk87.spec`（rpm）：同步为 Fedora 包名，长尾放弱依赖。
+3. **启动器崩溃回退**（`packaging/linux/mk87-launcher`，安装为 `/usr/bin/mk87`）
+   - 只在进程**被信号杀死**（exit ≥ 128，例如 139=段错误、134=abort）时重试：
+     默认 → `QT_QPA_PLATFORM=xcb`（XWayland）→ `MK87_SOFTWARE_RENDERING=1`（软件渲染）；
+     正常退出/关窗口不重试。
+   - 日志：`~/.cache/mk87/launcher.log`（启动方式/退出码/回退原因）、
+     `~/.cache/mk87/launcher-console.log`（桌面图标启动时本来会丢失的 stdout/stderr）。
+   - `shell.py` 新增 `_apply_render_env()`：把 `MK87_SOFTWARE_RENDERING=1` 翻译为
+     `LIBGL_ALWAYS_SOFTWARE=1`、`QT_OPENGL=software`、Chromium
+     `--disable-gpu --disable-gpu-compositing`（不覆盖用户已设置的值），并把
+     `MK87_LAUNCH_MODE` / 渲染环境写进 `~/.mk87-boot.log`（`render-env` 标记）。
+4. **CI 卡口**
+   - 新增 `packaging/linux/check-bundle.sh`：打包体出现宿主系统库、或缺 `libpython3*.so*` 直接失败；
+     `build-deb.sh` 与 rpm job 都会先跑（本地打包同样生效）。
+   - `linux-deb` job：干净 `ubuntu:22.04` + `ubuntu:24.04` 容器，按 deb 声明的 `Depends`
+     安装（`dpkg -i` + `apt-get -f install`）后做两级检查：**所有 ELF 的 `ldd` 不得有
+     `not found`**；`Xvfb + llvmpipe` 下启动必须存活 40s（exit=124）且 boot log 有
+     `[preflight-pyqt6-ok]`、`[webview-start-begin]`。
+   - `linux-smoke` 工作流同步升级：可在干净 Ubuntu 24.04 里**复验已发布的 .deb**（`asset_tag`），
+     并做同样的 ldd + 存活检查。
+
+### 27.4 验证
+
+| 项 | 命令 / 位置 | 结果 | 标注 |
+|---|---|---|---|
+| v0.1.8.2 deb 内容核查 | 解 `data.tar.zst` → 统计 `_internal` 根目录 `.so` | 3,570 个文件、227 个根目录 `.so`，其中 **117 个宿主系统库**、88 Qt/ICU、21 wheel 改名库 | 已实测 |
+| PyQt6-Qt6 wheel 是否自带 xcb | `pip download PyQt6-Qt6==6.9.2 --platform manylinux_2_28_x86_64` 列 zip | 2,487 个文件里只有 4 个 xcb 相关，且都是 Qt 插件 → 确认 `libxcb-9065bb12.so.1.1.0` 来自 Pillow wheel 的 auditwheel 副本 | 已实测 |
+| 单元测试 | `python -m unittest discover -s tests` | **300 tests OK**（v0.1.8.2 为 284；新增 libfilter 12 项 + 回退环境 4 项） | 已实测 |
+| 打包策略卡口脚本 | 假 dist 目录 4 个场景（干净 / 含 glib / 含 wayland / 缺 libpython） | 依次 OK / FAIL / FAIL / FAIL，符合预期 | 已实测 |
+| 脚本语法 | `bash -n check-bundle.sh build-deb.sh`、`sh -n mk87-launcher`、workflow YAML `yaml.safe_load` | 全部通过 | 已实测 |
+| CI 迭代 #1（run [#68](https://github.com/w32394045-dotcom/ajazz-mk87/actions/runs/42165424885)） | deb/rpm job | 过滤生效（打印 205 条 `host:`），但卡口抓到 `libxcb-9065bb12.so.1.1.0` —— Pillow wheel 自带的 auditwheel 改名库被 `libxcb-*` 通配符误伤 → 卡口改为「精确 soname 列表」 | 已实测 |
+| CI 迭代 #2（run [#72](https://github.com/w32394045-dotcom/ajazz-mk87/actions/runs/42165722690)） | deb/rpm job | 打包卡口通过；`Build .deb` 失败：`Depends` 字段出现字面 `\`（bash 赋值里写成双反斜杠 → 未续行）；`Build .rpm` 失败：rpm tag 不支持 `\` 续行 → 改为多行 `Requires:` | 已实测 |
+| CI 迭代 #3（run [#74](https://github.com/w32394045-dotcom/ajazz-mk87/actions/runs/42166080722)） | deb/rpm job | 见 27.5（发布时补记） | 已实测 |
+| 用户 Ubuntu 24.04 真机 | 安装 v0.1.8.3 | **待用户验证**（最终判据） | 待真机 |
+
+### 27.5 发布记录（v0.1.8.3）
+
+- 提交链：`7f7d066`（libfilter + 依赖重写 + 回退启动器 + 严格卡口）→ `312afbb`（修
+  ubuntu-latest 上的链接去重断言）→ `6f3697a`（卡口精确匹配 soname，不误伤 Pillow wheel）→
+  `40c05b1`（修 deb `Depends` 续行转义、rpm 多行 `Requires`）。
+- 发布：**待发布后补记**（tag / CI run / Release 时间 / 附件大小与哈希）。
+- 已知问题：
+  - Fedora `.rpm` 在很新的 glibc 上仍可能因 PyInstaller 打包的 numpy/OpenBLAS 报
+    `ELF load command address/offset not page-aligned`（该容器检查为提示级，不阻塞发布，
+    待后续版本处理）。
+  - 本次真机修复以用户 Ubuntu 24.04 的 `.deb` 为准；若仍崩溃，启动器会自动降级并留下
+    `~/.cache/mk87/launcher.log`、`~/.mk87-boot.log`、`~/.local/state/mk87/logs/crash.log`。

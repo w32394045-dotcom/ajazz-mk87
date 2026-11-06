@@ -590,3 +590,27 @@ udev 规则 / 结论；源码环境同一套逻辑在 `probe/linux_hid_check.py`
 | 干净容器启动验证 | **通过**：ubuntu:22.04 容器 exit=124（一直活着）；ubuntu:24.04 容器 PyQt6 预检通过 + server/window 就绪（容器无 GPU 的 GLX abort 忽略）。Fedora 容器：dnf 安装成功但 numpy/OpenBLAS page-alignment abort（提示级，记为 v0.1.8.3 待修） |
 | 发布 | tag v0.1.8.2 → CI #65 全绿 → Release 2026-11-05 21:36；deb SHA256 已本地复算一致 |
 | 用户真机 | **待用户安装 v0.1.8.2 后验证**（Ubuntu 24.04；`sudo apt install ./mk87_0.1.8.2_amd64.deb`） |
+
+
+## 23 v0.1.8.3 Ubuntu 段错误修复：宿主系统库不再随包 + 回退启动器 + 严格卡口（2026-11-06）
+
+> 触发：用户第二次贴 `E:\system-info.txt`（同一路径、内容已更新）。`GLIBC_2.43 not found` 已消失
+> （v0.1.8.2 基线修复生效），但 QtWebEngine 初始化 EGL 失败后 `段错误 (核心已转储)`。
+> 根因：PyInstaller 仍把构建机 Ubuntu 22.04 的**整套宿主系统库**打进 `_internal`，运行时顶掉
+> 用户系统的 glib / libstdc++ / wayland / xcb / Mesa。详见 [DEVLOG §27](DEVLOG.md)。
+
+| 测试项 | 结果 |
+|---|---|
+| 用户现场证据 | `libdconfsettings.so: undefined symbol: g_assertion_message_cmpint`（系统 GIO + 包内旧 glib）；`iHD_drv_video.so: GLIBCXX_3.4.32 not found`（系统 DRI + 包内旧 libstdc++）；`qt.qpa.wayland: EGL not available` → `QQuickWidget` 无 RHI → 段错误 |
+| v0.1.8.2 deb 内容核查 | 解 `data.tar.zst` → `_internal` 共 3,570 个文件；根目录 227 个 `.so` ＝ 88 Qt/ICU（wheel 自带）＋ 21 auditwheel 改名库（wheel 自带）＋ **117 个宿主系统库**（glib/gtk/x11/wayland/nss/libstdc++…） |
+| 归因旁证 | 下载 PyQt6-Qt6 6.9.2 manylinux wheel（2,487 文件）确认其**不自带** xcb 库 → 包内 `libxcb-9065bb12.so.1.1.0` 来自 Pillow wheel 的 auditwheel 副本（wheel 自洽，不顶替系统 soname） |
+| 过滤规则 | 新增 `packaging/libfilter.py`：`/usr/lib`、`/lib`、`/lib64` 下的共享库不进包；`libpython3*` 例外；Python 扩展模块不受影响。spec 在 `Analysis()` 后过滤并打印「交给系统」的库名 |
+| 过滤单测 | `tests/test_libfilter.py` **12 项**：系统库丢弃、wheel 库保留、Python 扩展保留、libpython 保留、Windows 路径不误判、符号链接解析、拆分顺序、名字去重 |
+| 回退启动器单测 | `tests/test_trayenv.py::TestRenderEnvFallback` **4 项**：未请求时不改环境；`MK87_SOFTWARE_RENDERING=1` → `LIBGL_ALWAYS_SOFTWARE/QT_OPENGL/chromium flags`；不覆盖用户 flags；不重复追加 |
+| 打包策略卡口 | 假 dist 目录 4 场景：干净 → OK；含 glib → FAIL；含 wayland → FAIL；缺 libpython → FAIL（符合预期） |
+| 脚本语法/配置 | `bash -n check-bundle.sh build-deb.sh`、`sh -n mk87-launcher`、两个 workflow `yaml.safe_load` 均通过；deb `Depends` 展开为单行（0 个残留 `\`） |
+| CI 迭代 #1 | run [#68](https://github.com/w32394045-dotcom/ajazz-mk87/actions/runs/42165424885)：过滤生效（205 条 `host:`），但卡口误伤 Pillow wheel 的 `libxcb-9065bb12.so.1.1.0` → 改为精确 soname 列表 |
+| CI 迭代 #2 | run [#72](https://github.com/w32394045-dotcom/ajazz-mk87/actions/runs/42165722690)：卡口通过；deb 失败于 `Depends` 出现字面 `\`（bash 双反斜杠未续行）；rpm 失败于 tag 行不支持 `\` 续行 → 改多行 `Requires:` |
+| CI 迭代 #3 | run [#74](https://github.com/w32394045-dotcom/ajazz-mk87/actions/runs/42166080722)：**待补**（发布时记录最终结果） |
+| 全量单测 | **300 tests OK**（本地 Windows + CI ubuntu/windows；v0.1.8.2 为 284） |
+| 用户真机 | **待用户安装 v0.1.8.3 后验证**：`sudo apt install ./mk87_0.1.8.3_amd64.deb`；若仍崩溃，附 `~/.mk87-boot.log`、`~/.cache/mk87/launcher.log`、`~/.local/state/mk87/logs/crash.log` |
