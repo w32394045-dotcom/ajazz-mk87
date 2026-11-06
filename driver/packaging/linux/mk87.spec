@@ -21,24 +21,25 @@ AutoReqProv:    no
 # 因此必须显式 Requires 发行版提供的运行库，否则装完启动会缺库（Qt/WebEngine 需要
 # 系统 Mesa/GLib/X11/Wayland/NSS 等）。这些名字在 Fedora 39–43 / RHEL9 都存在；
 # 不确定的长尾包放 Recommends（弱依赖，名字不存在也不阻塞安装）。
-Requires:       glibc, libgcc, libstdc++, zlib, bzip2-libs, xz-libs, libzstd, expat, libffi, \
-                sqlite-libs, openssl-libs, readline, ncurses-libs, libuuid, libblkid, libmount, \
-                libcap, libselinux, systemd-libs, systemd-udev, libusb1, \
-                pcre2, glib2, dbus-libs, fontconfig, freetype, harfbuzz, libpng, libjpeg-turbo, \
-                libwebp, gtk3, gdk-pixbuf2, atk, at-spi2-atk, at-spi2-core, cairo, pango, \
-                libepoxy, lcms2, fribidi, graphite2, libthai, libdatrie, pixman, \
-                mesa-libGL, mesa-libEGL, mesa-libgbm, libglvnd, libdrm, \
-                libX11, libxcb, xcb-util, xcb-util-cursor, xcb-util-image, xcb-util-keysyms, \
-                xcb-util-renderutil, xcb-util-wm, libXres, libXau, libXdmcp, \
-                libXext, libXrender, libXi, libXcursor, libXrandr, libXfixes, libXinerama, \
-                libXtst, libXcomposite, libXdamage, libxkbcommon, libxkbcommon-x11, libxkbfile, \
-                libwayland-client, libwayland-cursor, libwayland-server, \
-                nss, nss-softokn, nspr, alsa-lib, pulseaudio-libs, cups-libs, avahi-libs, \
-                gnutls, libgcrypt, libgpg-error, p11-kit, libtasn1, libidn2, nettle, gmp, \
-                krb5-libs, libcom_err, keyutils-libs
-Recommends:     pcre2-utf16, brotli, double-conversion, libb2, md4c, libatomic, \
-                libglvnd-egl, libglvnd-glx, mesa-dri-drivers, pipewire-libs, opus, libvpx, \
-                snappy, xdg-utils, libnotify, libbsd, libmd, lz4-libs, cairo-gobject
+# 注意：rpm 的 tag 行不支持 `\` 续行，多写几行 `Requires:`（逻辑上是 AND）。
+Requires:       glibc, libgcc, libstdc++, zlib, bzip2-libs, xz-libs, libzstd, expat, libffi
+Requires:       sqlite-libs, openssl-libs, readline, ncurses-libs, libuuid, libblkid, libmount
+Requires:       libcap, libselinux, systemd-libs, systemd-udev, libusb1
+Requires:       pcre2, glib2, dbus-libs, fontconfig, freetype, harfbuzz, libpng, libjpeg-turbo
+Requires:       libwebp, gtk3, gdk-pixbuf2, atk, at-spi2-atk, at-spi2-core, cairo, pango
+Requires:       libepoxy, lcms2, fribidi, graphite2, libthai, libdatrie, pixman
+Requires:       mesa-libGL, mesa-libEGL, mesa-libgbm, libglvnd, libdrm
+Requires:       libX11, libxcb, xcb-util, xcb-util-cursor, xcb-util-image, xcb-util-keysyms
+Requires:       xcb-util-renderutil, xcb-util-wm, libXres, libXau, libXdmcp
+Requires:       libXext, libXrender, libXi, libXcursor, libXrandr, libXfixes, libXinerama
+Requires:       libXtst, libXcomposite, libXdamage, libxkbcommon, libxkbcommon-x11, libxkbfile
+Requires:       libwayland-client, libwayland-cursor, libwayland-server
+Requires:       nss, nss-softokn, nspr, alsa-lib, pulseaudio-libs, cups-libs, avahi-libs
+Requires:       gnutls, libgcrypt, libgpg-error, p11-kit, libtasn1, libidn2, nettle, gmp
+Requires:       krb5-libs, libcom_err, keyutils-libs
+Recommends:     pcre2-utf16, brotli, double-conversion, libb2, md4c, libatomic
+Recommends:     libglvnd-egl, libglvnd-glx, mesa-dri-drivers, pipewire-libs, opus, libvpx
+Recommends:     snappy, xdg-utils, libnotify, libbsd, libmd, lz4-libs, cairo-gobject
 
 %description
 MK87 Studio is an unofficial cross-platform configuration tool for the

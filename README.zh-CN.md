@@ -8,7 +8,7 @@ USB / 2.4G 协议的完整逆向实现，全部功能**离线本地运行**。
 - **设备**：USB `VID 0x0C45 / PID 0x8047`；2.4G 接收器 `VID 0x0C45 / PID 0xFEFE`
 - **官方网页驱动**（已逆向）：`https://ajazz.driveall.cn`
 - **全程本地**：不访问外网、不上传数据、不依赖官方驱动
-- **最新版本**：[v0.1.8.2](https://github.com/w32394045-dotcom/ajazz-mk87/releases/latest)
+- **最新版本**：[v0.1.8.3](https://github.com/w32394045-dotcom/ajazz-mk87/releases/latest)
 
 ## 界面截图
 
@@ -60,7 +60,42 @@ dbusmenu：**左键显示主窗口，右键打开菜单**（显示主窗口 / �
 缺少扩展，可直接「一键安装」（需要一次管理员密码，装的是发行版包）。Wayland 下装完请注销重新登录，
 X11 下也可以按 `Alt+F2` 输入 `r`。
 
-## v0.1.8.2 更新
+## v0.1.8.3 更新
+
+> **第二次修复：v0.1.8.2 修好了 GLIBC，但 QtWebEngine 在 EGL 初始化失败后段错误（`段错误 (核心已转储)`）。**
+> 根因是 PyInstaller 仍然把构建机 Ubuntu 22.04 的**整套系统库**（glib / libstdc++ / wayland / xcb /
+> Mesa 相关库）打进了 `_internal/`。冻结程序把 `_internal` 放在库搜索路径最前面，于是在 Ubuntu 24.04 上：
+> 系统 GIO 模块（`libdconfsettings.so`）被包里更旧的 **glib** 顶上 → `undefined symbol: g_assertion_message_cmpint`；
+> 系统 DRI 驱动（`iHD_drv_video.so`）被包里更旧的 **libstdc++** 顶上 → `GLIBCXX_3.4.32 not found`；
+> 系统 Mesa/EGL 被包里的 **wayland/xcb/gbm** 顶上 → `qt.qpa.wayland: EGL not available` → QRhi 失败 → 段错误。
+> v0.1.6 之所以正常，只是因为它恰好构建在 24.04、与用户系统同版本。
+
+- **宿主系统库不再随包**：新增 `driver/packaging/libfilter.py`，PyInstaller 只随包 Qt/WebEngine、Python
+  运行时和 wheel 自带的第三方库；glib / GTK / X11 / Wayland / 显卡栈 / NSS 等**由发行版提供**，和系统里
+  其它程序用同一份。deb `Depends` / rpm `Requires` 按此重写（含 Ubuntu 24.04 的 `t64 | 旧名` 备选），
+  `sudo apt install ./mk87_*.deb` 一次装齐。
+- **启动器崩溃回退**：`mk87` 启动器只在进程**被信号杀死**（exit ≥ 128，如 139=段错误、134=abort）时
+  自动重试 —— 默认 → **XWayland**（`QT_QPA_PLATFORM=xcb`）→ **软件渲染**（`LIBGL_ALWAYS_SOFTWARE=1` +
+  Chromium `--disable-gpu`）；正常退出/关窗口不重试。日志在 `~/.cache/mk87/launcher.log` 与
+  `~/.cache/mk87/launcher-console.log`。也可手动：`QT_QPA_PLATFORM=xcb mk87`、
+  `MK87_SOFTWARE_RENDERING=1 mk87`、`MK87_NO_FALLBACK=1 mk87`（排查用）。
+- **CI 卡口更严格**：打包体出现宿主系统库直接失败；干净 `ubuntu:22.04` / `ubuntu:24.04` 容器里按 deb
+  声明的 `Depends` 安装后，**所有 ELF 的 `ldd` 不得有 `not found`**，且 Xvfb 下启动必须稳定存活 40s
+  并进入 WebEngine 初始化 —— 这两条正好对应本次的「缺库 / 段错误」。
+- **测试**：300 个单元测试（新增 16 个：打包过滤规则 + 回退环境）。
+- **已知问题**：Fedora `.rpm` 在很新的 glibc 上仍可能因 PyInstaller 打包的 numpy/OpenBLAS 报
+  `ELF load command address/offset not page-aligned`（该检查目前为提示级，不阻塞发布）；本次主要修复
+  Ubuntu/Debian 的 `.deb`。
+
+安装后如果仍有问题，请把这三个文件发给我，能直接定位到具体阶段：
+
+```bash
+cat ~/.mk87-boot.log                          # 启动阶段（哪一步崩溃）
+cat ~/.cache/mk87/launcher.log                # 启动器重试记录（崩了的话）
+cat ~/.local/state/mk87/logs/crash.log        # Python faulthandler 崩溃栈
+```
+
+### v0.1.8.2
 
 > **Ubuntu 启动闪退的真正修复**：闪退是因为打包进去的 PyQt6 导入失败。PyInstaller 会把构建机上的
 > 系统库（libglib 等）打进包里，而 **GitHub 的 `ubuntu-latest` 在 v0.1.6→v0.1.7 之间从 24.04 升级到了

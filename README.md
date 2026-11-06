@@ -8,7 +8,7 @@
 - **Device**: USB `VID 0x0C45 / PID 0x8047`; 2.4G receiver `VID 0x0C45 / PID 0xFEFE`
 - **Official web driver** (reverse-engineered): `https://ajazz.driveall.cn`
 - **Everything local**: no network access, no telemetry, no vendor driver required
-- **Latest release**: [v0.1.8.2](https://github.com/w32394045-dotcom/ajazz-mk87/releases/latest)
+- **Latest release**: [v0.1.8.3](https://github.com/w32394045-dotcom/ajazz-mk87/releases/latest)
 
 ## Screenshots
 
@@ -61,7 +61,48 @@ KDE, XFCE, Cinnamon, MATE and Ubuntu GNOME: **left-click shows the window, right
 install (one admin password, distro package) if the status card says the extension is missing. After
 installing on Wayland, log out and back in (on X11 you can also press `Alt+F2` and run `r`).
 
-## What's new in v0.1.8.2
+## What's new in v0.1.8.3
+
+> **Second fix: v0.1.8.2 cured the `GLIBC_2.43` error, but QtWebEngine then died with a segfault
+> (`段错误 (核心已转储)`) after EGL initialisation failed.** Root cause: PyInstaller still bundled the
+> **entire system library stack** from the Ubuntu 22.04 build machine (glib / libstdc++ / wayland /
+> xcb / Mesa-related) into `_internal/`. The frozen app puts `_internal` first on the library search
+> path, so on Ubuntu 24.04 the system components loaded the bundled **older** copies:
+> GIO modules (`libdconfsettings.so`) hit `undefined symbol: g_assertion_message_cmpint` (bundled glib),
+> the iHD DRI driver hit `GLIBCXX_3.4.32 not found` (bundled libstdc++), and Mesa/EGL got bundled
+> **wayland/xcb/gbm** → `qt.qpa.wayland: EGL not available` → QRhi failed → segfault.
+> v0.1.6 only worked because it happened to be built on 24.04, matching the user's system.
+
+- **Host system libraries are no longer bundled** — the new `driver/packaging/libfilter.py` strips every
+  shared library that comes from the build machine's system directories. Only Qt/WebEngine, the Python
+  runtime and wheel-provided third-party libraries are shipped; glib / GTK / X11 / Wayland / the graphics
+  stack / NSS now come from the distro (the same copies every other app uses). deb `Depends` and rpm
+  `Requires` were rewritten accordingly, with Ubuntu 24.04 `t64 | old-name` alternatives. Because the app
+  now *depends* on those packages, a missing entry would break startup — which is why CI installs the
+  package in clean containers and fails on any `ldd ... not found`.
+- **Launcher crash fallback** — `/usr/bin/mk87` now retries only when the app is **killed by a signal**
+  (exit ≥ 128, e.g. 139 = segfault, 134 = abort): default → **XWayland** (`QT_QPA_PLATFORM=xcb`) →
+  **software rendering** (`LIBGL_ALWAYS_SOFTWARE=1` + Chromium `--disable-gpu`). Normal quits are never
+  retried. Logs: `~/.cache/mk87/launcher.log` and `~/.cache/mk87/launcher-console.log`. Manual knobs:
+  `QT_QPA_PLATFORM=xcb mk87`, `MK87_SOFTWARE_RENDERING=1 mk87`, `MK87_NO_FALLBACK=1 mk87`.
+- **Stricter release gates** — the build fails if a host system library sneaks into the bundle; the deb is
+  installed in clean `ubuntu:22.04` / `ubuntu:24.04` containers, every bundled ELF is checked with `ldd`
+  for missing libraries, and the app must stay alive for 40 s under Xvfb and reach WebEngine
+  initialisation. Both gates are exactly the failure modes of this bug.
+- **Tests**: 300 unit tests (16 new: bundle filtering rules + fallback environment).
+- **Known issue**: the Fedora `.rpm` may still fail on very new glibc with PyInstaller/OpenBLAS
+  `ELF load command address/offset not page-aligned` (that check is informational, it does not block the
+  release); this release focuses on the Ubuntu/Debian `.deb`.
+
+If it still fails, these three files pinpoint the crashing stage:
+
+```bash
+cat ~/.mk87-boot.log                          # startup stages (where it died)
+cat ~/.cache/mk87/launcher.log                # launcher retry history
+cat ~/.local/state/mk87/logs/crash.log        # Python faulthandler crash stack
+```
+
+### v0.1.8.2
 
 > **The real fix for the Ubuntu startup crash (v0.1.7/v0.1.8)**: the app exited before showing a window
 > because the bundled **PyQt6 failed to import**. PyInstaller bundles system libraries from the build

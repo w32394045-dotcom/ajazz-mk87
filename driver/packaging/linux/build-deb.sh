@@ -49,36 +49,36 @@ install -m 644 "$DRIVER/packaging/udev/99-ajazz-mk87.rules" "$PKG/usr/lib/udev/r
 #   * 其它分支上不存在某个包时，apt 会自动选备选（Depends 的 a | b 语义）；
 #   * 版本要求尽量宽松，不锁具体小版本，避免不同发行版版本号比较失败。
 # ---------------------------------------------------------------------------
-DEPENDS="libc6 (>= 2.35), libgcc-s1, libstdc++6, zlib1g, libbz2-1.0, liblzma5, libzstd1, \\
- libexpat1, libffi8, libsqlite3-0, libssl3t64 | libssl3, libreadline8t64 | libreadline8, \\
- libtinfo6, libuuid1t64 | libuuid1, libcap2t64 | libcap2, libselinux1t64 | libselinux1, \\
- libblkid1t64 | libblkid1, libmount1t64 | libmount1, libsystemd0, \\
- libpcre2-8-0, libpcre2-16-0, libdouble-conversion3, libb2-1, libmd4c0, \\
- libglib2.0-0t64 | libglib2.0-0, libdbus-1-3, libudev1, libusb-1.0-0, \\
- libfontconfig1, libfreetype6, libharfbuzz0b, libbrotli1, \\
- libpng16-16t64 | libpng16-16, libjpeg-turbo8t64 | libjpeg-turbo8, libwebp7t64 | libwebp7, \\
- libgtk-3-0t64 | libgtk-3-0, libgdk-pixbuf-2.0-0t64 | libgdk-pixbuf-2.0-0, \\
- libatk1.0-0t64 | libatk1.0-0, libatk-bridge2.0-0t64 | libatk-bridge2.0-0, \\
- libatspi2.0-0t64 | libatspi2.0-0, libcairo2, libcairo-gobject2, \\
- libpango-1.0-0, libpangocairo-1.0-0, libpangoft2-1.0-0, \\
- libepoxy0, liblcms2-2, libfribidi0, libgraphite2-3, libthai0, libdatrie1, libpixman-1-0, \\
- libgl1, libegl1, libglx0, libopengl0, libglvnd0, libgbm1, libdrm2, \\
- libx11-6, libx11-xcb1, libxcb1, libxau6, libxdmcp6, \\
- libxcb-dri3-0, libxcb-glx0, libxcb-present0, libxcb-randr0, libxcb-render0, libxcb-shm0, \\
- libxcb-sync1, libxcb-xfixes0, libxcb-icccm4, libxcb-keysyms1, libxcb-shape0, \\
- libxcb-image0, libxcb-render-util0, libxcb-xkb1, libxcb-cursor0, libxres1, \\
- libxext6, libxrender1, libxi6, libxcursor1, libxrandr2, libxfixes3, libxinerama1, \\
- libxtst6, libxcomposite1, libxdamage1, libxkbcommon0, libxkbcommon-x11-0, libxkbfile1, \\
- libwayland-client0, libwayland-cursor0, libwayland-egl1, libwayland-server0, \\
- libnss3, libnspr4, libasound2t64 | libasound2 (>= 1.0.16), libpulse0, \\
- libcups2t64 | libcups2, libavahi-client3, libavahi-common3, \\
- libgnutls30t64 | libgnutls30, libgcrypt20, libgpg-error0, libp11-kit0t64 | libp11-kit0, \\
- libtasn1-6t64 | libtasn1-6, libidn2-0, libnettle8t64 | libnettle8, \\
- libhogweed6t64 | libhogweed6, libgmp10, libbsd0, libmd0, liblz4-1, \\
- libkrb5-3, libk5crypto3, libkrb5support0, \\
+DEPENDS="libc6 (>= 2.35), libgcc-s1, libstdc++6, zlib1g, libbz2-1.0, liblzma5, libzstd1, \
+ libexpat1, libffi8, libsqlite3-0, libssl3t64 | libssl3, libreadline8t64 | libreadline8, \
+ libtinfo6, libuuid1t64 | libuuid1, libcap2t64 | libcap2, libselinux1t64 | libselinux1, \
+ libblkid1t64 | libblkid1, libmount1t64 | libmount1, libsystemd0, \
+ libpcre2-8-0, libpcre2-16-0, libdouble-conversion3, libb2-1, libmd4c0, \
+ libglib2.0-0t64 | libglib2.0-0, libdbus-1-3, libudev1, libusb-1.0-0, \
+ libfontconfig1, libfreetype6, libharfbuzz0b, libbrotli1, \
+ libpng16-16t64 | libpng16-16, libjpeg-turbo8t64 | libjpeg-turbo8, libwebp7t64 | libwebp7, \
+ libgtk-3-0t64 | libgtk-3-0, libgdk-pixbuf-2.0-0t64 | libgdk-pixbuf-2.0-0, \
+ libatk1.0-0t64 | libatk1.0-0, libatk-bridge2.0-0t64 | libatk-bridge2.0-0, \
+ libatspi2.0-0t64 | libatspi2.0-0, libcairo2, libcairo-gobject2, \
+ libpango-1.0-0, libpangocairo-1.0-0, libpangoft2-1.0-0, \
+ libepoxy0, liblcms2-2, libfribidi0, libgraphite2-3, libthai0, libdatrie1, libpixman-1-0, \
+ libgl1, libegl1, libglx0, libopengl0, libglvnd0, libgbm1, libdrm2, \
+ libx11-6, libx11-xcb1, libxcb1, libxau6, libxdmcp6, \
+ libxcb-dri3-0, libxcb-glx0, libxcb-present0, libxcb-randr0, libxcb-render0, libxcb-shm0, \
+ libxcb-sync1, libxcb-xfixes0, libxcb-icccm4, libxcb-keysyms1, libxcb-shape0, \
+ libxcb-image0, libxcb-render-util0, libxcb-xkb1, libxcb-cursor0, libxres1, \
+ libxext6, libxrender1, libxi6, libxcursor1, libxrandr2, libxfixes3, libxinerama1, \
+ libxtst6, libxcomposite1, libxdamage1, libxkbcommon0, libxkbcommon-x11-0, libxkbfile1, \
+ libwayland-client0, libwayland-cursor0, libwayland-egl1, libwayland-server0, \
+ libnss3, libnspr4, libasound2t64 | libasound2 (>= 1.0.16), libpulse0, \
+ libcups2t64 | libcups2, libavahi-client3, libavahi-common3, \
+ libgnutls30t64 | libgnutls30, libgcrypt20, libgpg-error0, libp11-kit0t64 | libp11-kit0, \
+ libtasn1-6t64 | libtasn1-6, libidn2-0, libnettle8t64 | libnettle8, \
+ libhogweed6t64 | libhogweed6, libgmp10, libbsd0, libmd0, liblz4-1, \
+ libkrb5-3, libk5crypto3, libkrb5support0, \
  libcom-err2, libkeyutils1, libgssapi-krb5-2"
 
-RECOMMENDS="libgl1-mesa-dri, pipewire-bin | pulseaudio-utils, fonts-dejavu-core, \\
+RECOMMENDS="libgl1-mesa-dri, pipewire-bin | pulseaudio-utils, fonts-dejavu-core, \
  xdg-utils, libnotify-bin, zenity, libcanberra-gtk3-module"
 
 cat > "$PKG/DEBIAN/control" <<EOF

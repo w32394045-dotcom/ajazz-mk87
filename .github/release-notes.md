@@ -11,7 +11,54 @@ Screenshots and the full feature list live in the repository README:
 **[README.md (English)](https://github.com/w32394045-dotcom/ajazz-mk87/blob/main/README.md)** ·
 **[README.zh-CN.md (简体中文)](https://github.com/w32394045-dotcom/ajazz-mk87/blob/main/README.zh-CN.md)**
 
-## What's new in v0.1.8.2
+## What's new in v0.1.8.3
+
+> **v0.1.8.2 fixed the `GLIBC_2.43` error but the app still crashed on Ubuntu 24.04 — this time with
+> `段错误 (核心已转储)` (segfault) after QtWebEngine failed to initialise EGL.** Root cause: PyInstaller
+> still bundled the **entire system library stack** copied from the Ubuntu 22.04 build machine
+> (glib, libstdc++, wayland, xcb, Mesa-related libraries) into `_internal/`. The frozen app puts
+> `_internal` first on the library search path, so on Ubuntu 24.04 **system** components loaded the
+> bundled **older** copies:
+>
+> - system GIO modules (`libdconfsettings.so`) → `undefined symbol: g_assertion_message_cmpint` (bundled glib);
+> - iHD DRI driver (`iHD_drv_video.so`) → `GLIBCXX_3.4.32 not found` (bundled libstdc++);
+> - Mesa/EGL → bundled `libwayland`/`libxcb`/`libgbm` → `qt.qpa.wayland: EGL not available` →
+>   QRhi failed → **segfault**.
+>
+> v0.1.6 only worked because it happened to be built on Ubuntu 24.04, matching the user's system.
+
+- **Fixed: host system libraries are no longer bundled.** The new `driver/packaging/libfilter.py` strips
+  every shared library that comes from the build machine's system directories (`/usr/lib`, `/lib`), except
+  `libpython`. Only Qt/WebEngine (from the PyQt6 wheel), the Python runtime and wheel-provided
+  third-party libraries ship with the app; glib / GTK / X11 / Wayland / the graphics stack / NSS come from
+  the distribution — the same copies every other app on the system uses.
+- **Fixed: deb/rpm dependencies rewritten for the new policy.** `Depends` / `Requires` now declare the host
+  system libraries (with Ubuntu 24.04 `t64 | old-name` alternatives), since a missing entry means a failed
+  startup. `sudo apt install ./mk87_*.deb` installs everything in one go.
+- **New: launcher crash fallback.** `/usr/bin/mk87` now retries **only when the app is killed by a signal**
+  (exit ≥ 128, e.g. 139 = segfault, 134 = abort): default → **XWayland** (`QT_QPA_PLATFORM=xcb`) →
+  **software rendering** (`LIBGL_ALWAYS_SOFTWARE=1` + Chromium `--disable-gpu`). Normal quits are never
+  retried. Retry history: `~/.cache/mk87/launcher.log`; console output of a desktop launch:
+  `~/.cache/mk87/launcher-console.log`. Manual knobs: `QT_QPA_PLATFORM=xcb mk87`,
+  `MK87_SOFTWARE_RENDERING=1 mk87`, `MK87_NO_FALLBACK=1 mk87`.
+- **Stricter release gates.** The build fails if a host system library sneaks into the bundle. The `.deb` is
+  installed in clean `ubuntu:22.04` and `ubuntu:24.04` containers and every bundled ELF is checked with
+  `ldd` for unresolved libraries; then the app must stay alive for 40 s under Xvfb and reach WebEngine
+  initialisation. These two gates correspond exactly to the "missing dependency / segfault" failure modes.
+- **Tests**: 300 unit tests (16 new: bundle filtering rules + fallback environment).
+- **Known issue**: the Fedora `.rpm` may still fail on very new glibc with PyInstaller/OpenBLAS
+  `libscipy_openblas64_*.so: ELF load command address/offset not page-aligned` (that check is
+  informational and does not block the release); this release focuses on the Ubuntu/Debian `.deb`.
+
+If it still fails, these three files pinpoint the crashing stage:
+
+```bash
+cat ~/.mk87-boot.log                          # startup stages (where it died)
+cat ~/.cache/mk87/launcher.log                # launcher retry history
+cat ~/.local/state/mk87/logs/crash.log        # Python faulthandler crash stack
+```
+
+### v0.1.8.2
 
 > **This fixes the Linux startup crash reported on Ubuntu (v0.1.7/v0.1.8).** Root cause found: the app died
 > because the packaged **PyQt6 could not be imported** — PyInstaller bundled system libraries
