@@ -9,6 +9,23 @@
 产物：dist/MK87Config/
   Windows: dist/MK87Config/MK87Config.exe
   Linux  : dist/MK87Config/MK87Config
+
+Linux 打包策略（v0.1.8.3 起，2026-11-06 修正）
+--------------------------------------------
+**Qt/WebEngine 随包（PyQt6 wheel 自带、版本自洽）；宿主系统库不随包。**
+
+v0.1.8.2 及更早版本让 PyInstaller 顺着 Qt 库的 DT_NEEDED 把构建机 Ubuntu 22.04 的
+glib 2.72 / libstdc++(GCC 12) / wayland 1.20 / xcb 1.14 / GTK3 / NSS 等整套系统库
+打进 ``_internal/``。冻结程序把 ``_internal`` 放在库搜索路径最前面，于是系统组件
+（GIO 模块、DRI 驱动、Mesa/libEGL）被这些"更旧的一份"顶上，用户 Ubuntu 24.04 上表现为：
+
+* ``libdconfsettings.so: undefined symbol: g_assertion_message_cmpint``（glib 被顶）
+* ``iHD_drv_video.so: GLIBCXX_3.4.32 not found``（libstdc++ 被顶）
+* ``qt.qpa.wayland: EGL not available`` → QRhi 失败 → QtWebEngine **段错误**
+
+修复：用 ``packaging/libfilter.py`` 把所有来自系统库目录（``/usr/lib``、``/lib``）的
+共享库从 ``a.binaries`` 里滤掉，交给宿主发行版提供（deb ``Depends`` / rpm ``Requires``
+已经声明齐全）。这样 Qt 用的 Mesa/glib/X11 和系统里其它程序是同一份，版本不会再错配。
 """
 import os
 import sys
@@ -24,6 +41,8 @@ else:
     ROOT = os.path.abspath(_HERE)
 if not os.path.isdir(os.path.join(ROOT, "web")):
     ROOT = os.path.abspath(os.getcwd())
+if _HERE not in sys.path:
+    sys.path.insert(0, _HERE)
 
 datas = [
     (os.path.join(ROOT, "web"), "web"),
@@ -43,15 +62,6 @@ for pkg in ("uvicorn", "soundcard", "hidapi", "fastapi", "pydantic", "websockets
         hiddenimports += h
     except Exception:
         pass
-# Linux 原生窗口用 Qt 后端（PySide6/QtWebEngine）保证自包含；Windows 用系统 WebView2
-if sys.platform != "win32":
-    try:
-        d, b, h = collect_all("PySide6")
-        datas += d
-        binaries += b
-        hiddenimports += h
-    except Exception:
-        pass
 hiddenimports += collect_submodules("uvicorn")
 hiddenimports += ["server.app", "server.state", "mk87lib"]
 # hidapi wheel 在 Linux 上打包了两个扩展模块：hid（libusb 后端）和 hidraw
@@ -61,45 +71,6 @@ if sys.platform.startswith("linux"):
     hiddenimports += ["hidraw"]
 else:
     hiddenimports += ["hid"]
-
-# Linux：PyInstaller 会漏收少量 PyQt6/Qt 6.12 依赖的系统库（它已经收了一部分，
-# 但没有递归收全 libQt6Core/Qt6Gui 的系统依赖）。2026-11-05 用户 Ubuntu 上
-# "No Qt bindings could be found / PyQt6 导入失败" 就是缺这些库（Ubuntu 桌面如果
-# 没装 Qt 生态，默认不带 libpcre2-16 / libdouble-conversion / libb2 / libmd4c）。
-# 这里把必需的库显式打进来，做成自包含（deb/rpm 的 Depends/Requires 仍然会声明，
-# 双保险；这样即使用 dpkg -i 强装跳过依赖也能跑）。
-if sys.platform.startswith("linux"):
-    import glob as _glob
-
-    _LINUX_EXTRA_LIBS = (
-        # Qt 6 核心依赖（QtCore/QtGui 直接链接）
-        "libpcre2-16.so.0",
-        "libdouble-conversion.so.3",
-        "libb2.so.1",
-        "libmd4c.so.0",
-        # X11 / Wayland 运行库（Qt xcb/wayland 插件、WebEngine 会用到）
-        "libxcb.so.1",
-        "libxcb-present.so.0",
-        "libxcb-dri3.so.0",
-        "libxcb-icccm.so.4",
-        "libxcb-keysyms.so.1",
-        "libxcb-shape.so.0",
-        "libXres.so.1",
-        "libwayland-client.so.0",
-        "libwayland-cursor.so.0",
-        "libwayland-egl.so.1",
-        "libwayland-server.so.0",
-    )
-    _existing = {os.path.basename(src) for src, _dest in binaries}
-    for _name in _LINUX_EXTRA_LIBS:
-        if _name in _existing:
-            continue
-        for _root in ("/usr/lib/x86_64-linux-gnu", "/usr/lib64", "/usr/lib"):
-            _matches = _glob.glob(os.path.join(_root, _name))
-            if _matches:
-                binaries.append((_matches[0], "."))
-                _existing.add(_name)
-                break
 
 icon = os.path.join(ROOT, "assets", "mk87.ico")
 version_file = os.path.join(ROOT, "packaging", "windows", "version_info.txt")
@@ -115,6 +86,18 @@ a = Analysis(
     excludes=["tkinter", "matplotlib", "scipy", "pandas", "IPython"],
     noarchive=False,
 )
+
+# Linux：宿主系统库一律不随包（规则与原因见模块 docstring 与 packaging/libfilter.py）。
+if sys.platform.startswith("linux"):
+    import libfilter  # noqa: E402  （SPECPATH 已加入 sys.path）
+
+    _kept, _dropped = libfilter.split_host_libs(a.binaries)
+    a.binaries = _kept
+    print("[mk87.spec] Linux 打包：保留 %d 个随包二进制，%d 个宿主系统库交给系统提供"
+          % (len(_kept), len(_dropped)))
+    for _name in libfilter.host_lib_names(_dropped):
+        print("[mk87.spec]   host: %s" % _name)
+
 pyz = PYZ(a.pure)
 exe = EXE(
     pyz,

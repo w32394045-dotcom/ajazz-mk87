@@ -47,6 +47,11 @@ jobs:
   # v0.1.8 的包在 Ubuntu 24.04（glibc 2.39）上加载时直接报
   # `GLIBC_2.43 not found` → PyQt6 导入失败 → 启动闪退。v0.1.6（构建于 ubuntu-24.04）正常。
   # 修复：Linux 包固定在 **ubuntu-22.04**（glibc 2.35）构建，兼容 22.04 及更新版本。
+  #
+  # ⚠ 2026-11-06 v0.1.8.2 在用户 Ubuntu 24.04 上仍闪退（这次是段错误）：因为 PyInstaller 还会
+  # 顺着 Qt 库的 DT_NEEDED 把构建机的 glib/libstdc++/wayland/xcb 打进包，在 24.04 上顶掉
+  # 系统 Mesa/GLib。修复：宿主系统库一律不随包（packaging/libfilter.py），deb/rpm 显式声明
+  # 依赖，并在容器里做「ldd 缺库检查 + 启动存活 40s」双重卡口。
   linux-deb:
     name: linux deb (Debian/Ubuntu)
     if: startsWith(github.ref, 'refs/tags/v') || github.event_name == 'workflow_dispatch'
@@ -70,12 +75,22 @@ jobs:
       - name: Build PyInstaller app
         working-directory: driver
         run: python -m PyInstaller packaging/mk87.spec --noconfirm --clean
+      # 2026-11-06（v0.1.8.3）打包策略卡口：宿主系统库（glib/libstdc++/wayland/xcb/Mesa
+      # /NSS…）**不许**打进 _internal。v0.1.8.2 正是因为把构建机 Ubuntu 22.04 的系统库
+      # 打进包，在用户 Ubuntu 24.04 上顶掉系统 Mesa/GLib → EGL 不可用 → QtWebEngine 段错误。
+      # 规则实现：driver/packaging/libfilter.py；校验：driver/packaging/linux/check-bundle.sh。
+      - name: Bundle policy check (host system libs must not be bundled)
+        working-directory: driver
+        run: |
+          sh -n packaging/linux/mk87-launcher
+          bash packaging/linux/check-bundle.sh
       - name: Build .deb
         working-directory: driver
         run: bash packaging/linux/build-deb.sh
-      # 2026-11-05 用户 Ubuntu 闪退：PyQt6 在打包程序里导入失败（缺系统库）。
-      # 这里在**干净的 Ubuntu 24.04 容器**里按 deb 自己声明的 Depends 安装后启动打包程序，
-      # app 被 timeout 杀掉（exit=124）= 一直活着 = 启动成功；否则阻塞发布。
+      # 在干净的 Ubuntu 22.04 / 24.04 容器里按 deb 自己声明的 Depends 安装后验证：
+      #   1) 打包体所有 ELF 的 DT_NEEDED 都能在本机解析（Depends 完整性）；
+      #   2) 启动后能稳定存活 40s（被 timeout 杀掉 = exit 124），而不是崩溃退出。
+      # 这两条正好覆盖 v0.1.8.2 用户遇到的「装完启动闪退 / 段错误」。
       - name: Runtime check in clean Ubuntu 22.04 + 24.04 containers
         working-directory: driver
         run: |
@@ -86,32 +101,46 @@ jobs:
               DEB=$(ls /pkg/*.deb | head -1)
               apt-get install -y -qq --no-install-recommends xvfb ca-certificates dpkg \
                 libgl1-mesa-dri libglx-mesa0 libegl-mesa0 > /dev/null
-              # 真实安装流程解析 Depends（含 `a | b` 备选、t64 重命名），等价于用户
-              # `sudo apt install ./mk87_*.deb`；装不齐依赖这里会直接失败。
+              # 等价于用户 `sudo apt install ./mk87_*.deb`：按 deb 声明的 Depends 解析安装。
               dpkg -i "$DEB" || true
               apt-get -f install -y -qq > /dev/null
               dpkg -s mk87 > /dev/null
+
+              echo "----- 1) 依赖完整性（ldd 不许有 not found）-----"
+              export LD_LIBRARY_PATH=/opt/mk87/_internal
+              missing=$( (find /opt/mk87 -type f \( -name "*.so" -o -name "*.so.*" -o -name MK87Config \) -print0 \
+                | xargs -0 -r ldd 2>/dev/null || true) | awk "/not found/{print \$1}" | sort -u)
+              if [ -n "$missing" ]; then
+                echo "FAIL: 打包体引用了本机没有的系统库（Depends 不完整）："
+                echo "$missing"
+                exit 1
+              fi
+              echo "OK: 所有共享库依赖都能解析"
+
+              echo "----- 2) 启动（Xvfb + llvmpipe 软件 GL，真实走 Qt/WebEngine 初始化）-----"
               export QT_QPA_PLATFORM=xcb
-              # 容器里没有 GPU：用 llvmpipe 软件 GL；否则 Qt 初始化 GLX 会 Aborted(core dumped)
               export LIBGL_ALWAYS_SOFTWARE=1
-              export QTWEBENGINE_CHROMIUM_FLAGS="--disable-gpu --no-sandbox --disable-dev-shm-usage"
+              export QTWEBENGINE_CHROMIUM_FLAGS="--no-sandbox --disable-dev-shm-usage"
               code=0
               timeout 40 xvfb-run -a -s "-screen 0 1280x800x24 +extension GLX +render" \
                 /opt/mk87/MK87Config --tray > /tmp/app.log 2>&1 || code=$?
-              echo "app_exit_code=$code"
-              tail -100 /tmp/app.log || true
+              echo "app_exit_code=$code (124 = 稳定存活 40s)"
+              tail -80 /tmp/app.log || true
+              echo "----- boot log -----"
               cat "$HOME/.mk87-boot.log" 2>/dev/null || true
-              if [ "$code" = "124" ]; then echo "OK: app stayed alive 40s"; exit 0; fi
-              # 容器里没有真实 GPU/X 环境，QtWebEngine 初始化 GLX 可能 Aborted；这不是软件问题。
-              # 本卡口的目的是拦住「PyQt6/Qt 绑定在用户机器上加载失败」这类打包回归：
-              # 只要 PyQt6 预检通过且服务/窗口已创建，就说明依赖与打包基线没问题。
-              if grep -q "\[preflight-pyqt6-ok\]" "$HOME/.mk87-boot.log" 2>/dev/null && \
-                 grep -q "\[server-ready\]" "$HOME/.mk87-boot.log" 2>/dev/null && \
-                 ! grep -q "\[preflight-pyqt6-failed\]" "$HOME/.mk87-boot.log" 2>/dev/null; then
-                echo "OK: Qt bindings loaded (PyQt6 preflight passed, server/window ready); GLX abort in headless container ignored"
-                exit 0
+              if [ "$code" != "124" ]; then
+                echo "FAIL: app 没有稳定运行 40s（exit=$code，崩溃/异常退出）"
+                exit 1
               fi
-              echo "FAIL: app exited before Qt/window initialization"; exit 1
+              if ! grep -q "\[preflight-pyqt6-ok\]" "$HOME/.mk87-boot.log" 2>/dev/null; then
+                echo "FAIL: PyQt6 预检没有通过"
+                exit 1
+              fi
+              if ! grep -q "\[webview-start-begin\]" "$HOME/.mk87-boot.log" 2>/dev/null; then
+                echo "FAIL: 没有进入 WebEngine 初始化阶段"
+                exit 1
+              fi
+              echo "OK: app 稳定运行 40s，且已进入 WebEngine 初始化"
             '
           done
       - uses: actions/upload-artifact@v4
@@ -143,24 +172,35 @@ jobs:
       - name: Build PyInstaller app
         working-directory: driver
         run: python -m PyInstaller packaging/mk87.spec --noconfirm --clean
+      - name: Bundle policy check (host system libs must not be bundled)
+        working-directory: driver
+        run: bash packaging/linux/check-bundle.sh
       - name: Build .rpm
         working-directory: driver
         run: bash packaging/linux/build-rpm.sh
-      # 同上：在干净的 Fedora 容器里 dnf 安装 rpm（会解析 Requires）后启动，验证依赖声明
-      # 和自包含库都正确，防止「Ubuntu 能跑、Fedora 缺库」这类问题再次发出去。
-      # 已知问题（v0.1.8.2 记为 known issue，待 v0.1.8.3 处理）：PyInstaller 打包的 numpy
+      # 同上：在干净的 Fedora 容器里 dnf 安装 rpm（会解析 Requires）后启动。
+      # 已知问题（v0.1.8.2 记为 known issue，待处理）：PyInstaller 打包的 numpy
       # (libscipy_openblas64_*.so) 在较新 glibc 的 Fedora 容器里报
-      # "ELF load command address/offset not page-aligned"；与本次 Ubuntu 闪退修复无关，
-      # 先记日志不阻塞发布（Ubuntu deb 的启动检查仍然阻塞）。
+      # "ELF load command address/offset not page-aligned"；另 Fedora 包名与 Ubuntu
+      # 不同，Requires 可能有个别名字需要调整。先记日志不阻塞发布（Ubuntu deb 的
+      # 启动检查是阻塞的）。
       - name: Runtime check in clean Fedora container (informational)
         continue-on-error: true
         working-directory: driver
         run: |
           docker run --rm -v "$PWD/dist-packages:/pkg:ro" fedora:latest bash -euc '
             RPM=$(ls /pkg/*.rpm | head -1)
-            dnf install -y -q "$RPM" xorg-x11-server-Xvfb > /dev/null
-            export QT_QPA_PLATFORM=xcb
-            export QTWEBENGINE_CHROMIUM_FLAGS="--disable-gpu --no-sandbox --disable-dev-shm-usage"
+            dnf install -y -q "$RPM" xorg-x11-server-Xvfb mesa-dri-drivers > /dev/null
+            echo "----- 依赖完整性（ldd 不许有 not found）-----"
+            export LD_LIBRARY_PATH=/opt/mk87/_internal
+            missing=$( (find /opt/mk87 -type f \( -name "*.so" -o -name "*.so.*" -o -name MK87Config \) -print0 \
+              | xargs -0 -r ldd 2>/dev/null || true) | awk "/not found/{print \$1}" | sort -u)
+            if [ -n "$missing" ]; then
+              echo "FAIL: 缺少系统库："; echo "$missing"; exit 1
+            fi
+            echo "OK: 所有共享库依赖都能解析"
+            export QT_QPA_PLATFORM=xcb LIBGL_ALWAYS_SOFTWARE=1
+            export QTWEBENGINE_CHROMIUM_FLAGS="--no-sandbox --disable-dev-shm-usage"
             code=0
             timeout 40 xvfb-run -a /opt/mk87/MK87Config --tray > /tmp/app.log 2>&1 || code=$?
             echo "app_exit_code=$code"

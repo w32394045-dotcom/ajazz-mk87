@@ -2,7 +2,7 @@ Name:           mk87
 # PyInstaller 产物没有需要拆分的 ELF 调试信息，不需要生成 -debuginfo 子包
 %global debug_package %{nil}
 # 显式版本号；build-rpm.sh 传 --define version_override 时以它为准（避免改了 __version__ 而 spec 忘记同步）
-Version:        %{?version_override}%{!?version_override:0.1.8.2}
+Version:        %{?version_override}%{!?version_override:0.1.8.3}
 Release:        1%{?dist}
 Summary:        AJAZZ MK87 keyboard configuration tool (unofficial)
 
@@ -11,15 +11,34 @@ URL:            https://github.com/w32394045-dotcom/ajazz-mk87
 Source0:        %{name}-%{version}.tar.gz
 BuildArch:      x86_64
 
-# 2026-11-05：PyInstaller 会把大量库（含改名后的 libattr-hash.so、libelf-hash.so 等）打进
+# 2026-11-05：PyInstaller 会把 wheel 自带的改名库（auditwheel 的 libxxx-<hash>.so）打进
 # /opt/mk87，rpmbuild 的自动依赖生成器会把它们当成未满足的 Requires，导致 dnf 安装失败
-# （nothing provides libattr-4f2a9577.so.1.1.0）。PyInstaller 产物必须关闭 AutoReqProv。
+# （nothing provides libattr-4f2a9577.so.1.1.0）。PyInstaller 产物必须关闭 AutoReqProv，
+# 由下面显式声明运行时依赖。
 AutoReqProv:    no
 
-# Requires 只保留稳定、各 Fedora 版本都存在的核心运行库（其余库已随包自带）；
-# 长尾依赖放 Recommends（弱依赖，名字不存在也不阻塞安装）。
-Requires:       glibc, libusb1, systemd-udev, mesa-libGL, mesa-libEGL, libxkbcommon, libxkbcommon-x11, nss, nspr, alsa-lib, pulseaudio-libs, xcb-util-cursor
-Recommends:     glib2, pcre2, double-conversion, libb2, md4c, dbus-libs, fontconfig, freetype, harfbuzz, graphite2, fribidi, cairo, pango, gdk-pixbuf2, gtk3, atk, at-spi2-atk, at-spi2-core, cups-libs, avahi-libs, libepoxy, lcms2, libthai, libdatrie, libXcomposite, libXdamage, libXfixes, libXi, libXinerama, libXres, libXcursor, libXtst, xcb-util-wm, xcb-util-keysyms, xcb-util, libpng, libjpeg-turbo, libwebp, opus, libvpx, snappy, expat, libzstd, readline, ncurses-libs, libatomic
+# 2026-11-06（v0.1.8.3）打包策略变更：**宿主系统库不再随包**（见 packaging/libfilter.py）。
+# 因此必须显式 Requires 发行版提供的运行库，否则装完启动会缺库（Qt/WebEngine 需要
+# 系统 Mesa/GLib/X11/Wayland/NSS 等）。这些名字在 Fedora 39–43 / RHEL9 都存在；
+# 不确定的长尾包放 Recommends（弱依赖，名字不存在也不阻塞安装）。
+Requires:       glibc, libgcc, libstdc++, zlib, bzip2-libs, xz-libs, libzstd, expat, libffi, \
+                sqlite-libs, openssl-libs, readline, ncurses-libs, libuuid, libblkid, libmount, \
+                libcap, libselinux, systemd-libs, systemd-udev, libusb1, \
+                pcre2, glib2, dbus-libs, fontconfig, freetype, harfbuzz, libpng, libjpeg-turbo, \
+                libwebp, gtk3, gdk-pixbuf2, atk, at-spi2-atk, at-spi2-core, cairo, pango, \
+                libepoxy, lcms2, fribidi, graphite2, libthai, libdatrie, pixman, \
+                mesa-libGL, mesa-libEGL, mesa-libgbm, libglvnd, libdrm, \
+                libX11, libxcb, xcb-util, xcb-util-cursor, xcb-util-image, xcb-util-keysyms, \
+                xcb-util-renderutil, xcb-util-wm, libXres, libXau, libXdmcp, \
+                libXext, libXrender, libXi, libXcursor, libXrandr, libXfixes, libXinerama, \
+                libXtst, libXcomposite, libXdamage, libxkbcommon, libxkbcommon-x11, libxkbfile, \
+                libwayland-client, libwayland-cursor, libwayland-server, \
+                nss, nss-softokn, nspr, alsa-lib, pulseaudio-libs, cups-libs, avahi-libs, \
+                gnutls, libgcrypt, libgpg-error, p11-kit, libtasn1, libidn2, nettle, gmp, \
+                krb5-libs, libcom_err, keyutils-libs
+Recommends:     pcre2-utf16, brotli, double-conversion, libb2, md4c, libatomic, \
+                libglvnd-egl, libglvnd-glx, mesa-dri-drivers, pipewire-libs, opus, libvpx, \
+                snappy, xdg-utils, libnotify, libbsd, libmd, lz4-libs, cairo-gobject
 
 %description
 MK87 Studio is an unofficial cross-platform configuration tool for the

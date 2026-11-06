@@ -1,3 +1,131 @@
 #!/bin/sh
 # MK87 Studio 启动器（安装到 /usr/bin/mk87）
-exec /opt/mk87/MK87Config "$@"
+#
+# 为什么不是直接 `exec /opt/mk87/MK87Config`：
+# v0.1.8.2 在部分 Linux 桌面（尤其 Wayland + Intel/AMD 核显）上，QtWebEngine 初始化
+# QRhi/EGL 失败后会**段错误**（终端只看到「段错误 (核心已转储)」，桌面图标启动则什么都看不到）。
+# 这类问题多数出在「Wayland 原生 EGL 路径」或 GPU 驱动，用 XWayland 或软件渲染重试
+# 通常就能起来。所以这里做一次有节制的回退阶梯：
+#
+#   1) 默认（Wayland 原生 / X11 原生）
+#   2) XWayland（仅 Wayland 会话）
+#   3) XWayland + 软件渲染（Mesa llvmpipe + Chromium 关 GPU）
+#
+# 只有进程**被信号杀死**（exit >= 128，例如 139=段错误、134=abort）才重试；
+# 正常退出（0）、用户关窗口、被 timeout 杀掉都不重试。
+#
+# 环境变量：
+#   MK87_NO_FALLBACK=1        关闭回退，只启动一次（排查用）
+#   MK87_FORCE_X11=1          直接走 XWayland
+#   MK87_SOFTWARE_RENDERING=1 直接软件渲染
+#   MK87_APP=<path>           指定可执行文件（调试用）
+#
+# 日志：$XDG_CACHE_HOME/mk87/launcher.log（每次启动/退出码/回退原因）
+#       $XDG_CACHE_HOME/mk87/launcher-console.log（非终端启动时的 stdout/stderr）
+
+MK87_APP="${MK87_APP:-/opt/mk87/MK87Config}"
+if [ ! -x "$MK87_APP" ]; then
+  # 允许从解包目录直接运行（便携版 / 本地构建）
+  _self_dir=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
+  if [ -x "$_self_dir/MK87Config" ]; then
+    MK87_APP="$_self_dir/MK87Config"
+  fi
+fi
+
+LOG_DIR="${XDG_CACHE_HOME:-$HOME/.cache}/mk87"
+mkdir -p "$LOG_DIR" 2>/dev/null || LOG_DIR="${TMPDIR:-/tmp}"
+LOG="$LOG_DIR/launcher.log"
+CONSOLE="$LOG_DIR/launcher-console.log"
+
+# 控制台日志别无限增长（超过 256KB 就清空；只保留最近一次启动的输出）
+if [ -f "$CONSOLE" ]; then
+  _sz=$(wc -c <"$CONSOLE" 2>/dev/null || echo 0)
+  if [ "${_sz:-0}" -gt 262144 ] 2>/dev/null; then
+    : >"$CONSOLE" 2>/dev/null || true
+  fi
+fi
+
+_log() {
+  printf '%s %s\n' "$(date '+%F %T' 2>/dev/null || echo '-')" "$*" >>"$LOG" 2>/dev/null || true
+}
+
+_launch() {
+  _mode="$1"
+  _envspec="$2"
+  shift 2
+  _log "启动 [$_mode] $MK87_APP $*"
+  if [ -t 2 ]; then
+    # 用户在终端里跑：直接输出，方便现场排查
+    # shellcheck disable=SC2086  # envspec 是刻意按空格拆分的 env 赋值
+    env $_envspec "MK87_LAUNCH_MODE=$_mode" "$MK87_APP" "$@"
+  else
+    printf '\n===== %s [%s] =====\n' "$(date '+%F %T' 2>/dev/null || echo '-')" "$_mode" \
+      >>"$CONSOLE" 2>/dev/null || true
+    # shellcheck disable=SC2086
+    env $_envspec "MK87_LAUNCH_MODE=$_mode" "$MK87_APP" "$@" >>"$CONSOLE" 2>&1
+  fi
+}
+
+_log "==== mk87 启动（session=${XDG_SESSION_TYPE:-?} desktop=${XDG_CURRENT_DESKTOP:-?} display=${DISPLAY:-?} wayland=${WAYLAND_DISPLAY:-?} no_fallback=${MK87_NO_FALLBACK:-0}）"
+
+if [ "${MK87_NO_FALLBACK:-}" = "1" ]; then
+  _launch "no-fallback" ""
+  _code=$?
+  _log "退出码 $_code（no-fallback，不重试）"
+  exit "$_code"
+fi
+
+if [ "${MK87_FORCE_X11:-}" = "1" ]; then
+  _launch "x11-forced" "QT_QPA_PLATFORM=xcb"
+  _code=$?
+  _log "退出码 $_code（x11-forced）"
+  exit "$_code"
+fi
+
+if [ "${MK87_SOFTWARE_RENDERING:-}" = "1" ]; then
+  _launch "software-forced" "MK87_SOFTWARE_RENDERING=1"
+  _code=$?
+  _log "退出码 $_code（software-forced）"
+  exit "$_code"
+fi
+
+# 1) 默认启动
+_launch "default" ""
+_code=$?
+if [ "$_code" -lt 128 ]; then
+  _log "正常退出（exit=$_code）"
+  exit "$_code"
+fi
+_log "第 1 次启动被信号终止（exit=$_code），进入回退阶梯"
+
+if [ "${XDG_SESSION_TYPE:-}" = "wayland" ] || [ -n "${WAYLAND_DISPLAY:-}" ]; then
+  # 2) 退回 XWayland：绕开 Wayland 原生 EGL / 图形集成插件
+  _launch "xwayland" "QT_QPA_PLATFORM=xcb"
+  _code=$?
+  if [ "$_code" -lt 128 ]; then
+    _log "XWayland 回退成功（exit=$_code）"
+    exit "$_code"
+  fi
+  _log "第 2 次启动被信号终止（exit=$_code），改用软件渲染重试"
+  # 3) XWayland + 软件渲染（最后手段）
+  _launch "xwayland+software" "QT_QPA_PLATFORM=xcb MK87_SOFTWARE_RENDERING=1"
+  _code=$?
+else
+  # 纯 X11 会话：直接软件渲染重试
+  _launch "software" "MK87_SOFTWARE_RENDERING=1"
+  _code=$?
+fi
+
+if [ "$_code" -lt 128 ]; then
+  _log "回退启动成功（exit=$_code）"
+  exit "$_code"
+fi
+
+_log "所有启动方式都失败（最后一次 exit=$_code）"
+printf '\nMK87 Studio 启动失败（图形环境初始化崩溃）。\n' >&2
+printf '  启动方式日志: %s\n' "$LOG" >&2
+printf '  程序输出:     %s\n' "$CONSOLE" >&2
+printf '  启动阶段日志: %s\n' "${HOME:-~}/.mk87-boot.log" >&2
+printf '可尝试: QT_QPA_PLATFORM=xcb mk87   （XWayland）\n' >&2
+printf '        MK87_SOFTWARE_RENDERING=1 mk87   （软件渲染）\n' >&2
+exit "$_code"

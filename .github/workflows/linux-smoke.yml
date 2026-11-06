@@ -1,14 +1,15 @@
 name: linux-smoke
 
 # 单独的 Linux 冒烟/排查工作流（手动触发）：
-#   * 在一台全新的 Ubuntu runner 上构建 PyInstaller 产物；
-#   * 用 Xvfb 真正启动打包后的 MK87Config（可选 --tray / --no-tray）；
-#   * 把 stderr、~/.mk87-boot.log、~/.local/state/mk87/logs 全部打进 job 输出与 artifact。
+#   * released-deb-2404：在干净 Ubuntu 24.04 容器里安装**已发布的 .deb**（按它自己声明的
+#     Depends 装），做「ldd 缺库检查 + 启动存活 40s + WebEngine 初始化」验证；
+#   * smoke：在全新 Ubuntu runner 上构建 PyInstaller 产物，做同样的检查，并上传崩溃现场。
 #
-# 用途：不发布版本也能快速验证「Linux 上启动是否闪退」，并拿到崩溃现场。
+# 用途：不发布版本也能快速验证「Linux 上启动是否闪退/段错误」，以及复验已发布资产。
 # 用法（GitHub UI：Actions -> linux-smoke -> Run workflow）：
-#   target_ref = main / v0.1.8 / 某个分支
-#   args       = 额外参数，例如 "--no-tray --tray"，留空则默认 "--tray"
+#   target_ref = main / 某个分支 / tag
+#   args       = 传给 MK87Config 的参数，留空默认 "--tray"
+#   asset_tag / asset_version = 要复验的已发布 deb（如 v0.1.8.3 / 0.1.8.3）
 
 on:
   workflow_dispatch:
@@ -22,16 +23,16 @@ on:
         required: false
         default: "--tray"
       asset_tag:
-        description: "（可选）在 Ubuntu 24.04 容器里测试已发布 .deb：填 tag，如 v0.1.8.2；留空跳过"
+        description: "（可选）在 Ubuntu 24.04 容器里复验已发布 .deb：填 tag，如 v0.1.8.3；留空跳过"
         required: false
         default: ""
       asset_version:
-        description: "（可选）.deb 版本号，如 0.1.8.2（与 asset_tag 配套）"
+        description: "（可选）.deb 版本号，如 0.1.8.3（与 asset_tag 配套）"
         required: false
         default: ""
 
 jobs:
-  # 在真实的 Ubuntu 24.04 容器里安装**已发布的 .deb** 并启动，复现用户环境
+  # 在真实的 Ubuntu 24.04 容器里安装**已发布的 .deb** 并启动，复现代用户环境
   # （用于排查「打包产物在用户机器上闪退」这类环境相关问题，不需要重新构建）。
   released-deb-2404:
     name: released deb on Ubuntu 24.04 (${{ github.event.inputs.asset_tag }})
@@ -40,50 +41,44 @@ jobs:
     timeout-minutes: 15
     container: ubuntu:24.04
     steps:
-      - name: Install only the deb's declared Depends (mirror a clean Ubuntu 24.04)
+      - name: Install test tooling
         run: |
-          apt-get update
-          apt-get install -y --no-install-recommends ca-certificates curl xvfb apt-file \
-            libc6 libudev1 libusb-1.0-0 libgl1 libegl1 libxkbcommon-x11-0 \
-            libnss3 libasound2t64 libpulse0 libxcb-cursor0
-          apt-file update >/dev/null 2>&1 || true
-      - name: Download and extract released deb
+          apt-get update -qq
+          apt-get install -y -qq --no-install-recommends ca-certificates curl xvfb dpkg \
+            libgl1-mesa-dri libglx-mesa0 libegl-mesa0 > /dev/null
+      - name: Download released deb
         run: |
           TAG="${{ github.event.inputs.asset_tag }}"
           VER="${{ github.event.inputs.asset_version }}"
           URL="https://github.com/w32394045-dotcom/ajazz-mk87/releases/download/${TAG}/mk87_${VER}_amd64.deb"
           echo "URL=$URL"
           curl -fsSL -o /tmp/mk87.deb "$URL"
-          dpkg -x /tmp/mk87.deb /tmp/root
-          ls -l /tmp/root/opt/mk87 | head
-      - name: Collect missing shared libraries + apt package mapping
-        continue-on-error: true
+          ls -l /tmp/mk87.deb
+      - name: Install exactly like a user (dpkg -i + apt -f install resolves Depends)
         run: |
-          : > /tmp/missing.txt
-          find /tmp/root/opt/mk87/_internal -type f -name '*.so*' 2>/dev/null | while read -r f; do
-            ldd "$f" 2>/dev/null | awk '/not found/{print $1}' >> /tmp/missing.txt
-          done
-          sort -u /tmp/missing.txt > /tmp/missing_uniq.txt
-          echo "===== missing unique count: $(wc -l < /tmp/missing_uniq.txt)"
-          cat /tmp/missing_uniq.txt
-          echo "===== apt package mapping (for build-deb.sh Depends) ====="
-          while read -r so; do
-            [ -z "$so" ] && continue
-            pkgs=$(apt-file search --package-only "/$so" 2>/dev/null | head -3 | tr '\n' ' ')
-            echo "$so -> ${pkgs:-<unknown>}"
-          done < /tmp/missing_uniq.txt
-      - name: Python PyQt6 import probe (same version as CI build)
-        continue-on-error: true
+          dpkg -i /tmp/mk87.deb || true
+          apt-get -f install -y -qq > /dev/null
+          dpkg -s mk87 | sed -n '1,12p'
+      - name: Check no missing shared libraries (Depends completeness)
         run: |
-          python3 -m pip install --break-system-packages --quiet "PyQt6==6.12.0" 2>/dev/null || true
-          python3 -c "import PyQt6.QtCore; print('system pyqt6 OK', PyQt6.QtCore.QT_VERSION_STR)" 2>&1 || true
-      - name: Run released app under Xvfb
-        continue-on-error: true
+          export LD_LIBRARY_PATH=/opt/mk87/_internal
+          missing=$( (find /opt/mk87 -type f \( -name "*.so" -o -name "*.so.*" -o -name MK87Config \) -print0 \
+            | xargs -0 -r ldd 2>/dev/null || true) | awk '/not found/{print $1}' | sort -u)
+          if [ -n "$missing" ]; then
+            echo "FAIL: 打包体引用了本机没有的系统库（Depends 不完整）："
+            echo "$missing"
+            exit 1
+          fi
+          echo "OK: 所有共享库依赖都能解析"
+      - name: Run released app under Xvfb (must stay alive 40s)
         run: |
           export QT_QPA_PLATFORM=xcb
-          export QTWEBENGINE_CHROMIUM_FLAGS="--disable-gpu --no-sandbox --disable-dev-shm-usage"
-          timeout 40 xvfb-run -a /tmp/root/opt/mk87/MK87Config --tray > /tmp/app.log 2>&1
-          echo "app_exit_code=$?"
+          export LIBGL_ALWAYS_SOFTWARE=1
+          export QTWEBENGINE_CHROMIUM_FLAGS="--no-sandbox --disable-dev-shm-usage"
+          code=0
+          timeout 40 xvfb-run -a -s "-screen 0 1280x800x24 +extension GLX +render" \
+            /opt/mk87/MK87Config --tray > /tmp/app.log 2>&1 || code=$?
+          echo "app_exit_code=$code (124 = 稳定存活 40s)"
           echo "----- app stdout/stderr -----"
           tail -150 /tmp/app.log || true
           echo "----- boot log -----"
@@ -91,10 +86,17 @@ jobs:
           echo "----- qt-error report -----"
           cat "$HOME/.cache/mk87/qt-error.txt" 2>/dev/null || true
           ls -la "$HOME/.cache/mk87" 2>/dev/null || true
+          if [ "$code" != "124" ]; then
+            echo "FAIL: app 没有稳定运行 40s（exit=$code）"
+            exit 1
+          fi
+          grep -q "\[preflight-pyqt6-ok\]" "$HOME/.mk87-boot.log"
+          grep -q "\[webview-start-begin\]" "$HOME/.mk87-boot.log"
+          echo "OK: released deb 在干净 Ubuntu 24.04 上可稳定启动"
 
   smoke:
     name: build + run under Xvfb (${{ github.event.inputs.target_ref }})
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
@@ -108,7 +110,7 @@ jobs:
       - name: System dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y xvfb libegl1 libgl1 libnss3 libasound2t64 \
+          sudo apt-get install -y xvfb libegl1 libgl1 libnss3 libasound2 \
             libxkbcommon-x11-0 libxcb-cursor0 libxcb-icccm4 libxcb-image0 \
             libxcb-keysyms1 libxcb-randr0 libxcb-render-util0 libxcb-shape0 \
             libxcb-xinerama0 libudev-dev
@@ -123,6 +125,11 @@ jobs:
       - name: Build PyInstaller app
         working-directory: driver
         run: python -m PyInstaller packaging/mk87.spec --noconfirm --clean
+      - name: Bundle policy check (host system libs must not be bundled)
+        working-directory: driver
+        run: |
+          sh -n packaging/linux/mk87-launcher
+          bash packaging/linux/check-bundle.sh
       - name: Run packaged app under Xvfb
         id: run
         working-directory: driver
@@ -132,15 +139,17 @@ jobs:
           APP="./dist/MK87Config/MK87Config"
           echo "target_ref=${{ github.event.inputs.target_ref }}"
           echo "args=${{ github.event.inputs.args }}"
-          echo "--- app --version (should print nothing / quick exit) ---"
+          echo "--- app --diagnose ---"
           timeout 10 "$APP" --diagnose 2>&1 | tail -40
           echo "diagnose_exit=$?"
           echo "--- run app ---"
-          export QTWEBENGINE_CHROMIUM_FLAGS="--disable-gpu --no-sandbox --disable-dev-shm-usage"
+          export QTWEBENGINE_CHROMIUM_FLAGS="--no-sandbox --disable-dev-shm-usage"
           export QT_QPA_PLATFORM=xcb
+          export LIBGL_ALWAYS_SOFTWARE=1
           ARGS="${{ github.event.inputs.args }}"
           [ -z "$ARGS" ] && ARGS="--tray"
-          timeout 45 xvfb-run -a -s "-screen 0 1280x800x24" "$APP" $ARGS > /tmp/mk87-app.log 2>&1
+          timeout 45 xvfb-run -a -s "-screen 0 1280x800x24 +extension GLX +render" "$APP" $ARGS \
+            > /tmp/mk87-app.log 2>&1
           code=$?
           echo "app_exit_code=$code"
           echo "----- app stdout/stderr (last 150 lines) -----"

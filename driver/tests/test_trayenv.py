@@ -523,5 +523,56 @@ class TestQtPreflight(unittest.TestCase):
         self.assertIn("preflight-pyqt6-system-failed", marks)
 
 
+class TestRenderEnvFallback(unittest.TestCase):
+    """v0.1.8.3：launcher 崩溃回退时 MK87_SOFTWARE_RENDERING=1 的落地逻辑。"""
+
+    def test_not_requested_keeps_env(self):
+        import shell
+
+        with mock.patch.dict(shell.os.environ, {}, clear=False):
+            shell.os.environ.pop("MK87_SOFTWARE_RENDERING", None)
+            shell.os.environ.pop("QTWEBENGINE_CHROMIUM_FLAGS", None)
+            info = shell._apply_render_env()
+            self.assertFalse(info["requested"])
+            self.assertNotIn("QTWEBENGINE_CHROMIUM_FLAGS", shell.os.environ)
+
+    def test_software_mode_sets_flags_once(self):
+        import shell
+
+        with mock.patch.dict(shell.os.environ, {"MK87_SOFTWARE_RENDERING": "1",
+                                                "MK87_LAUNCH_MODE": "xwayland+software"}):
+            info = shell._apply_render_env()
+            self.assertTrue(info["requested"])
+            self.assertEqual(info["launch_mode"], "xwayland+software")
+            self.assertEqual(shell.os.environ["LIBGL_ALWAYS_SOFTWARE"], "1")
+            self.assertEqual(shell.os.environ["QT_OPENGL"], "software")
+            flags = shell.os.environ["QTWEBENGINE_CHROMIUM_FLAGS"]
+            self.assertIn("--disable-gpu", flags.split())
+            self.assertIn("--disable-gpu-compositing", flags.split())
+            # 重复调用不得重复追加
+            shell._apply_render_env()
+            self.assertEqual(shell.os.environ["QTWEBENGINE_CHROMIUM_FLAGS"], flags)
+
+    def test_software_mode_keeps_user_flags(self):
+        import shell
+
+        with mock.patch.dict(shell.os.environ, {
+                "MK87_SOFTWARE_RENDERING": "1",
+                "QTWEBENGINE_CHROMIUM_FLAGS": "--no-sandbox",
+        }):
+            shell._apply_render_env()
+            flags = shell.os.environ["QTWEBENGINE_CHROMIUM_FLAGS"].split()
+            self.assertEqual(flags.count("--no-sandbox"), 1)
+            self.assertEqual(flags.count("--disable-gpu"), 1)
+
+    def test_env_snapshot_has_fallback_keys(self):
+        import shell
+
+        snap = shell._env_snapshot()
+        for key in ("MK87_LAUNCH_MODE", "MK87_SOFTWARE_RENDERING",
+                    "QTWEBENGINE_CHROMIUM_FLAGS", "LIBGL_ALWAYS_SOFTWARE"):
+            self.assertIn(key, snap)
+
+
 if __name__ == "__main__":
     unittest.main()

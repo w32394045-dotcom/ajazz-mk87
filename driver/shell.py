@@ -141,8 +141,40 @@ _SYSTEM_SITE_PACKAGES = (
 
 def _env_snapshot() -> dict:
     keys = ("QT_API", "XDG_SESSION_TYPE", "XDG_CURRENT_DESKTOP", "XDG_RUNTIME_DIR",
-            "DISPLAY", "WAYLAND_DISPLAY", "LD_LIBRARY_PATH", "QT_QPA_PLATFORM")
+            "DISPLAY", "WAYLAND_DISPLAY", "LD_LIBRARY_PATH", "QT_QPA_PLATFORM",
+            "MK87_LAUNCH_MODE", "MK87_SOFTWARE_RENDERING", "QTWEBENGINE_CHROMIUM_FLAGS",
+            "LIBGL_ALWAYS_SOFTWARE", "QT_OPENGL")
     return {k: os.environ.get(k) for k in keys}
+
+
+def _apply_render_env() -> dict:
+    """把回退启动模式（``MK87_SOFTWARE_RENDERING=1``）翻译成真正生效的渲染开关。
+
+    v0.1.8.3：``packaging/linux/mk87-launcher`` 在默认启动被**信号杀死**（段错误/abort）
+    后会用 ``QT_QPA_PLATFORM=xcb``、``MK87_SOFTWARE_RENDERING=1`` 逐级重试。这里负责
+    把后者变成生效的环境变量：
+
+    * ``LIBGL_ALWAYS_SOFTWARE=1`` / ``QT_OPENGL=software`` → Qt 走 Mesa llvmpipe 软件 GL；
+    * ``QTWEBENGINE_CHROMIUM_FLAGS`` 追加 ``--disable-gpu --disable-gpu-compositing``
+      → QtWebEngine 不做 GPU 合成。
+
+    已经显式设置的值一律不覆盖，避免影响高级用户自己的调参。
+    """
+    info = {
+        "launch_mode": os.environ.get("MK87_LAUNCH_MODE"),
+        "requested": os.environ.get("MK87_SOFTWARE_RENDERING") == "1",
+    }
+    if not info["requested"]:
+        return info
+    os.environ.setdefault("LIBGL_ALWAYS_SOFTWARE", "1")
+    os.environ.setdefault("QT_OPENGL", "software")
+    flags = os.environ.get("QTWEBENGINE_CHROMIUM_FLAGS", "").split()
+    for flag in ("--disable-gpu", "--disable-gpu-compositing"):
+        if flag not in flags:
+            flags.append(flag)
+    os.environ["QTWEBENGINE_CHROMIUM_FLAGS"] = " ".join(flags)
+    info["chromium_flags"] = os.environ["QTWEBENGINE_CHROMIUM_FLAGS"]
+    return info
 
 
 def _preflight_qt() -> bool:
@@ -738,6 +770,12 @@ def _run_diagnose() -> int:
 def main() -> int:
     bootlog.mark("main-start", argv=sys.argv[1:], frozen=getattr(sys, "frozen", False),
                  exec=sys.executable)
+    # Linux 回退启动模式：launcher 崩溃重试时用 MK87_SOFTWARE_RENDERING=1 进来，
+    # 这里在 Qt/WebEngine 初始化前把软件渲染开关落地，并把启动方式记进 boot log。
+    _render = _apply_render_env()
+    if _render.get("requested") or _render.get("launch_mode"):
+        bootlog.mark("render-env", **{k: v for k, v in _render.items() if v is not None},
+                     env=_env_snapshot())
     ap = argparse.ArgumentParser(description="MK87 Studio 桌面外壳")
     ap.add_argument("--tray", action="store_true", help="静默启动到系统托盘（开机自启用）")
     ap.add_argument("--debug", action="store_true", help="打开 WebView 开发者工具")
