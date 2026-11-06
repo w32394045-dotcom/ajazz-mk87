@@ -1770,4 +1770,31 @@ GLOzone not found for unknown
 | 快捷方式可取消 | `/VERYSILENT /CURRENTUSER /MERGETASKS=!startmenuicon,!desktopicon` | 安装成功，开始菜单文件夹与桌面 `.lnk` 均**未**创建 | 已实测 |
 | 本地 setup 日志 | `[Setup] SetupLogging=yes` | `%TEMP%\mk87-setup-test-*.log` 正常写出，`Installation process succeeded` | 已实测 |
 | 全量单测 | `cd driver && .\.venv\Scripts\python.exe -m unittest discover -s tests` | **339 tests OK** | 已实测 |
-| CI 发布 | tag `v0.1.8.5` → CI run | 待回填 | — |
+| CI 发布 | tag `v0.1.8.5`（提交 `665c588`）→ CI run [#82](https://github.com/w32394045-dotcom/ajazz-mk87/actions/runs/42240109130) | **全绿**：ubuntu/windows 339 tests OK；Windows portable + setup；deb + 干净 22.04/24.04 容器卡口；rpm + Fedora 容器；Release 自动发布 | 已实测 |
+
+### 29.4 发布记录（v0.1.8.5）
+
+- 版本号：`0.1.8.5`（6 处，见 29.2）。
+- 提交：`665c588`（11 个文件，+237/−22）→ tag `v0.1.8.5` → CI run
+  [#82](https://github.com/w32394045-dotcom/ajazz-mk87/actions/runs/42240109130) **全绿**
+  （ubuntu/windows 单测 339 OK；Windows 便携包 + 安装包；deb 打包 + 干净 22.04/24.04 容器 ldd/启动卡口；
+  rpm 打包 + Fedora 容器）→ Release 2026-11-06 23:15:53 自动发布（Release 正文由 tag 提交里的
+  `.github/release-notes.md` 生成）：
+  <https://github.com/w32394045-dotcom/ajazz-mk87/releases/tag/v0.1.8.5>
+- 附件（`SHA256SUMS.txt` 与 GitHub asset digest 逐项一致）：
+  - `MK87Studio-0.1.8.5-win64-setup.exe` 30,279,874 B
+    （`69c83db7e6cf07bcf3ed27f14bea91a22e9187d6cda6c415808d46fb1ead30d5`）
+  - `MK87Studio-0.1.8.5-win64-portable.zip` 39,144,350 B
+    （`cd57d6e11be14bdb4341768b893de0a1f0d447e4680d28a75f49ba189884eddb`）
+  - `mk87_0.1.8.5_amd64.deb` 192,262,156 B
+    （`43c2df0eca16e952d73f1a69de6be7d5301e51cf01272a622fc25d51620a7a0c`）
+  - `mk87-0.1.8.5-1.x86_64.rpm` 226,929,254 B
+    （`e6d71c7a01bb49b6c5d76d32bf49c0f2e7f0a9f9b0f55ecd9c64c624ae39faba`）
+  - `SHA256SUMS.txt` 386 B（`2d9f7a8ae0278c3ecfc3bbe09f4f8d1b5ec7efc489ad9ef6dd6e844f76b2efc8`）
+- **体积对比（v0.1.8.4 → v0.1.8.5）**：deb 192,255,546 → 192,262,156 B（+6,610）；
+  rpm 226,930,950 → 226,929,254 B（−1,696）；portable 39,144,509 → 39,144,350 B（−159）；
+  setup 30,280,447 → 30,279,874 B（−573）。仅版本号/安装脚本变化，体积波动在预期内。
+- 验证：`SHA256SUMS.txt` 本地下载复算 SHA256 = `2d9f7a8a…efc8`，与 GitHub 为每个存储资产计算的
+  `digest` **逐项一致**；`releases/latest` 已指向 v0.1.8.5；deb/rpm 干净容器安装/启动卡口在 CI 内通过。
+- 待办：用户在 Windows 上用 v0.1.8.5 安装包（右键「以管理员身份运行」）复测安装流程与两个快捷方式
+  勾选项；Linux 侧本版无改动。

@@ -658,4 +658,4 @@ udev 规则 / 结论；源码环境同一套逻辑在 `probe/linux_hid_check.py`
 | 本地 setup 日志 | `%TEMP%\mk87-setup-test-*.log` 正常写出，含 `Installation process succeeded` |
 | 全量单测 | **339 tests OK**（本次无 Python 代码改动，回归确认） |
 | 覆盖缺口（诚实标注） | ①未在用户机器上用 v0.1.8.5 新包做「管理员身份安装」复测（本地用 `/CURRENTUSER` 验证了快捷方式行为，避开 UAC）；②CI 用的是 Inno Setup 6.7.1（choco），本地用 6.7.4 编译验证，两者同属 6.x；③中文向导未做（Inno 不随包提供中文 isl，安装器仍为英文 UI） |
-| 发布 | 待回填（tag `v0.1.8.5` → CI → Release，记录并入 [DEVLOG §29](DEVLOG.md)） |
+| 发布 | tag `v0.1.8.5`（提交 `665c588`）→ CI run [#82](https://github.com/w32394045-dotcom/ajazz-mk87/actions/runs/42240109130) **全绿**（ubuntu/windows 单测 339 OK；Windows 便携包 + 安装包；deb 打包 + 22.04/24.04 干净容器卡口；rpm 打包 + Fedora 容器）→ Release 2026-11-06 23:15:53。资产：deb 192,262,156 B（sha256 `43c2df0e…7a0c`）、rpm 226,929,254 B（`e6d71c7a…faba`）、portable 39,144,350 B（`cd57d6e1…eddb`）、setup 30,279,874 B（`69c83db7…30d5`）；`SHA256SUMS.txt`（386 B，sha256 `2d9f7a8a…efc8`）与 GitHub 存储资产 digest **逐项一致**；`releases/latest` 已指向 v0.1.8.5 |
