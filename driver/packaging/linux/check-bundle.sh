@@ -30,7 +30,10 @@ FORBIDDEN=(
   'libX11.so*' 'libX11-xcb.so*' 'libXext.so*' 'libXrender.so*' 'libXi.so*' 'libXcursor.so*' 'libXrandr.so*'
   'libXfixes.so*' 'libXinerama.so*' 'libXtst.so*' 'libXcomposite.so*' 'libXdamage.so*' 'libXRes.so*'
   'libXau.so*' 'libXdmcp.so*' 'libbsd.so*' 'libmd.so*' 'liblz4.so*'
-  'libxcb.so*' 'libxcb-*.so*' 'libxkbcommon.so*' 'libxkbfile.so*'
+  'libxcb.so*' 'libxcb-dri3.so*' 'libxcb-glx.so*' 'libxcb-present.so*' 'libxcb-randr.so*' \
+  'libxcb-render.so*' 'libxcb-shm.so*' 'libxcb-sync.so*' 'libxcb-xfixes.so*' 'libxcb-icccm.so*' \
+  'libxcb-keysyms.so*' 'libxcb-shape.so*' 'libxcb-image.so*' 'libxcb-render-util.so*' \
+  'libxcb-xkb.so*' 'libxcb-cursor.so*' 'libxkbcommon.so*' 'libxkbfile.so*'
   'libwayland-client.so*' 'libwayland-cursor.so*' 'libwayland-egl.so*' 'libwayland-server.so*'
   'libdrm.so*' 'libgbm.so*' 'libEGL.so*' 'libGL.so*' 'libGLX.so*' 'libGLdispatch.so*' 'libOpenGL.so*'
   'libnss3.so' 'libnspr4.so' 'libnssutil3.so' 'libsmime3.so' 'libssl3.so' 'libfreebl3.so' 'libsoftokn3.so'
