@@ -1577,3 +1577,117 @@ GLOzone not found for unknown
   - 若真机仍崩溃：启动器会自动按 XWayland → 软件渲染降级，并留下
     `~/.cache/mk87/launcher.log`（重试记录）、`~/.mk87-boot.log`（启动阶段）、
     `~/.local/state/mk87/logs/crash.log`（faulthandler 崩溃栈）。
+
+## 28 2026-11-06（晚）：v0.1.8.4 修音乐律动长时运行失效（Windows 待机挂起 HID / 音频采集卡死）+ 保后台 + 自动恢复
+
+> 触发：用户报告「windows 这个现在这个系统我发现一出 bug 就是音乐律动，当开久了后，就是键盘会突然
+> 没有音乐律动，而打开应用却还是显示在音乐律动中。但是它那个音频助也不再开始动了。我认为的原因
+> 应该是系统杀后台了。所以这点你要去负责去弄一下，去搞一个保后台机制 linux 同理。」
+> 要求：Windows 优先，Linux 同样要有；自动查根因并直接修，不要只解释。
+
+### 28.1 现场证据（用户 Windows 实机；只看日志与在线进程线程栈，未改用户环境）
+
+用户当时运行的是本仓库本地构建 `driver/dist/MK87Config/MK87Config.exe --tray`（12:35:58 启动，
+持续运行到排查时）。证据来自 `%LOCALAPPDATA%\mk87\logs` 与 py-spy。
+
+1. **系统待机事件**（`mk87.log.2`，与音乐失效同一秒）：
+   ```text
+   2026-11-06 13:37:16  Kernel-Power 506  系统正在进入连接待机状态  原因: Lid
+   2026-11-06 13:37:17.888  WARNING [mk87.music] 音乐帧发送异常 #1: WriteFile 失败: 995
+   ... 连续 51 条（995 = ERROR_OPERATION_ABORTED）...
+   2026-11-06 13:37:18.713  WARNING [mk87.music] 音乐帧发送异常 #51: WriteFile 失败: 995
+   2026-11-06 13:37:18.816  WARNING [mk87.lighting] 恢复灯效快照失败（mode=5）: HID 写入失败
+   2026-11-06 13:37:20.547  WARNING [mk87.state] 设备已断开: 未找到可用的 MK87 协议接口
+   2026-11-06 13:40:42.931  WARNING [mk87.shell] 进程卡顿：178.2s 内 watchdog 无采样（正常 0.5s）
+   ```
+   合盖 → 系统进入连接待机 → USB HID 被挂起 → 帧流写全失败 → 旧代码 `errors > 50` 静默退出；
+   唤醒后设备扫描一直失败，音乐**不会自己恢复**。
+2. **另一条更隐蔽的路径（21:25 复现，进程仍活着）**：`/api/music/status` 返回
+   `running: true, fps: 59.9`，但 `frames` 冻结在 148329、`level` 不再变化；同时 `/api/status`
+   `connected: false`。py-spy dump 决定性证据：
+   ```text
+   Thread 1824 (idle): "mk87-music"
+       NativeHidChannel.write (mk87lib\winhid.py:150)
+       FrameSender.send (mk87lib\lighting.py:490)
+       MusicPlayer._loop (mk87lib\music.py:2308)
+   Thread 4500 (idle): "mk87-audio"
+       _AudioClient.deviceperiod (soundcard\mediafoundation.py:571)
+       _Recorder._record_chunk (mediafoundation.py:744)
+   ```
+   原生同步 `WriteFile` 在设备被系统挂起后**永久阻塞**：线程还活着 → `running` 仍为 True →
+   前端继续显示「律动中」；但帧不再下发 → 键盘停更、WS 电平事件也不再变化 → 电平条冻结。
+3. **前端状态不同步**：旧 `music.js` 的 `running` 只在用户点 start/stop 时更新，3s 轮询只同步
+   `fps`，从不读 `st.running`；所以「后端已死/已卡死」与「界面仍显示律动中」可以长期并存。
+
+### 28.2 根因
+
+1. Windows 连接待机（modern standby）会挂起 HID 设备；本工具的原生写句柄是**同步 WriteFile 且无
+   超时**，一旦设备挂起就永久阻塞（或返回 995 让旧代码累计 50 次后退出），两种路径都没有恢复机制。
+2. 音乐律动是单次会话（打开采集 → 帧循环 → 结束即退出），没有「会话中断 → 重建」的监督者；
+   键盘掉线/换 USB 口/系统唤醒后都不会自动续播。
+3. 音频采集线程是 daemon，`record()` 在 WASAPI 设备被挂起/默认输出被拔掉后会永久阻塞且不报错，
+   旧主循环只看到「没有新数据」但没有任何检测（数据缓冲区里还是旧数据）。
+4. 前端不消费后端真实 `running`，也没有健康状态可显示。
+5. 缺少「保后台」：系统空闲/待机时没有阻止休眠，Windows 后台能效节流（EcoQoS）也可能让 60fps
+   帧流排期抖动。
+
+### 28.3 修复（Windows / Linux 共用同一套逻辑，平台差异只在保后台与原生写）
+
+1. **原生 HID 写可超时（Windows）** —— `mk87lib/winhid.py`
+   - 写句柄改 `FILE_FLAG_OVERLAPPED`：`WriteFile` 立即完成时走同步快路径（正常发包不受影响）；
+     返回 `ERROR_IO_PENDING` 时等待 0.25s，超时 `CancelIoEx`；取消不掉（设备真挂起）则标记
+     通道卡死、抛错交给上层重建。
+   - 绝不在在途 IO 未完成时 `CloseHandle`：整条通道（句柄/事件/OVERLAPPED/缓冲区）交给模块级
+     `_ORPHAN_CHANNELS` 保活，等设备恢复后内核自行完成，避免「内核写已释放内存」的随机崩溃。
+2. **音乐律动会话监督 + 自动恢复** —— `mk87lib/music.py`
+   - `_loop` 改为监督循环：`_run_session` 负责一段「音频采集 + 帧流」会话；会话因音频中断/采集卡死/
+     HID 连续发送失败结束时，退避 0.5→1→2→5s 重建；`_stop` 只在用户停止时生效。
+   - 会话建立前检查 `device.status.connected`，键盘掉线时**等待 monitor 线程自动重连**后自动续播，
+     不反复开关音频设备；恢复期间参数热更新先缓存，新会话建立时带进新引擎。
+   - 音频采集 2.0s 无新数据 → 判定采集卡死（`AudioCapture.last_data_ts` 由采集线程每次读到新数据
+     刷新；系统待机后 WASAPI 永久阻塞但不会抛异常，只能靠数据新鲜度发现）。
+   - HID 连续 5 次发送失败 → 重建发送通道（每次写超时 ~0.25s，约 1.5s 内判定）。
+   - 原音频设备失效（拔耳机/切默认输出）→ 回退默认输出回环并置 `audioFallback` 标记。
+   - `status()` 新增 `health`（starting/ok/recovering/waiting-device/stopped）、`recoveries`、
+     `lastRecovery`、`frameAgeMs`、`keepAwake`、`deviceConnected`、`audioFallback`、`stoppedByUser`。
+3. **保后台** —— 新增 `mk87lib/powerkeep.py`（由并行开发完成，代码见文件头注释）
+   - Windows：音乐律动期间常驻 daemon 线程维持 `SetThreadExecutionState(ES_CONTINUOUS |
+     ES_SYSTEM_REQUIRED)`（每 30s 重申，因为该状态是 per-thread）+ `timeBeginPeriod(1)`；
+     程序启动时 `SetProcessInformation(ProcessPowerThrottling)`：`ControlMask=EXECUTION_SPEED |
+     IGNORE_TIMER_RESOLUTION`、`StateMask=IGNORE_TIMER_RESOLUTION` → 关闭 EcoQoS 执行速度节流、
+     让系统忽略计时器精度请求（boot log 记 `power-throttle-optout`）。
+   - Linux：`systemd-inhibit --what=sleep --mode=block ... -- sleep infinity`（缺命令自动降级
+     no-op）；停止律动时 terminate→wait(2)→kill。
+   - 合盖等**用户主动休眠**仍会睡（不篡改电源策略），靠第 2 条在唤醒后自动恢复。
+4. **状态事件 + 前端如实反映** —— `server/state.py` / `web/js/pages/music.js`
+   - `_music_level_loop` 在 running/health 变化时额外推送 `music_health`（state/lastError/
+     recoveries/connected）与 `music_stopped`（reason/unexpected/frames/errors），只在变化时发。
+   - 前端 3s 轮询同步后端真实 `running`：后端 true→false 自动切回「未开始」并 toast 原因；
+     徽章显示「律动中 / 恢复中… / 等待键盘」；恢复成功 toast「音乐律动已自动恢复」；
+     提示行显示「已自动恢复 N 次（最近一次：本地时间）」与「原音频设备不可用，已回退默认输出」。
+5. **测试**：新增 `tests/test_powerkeep.py`（23）、`tests/test_music_watchdog.py`（8）、
+   `tests/test_winhid_write.py`（5）、`tests/test_music_health_events.py`（3），全量 **339 tests OK**。
+
+### 28.4 验证
+
+| 项 | 命令 / 方式 | 结果 | 标注 |
+|---|---|---|---|
+| 用户实机日志时间线 | `%LOCALAPPDATA%\mk87\logs`（user 机器，只读） | 合盖 13:37:16 → 51 次 `WriteFile 995` → 线程退出；178.2s 进程冻结 | 已查看 |
+| 卡死线程栈 | `py-spy dump --pid <运行中的 MK87Config>` | `mk87-music` 阻塞在 `NativeHidChannel.write`；`mk87-audio` 阻塞在 soundcard `_AudioClient.deviceperiod` | 已实测 |
+| winhid 写超时单测 | `tests.test_winhid_write` | 5/5 OK：同步快路径、pending 超时抛错、取消成功可复用、卡死 close 不关句柄转保活、1167 普通错误 | 已实测 |
+| 会话守护单测 | `tests.test_music_watchdog` | 8/8 OK：音频卡死自动恢复、发送失败自动恢复、偶发失败不重建、音频设备回退、恢复期热更新、状态字段、stop 快速退出 | 已实测 |
+| 保后台单测 | `tests.test_powerkeep` | 23/23 OK（Windows/Linux/none 分支 + 幂等 + 降级） | 已实测 |
+| 健康事件契约 | `tests.test_music_health_events` | 3/3 OK：music_health / music_stopped / 用户停止不标 unexpected / 旧 Player 兼容 | 已实测 |
+| 全量单测 | `cd driver && .\.venv\Scripts\python.exe -m unittest discover -s tests` | **339 tests OK** | 已实测 |
+| 真实 HTTP/WS 冒烟 | 临时脚本：真实 FastAPI+uvicorn + `/ws` | `/api/music/status` 新字段齐全；music_health/music_stopped 事件链路正常；设备离线时 `POST /api/music/start` 干净返回 503 | 已实测（临时脚本已删） |
+| 真实 Windows API 冒烟 | `powerkeep.opt_out_power_throttling()` / `KeepAwake.start/stop` | 返回 True；线程名 `mk87-keep-awake` 起停正常、stop 后线程归零、可重启 | 已实测 |
+| 前端语法 | `node --check` 三个改动 JS | 全部通过 | 已实测 |
+| 用户真机复测 | 安装 v0.1.8.4 后：①长时间播放 ②合盖→唤醒 ③拔插键盘/USB 口 | **待用户复测**（最终判据） | 待真机 |
+
+### 28.5 发布记录（v0.1.8.4）
+
+- 版本号：`0.1.8.4`（`mk87lib/__init__.py` / `server/app.py` / `server/state.py` /
+  `packaging/linux/mk87.spec` / `packaging/windows/mk87.iss` / `packaging/windows/version_info.txt`）。
+- 提交 / CI / Release：**发布后回填**（见下一次文档提交）。
+- 待办：用户 Windows 真机长时间运行 + 合盖唤醒复测；Fedora rpm 的 numpy/OpenBLAS
+  page-alignment 提示级问题继续保持观察。

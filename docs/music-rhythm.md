@@ -438,3 +438,82 @@ getDisplayMedia({audio:true}) 抓系统音频（用户勾选共享音频）
 - LED 颜色覆盖支持 **1/2/4/5/13 + 14–22** 全部动态模式（单色方案下多色结构会退化为同色相）；
   纯色 6–11 与背景的自带配色不受影响。
 - 音乐律动仍**仅 USB**（官方确认 2.4G 不支持）。
+
+## 13 长时运行稳定性：会话守护 / 自动恢复 / 保后台（v0.1.8.4）
+
+> 背景（用户 2026-11-06 实机 + py-spy）：Windows 合盖进入连接待机后 USB HID 被挂起，
+> 原生同步 `WriteFile` 在 `mk87-music` 线程里永久阻塞；音频采集线程同时卡在 WASAPI。
+> 旧实现没有检测/恢复，界面还继续显示「律动中」。完整根因见 [DEVLOG §28](DEVLOG.md)。
+
+### 13.1 会话模型
+
+音乐律动线程从「一次性循环」改为**监督循环**：
+
+```text
+mk87-music 线程
+  └─ 监督循环（_loop）
+       ├─ 会话 N（_run_session）：打开音频采集 → 进入帧模式 → 逐帧发送
+       │    ├─ 正常结束（用户停止）
+       │    └─ 异常结束：audio-error / audio-stalled / send-error / session-error
+       └─ 会话中断 → 退避 0.5→1→2→5s → 重建会话（recoveries += 1）
+```
+
+- 会话建立前检查 `device.status.connected`；键盘掉线时**等待 monitor 线程自动重连**（不反复开关
+  音频设备），重连成功后自动续播 —— 用户不需要重新点「开始律动」。
+- 只有用户点「停止」/退出程序才会真正结束监督循环；恢复期间的热更新参数先缓存，新会话建立时生效。
+- 音频采集卡死判定：`AudioCapture.last_data_ts` 由采集线程每读到新数据刷新；会话里 2.0s 没有
+  新数据即判定卡死（WASAPI 在设备挂起后**永久阻塞且不报错**，只能靠数据新鲜度发现）。
+- HID 发送连续 5 次失败 → 重建通道；单包写超时 0.25s（正常单包 ~1–3ms），约 1.5s 内可判定。
+- 原音频设备失效（拔耳机 / 切换默认输出 / 设备 ID 变化）→ 自动回退默认输出回环，状态里
+  `audioFallback=true`，界面提示「原音频设备不可用，已回退默认输出」。
+
+### 13.2 Windows 原生写超时（`winhid.NativeHidChannel`）
+
+| 场景 | 行为 |
+|---|---|
+| 正常写 | `WriteFile` 同步完成 → 直接返回（快路径，20/60/66fps 发包路径不变） |
+| 返回 `ERROR_IO_PENDING` | 等 0.25s（事件）；完成则取结果 |
+| 等待超时 | `CancelIoEx` 取消；取消在 100ms 宽限内完成 → 抛超时错误，通道可继续用 |
+| 取消不掉（设备真挂起） | 标记通道卡死；后续写立即失败；`close()` **不关句柄**，整条通道交给模块级 `_ORPHAN_CHANNELS` 保活，等设备恢复内核自行完成，避免内核写已释放内存 |
+
+### 13.3 保后台（`powerkeep.py`）
+
+| 平台 | 机制 | 备注 |
+|---|---|---|
+| Windows | 音乐律动期间常驻 daemon 线程维持 `SetThreadExecutionState(ES_CONTINUOUS \| ES_SYSTEM_REQUIRED)`（每 30s 重申）+ `timeBeginPeriod(1)` | 阻止**系统空闲休眠**、稳定 60fps 排期；合盖等用户主动休眠仍会睡 |
+| Windows（启动时） | `SetProcessInformation(ProcessPowerThrottling)`：`ControlMask=EXECUTION_SPEED\|IGNORE_TIMER_RESOLUTION`、`StateMask=IGNORE_TIMER_RESOLUTION` | 关闭 EcoQoS 执行速度节流 + 忽略计时器精度请求；boot log 记 `power-throttle-optout` |
+| Linux | `systemd-inhibit --what=sleep --mode=block … -- sleep infinity` | 音乐律动期间阻止系统 sleep；没有 systemd-inhibit 时降级 no-op |
+
+### 13.4 状态与事件契约
+
+`GET /api/music/status` 新增字段：
+
+| 字段 | 含义 |
+|---|---|
+| `health` | `starting` / `ok` / `recovering` / `waiting-device` / `stopped` |
+| `recoveries` | 本次律动累计自动恢复次数 |
+| `lastRecovery` | 最近一次恢复开始的 unix 时间戳（可为 null） |
+| `frameAgeMs` | 距最后一帧成功下发的毫秒数（未运行/未出帧为 null） |
+| `keepAwake` | 保后台是否生效 |
+| `deviceConnected` | 键盘是否在线 |
+| `audioFallback` | 是否因原音频设备失效回退默认输出 |
+| `stoppedByUser` | 是否用户主动停止（诊断用） |
+
+WebSocket 新事件（只在状态变化时推送）：
+
+```json
+{"type": "music_health", "data": {"state": "recovering", "lastError": "...", "recoveries": 1, "connected": true}}
+{"type": "music_stopped", "data": {"reason": "...", "unexpected": false, "frames": 1234, "errors": 0}}
+```
+
+前端：徽章显示「律动中 / 恢复中… / 等待键盘」；3s 轮询同步后端真实 `running`（后端已停止时自动
+切回「未开始」并提示原因）；恢复成功 toast 并显示「已自动恢复 N 次（最近一次：本地时间）」。
+
+### 13.5 已知边界 / 待真机验证
+
+- 修复来自用户实机日志 + 在线进程线程栈 + 单元测试，**尚未在用户机器上完成「长时间播放 + 合盖唤醒」
+  真机复测**（最终判据）。
+- Windows overlapped 写的真实设备路径未做真机帧流复测（单测覆盖分支；正常路径与旧同步写行为一致）。
+- 用户主动休眠（合盖/开始菜单睡眠）**不会被阻止**，依赖唤醒后的自动恢复；若设备在睡眠中被系统
+  移除且唤醒后未重新枚举，则保持「等待键盘」，需要重新插拔。
+- 长时间 soak（2h+）未覆盖。

@@ -787,6 +787,17 @@ def main() -> int:
     setup_logging()
     bootlog.mark("logging-ready", log_dir=LOG_DIR)
 
+    # 音乐律动长时间运行会因系统「连接待机 / EcoQoS 能效节流」导致 HID 写入挂起、帧流卡死。
+    # 启动早期就关闭 Windows 进程能效节流并记录平台能力（其它平台为空操作，失败只忽略）。
+    try:
+        from mk87lib import powerkeep  # noqa: PLC0415
+
+        _throttle_ok = powerkeep.opt_out_power_throttling()
+        bootlog.mark("power-throttle-optout", ok=bool(_throttle_ok),
+                     report=powerkeep.platform_report())
+    except Exception:  # noqa: BLE001
+        log.debug("关闭进程能效节流失败（忽略）", exc_info=True)
+
     if args.diagnose:
         return _run_diagnose()
 

@@ -53,7 +53,7 @@ from typing import Dict, List, Optional, Tuple
 
 import numpy as np
 
-from . import keymap, lighting
+from . import keymap, lighting, powerkeep
 from .errors import MK87Error
 
 log = logging.getLogger("mk87.music")
@@ -156,6 +156,25 @@ MEASURED_FPS_MIN_SPAN = 0.25
 #:   * 连写 7 包 + ACK 清道夫线程异步读回包：send ≈ 8.9ms/帧，实测 66.14fps（lateFrames=0）。
 #: 所以 ≥60fps 用「burst + 异步清道夫」，只有在清道夫起不来时才回退帧末同步 drain。
 BURST_SYNC_DRAIN = 7
+
+
+# ----------------------------------------------------------------------
+# 会话守护 / 自动恢复（v0.1.8.4，2026-11-06 用户实机事故）
+# ----------------------------------------------------------------------
+# 事故链条（用户 Windows 机器日志 + py-spy 线程栈）：
+#   合盖进入连接待机（modern standby）→ USB HID 挂起 → 原生 WriteFile 在
+#   `mk87-music` 线程里**永久阻塞** → 帧流停在最后一帧、音频采集线程同时卡在
+#   WASAPI 里 → 后端 `running` 仍为 True，界面一直显示「律动中」、电平条冻结；
+#   另一条路径是 WriteFile 立刻返回 995，累计 50+ 次错误后线程静默退出。
+# 因此音乐律动改为「监督循环」：任何一次会话（音频采集 + 帧流）中断都自动重建，
+# 键盘掉线时等待自动重连后继续播，用户点「停止」才真正结束。
+#: 音频采集「无新数据」超过该秒数 → 判定采集卡死（WASAPI 在系统待机、默认输出
+#: 设备被拔掉/切换后可能永久阻塞在 read()，但不会报错，只能靠数据新鲜度发现）。
+AUDIO_STALL_TIMEOUT = 2.0
+#: 连续发送失败多少次判定 HID 通道不可用 → 重建会话（每次单包写超时 ~0.25s）。
+SEND_ERROR_LIMIT = 5
+#: 自动恢复重试退避（秒）：0.5 → 1 → 2 → 5 封顶；键盘离线时等待 monitor 线程重连。
+RECOVER_MIN_DELAY, RECOVER_MAX_DELAY = 0.5, 5.0
 
 
 def _clamp_fps(fps) -> int:
@@ -1771,6 +1790,15 @@ class AudioCapture:
         self._stop = threading.Event()
         self._ready = threading.Event()
         self._error: Optional[str] = None
+        #: 最近一次读到**新数据**的单调时钟（音乐会话据此检测采集卡死）。
+        #: 系统待机 / 拔掉默认输出设备后 WASAPI 会永久阻塞在 record()，
+        #: 不会抛异常，只能靠这个时间戳发现「采集线程还活着但不再出数据」。
+        self._last_data_ts: Optional[float] = None
+
+    @property
+    def last_data_ts(self) -> Optional[float]:
+        """最近一次采集到新音频数据的单调时钟时间；None = 还没出过数据。"""
+        return self._last_data_ts
 
     # ------------------------------------------------- 设备打开/单次读取
     def _open_impl(self):
@@ -1882,6 +1910,7 @@ class AudioCapture:
                 except Exception:
                     pass
             self._open_impl()
+            self._last_data_ts = time.monotonic()
             self._ready.set()
             while not self._stop.is_set():
                 try:
@@ -1892,6 +1921,7 @@ class AudioCapture:
                 if data.size:
                     with self._lock:
                         self._buf = np.concatenate((self._buf, data))[-8192:]
+                    self._last_data_ts = time.monotonic()
         except Exception as exc:  # noqa: BLE001
             self._error = str(exc)
             self._ready.set()
@@ -2111,6 +2141,23 @@ class MusicPlayer:
         self._pace_fps = 0
         self._late_frames = 0
         self._ack_miss_streak = 0
+        # ---- 会话守护 / 自动恢复（v0.1.8.4） ----
+        #: 健康状态：starting / ok / recovering / waiting-device / stopped（前端徽章用）
+        self.health = "stopped"
+        #: 自动恢复次数（同一段律动里会话中断后重建的次数）
+        self.recoveries = 0
+        #: 最近一次自动恢复开始的 unix 时间戳
+        self.last_recovery: Optional[float] = None
+        #: 最近一次成功下发帧的单调时钟（前端 frameAgeMs / 卡死检测用）
+        self._last_frame_ts: Optional[float] = None
+        #: 当前会话是否已成功建立过（区分「首次建立失败」与「运行中中断」）
+        self._session_ok = False
+        #: 是否因为原音频设备失效回退到了默认输出回环
+        self._audio_fallback = False
+        #: 是否由用户主动停止（用于区分「意外停止」的事件通知）
+        self._user_stopped = False
+        #: 保后台句柄（音乐律动期间阻止系统休眠；Windows 关闭能效节流）
+        self._keepalive = None
 
     @property
     def running(self) -> bool:
@@ -2209,62 +2256,180 @@ class MusicPlayer:
         self._late_frames = 0
         self._drainer_failed = False
         self._reset_measured_fps()
+        # 会话守护字段：新一轮启动从干净状态开始（restart 后恢复次数归零）
+        self._user_stopped = False
+        self._session_ok = False
+        self._last_frame_ts = None
+        self.health = "starting"
+        self.recoveries = 0
+        self.last_recovery = None
+        self._audio_fallback = False
+        # 保后台：音乐律动期间阻止系统空闲休眠 / 关闭 Windows 能效节流，
+        # 否则合盖待机或后台节流会让帧流中断（v0.1.8.4，见文件头会话守护注释）。
+        self._keepalive = powerkeep.keep_awake()
+        try:
+            self._keepalive.start()
+        except Exception:  # noqa: BLE001 - 保后台失败不能影响律动本身
+            log.debug("保后台启动失败（忽略）", exc_info=True)
         self._thread = threading.Thread(target=self._loop, name="mk87-music", daemon=True)
         self._thread.start()
         log.info("音乐律动启动: mode=%s(请求 %s) amplitude=%s backmode=%s bb=%s color=%s "
-                 "targetFps=%s send=%s device=%s",
+                 "targetFps=%s send=%s device=%s keepAwake=%s",
                  self.mode, self.requested_mode, self.amplitude_ui,
                  self.backmode, self.backmode_brightness, self.color,
                  self.fps, "burst" if self.fps >= BURST_MIN_FPS else "ack",
-                 device_id or "默认输出")
+                 device_id or "默认输出",
+                 bool(getattr(self._keepalive, "active", False)))
         # 等音频引擎真正打开再返回：失败要立刻报错，不能"假装成功"
         if not self._ready.wait(timeout=5.0):
             self._stop.set()
+            self._stop_keepalive()
             raise MK87Error("音乐引擎启动超时（音频设备无响应）")
         if self._start_error:
             self._stop.set()
-            raise MK87Error(f"音频采集打开失败（设备: {device_id or '默认输出'}）：{self._start_error}")
+            self._stop_keepalive()
+            raise MK87Error(f"音乐律动启动失败（设备: {device_id or '默认输出'}）：{self._start_error}")
         return self.status()
 
-    def _loop(self) -> None:
-        capture = None
-        try:
-            # WASAPI/COM 需要线程内初始化（soundcard 打开设备/循环采集依赖 COM）
-            if platform.system() == "Windows":
-                try:
-                    import ctypes
+    def _stop_keepalive(self) -> None:
+        keepalive = self._keepalive
+        self._keepalive = None
+        if keepalive is not None:
+            try:
+                keepalive.stop()
+            except Exception:  # noqa: BLE001
+                pass
 
-                    ctypes.windll.ole32.CoInitializeEx(None, 0x2)  # COINIT_APARTMENTTHREADED
-                except Exception:
-                    pass
+    # ------------------------------------------------------------------ 会话守护
+    def _device_connected(self) -> bool:
+        """键盘当前是否在线（假设备 / 无状态对象按在线处理）。"""
+        try:
+            return bool(getattr(getattr(self.device, "status", None), "connected", True))
+        except Exception:  # noqa: BLE001
+            return True
+
+    def _frame_age(self) -> Optional[float]:
+        ts = self._last_frame_ts
+        if ts is None:
+            return None
+        return max(0.0, time.monotonic() - ts)
+
+    def _set_health(self, state: str) -> None:
+        if self.health != state:
+            log.debug("音乐律动健康状态: %s -> %s", self.health, state)
+            self.health = state
+
+    def _open_capture(self) -> AudioCapture:
+        """打开音频采集；原设备失效时回退默认输出回环。
+
+        用户拔掉耳机 / 切换默认输出设备后，旧的 loopback 设备 ID 会永久失效，
+        此时回退默认输出比直接报错更符合预期（界面会显示 audioFallback 提示）。
+        """
+        try:
             capture = AudioCapture(self.device_id)
             capture.open()
-            self.audio_backend = getattr(capture, "_backend", "")
+            return capture
+        except Exception as exc:  # noqa: BLE001
+            if not self.device_id:
+                raise
+            log.warning("原音频设备不可用（%s），回退默认输出回环: %s", self.device_id, exc)
+            capture = AudioCapture(None)
+            capture.open()
+            self._audio_fallback = True
+            return capture
+
+    def _new_engine(self) -> MusicEngine:
+        return MusicEngine(self.mode, amplitude_ui=self.amplitude_ui,
+                           backmode=self.backmode,
+                           backmode_brightness=self.backmode_brightness,
+                           color=self.color)
+
+    def _close_session(self, capture, sender) -> None:
+        """关闭一次会话的音频/发送资源，并恢复进入前的灯效（失败只告警）。"""
+        if self._drainer is not None:
+            try:
+                self._drainer.stop()
+            except Exception:  # noqa: BLE001
+                pass
+            self._drainer = None
+        if sender is not None:
+            try:
+                sender.close()
+            except Exception:  # noqa: BLE001
+                pass
+            if self._sender is sender:
+                self._sender = None
+        if capture is not None:
+            try:
+                capture.close()
+            except Exception:  # noqa: BLE001
+                pass
+        snap = self._snapshot
+        self._snapshot = None
+        if snap:
+            try:
+                lighting.restore_effect(self.device, snap["before"])
+            except Exception:  # noqa: BLE001
+                pass
+
+    def _note_recovery(self, reason: str, failures: int) -> None:
+        """会话中断：累计恢复次数、清空预览并更新健康状态（前端据此显示恢复中）。"""
+        self.recoveries += 1
+        self.last_recovery = time.time()
+        self._reset_measured_fps()
+        self.last_colors = {}
+        self.level = 0.0
+        self.bands = [0.0, 0.0, 0.0]
+        self.levels32 = [0.0] * 32
+        online = self._device_connected()
+        self._set_health("recovering" if online else "waiting-device")
+        if failures == 1 or failures % 5 == 0:
+            log.warning("音乐律动会话中断（%s），第 %d 次自动恢复（键盘%s）",
+                        reason, self.recoveries, "在线" if online else "离线，等待重连")
+
+    def _run_session(self, first: bool = False) -> str:
+        """跑一段「音频采集 + 帧流」会话，返回结束原因。
+
+        ``stop`` = 用户停止；``first-error`` = 首次启动失败（start() 抛给调用方）；
+        ``audio-error`` / ``audio-stalled`` = 音频采集中断/卡死；``send-error`` =
+        HID 帧流连续失败（设备挂起/拔线）；``session-error`` = 会话建立失败。
+        """
+        capture = None
+        sender = None
+        if not first and not self._device_connected():
+            # 键盘还没回来：不要反复开关音频采集，等 monitor 线程自动重连。
+            self.last_error = "键盘已断开，等待重新连接"
+            return "session-error"
+        try:
+            capture = self._open_capture()
+            self.audio_backend = getattr(capture, "_backend", "") or ""
             analyzer = Analyzer(capture.samplerate)
-            self._engine = MusicEngine(self.mode, amplitude_ui=self.amplitude_ui,
-                                       backmode=self.backmode,
-                                       backmode_brightness=self.backmode_brightness,
-                                       color=self.color)
+            self._engine = self._new_engine()
             self._snapshot = lighting.ensure_frame_mode(self.device)
             # 帧流走原生通道（Windows）：hidapi 逐包 ACK 只能到 ~10fps，原生通道实测 20fps
-            self._sender = lighting.FrameSender(self.device)
-            self._ready.set()
+            self._sender = sender = lighting.FrameSender(self.device)
+            self._session_ok = True
+            self._set_health("ok")
+            if first:
+                self._ready.set()
         except Exception as exc:  # noqa: BLE001
-            self._start_error = str(exc)
+            self.last_error = str(exc)
             self.errors += 1
-            self.last_error = f"音频采集打开失败: {exc}"
-            # 关键：把具体原因写进日志，否则只剩 HTTP 400，支持包看不出是哪个后端失败
-            log.error("音乐律动启动失败: %s", exc)
-            self._ready.set()
-            if capture is not None:
-                try:
-                    capture.close()
-                except Exception:
-                    pass
-            return
+            self._close_session(capture, sender)
+            if first:
+                self._start_error = str(exc)
+                self._ready.set()
+                self._set_health("stopped")
+                # 关键：把具体原因写进日志，否则只剩 HTTP 400，支持包看不出是哪个后端失败
+                log.error("音乐律动启动失败: %s", exc)
+                return "first-error"
+            log.warning("音乐律动会话建立失败: %s", exc)
+            return "session-error"
+
+        self.timing = {"read": 0.0, "analyze": 0.0, "send": 0.0, "frames": 0}
         next_t = self._clock()
         last_frame: Optional[float] = None
-        self.timing = {"read": 0.0, "analyze": 0.0, "send": 0.0, "frames": 0}
+        consecutive = 0
         try:
             while not self._stop.is_set():
                 frame_start = self._clock()
@@ -2274,6 +2439,15 @@ class MusicPlayer:
                 dt = period if last_frame is None else frame_start - last_frame
                 last_frame = frame_start
                 dt_scale = _dt_scale(dt)
+                # 音频采集卡死检测：采集线程仍活着但不再出新数据（系统待机、
+                # 默认输出设备被拔掉/切换后 WASAPI 会永久阻塞，且不报错）。
+                last_data = getattr(capture, "last_data_ts", None)
+                if last_data is not None:
+                    stall = time.monotonic() - last_data
+                    if stall > AUDIO_STALL_TIMEOUT:
+                        self.last_error = f"音频采集卡死（{stall:.1f}s 无新数据）"
+                        log.warning("音频采集卡死（%.1fs 无新数据），重建采集", stall)
+                        return "audio-stalled"
                 wait_ack, _ = _send_strategy(target_fps)
                 if wait_ack:
                     if self._drainer is not None:
@@ -2291,6 +2465,12 @@ class MusicPlayer:
                     t_a = time.perf_counter()
                     samples = capture.read(2048)
                     t_b = time.perf_counter()
+                except Exception as exc:  # noqa: BLE001
+                    self.errors += 1
+                    self.last_error = f"音频采集中断: {exc}"
+                    log.warning("音频采集中断: %s", exc)
+                    return "audio-error"
+                try:
                     analysis = analyzer.analyze(samples, dt_scale=dt_scale)
                     t_c = time.perf_counter()
                     self.level = analysis["amp"]
@@ -2301,7 +2481,6 @@ class MusicPlayer:
                                if self._engine else b"")
                     # 记录本帧逐键颜色：前端「官方方案」预览直接回放（与设备实发帧同源）
                     self.last_colors = self._engine.last_colors if self._engine else {}
-                    drained = 0
                     if self._sender is not None:
                         # ≤30fps 逐包 ACK；≥60fps 连写 7 包（回包由清道夫线程读走；
                         # 清道夫起不来时才在帧末同步 drain）
@@ -2312,6 +2491,18 @@ class MusicPlayer:
                             drain=drain_now,
                         )
                     t_d = time.perf_counter()
+                except Exception as exc:  # noqa: BLE001
+                    self.errors += 1
+                    self.last_error = str(exc)
+                    consecutive += 1
+                    if consecutive == 1:
+                        log.warning("音乐帧发送失败: %s", exc)
+                    if consecutive >= SEND_ERROR_LIMIT:
+                        log.warning("音乐帧连续发送失败 %d 次，重建 HID 通道: %s",
+                                    consecutive, exc)
+                        return "send-error"
+                else:
+                    consecutive = 0
                     tm = self.timing
                     tm["read"] += t_b - t_a
                     tm["analyze"] += t_c - t_b
@@ -2319,6 +2510,7 @@ class MusicPlayer:
                     tm["frames"] += 1
                     self.last_payload = payload
                     self.frames += 1
+                    self._last_frame_ts = time.monotonic()
                     # 实测帧率用单调时钟的「发送完成」时间戳（可注入假时钟做单测）
                     self._record_frame_time(self._clock())
                     if self.frames % 200 == 0:
@@ -2328,14 +2520,6 @@ class MusicPlayer:
                                   self.frames, self.timing["send"] / n * 1000,
                                   self.timing["analyze"] / n * 1000, target_fps,
                                   self.measured_fps, dt_scale, self.level)
-                except MK87Error:
-                    raise
-                except Exception as exc:  # noqa: BLE001
-                    self.errors += 1
-                    self.last_error = str(exc)
-                    log.warning("音乐帧发送异常 #%d: %s", self.errors, exc)
-                    if self.errors > 50:
-                        break
                 # ----------------------------------------------------------
                 # 节奏：按目标 period 用单调时钟排绝对 deadline。
                 # * 周期每帧重算 → 运行中热更新 fps 立即生效；
@@ -2355,25 +2539,76 @@ class MusicPlayer:
                     next_t = now
                 elif next_t > now:
                     self._sleep(next_t - now)
+        finally:
+            self._close_session(capture, sender)
+        return "stop"
+
+    def _cleanup_loop(self) -> None:
+        """监督循环退出：停清道夫/保活，清预览与实测值，健康状态归 stopped。"""
+        if self._drainer is not None:
+            try:
+                self._drainer.stop()
+            except Exception:  # noqa: BLE001
+                pass
+            self._drainer = None
+        self.last_colors = {}
+        self._reset_measured_fps()
+        self._last_frame_ts = None
+        self._sender = None
+        keepalive = self._keepalive
+        self._keepalive = None
+        if keepalive is not None:
+            try:
+                keepalive.stop()
+            except Exception:  # noqa: BLE001
+                pass
+        self._set_health("stopped")
+
+    def _loop(self) -> None:
+        """监督循环：会话中断自动重建，键盘掉线时等重连后继续，直到用户停止。"""
+        try:
+            # WASAPI/COM 需要线程内初始化（soundcard 打开设备/循环采集依赖 COM）
+            if platform.system() == "Windows":
+                try:
+                    import ctypes
+
+                    ctypes.windll.ole32.CoInitializeEx(None, 0x2)  # COINIT_APARTMENTTHREADED
+                except Exception:
+                    pass
+            first = True
+            failures = 0
+            while not self._stop.is_set():
+                was_ok = self._session_ok
+                reason = self._run_session(first=first)
+                first = False
+                if self._stop.is_set() or reason == "stop":
+                    break
+                if reason == "first-error":
+                    break
+                if reason == "session-error" and not was_ok:
+                    # 会话还没建立成功（设备未就绪 / 音频设备暂时不可用）：
+                    # 只按退避等待重试，不累计「自动恢复」次数，避免 UI 数字乱涨。
+                    self._set_health("recovering" if self._device_connected()
+                                     else "waiting-device")
+                    delay = min(RECOVER_MAX_DELAY,
+                                RECOVER_MIN_DELAY * (2 ** min(failures, 3)))
+                    failures += 1
+                    if self._stop.wait(delay):
+                        break
+                    continue
+                self._session_ok = False
+                failures += 1
+                self._note_recovery(reason, failures)
+                delay = min(RECOVER_MAX_DELAY,
+                            RECOVER_MIN_DELAY * (2 ** min(failures - 1, 3)))
+                if self._stop.wait(delay):
+                    break
         except Exception as exc:  # noqa: BLE001
             self.errors += 1
-            self.last_error = str(exc)
+            self.last_error = f"音乐律动线程异常: {exc}"
+            log.exception("音乐律动线程异常")
         finally:
-            self.last_colors = {}
-            self._reset_measured_fps()
-            try:
-                capture.close()
-            except Exception:
-                pass
-            if self._drainer is not None:
-                self._drainer.stop()
-                self._drainer = None
-            if self._sender is not None:
-                self._sender.close()
-                self._sender = None
-            if self._snapshot:
-                lighting.restore_effect(self.device, self._snapshot["before"])
-                self._snapshot = None
+            self._cleanup_loop()
 
     def update(self, mode: Optional[int] = None, amplitude: Optional[int] = None,
                backmode: Optional[int] = None, backmode_brightness: Optional[int] = None,
@@ -2382,8 +2617,36 @@ class MusicPlayer:
         不打断音频采集。color=None 表示本次不改（显式传 "default" 才会恢复官方配色）。
         """
         engine = self._engine
-        if engine is None or not self.running:
+        if not self.running:
             raise MK87Error("音乐律动未在运行，无法热更新参数")
+        if engine is None:
+            # 自动恢复中（音频/键盘重建会话）：参数先缓存在 player 上，
+            # 下一次会话建立时由 _new_engine() 带进新引擎，界面上的调节不丢。
+            if mode is not None:
+                self.requested_mode = int(mode)
+                self.mode = int(mode) if int(mode) in IMPLEMENTED_MODES else 13
+            if color is not None:
+                self.color = normalize_color_id(color)
+            if amplitude is not None:
+                self.amplitude_ui = int(_clamp(int(amplitude), 1, 100))
+            if backmode is not None or backmode_brightness is not None:
+                self.backmode = int(_clamp(
+                    int(self.backmode if backmode is None else backmode), 0, 11))
+                self.backmode_brightness = int(_clamp(
+                    int(self.backmode_brightness if backmode_brightness is None
+                        else backmode_brightness), 1, 100))
+            if fps is not None:
+                target = _clamp_fps(fps)
+                if target != self.fps:
+                    self.fps = target
+                    self._reset_measured_fps()
+                    self._pace_fps = 0
+                    self._late_frames = 0
+            log.info("音乐律动恢复中，参数已缓存: mode=%s(请求 %s) backmode=%s bb=%s "
+                     "amp=%s color=%s targetFps=%s",
+                     self.mode, self.requested_mode, self.backmode,
+                     self.backmode_brightness, self.amplitude_ui, self.color, self.fps)
+            return self.status()
         if mode is not None:
             self.requested_mode = int(mode)
             engine.set_mode(int(mode))
@@ -2414,20 +2677,39 @@ class MusicPlayer:
         return self.status()
 
     def stop(self) -> dict:
+        self._user_stopped = True
         if self.running:
-            log.info("音乐律动停止: 共 %d 帧, %d 错误", self.frames, self.errors)
+            log.info("音乐律动停止: 共 %d 帧, %d 错误, 自动恢复 %d 次",
+                     self.frames, self.errors, self.recoveries)
         self._stop.set()
         if self._thread is not None:
-            self._thread.join(timeout=2.0)
+            self._thread.join(timeout=2.5)
             self._thread = None
+        self._stop_keepalive()
+        self._set_health("stopped")
         self._reset_measured_fps()
         return self.status()
 
     def status(self) -> dict:
         tm = self.timing
         n = max(1, int(tm.get("frames", 0)))
+        frame_age = self._frame_age()
+        keepalive = self._keepalive
         return {
             "running": self.running,
+            # 健康状态（v0.1.8.4）：starting / ok / recovering / waiting-device / stopped
+            "health": self.health,
+            # 自动恢复次数与最近一次恢复开始时间（前端显示「已自动恢复 N 次」）
+            "recoveries": int(self.recoveries),
+            "lastRecovery": self.last_recovery,
+            # 距最后一帧成功下发多少毫秒（运行中且出过帧才有；前端可显示卡顿）
+            "frameAgeMs": (int(frame_age * 1000) if frame_age is not None else None),
+            # 保后台是否生效（阻止系统空闲休眠）；键盘是否在线；音频是否回退默认
+            "keepAwake": bool(getattr(keepalive, "active", False)) if keepalive else False,
+            "deviceConnected": self._device_connected(),
+            "audioFallback": bool(self._audio_fallback),
+            # 是否用户主动停止（区别「意外停止」，仅诊断用）
+            "stoppedByUser": bool(self._user_stopped),
             "mode": self.mode,
             "requestedMode": self.requested_mode,
             "modes": MODES,

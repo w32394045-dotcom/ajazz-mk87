@@ -5,7 +5,7 @@
 ; MK87 Studio - Inno Setup installer script (Windows)
 
 #define MyAppName "MK87 Studio"
-#define MyAppVersion "0.1.8.3"
+#define MyAppVersion "0.1.8.4"
 #define MyAppPublisher "MK87 Studio (unofficial)"
 #define MyAppExeName "MK87Config.exe"
 #define MyAppId "{{8E6F3D42-4F7A-4C7B-9B1E-6A2D5E9C0F31}"

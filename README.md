@@ -8,7 +8,7 @@
 - **Device**: USB `VID 0x0C45 / PID 0x8047`; 2.4G receiver `VID 0x0C45 / PID 0xFEFE`
 - **Official web driver** (reverse-engineered): `https://ajazz.driveall.cn`
 - **Everything local**: no network access, no telemetry, no vendor driver required
-- **Latest release**: [v0.1.8.3](https://github.com/w32394045-dotcom/ajazz-mk87/releases/latest)
+- **Latest release**: [v0.1.8.4](https://github.com/w32394045-dotcom/ajazz-mk87/releases/latest)
 
 ## Screenshots
 
@@ -61,7 +61,58 @@ KDE, XFCE, Cinnamon, MATE and Ubuntu GNOME: **left-click shows the window, right
 install (one admin password, distro package) if the status card says the extension is missing. After
 installing on Wayland, log out and back in (on X11 you can also press `Alt+F2` and run `r`).
 
-## What's new in v0.1.8.3
+## What's new in v0.1.8.4
+
+> **Fixed: Music Rhythm used to keep showing "running" after the keyboard stream silently stopped**
+> (Windows + Linux). Real-device logs (Surface Laptop 2 · Windows 11 · keyboard USB fw1.19) show
+> `Kernel-Power 506: 系统正在进入连接待机状态 原因: Lid` at 2026-11-06 13:37:16 — the lid was closed,
+> Windows entered Modern Standby and the USB HID interface was suspended. From 13:37:17.888 every music
+> frame write reported `WriteFile 失败: 995` (`ERROR_OPERATION_ABORTED`); after 51 failures the old code
+> silently quit the thread (`errors > 50` → `break`). The other path (reproduced at 21:25) had `WriteFile`
+> **block forever** inside the `mk87-music` thread (py-spy stack: `NativeHidChannel.write`), while the
+> audio capture thread hung in WASAPI — frames stopped with no error at all. The old frontend only updated
+> `running` when the user pressed start/stop, and its 3 s poll only synced fps, so the UI kept showing
+> "running" with a frozen level bar after the backend had stopped or hung. This is not a keyboard or
+> user-system problem: the tool lacked detection and recovery for system standby / device loss / capture
+> stalls, and it had no keep-awake.
+
+- **HID writes can now time out (Windows)** — in `mk87lib/winhid.py` the write handle is opened as
+  **overlapped** with a **0.25 s timeout** and `CancelIoEx`; if cancellation cannot complete (device really
+  suspended) the channel is marked stuck and rebuilt by the layer above. In-flight IO channels are pinned
+  in a module-level keep-alive list, so a pending transfer's memory is never freed under a dangling
+  `CloseHandle`. The normal path stays synchronous, so 20/60/66 fps is unaffected.
+- **Music-session supervision and automatic recovery** (`mk87lib/music.py`) — a broken
+  "audio capture + frame stream" session is rebuilt automatically with backoff **0.5 → 1 → 2 → 5 s**; if the
+  keyboard drops off, the app waits for auto-reconnect and then **resumes playback by itself** — only the
+  user's "Stop" really ends the session; audio capture with no new data for **2.0 s** counts as stalled
+  (a WASAPI hang after standby used to be completely silent); **5 consecutive HID send failures** rebuild
+  the channel; a vanished audio device (headphones unplugged / default output switched) falls back to the
+  default-output loopback; live parameter changes survive a recovery.
+- **Keep-awake: Windows** (new `mk87lib/powerkeep.py`) — while Music Rhythm is running, a resident thread
+  holds `SetThreadExecutionState(ES_CONTINUOUS|ES_SYSTEM_REQUIRED)` + `timeBeginPeriod(1)` to prevent
+  **idle** system sleep and keep the 60 fps schedule stable; at startup
+  `SetProcessInformation(ProcessPowerThrottling)` disables Windows **EcoQoS** power throttling and ignores
+  timer-precision requests (the boot log records `power-throttle-optout`).
+- **Keep-awake: Linux** — `systemd-inhibit --what=sleep` blocks sleep and degrades to a no-op when
+  `systemd-inhibit` is unavailable. Deliberate user sleep (e.g. closing the lid) still happens; the
+  auto-recovery above is what handles wake-up.
+- **`/api/music/status` reports real health** — new `health` (`starting` / `ok` / `recovering` /
+  `waiting-device` / `stopped`), `recoveries`, `lastRecovery`, `frameAgeMs`, `keepAwake`,
+  `deviceConnected`, `audioFallback`, `stoppedByUser`; new WebSocket events `music_health` /
+  `music_stopped`.
+- **The UI follows the backend's real state** — the 3 s poll now syncs the backend's real `running` value;
+  the badge shows **rhythm running / recovering… / waiting for keyboard**, a successful recovery announces
+  "recovered N times automatically" (「已自动恢复 N 次」), and when the backend stops the page switches back
+  to "not started" and shows the reason.
+- **Tests** — 339 unit tests green (39 new: 23 keep-awake, 8 session guard / auto-recovery, 5 winhid write
+  timeout, 3 health-event contract); a real FastAPI + WebSocket smoke test also covered the HTTP/WS path
+  (the new `/api/music/status` fields, the `music_health` / `music_stopped` events, and a clean 503 from
+  `start` while the device is offline).
+- **Hardware verification status** — the root cause comes from the user's real-device logs and a live
+  process thread dump; the fix is covered by unit tests and a process-level smoke test, but a **full
+  standby-and-wake retest on the user's machine is still pending**.
+
+### v0.1.8.3
 
 > **Second fix: v0.1.8.2 cured the `GLIBC_2.43` error, but QtWebEngine then died with a segfault
 > (`段错误 (核心已转储)`) after EGL initialisation failed.** Root cause: PyInstaller still bundled the

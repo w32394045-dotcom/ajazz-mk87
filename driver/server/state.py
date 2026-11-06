@@ -307,18 +307,45 @@ class DeviceManager:
         self._music_level_thread.start()
 
     def _music_level_loop(self) -> None:
-        """音乐律动运行时推送两类事件：
+        """音乐律动运行时推送两类事件（v0.1.8.4 起再加健康/停止事件）：
 
         * ``music_level``（10fps）：总振幅 + 32 段频谱，给电平条/频谱条用；
         * ``music_frame``（跟随目标帧率、预览上限 30fps）：后端**实际发给键盘那一帧**的
           逐键颜色，前端「官方方案」预览直接回放它，保证屏幕预览与键盘逐键一致；
-          事件里的 ``fps`` 是后端实测帧率（float），与 ``/api/music/status`` 同源。
+          事件里的 ``fps`` 是后端实测帧率（float），与 ``/api/music/status`` 同源；
+        * ``music_health``（状态变化时）：自动恢复中 / 等待键盘 / 已恢复，前端显示徽章；
+        * ``music_stopped``（运行中 → 不在运行）：意外停止时前端自动切回未开始并提示原因。
         """
         level_due = 0.0
         frame_due = 0.0
+        last_health = None
+        last_running = False
         while not self._stop.is_set():
             try:
-                if self.music.running:
+                running = bool(self.music.running)
+                if running != last_running:
+                    if running:
+                        last_health = getattr(self.music, "health", "ok")
+                        self.emit({"type": "music_health",
+                                   "data": self._music_health_event()})
+                    else:
+                        self.emit({
+                            "type": "music_stopped",
+                            "data": {
+                                "reason": getattr(self.music, "last_error", "") or "",
+                                "unexpected": not bool(
+                                    getattr(self.music, "_user_stopped", False)),
+                                "frames": int(getattr(self.music, "frames", 0)),
+                                "errors": int(getattr(self.music, "errors", 0)),
+                            },
+                        })
+                    last_running = running
+                if running:
+                    health = getattr(self.music, "health", "ok")
+                    if health != last_health:
+                        last_health = health
+                        self.emit({"type": "music_health",
+                                   "data": self._music_health_event()})
                     now = time.time()
                     if now >= level_due:
                         level_due = now + 0.1
@@ -342,6 +369,15 @@ class DeviceManager:
             except Exception:  # noqa: BLE001
                 pass
             time.sleep(0.1)
+
+    def _music_health_event(self) -> dict:
+        """音乐律动健康事件数据（兼容旧 MusicPlayer / 单测假对象）。"""
+        return {
+            "state": getattr(self.music, "health", "ok"),
+            "lastError": getattr(self.music, "last_error", "") or "",
+            "recoveries": int(getattr(self.music, "recoveries", 0)),
+            "connected": bool(self.connected),
+        }
 
     def _music_frame_event(self) -> Optional[dict]:
         """把 MusicPlayer 最近一帧的逐键颜色转成 WS 事件（还没出帧时返回 None）。
@@ -573,7 +609,7 @@ class DeviceManager:
         st = self.device.status.to_dict()
         st["mock"] = False
         st["shell"] = bool(getattr(self, "shell_mode", False))
-        st["webVersion"] = "0.1.8.3"
+        st["webVersion"] = "0.1.8.4"
         st["recentNotifications"] = [
             e for e in self.device.recent_events if e.get("type") == "notification"
         ][-10:]

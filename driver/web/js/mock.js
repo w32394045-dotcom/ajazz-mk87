@@ -718,6 +718,15 @@ export class MockServer {
         method: 'GET', path: '/api/music/status', handler: () => ({
           running: S.music.running, mode: S.music.mode, requestedMode: S.music.requestedMode,
           modes: MUSIC_MODES,
+          /* 运行健康状态（与真实后端契约一致：自动恢复 / 保后台 / 设备在线 / 音频回退） */
+          health: S.music.running ? 'ok' : 'stopped',
+          recoveries: 0,
+          lastRecovery: null,
+          frameAgeMs: S.music.running ? 50 : null,
+          keepAwake: S.music.running,
+          deviceConnected: true,
+          lastError: '',
+          audioFallback: false,
           fps: S.music.running ? (S.music.official ? S.music.measuredFps : S.music.fps) : null,
           targetFps: S.music.official ? (S.music.nativeFps || OFFICIAL_DEFAULT_FRAME_RATE) : (S.music.fps || 20),
           color: S.music.color || 'default',

@@ -384,6 +384,18 @@ export const EN_TEXT = {
   "本工具的「官方方案」使用与官方 v1 插件相同的设置项：显示模式（21 种，含 100 屏光联动）、背景模式（11 种）、背景亮度、振幅，并增加本工具自研的 LED 颜色覆盖与原生帧率（20/60/66，默认 66）；由本地移植的官方渲染器计算逐键帧并发送（cmd 0x32）。": "The Official scheme uses the same settings as the official v1 plugin — 21 display modes (incl. 100 Screen light linkage), 11 background modes, background brightness and amplitude — plus custom LED color override and native frame rate (20/60/66, default 66). Per-key frames are rendered by the locally ported official renderer and sent over cmd 0x32.",
   "其中 1/2/4/5/6/7/8/9/10/11 是官方「曲率频阶柱状」的不同调色板（模式号即调色板），13 是同心环，14–22 是扩展模式（自研渲染器）；1/2/4/5/6/7/8/9/10/11/13 的颜色、覆盖率与亮度缩放都用官方采样（capture/official_music_colors3.jsonl）逐项校验过。": "Modes 1/2/4/5/6/7/8/9/10/11 share the official \"Curvature Frequency Steps\" bar geometry with different palettes (the mode number is the palette); mode 13 is the concentric-ring renderer and 14–22 are extended modes (custom renderers). Colors, coverage and brightness scaling for 1/2/4/5/6/7/8/9/10/11/13 were verified item by item against the official samples (capture/official_music_colors3.jsonl).",
   "LED 颜色覆盖 · 原生帧率 20 / 60 / 66（默认 66）": "LED color override · native FPS 20 / 60 / 66 (default 66)",
+  /* 音乐律动健康状态 / 自动恢复（本次新增） */
+  "恢复中…": "Recovering…",
+  "等待键盘": "Waiting for keyboard",
+  "音频/键盘中断，正在自动恢复…": "Audio/keyboard interrupted; recovering automatically…",
+  "键盘已断开，等待重新连接后自动恢复律动": "Keyboard disconnected; waiting for reconnection to resume rhythm",
+  "音频采集中断，正在自动恢复…": "Audio capture interrupted; recovering automatically…",
+  "键盘连接中断，等待重连后自动恢复律动": "Keyboard disconnected; rhythm will resume automatically after reconnection",
+  "音乐律动已自动恢复": "Music rhythm recovered automatically",
+  "音乐律动已停止（原因未知）": "Music rhythm stopped (reason unknown)",
+  "（原音频设备不可用，已回退默认输出）": " (original audio device unavailable; using the default output instead)",
+  "原音频设备不可用，已回退默认输出": "Original audio device unavailable; using the default output instead",
+  "未知原因": "unknown reason",
   /* LED 颜色预设名 */
   "不覆盖（官方采样色）": "No override (official sampled colors)",
   "冰蓝": "Ice Blue",
@@ -792,4 +804,8 @@ export const EN_PATTERNS = [
   [/^退出失败：(.*)$/, 'Quit failed: $1'],
   [/^设置开机自启失败：(.*)$/, 'Failed to update launch-at-start-up: $1'],
   [/^读取开机自启失败：(.*)$/, 'Failed to read launch-at-start-up state: $1'],
+  /* ---------- 音乐律动健康状态 / 自动恢复 ---------- */
+  [/^已自动恢复 (\d+) 次（最近一次：(.*)）$/, 'Auto-recovered $1 time(s) (last: $2)'],
+  [/^已自动恢复 (\d+) 次$/, 'Auto-recovered $1 time(s)'],
+  [/^音乐律动已停止：(.*)$/, 'Music rhythm stopped: $1'],
 ];

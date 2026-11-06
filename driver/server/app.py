@@ -34,7 +34,7 @@ from mk87lib.errors import (
 from server import state
 
 WEB_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "web")
-VERSION = "0.1.8.3"
+VERSION = "0.1.8.4"
 
 manager = state.manager
 log = logging.getLogger("mk87.http")

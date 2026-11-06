@@ -11,7 +11,71 @@ Screenshots and the full feature list live in the repository README:
 **[README.md (English)](https://github.com/w32394045-dotcom/ajazz-mk87/blob/main/README.md)** ·
 **[README.zh-CN.md (简体中文)](https://github.com/w32394045-dotcom/ajazz-mk87/blob/main/README.zh-CN.md)**
 
-## What's new in v0.1.8.3
+## What's new in v0.1.8.4
+
+**Fixes the "keyboard stream stops but the UI still says running" bug in Music Rhythm after long sessions,
+on Windows and Linux — and adds a keep-awake mechanism plus automatic recovery.**
+
+> **Root cause (real-device logs + a live process thread dump).** On a Surface Laptop 2 running Windows 11
+> with the keyboard on USB fw1.19, Windows entered **Modern Standby** at 2026-11-06 13:37:16
+> (`Kernel-Power 506: 系统正在进入连接待机状态 原因: Lid`, lid closed) and suspend the USB HID interface.
+> From 13:37:17.888 the music frame writer failed with `WriteFile 失败: 995` (`ERROR_OPERATION_ABORTED`) on
+> every write; after 51 failures the old code silently ended the thread (`errors > 50` → `break`).
+>
+> A second path reproduced at 21:25: `WriteFile` **blocked forever** in the `mk87-music` thread (py-spy
+> stack: `NativeHidChannel.write`) while the audio capture thread hung inside WASAPI — frames simply
+> stopped, with no error at all.
+>
+> The old frontend only updated `running` when the user pressed start/stop, and its 3 s poll only synced
+> fps, so the UI kept showing "running" with a frozen level bar after the backend had stopped or hung.
+> This was not a keyboard or user-system problem: the tool had no detection/recovery for system standby,
+> device loss or capture stalls — and no keep-awake.
+
+- **Fixed: native HID writes can time out (Windows).** `mk87lib/winhid.py` opens the write handle as
+  **overlapped** with a **0.25 s timeout** and calls `CancelIoEx` when it expires. If cancellation cannot
+  complete (device really suspended) the channel is marked stuck and rebuilt by the layer above. In-flight
+  IO channels are pinned in a module-level keep-alive list, so a pending transfer's memory is never freed
+  under a dangling `CloseHandle`. The normal path stays synchronous and still sustains 20/60/66 fps.
+- **Fixed: Music Rhythm session supervision + automatic recovery (`mk87lib/music.py`).** A broken
+  "audio capture + frame stream" session is rebuilt automatically with backoff **0.5 → 1 → 2 → 5 s**; if
+  the keyboard drops off, the app waits for auto-reconnect and then **resumes playback by itself** — only
+  the user's "Stop" really ends the session. Audio capture with no new data for **2.0 s** is treated as
+  stalled (a WASAPI hang after standby was silent in the old code); **5 consecutive HID send failures**
+  rebuild the channel; if the original audio device disappears (headphones unplugged / default output
+  switched) it falls back to the default-output loopback; live parameter changes survive a recovery.
+- **New: keep-awake (`mk87lib/powerkeep.py`).** While Music Rhythm runs, Windows holds a resident thread
+  with `SetThreadExecutionState(ES_CONTINUOUS|ES_SYSTEM_REQUIRED)` + `timeBeginPeriod(1)` to prevent
+  **idle** system sleep and keep the 60 fps schedule stable; at startup
+  `SetProcessInformation(ProcessPowerThrottling)` disables Windows **EcoQoS** power throttling and ignores
+  timer-precision requests (boot log records `power-throttle-optout`). On Linux `systemd-inhibit
+  --what=sleep` blocks sleep and degrades to a no-op when `systemd-inhibit` is unavailable. Deliberate user
+  sleep (e.g. closing the lid) still happens — the automatic recovery above is what handles wake-up.
+- **Fixed: status and UI now tell the truth.** `/api/music/status` gained `health` (`starting` / `ok` /
+  `recovering` / `waiting-device` / `stopped`), `recoveries`, `lastRecovery`, `frameAgeMs`, `keepAwake`,
+  `deviceConnected`, `audioFallback` and `stoppedByUser`; new WebSocket events `music_health` and
+  `music_stopped`. The frontend's 3 s poll now syncs the backend's real `running` state: the badge shows
+  **running / recovering… / waiting for keyboard**, a successful recovery announces "recovered N times
+  automatically" (「已自动恢复 N 次」), and when the backend stops the page switches back to "not started"
+  and shows the reason.
+- **Tests.** 339 unit tests green (39 new: 23 keep-awake, 8 session-guard/recovery, 5 winhid write-timeout,
+  3 health-event contract). A real FastAPI + WebSocket smoke test also covered the HTTP/WS path: the new
+  `/api/music/status` fields, the `music_health` / `music_stopped` events, and a clean **503** from `start`
+  while the device is offline.
+- **Upgrade.** Windows: run the new installer or unzip the portable build over the old one (overwrite =
+  upgrade). Linux: `sudo apt install ./mk87_*.deb` / `sudo dnf install ./mk87-*.rpm` over the old package.
+  No driver reinstall is needed.
+- **Known limitation / verification status.** The root cause is backed by the user's real-device logs and
+  an online process thread dump; the fix is covered by unit tests and a process-level smoke test, but a
+  **full standby → wake-up retest on the user's machine is still pending**. Do not treat this release as
+  fully verified on hardware yet.
+
+> 中文摘要：v0.1.8.4 修复音乐律动长时间运行后「键盘停更、界面仍显示律动中」——根因是系统进入 Modern
+> Standby（合盖）后 USB HID 被挂起、旧代码在 `WriteFile` 报错 51 次后静默退出线程（另一路径是写调用
+> 永久阻塞），而旧前端不同步后端 `running`。本版加入 HID 写超时与通道重建、会话监督与自动续播、保后台
+> （Windows `SetThreadExecutionState` / Linux `systemd-inhibit`），并让状态与界面如实反映 `health`；
+> 339 个单元测试全绿，真机待机-唤醒复测仍待用户执行。
+
+### v0.1.8.3
 
 > **v0.1.8.2 fixed the `GLIBC_2.43` error but the app still crashed on Ubuntu 24.04 — this time with
 > `段错误 (核心已转储)` (segfault) after QtWebEngine failed to initialise EGL.** Root cause: PyInstaller

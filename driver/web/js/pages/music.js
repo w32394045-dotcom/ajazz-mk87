@@ -82,6 +82,13 @@ export default {
     let measuredFps = null;        // 官方方案页面上显示的「实测」帧率；null → 显示 —
     let implementedModes = IMPLEMENTED_FALLBACK.slice();
     let officialColors = null;     // Map<slot, [r,g,b]> 后端最近一帧
+    /* 引擎健康状态（后端自动恢复 / 等待设备） */
+    let healthState = 'stopped';   // starting | ok | recovering | waiting-device | stopped
+    let recoveries = 0;            // 后端自动恢复次数
+    let lastRecovery = null;       // 最近一次恢复开始的 unix 时间戳
+    let lastError = '';            // 后端最近错误（可能为空）
+    let audioFallback = false;     // 原音频设备失效后是否回退到默认输出
+    let frameAgeMs = null;         // 运行中距最后一帧成功下发的毫秒数
     let statusTimer = null;
     let levels = new Array(BAND_COUNT).fill(0);
     let targetLevels = new Array(BAND_COUNT).fill(0);
@@ -113,6 +120,13 @@ export default {
         if (st.requestedMode != null) backendRequested = Number(st.requestedMode);
         if (st.fps != null) backendFps = Number(st.fps);
         if (running && st.fps != null) measuredFps = Number(st.fps);
+        /* 健康状态回填：刷新 / 重开页面时与后端自动恢复状态一致 */
+        if (typeof st.health === 'string') healthState = st.health;
+        if (st.recoveries != null) recoveries = Number(st.recoveries) || 0;
+        lastRecovery = st.lastRecovery != null ? Number(st.lastRecovery) : null;
+        if (typeof st.lastError === 'string') lastError = st.lastError;
+        if (typeof st.audioFallback === 'boolean') audioFallback = st.audioFallback;
+        if (st.frameAgeMs != null) frameAgeMs = Number(st.frameAgeMs);
         // 官方参数回填（刷新页面 / 从别处启动时保持一致）
         if (st.amplitude != null) offAmplitude = Number(st.amplitude);
         if (st.backmode != null) offBackmode = Number(st.backmode);
@@ -146,7 +160,55 @@ export default {
     const levelMeter = h('div', { class: 'meter' }, h('div', { class: 'meter-bar' }, h('i')));
     const meterValue = h('span', { class: 'mono tiny muted' }, '0.000');
     const statusBadge = h('span', { class: 'badge' }, '未开始');
+    /* 自动恢复提示（start/stop 行下方）：文案随后端健康状态变化，非恢复场景隐藏 */
+    const healthHintMain = h('span', {}, '');
+    const healthHintFallback = h('span', {}, '');
+    const healthHint = h('div', {
+      class: 'tiny muted',
+      style: { marginTop: '8px', display: 'none' },
+    }, healthHintMain, healthHintFallback);
     const deviceList = h('div', { class: 'stack' });
+
+    /* 徽章反映后端真实健康状态；样式使用 app.css 已有的 .badge.ok / .badge.warn */
+    function applyHealthBadge() {
+      if (!running) {
+        statusBadge.textContent = '未开始';
+        statusBadge.className = 'badge';
+        return;
+      }
+      if (healthState === 'recovering') {
+        statusBadge.textContent = '恢复中…';
+        statusBadge.className = 'badge warn';
+      } else if (healthState === 'waiting-device') {
+        statusBadge.textContent = '等待键盘';
+        statusBadge.className = 'badge warn';
+      } else {
+        statusBadge.textContent = '律动中';
+        statusBadge.className = 'badge ok';
+      }
+    }
+
+    /* 恢复提示：自动恢复次数 / 恢复中 / 等待键盘 / 音频回退 */
+    function refreshHealthHint() {
+      let main = '';
+      if (running) {
+        if (healthState === 'recovering') {
+          main = '音频/键盘中断，正在自动恢复…';
+        } else if (healthState === 'waiting-device') {
+          main = '键盘已断开，等待重新连接后自动恢复律动';
+        } else if (healthState === 'ok' && recoveries > 0) {
+          const seconds = Number(lastRecovery);
+          const when = Number.isFinite(seconds) && seconds > 0
+            ? new Date(seconds * 1000).toLocaleTimeString()
+            : '';
+          main = when ? `已自动恢复 ${recoveries} 次（最近一次：${when}）` : `已自动恢复 ${recoveries} 次`;
+        }
+      }
+      const fallbackNote = running && audioFallback ? '（原音频设备不可用，已回退默认输出）' : '';
+      healthHintMain.textContent = main;
+      healthHintFallback.textContent = fallbackNote;
+      healthHint.style.display = (main || fallbackNote) ? '' : 'none';
+    }
 
     /* ---------------- 当前方案控件 ---------------- */
     const modeLabel = (m) => (LANG_EN ? (m.nameEn || m.name) : (m.name || m.nameEn));
@@ -341,12 +403,35 @@ export default {
       updateFpsReadout();
       refreshOfficialModeHint();
     }
-    /* 实测帧率：status.fps 是后端回传的实测值（可能是浮点），运行中每 3s 刷新一次 */
+    /* 状态轮询：完整同步后端状态（running / 健康 / 恢复次数 / 实测帧率）。
+       后端停止（或放弃自动恢复）后前端如实切回未开始并提示原因，不再只同步 fps */
     async function pollStatusFps() {
-      if (!running) return;
       try {
         const st = await api.get('/api/music/status');
         if (!st) return;
+        /* 后端 running 与本地不一致时以真实状态为准（典型：待机/设备断开后后端已停止） */
+        if (typeof st.running === 'boolean' && st.running !== running) {
+          const wasRunning = running;
+          setRunning(st.running);
+          if (wasRunning && !st.running) {
+            const reason = String(st.lastError || '').trim();
+            ctx.toastWarn(reason ? `音乐律动已停止：${reason}` : '音乐律动已停止（原因未知）');
+          }
+        }
+        /* 健康状态：恢复中 / 等待键盘 / 已恢复次数 / 音频回退 */
+        if (typeof st.health === 'string') healthState = st.health;
+        if (st.recoveries != null) {
+          const n = Number(st.recoveries);
+          if (Number.isFinite(n)) recoveries = n;
+        }
+        lastRecovery = st.lastRecovery != null ? Number(st.lastRecovery) : null;
+        if (typeof st.lastError === 'string') lastError = st.lastError;
+        if (typeof st.audioFallback === 'boolean') audioFallback = st.audioFallback;
+        frameAgeMs = st.frameAgeMs != null ? Number(st.frameAgeMs) : null;
+        if (!running) healthState = 'stopped';
+        applyHealthBadge();
+        refreshHealthHint();
+        /* 实测帧率：status.fps 是后端回传的实测值（可能是浮点） */
         if (st.fps != null) {
           const v = Number(st.fps);
           if (Number.isFinite(v)) { backendFps = v; measuredFps = v; }
@@ -533,13 +618,49 @@ export default {
       officialColors = officialFrameMap(d.colors);
       if (firstFrame && officialColors.size) refreshPreviewNote();
     }));
+    /* 后端健康状态推送：自动恢复中 / 等待键盘 / 恢复成功。只在状态值变化时 toast，避免每帧刷屏 */
+    offs.push(api.on('ws:music_health', (d) => {
+      if (!d) return;
+      const prev = healthState;
+      const next = typeof d.state === 'string' && d.state ? d.state : prev;
+      if (d.lastError != null) lastError = String(d.lastError || '');
+      if (d.recoveries != null) {
+        const n = Number(d.recoveries);
+        if (Number.isFinite(n)) recoveries = n;
+      }
+      healthState = running ? next : 'stopped';
+      applyHealthBadge();
+      refreshHealthHint();
+      if (!running || next === prev) return;
+      if (next === 'recovering') {
+        ctx.toastWarn('音频采集中断，正在自动恢复…');
+      } else if (next === 'waiting-device') {
+        ctx.toastWarn('键盘连接中断，等待重连后自动恢复律动');
+      } else if (next === 'ok' && (prev === 'recovering' || prev === 'waiting-device')) {
+        ctx.toastSuccess('音乐律动已自动恢复');
+      }
+    }));
+    /* 后端停止推送：前端立刻切回未开始；意外停止（待机/设备断开后放弃恢复）用 error 提示原因 */
+    offs.push(api.on('ws:music_stopped', (d) => {
+      const data = d || {};
+      if (running) {
+        setRunning(false);
+      } else {
+        applyHealthBadge();
+        refreshHealthHint();
+      }
+      if (data.unexpected) {
+        ctx.toastError('音乐律动已停止：' + (data.reason || '未知原因'));
+      }
+    }));
 
     function setRunning(on) {
       running = on;
       startBtn.disabled = on || !supported;
       stopBtn.disabled = !on;
-      statusBadge.textContent = on ? '律动中' : '未开始';
-      statusBadge.className = `badge ${on ? 'ok' : ''}`;
+      if (!on) healthState = 'stopped';
+      applyHealthBadge();
+      refreshHealthHint();
       idleHint.style.display = on ? 'none' : '';
       levelBarWrap.style.opacity = on ? '1' : '.55';
       if (on) {
@@ -633,6 +754,16 @@ export default {
         applyStatus(st);
         backendRequested = st?.requestedMode != null ? Number(st.requestedMode) : Number(body.mode);
         backendFps = Number(st?.fps || body.fps || 20);
+        /* 启动成功：后端已给健康状态就用它，否则先按 starting（下一轮轮询转 ok） */
+        healthState = (typeof st?.health === 'string' && st.health !== 'stopped') ? st.health : 'starting';
+        /* 新一轮启动后端会把自动恢复计数清零，这里同步回填，避免残留上一次的恢复提示 */
+        if (st && typeof st === 'object') {
+          if (st.recoveries != null) recoveries = Number(st.recoveries) || 0;
+          lastRecovery = st.lastRecovery != null ? Number(st.lastRecovery) : null;
+          if (typeof st.lastError === 'string') lastError = st.lastError;
+          if (typeof st.audioFallback === 'boolean') audioFallback = st.audioFallback;
+        }
+        frameAgeMs = null;
         setRunning(true);
         ctx.toastSuccess(scheme === 'official'
           ? '已开始音乐律动（官方方案 · 官方同款参数）'
@@ -650,6 +781,7 @@ export default {
       } catch (e) {
         ctx.toastError(`停止失败：${e.message || e}`);
       }
+      healthState = 'stopped';
       setRunning(false);
     }
     startBtn.addEventListener('click', startMusic);
@@ -671,6 +803,7 @@ export default {
           h('div', { class: 'spacer' }),
           h('span', { class: 'tiny muted' }, '参数由本地引擎计算，无需 Music.exe'),
         ),
+        healthHint,
         h('div', { class: 'section-title', style: { marginTop: '20px' } },
           h('h2', {}, '实时电平'), h('span', { class: 'hint' }, `32 段频谱 · ${meterValue.textContent}`)),
         levelBarWrap,

@@ -8,7 +8,7 @@ USB / 2.4G 协议的完整逆向实现，全部功能**离线本地运行**。
 - **设备**：USB `VID 0x0C45 / PID 0x8047`；2.4G 接收器 `VID 0x0C45 / PID 0xFEFE`
 - **官方网页驱动**（已逆向）：`https://ajazz.driveall.cn`
 - **全程本地**：不访问外网、不上传数据、不依赖官方驱动
-- **最新版本**：[v0.1.8.3](https://github.com/w32394045-dotcom/ajazz-mk87/releases/latest)
+- **最新版本**：[v0.1.8.4](https://github.com/w32394045-dotcom/ajazz-mk87/releases/latest)
 
 ## 界面截图
 
@@ -60,7 +60,42 @@ dbusmenu：**左键显示主窗口，右键打开菜单**（显示主窗口 / �
 缺少扩展，可直接「一键安装」（需要一次管理员密码，装的是发行版包）。Wayland 下装完请注销重新登录，
 X11 下也可以按 `Alt+F2` 输入 `r`。
 
-## v0.1.8.3 更新
+## v0.1.8.4 更新
+
+> **修复：音乐律动长时间运行后「键盘停更、界面仍显示律动中」**（Windows + Linux）。用户 Windows 实机
+> 日志（Surface Laptop 2 / Win11 / 键盘 USB fw1.19）显示：`Kernel-Power 506: 系统正在进入连接待机状态
+> 原因: Lid` 出现在 2026-11-06 13:37:16（合盖），USB HID 随之被挂起；13:37:17.888 起音乐帧发送连续报
+> `WriteFile 失败: 995`（`ERROR_OPERATION_ABORTED`），51 次后旧代码因 `errors>50` 静默退出线程。另一条
+> 路径（21:25 复现）里 `WriteFile` 在 `mk87-music` 线程中**永久阻塞**（py-spy 栈：`NativeHidChannel.write`），
+> 帧流停更、音频采集线程同时卡在 WASAPI。旧前端只在用户点 start/stop 时更新 `running`，3s 轮询只同步
+> fps，所以后端已停止/卡死时界面仍显示「律动中」、电平条冻结。结论：不是键盘或用户系统的问题，是本工具
+> 缺少「系统待机 / 设备掉线 / 采集阻塞」的检测与恢复，也没有保后台。
+
+- **原生 HID 写入可超时（Windows）** —— `mk87lib/winhid.py` 的写句柄改为 overlapped + 0.25s 超时 +
+  `CancelIoEx`；取消不掉（设备真挂起）则标记通道卡死、由上层重建；在途 IO 通道交给模块级保活列表，
+  绝不 `CloseHandle` 悬空内存。正常时走同步快路径，不影响 20/60/66fps。
+- **音乐律动会话监督 / 自动恢复**（`mk87lib/music.py`）—— 一次「音频采集 + 帧流」会话中断后自动重建
+  （退避 0.5→1→2→5s）；键盘掉线时等待自动重连后**自动续播**，用户点「停止」才真正结束；音频采集
+  2.0s 无新数据判定卡死（WASAPI 待机后永久阻塞但旧代码不报错）；HID 连续 5 次发送失败重建通道；
+  原音频设备失效（拔耳机 / 切默认输出）自动回退默认输出回环；恢复期间热更新参数不丢。
+- **保后台：Windows**（新增 `mk87lib/powerkeep.py`）—— 音乐律动运行期间用常驻线程维持
+  `SetThreadExecutionState(ES_CONTINUOUS|ES_SYSTEM_REQUIRED)` + `timeBeginPeriod(1)`，阻止系统空闲休眠、
+  稳定 60fps 排期；程序启动时 `SetProcessInformation(ProcessPowerThrottling)` 关闭 Windows 能效节流
+  （EcoQoS）并忽略计时器精度请求（boot log 记录 `power-throttle-optout`）。
+- **保后台：Linux** —— 用 `systemd-inhibit --what=sleep` 阻止 sleep，无 `systemd-inhibit` 时自动降级
+  no-op。合盖等用户主动休眠仍会睡，唤醒后靠上面的自动恢复续播。
+- **`/api/music/status` 如实上报健康状态** —— 新增 `health`（`starting` / `ok` / `recovering` /
+  `waiting-device` / `stopped`）、`recoveries`、`lastRecovery`、`frameAgeMs`、`keepAwake`、
+  `deviceConnected`、`audioFallback`、`stoppedByUser`；新增 WS 事件 `music_health` / `music_stopped`。
+- **界面按后端真实状态显示** —— 前端 3s 轮询同步后端真实 `running`，徽章显示「律动中 / 恢复中… /
+  等待键盘」，恢复成功提示「已自动恢复 N 次」，后端停止时自动切回「未开始」并提示原因。
+- **测试** —— 339 个单元测试全绿（本次新增 39 个：保活 23、会话守护 / 自动恢复 8、winhid 写超时 5、
+  健康事件契约 3）；另外用真实 FastAPI + WS 冒烟验证了 HTTP/WS 链路（`/api/music/status` 新字段、
+  `music_health` / `music_stopped` 事件、设备离线时 start 干净返回 503）。
+- **真机验证状态** —— 根因来自用户实机日志与在线进程线程栈；修复已通过单元测试与进程冒烟，但
+  **尚未在用户机器上跑完整的待机-唤醒真机复测**。
+
+### v0.1.8.3
 
 > **第二次修复：v0.1.8.2 修好了 GLIBC，但 QtWebEngine 在 EGL 初始化失败后段错误（`段错误 (核心已转储)`）。**
 > 根因是 PyInstaller 仍然把构建机 Ubuntu 22.04 的**整套系统库**（glib / libstdc++ / wayland / xcb /

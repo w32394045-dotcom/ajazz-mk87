@@ -617,3 +617,25 @@ udev 规则 / 结论；源码环境同一套逻辑在 `probe/linux_hid_check.py`
 | 发布 | tag `v0.1.8.3` → CI run [#76](https://github.com/w32394045-dotcom/ajazz-mk87/actions/runs/42166722401) 全绿 → Release 2026-11-06 13:18；deb/rpm 体积 210.7MB→192.3MB、248.5MB→226.9MB |
 | 全量单测 | **300 tests OK**（本地 Windows + CI ubuntu/windows；v0.1.8.2 为 284） |
 | 用户真机 | **待用户安装 v0.1.8.3 后验证**：`sudo apt install ./mk87_0.1.8.3_amd64.deb`；若仍崩溃，附 `~/.mk87-boot.log`、`~/.cache/mk87/launcher.log`、`~/.local/state/mk87/logs/crash.log` |
+
+
+## 24 v0.1.8.4 音乐律动长时运行失效修复：会话守护 / 自动恢复 / 保后台（2026-11-06 晚）
+
+> 触发：用户报告 Windows 上音乐律动开久了键盘突然停更、应用仍显示「律动中」、电平条冻结，
+> 怀疑「系统杀后台」，要求做保后台机制（Linux 同理）。根因分析见 [DEVLOG §28](DEVLOG.md)。
+
+| 测试项 | 结果 |
+|---|---|
+| 用户实机日志时间线 | 13:37:16 `Kernel-Power 506 进入连接待机（Lid）` → 13:37:17~18 连续 51 条 `WriteFile 失败: 995` → 帧流线程静默退出 → 13:40:42 记录 178.2s 进程冻结；唤醒后设备扫描持续失败、音乐未恢复 |
+| 卡死线程栈（py-spy） | `mk87-music`：`NativeHidChannel.write`（同步 WriteFile 永久阻塞）；`mk87-audio`：soundcard `_AudioClient.deviceperiod`。进程仍活、`/api/music/status` 仍 `running: true` 但 `frames` 冻结 → 与用户现象完全吻合 |
+| 修复 1：原生写超时 | `winhid.py` 写句柄 `FILE_FLAG_OVERLAPPED` + 0.25s 超时 + `CancelIoEx`；取消不掉标记卡死交上层重建；在途 IO 通道进 `_ORPHAN_CHANNELS` 保活，绝不 `CloseHandle`。单测 `tests/test_winhid_write.py` **5/5 OK**（同步快路径 / pending 超时 / 取消成功可复用 / 卡死 close 转保活 / 1167 普通错误） |
+| 修复 2：会话监督 + 自动恢复 | `music.py` 监督循环：会话中断自动重建（退避 0.5→1→2→5s）；音频采集 2.0s 无新数据判定卡死；HID 连续 5 次发送失败重建通道；键盘掉线等 monitor 重连后自动续播；原音频设备失效回退默认输出；恢复期热更新参数缓存。单测 `tests/test_music_watchdog.py` **8/8 OK** |
+| 修复 3：保后台 | 新增 `mk87lib/powerkeep.py`：Windows 常驻线程 `SetThreadExecutionState(ES_CONTINUOUS|ES_SYSTEM_REQUIRED)` 每 30s 重申 + `timeBeginPeriod(1)`；启动时 `SetProcessInformation(ProcessPowerThrottling)` 关闭 EcoQoS 并忽略计时器精度请求；Linux `systemd-inhibit --what=sleep`（缺命令降级 no-op）。单测 `tests/test_powerkeep.py` **23/23 OK**；真实 Windows API 冒烟：节流关闭返回 True、KeepAwake 线程起停正常且可重启 |
+| 修复 4：状态契约 | `/api/music/status` 新增 `health / recoveries / lastRecovery / frameAgeMs / keepAwake / deviceConnected / audioFallback / stoppedByUser`；WS 新增 `music_health` / `music_stopped`（只在状态变化时发）。单测 `tests/test_music_health_events.py` **3/3 OK**（含用户主动停止不标 unexpected、旧 Player 兼容） |
+| 修复 5：前端如实反映 | 3s 轮询同步后端真实 `running`（true→false 自动切回未开始 + toast 原因）；徽章「律动中 / 恢复中… / 等待键盘」；恢复成功 toast；提示行「已自动恢复 N 次（最近一次：本地时间）」「原音频设备不可用，已回退默认输出」。`node --check` 三个改动 JS 全部通过 |
+| 真实 HTTP/WS 冒烟 | 临时脚本启动真实 FastAPI+uvicorn + 连接 `/ws`：`/api/music/status` 新字段齐全；`music_health`、`music_stopped` 事件按契约送达；设备离线时 `POST /api/music/start` 干净返回 **503**（不 500、不崩线程）。脚本跑完已删除 |
+| 全量单测 | **339 tests OK**（`cd driver && .\.venv\Scripts\python.exe -m unittest discover -s tests`；v0.1.8.3 为 300，本次新增 39：保活 23 + 会话守护 8 + winhid 写超时 5 + 健康事件 3） |
+| 回归面 | 现有 300 个旧测试全绿（含 `test_music_fps` 的 20/60/66fps 排期、发送策略、帧率契约；`_cleanup_loop` 保留 engine 引用以兼容旧断言） |
+| 覆盖缺口（诚实标注） | ①未在真实键盘上做「长时间播放 + 合盖唤醒」复测（用户机器当前键盘未连接）；②Windows overlapped 写的真实设备路径只做了代码级/单测验证，未真机跑帧流；③Linux 的 systemd-inhibit 只在单测 mock 下验证，未在真实 systemd 会话里验证；④未做 2 小时以上连续运行 soak |
+| 用户真机复测建议 | 安装 v0.1.8.4 后：①正常播放 ≥30 分钟；②合盖 1 分钟后开盖，观察是否自动恢复；③拔插键盘/USB 口；如仍异常，导出日志（设置页「日志与诊断」一键导出）并附 `%LOCALAPPDATA%\mk87\logs` |
+| 发布 | 版本 `0.1.8.4`；tag / CI / Release 见 DEVLOG §28.5（发布后回填） |
