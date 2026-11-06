@@ -638,4 +638,4 @@ udev 规则 / 结论；源码环境同一套逻辑在 `probe/linux_hid_check.py`
 | 回归面 | 现有 300 个旧测试全绿（含 `test_music_fps` 的 20/60/66fps 排期、发送策略、帧率契约；`_cleanup_loop` 保留 engine 引用以兼容旧断言） |
 | 覆盖缺口（诚实标注） | ①未在真实键盘上做「长时间播放 + 合盖唤醒」复测（用户机器当前键盘未连接）；②Windows overlapped 写的真实设备路径只做了代码级/单测验证，未真机跑帧流；③Linux 的 systemd-inhibit 只在单测 mock 下验证，未在真实 systemd 会话里验证；④未做 2 小时以上连续运行 soak |
 | 用户真机复测建议 | 安装 v0.1.8.4 后：①正常播放 ≥30 分钟；②合盖 1 分钟后开盖，观察是否自动恢复；③拔插键盘/USB 口；如仍异常，导出日志（设置页「日志与诊断」一键导出）并附 `%LOCALAPPDATA%\mk87\logs` |
-| 发布 | 版本 `0.1.8.4`；tag / CI / Release 见 DEVLOG §28.5（发布后回填） |
+| 发布 | tag `v0.1.8.4`（提交 `b59be72`）→ CI run [#79](https://github.com/w32394045-dotcom/ajazz-mk87/actions/runs/42228765157) **全绿**（ubuntu/windows 单测 339 OK；Windows 便携包+安装包；deb 打包 + 22.04/24.04 干净容器卡口；rpm 打包 + Fedora 容器）→ Release 2026-11-06 21:58。资产：deb 192,255,546 B（sha256 `b6b65847…5e44`）、rpm 226,930,950 B（`eda5b3e9…2999`）、portable 39,144,509 B（`c46ac0a9…98db`）、setup 30,280,447 B（`6e33b7c0…82fa`）；`SHA256SUMS.txt`（386 B）与 GitHub 存储资产 digest **逐项一致** |

@@ -1688,6 +1688,25 @@ GLOzone not found for unknown
 
 - 版本号：`0.1.8.4`（`mk87lib/__init__.py` / `server/app.py` / `server/state.py` /
   `packaging/linux/mk87.spec` / `packaging/windows/mk87.iss` / `packaging/windows/version_info.txt`）。
-- 提交 / CI / Release：**发布后回填**（见下一次文档提交）。
-- 待办：用户 Windows 真机长时间运行 + 合盖唤醒复测；Fedora rpm 的 numpy/OpenBLAS
+- 提交：`b59be72`（23 个文件，+4311/−1786）→ tag `v0.1.8.4` → CI run
+  [#79](https://github.com/w32394045-dotcom/ajazz-mk87/actions/runs/42228765157) **全绿**
+  （ubuntu/windows 单测 339 OK；Windows 便携包 + 安装包；deb 打包 + 干净 22.04/24.04 容器 ldd/启动卡口；
+  rpm 打包 + Fedora 容器提示级检查）→ Release 2026-11-06 21:58 发布：
+  <https://github.com/w32394045-dotcom/ajazz-mk87/releases/tag/v0.1.8.4>
+- 附件（`SHA256SUMS.txt` 与 GitHub asset digest 逐项一致）：
+  - `MK87Studio-0.1.8.4-win64-portable.zip` 39,144,509 B
+    （`c46ac0a9bfa46893b49c4770b51773fa9a79f85d4bc391376f69c5d88d3e98db`）
+  - `MK87Studio-0.1.8.4-win64-setup.exe` 30,280,447 B
+    （`6e33b7c07f3f21ad82f5b1f855c58e7de827d1a5ae6e4dc0a5dc11d959dd82fa`）
+  - `mk87-0.1.8.4-1.x86_64.rpm` 226,930,950 B
+    （`eda5b3e91887730ffe5ee216f07de36c09fae038dbc6e9ff7bfa3945a5952999`）
+  - `mk87_0.1.8.4_amd64.deb` 192,255,546 B
+    （`b6b65847948a7d2b15bf1118ddc22626f974a5432100d1119d8d5d94b69e5e44`）
+  - `SHA256SUMS.txt` 386 B（`02bab3276674c2b572701a9f91150d3cb1bf45d3580a5eaa9ad13923d98cd1b7`）
+- **体积对比（v0.1.8.3 → v0.1.8.4）**：deb 192,317,190 → 192,255,546 B（−61,644）；
+  rpm 226,904,614 → 226,930,950 B（+26,336）；portable 39,122,942 → 39,144,509 B（+21,567）；
+  setup 30,256,265 → 30,280,447 B（+24,182）。新增 `powerkeep` 与恢复逻辑，体积变化在预期内。
+- 验证：`SHA256SUMS.txt` 与 GitHub 为每个存储资产计算的 `digest` **逐项一致**（等价于对已上传文件
+  复算 SHA256）；deb/rpm 干净容器安装/启动卡口在 CI 内通过。
+- 待办：用户 Windows 真机长时间运行 + 合盖唤醒复测（最终判据）；Fedora rpm 的 numpy/OpenBLAS
   page-alignment 提示级问题继续保持观察。
