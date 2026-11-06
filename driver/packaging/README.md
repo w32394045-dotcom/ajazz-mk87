@@ -25,7 +25,50 @@ powershell -ExecutionPolicy Bypass -File packaging\windows\build-installer.ps1
 - `dist-packages/*.zip` —— 免安装便携版（解压后双击 exe：独立窗口 + 系统托盘）
 - `dist-installer/*setup.exe` —— 安装包（开始菜单/桌面快捷方式/卸载项）
 
-> 原生窗口依赖：Windows 用系统 **WebView2**（Win10/11 自带）；Linux 用 **Qt 后端**（PyInstaller 打包 PySide6/QtWebEngine，自包含）。
+> 原生窗口依赖：Windows 用系统 **WebView2**（Win10/11 自带）；Linux 用 **Qt 后端**
+> （`pywebview[qt]` 带来 PyQt6 + QtWebEngine，随 PyInstaller 一起打包）。
+
+## Linux 打包策略（v0.1.8.3 起，重要）
+
+**应用库随包，宿主系统库不随包。**
+
+- 随包：PyQt6/Qt 6.12 wheel 自带的 Qt/WebEngine/ICU、Python 运行时（含 `libpython3.12.so`）、
+  wheel 自带的第三方库（numpy/Pillow 的 `*_libs`、auditwheel 改名库等）。
+- 不随包（由发行版提供）：**编译器运行库**（libstdc++/libgcc）、**GLib/GTK**、**X11 / xcb /
+  Wayland**、**显卡栈**（libdrm/libgbm/libEGL/libGL/libGLX）、NSS/OpenSSL、fontconfig/freetype、
+  dbus、ALSA/Pulse、CUPS/Avahi 等 —— 这些库会被系统组件（Mesa 驱动、GIO 模块、GTK 主题）加载，
+  必须和系统里其它程序用同一份，否则版本错配会出问题。
+
+> 为什么（v0.1.8.2 的教训）：PyInstaller 会顺着 Qt 库的 DT_NEEDED 把**构建机** Ubuntu 22.04 的
+> glib 2.72 / libstdc++(GCC 12) / wayland 1.20 / xcb 1.14 打进 `_internal/`。冻结程序把
+> `_internal` 放在库搜索路径最前面，于是在用户 Ubuntu 24.04 上：
+> `libdconfsettings.so: undefined symbol: g_assertion_message_cmpint`（系统 GIO 模块用了包里的旧 glib）、
+> `iHD_drv_video.so: GLIBCXX_3.4.32 not found`（系统 DRI 驱动用了包里旧 libstdc++）、
+> `qt.qpa.wayland: EGL not available` → QRhi 失败 → **QtWebEngine 段错误**。
+> v0.1.6 之所以正常，只是因为它恰好构建在 24.04、与用户系统版本一致。
+
+实现与校验：
+
+- 规则：`packaging/libfilter.py`（被 `packaging/mk87.spec` 调用，剔除所有来自 `/usr/lib`、`/lib`
+  的共享库；`libpython3*` 例外保留）。
+- 卡口：`packaging/linux/check-bundle.sh`（打包前跑；包里再出现宿主系统库或缺少 libpython 就失败）。
+  本地打 deb 时 `build-deb.sh` 会自动调用它。
+- 依赖声明：deb `Depends` / rpm `Requires` 就是「宿主系统库」清单（含 Ubuntu 24.04 的 `t64 | 旧名`
+  备选）；**少一个依赖，用户装完就会启动失败**，所以 CI 还会在干净容器里做 `ldd` 缺库检查。
+
+## 启动器与图形回退（v0.1.8.3 起）
+
+`/usr/bin/mk87` 不是直接 `exec` 程序，而是一个小的回退启动器（`packaging/linux/mk87-launcher`）：
+
+1. 默认启动（Wayland 原生 / X11 原生）；
+2. 若进程**被信号杀死**（exit ≥ 128，如 139 = 段错误）：Wayland 会话下先退回 **XWayland**
+   （`QT_QPA_PLATFORM=xcb`）；
+3. 仍崩溃则用 **软件渲染**重试（`MK87_SOFTWARE_RENDERING=1` → `LIBGL_ALWAYS_SOFTWARE=1`、
+   `QT_OPENGL=software`、Chromium `--disable-gpu`）。
+
+正常退出/关窗口不会触发重试。日志在 `~/.cache/mk87/launcher.log`（启动方式/退出码/回退原因）与
+`~/.cache/mk87/launcher-console.log`（非终端启动时的 stdout/stderr）；设置页「日志与诊断」可导出。
+手动排障可用：`QT_QPA_PLATFORM=xcb mk87`、`MK87_SOFTWARE_RENDERING=1 mk87`、`MK87_NO_FALLBACK=1 mk87`。
 
 ## Linux
 
@@ -44,7 +87,7 @@ bash packaging/linux/build-rpm.sh
 
 ```
 /opt/mk87/                        PyInstaller 程序（含 web/、data/、docs/）
-/usr/bin/mk87                     启动器（exec /opt/mk87/MK87Config "$@"）
+/usr/bin/mk87                     回退启动器（默认/ XWayland / 软件渲染三级重试）
 /usr/share/applications/mk87.desktop
 /usr/share/icons/hicolor/scalable/apps/mk87.svg
 /usr/lib/udev/rules.d/99-ajazz-mk87.rules   ← 免 root 访问键盘 HID
@@ -79,9 +122,19 @@ sudo rpm -e mk87
 
 ## CI（推荐用于产出 rpm/deb）
 
-Windows 机器上没有 rpmbuild/dpkg，**rpm/deb 通过 GitHub Actions 的 Linux runner 构建**：
-推送到 `main` 后 `.github/workflows/build.yml` 会自动跑离线测试并产出
-`linux-packages`（deb+rpm）与 `windows-package`（zip+setup.exe）两个 artifact。
+Windows 机器上没有 rpmbuild/dpkg，**rpm/deb 通过 GitHub Actions 的 Linux runner 构建**
+（固定 `ubuntu-22.04`，glibc 2.35 基线）：推送到 `main` 只跑离线测试；打 `v*` tag 或手动
+`workflow_dispatch` 才构建安装包，产出 `linux-deb`、`linux-rpm`、`windows-package` 三个 artifact，
+tag 时自动发布 Release（含 `SHA256SUMS.txt`）。
+
+Linux 包的构建流程里有两道**阻塞**卡口（rpm 的 Fedora 容器检查暂为提示级）：
+
+1. `check-bundle.sh`：打包体不得含宿主系统库、必须含 libpython；
+2. 干净 `ubuntu:22.04` / `ubuntu:24.04` 容器：按 deb 声明的 Depends 安装 → 全部 ELF 的 `ldd`
+   不得有 `not found` → Xvfb 下启动并稳定存活 40s、进入 WebEngine 初始化。
+
+另有手动 `linux-smoke` 工作流：可指定任意 ref 构建并跑同样的检查，也可用
+`asset_tag`/`asset_version` 复验**已发布**的 `.deb`。
 
 ## 内核级驱动？
 
