@@ -87,6 +87,11 @@ export default {
     const offs = [];
     let playTimer = null;
     let pollTimer = null;
+    /* 上传任务因独占键盘暂停音乐律动的状态（后端 /api/tft/job 的 musicPaused） */
+    let jobMusicPaused = false;
+    let jobMusicEverPaused = false;
+    let jobMusicSettled = false;
+    let musicNoteTimer = null;
 
     /* ---------------- DOM：素材 ---------------- */
     const fileInput = h('input', { type: 'file', accept: 'image/*,.gif,.webp,.apng', style: { display: 'none' } });
@@ -248,6 +253,7 @@ export default {
     /* ---------------- DOM：上传 ---------------- */
     const uploadProgress = createProgress({ label: '等待转换' });
     const jobInfo = h('div', { class: 'row between tiny muted' }, h('span', {}, '等待上传'), h('span', { class: 'mono' }, 'ETA —'));
+    const musicPauseNote = h('div', { class: 'tiny muted', role: 'status', style: { display: 'none' } });
     const uploadBtn = h('button', { class: 'btn primary', html: `${icon('upload', { size: 15 })}<span>压缩并上传到键盘</span>`, disabled: true });
     const cancelBtn = h('button', { class: 'btn', html: `${icon('x', { size: 15 })}<span>取消上传</span>`, disabled: true });
     const restoreBtn = h('button', { class: 'btn danger w-full', html: `${icon('refresh-cw', { size: 15 })}<span>恢复官方默认动画</span>` });
@@ -505,6 +511,72 @@ export default {
     }
 
     /* ---------------- 上传 / 恢复默认 ---------------- */
+    function setMusicPauseNote(text, timeout = 0) {
+      clearTimeout(musicNoteTimer);
+      musicNoteTimer = null;
+      if (!text) {
+        musicPauseNote.textContent = '';
+        musicPauseNote.style.display = 'none';
+        return;
+      }
+      musicPauseNote.textContent = text;
+      musicPauseNote.style.display = '';
+      if (timeout > 0) {
+        musicNoteTimer = setTimeout(() => {
+          musicNoteTimer = null;
+          musicPauseNote.textContent = '';
+          musicPauseNote.style.display = 'none';
+        }, timeout);
+      }
+    }
+
+    function resetJobMusicState() {
+      jobMusicPaused = false;
+      jobMusicEverPaused = false;
+      jobMusicSettled = false;
+      setMusicPauseNote('');
+    }
+
+    function markJobMusicPaused() {
+      if (jobMusicSettled) return;
+      jobMusicPaused = true;
+      jobMusicEverPaused = true;
+      setMusicPauseNote('已自动暂停音乐律动，完成后自动恢复');
+    }
+
+    function syncJobMusicPause(job) {
+      if (!job) return;
+      if (job.musicPaused === true) {
+        markJobMusicPaused();
+      } else if (job.musicPaused === false && job.running && jobMusicPaused) {
+        jobMusicPaused = false;
+        setMusicPauseNote('');
+      }
+    }
+
+    /** 任务结束：若这次任务暂停过音乐，短暂提示已恢复，然后清除该状态行 */
+    function settleJobMusic(job = {}) {
+      if (jobMusicSettled) return;
+      jobMusicSettled = true;
+      const wasPaused = jobMusicPaused || jobMusicEverPaused || job.musicPaused === true;
+      jobMusicPaused = false;
+      if (wasPaused) setMusicPauseNote('音乐律动已自动恢复', 6000);
+      else setMusicPauseNote('');
+    }
+
+    /** 只在音乐确实运行时补充说明；状态接口不可用时用中性文案，避免吓到普通上传 */
+    async function musicPauseHint() {
+      try {
+        const status = await Promise.race([
+          api.get('/api/music/status'),
+          new Promise((resolve) => setTimeout(() => resolve(null), 1200)),
+        ]);
+        if (status?.running) return '检测到音乐律动正在运行：上传期间会自动暂停，结束后自动恢复。';
+        if (status) return '';
+      } catch { /* 接口不可用 → 中性文案 */ }
+      return '上传期间如果音乐律动正在运行，会自动暂停并在结束后恢复。';
+    }
+
     function setUploading(on) {
       state.uploading = on;
       uploadBtn.disabled = on || !state.result || !tftSupported;
@@ -528,14 +600,19 @@ export default {
       const outBytes = Number(stats.outputBytes || frames * FRAME_BYTES);
       const estSec = Number(stats.estimatedSeconds || (stats.packets || 0) * secPerPacket);
       if (estSec > 90) {
+        const pauseHint = await musicPauseHint();
         const ok = await ctx.confirmDialog({
           title: '上传耗时较长',
           message: `压缩后：${frames} 帧 · ${fmtBytes(outBytes)} · 预计 ${fmtSeconds(estSec)}（约 ${Math.ceil(estSec / 60)} 分钟）。`,
-          extra: '上传期间键盘被独占（后台电量轮询已暂停），请勿关闭页面；可随时点「取消上传」。',
+          extra: [
+            '上传期间键盘被独占（后台电量轮询已暂停），请勿关闭页面；可随时点「取消上传」。',
+            pauseHint,
+          ].filter(Boolean).join('<br>'),
           confirmText: '开始上传',
         });
         if (!ok) return;
       }
+      resetJobMusicState();
       setUploading(true);
       state.uploadStartedAt = Date.now();
       uploadProgress.reset('提交压缩上传任务…');
@@ -559,15 +636,21 @@ export default {
       stopPoll();
       setUploading(false);
       uploadProgress.error('已取消');
+      settleJobMusic();
     }
     async function restoreDefault() {
+      const pauseHint = await musicPauseHint();
       const ok = await ctx.confirmDialog({
         title: '恢复官方默认动画',
         message: '将向键盘写入官方默认 135 帧动画，上传约 5 分钟（8.75 MB）。期间请勿关闭页面。',
-        extra: '恢复前无法备份原屏幕内容（协议无读回命令）。',
+        extra: [
+          '恢复前无法备份原屏幕内容（协议无读回命令）。',
+          pauseHint,
+        ].filter(Boolean).join('<br>'),
         confirmText: '恢复默认动画',
       });
       if (!ok) return;
+      resetJobMusicState();
       setUploading(true);
       state.uploadStartedAt = Date.now();
       uploadProgress.reset('正在写入官方默认动画…');
@@ -586,7 +669,9 @@ export default {
       pollTimer = setInterval(async () => {
         try {
           const job = await api.get('/api/tft/job');
-          if (!job || !job.total) return;
+          if (!job) return;
+          syncJobMusicPause(job);
+          if (!job.total) return;
           state.jobTotal = job.total;
           if (job.running) {
             const pct = job.pct ?? Math.round(((job.sent || 0) / job.total) * 100);
@@ -600,6 +685,7 @@ export default {
             jobInfo.lastElementChild.textContent = 'ETA —';
             setUploading(false);
             stopPoll();
+            settleJobMusic(job);
             return;
           }
           if (job.phase === 'done' || job.pct === 100) {
@@ -607,6 +693,7 @@ export default {
             jobInfo.lastElementChild.textContent = '完成';
             setUploading(false);
             stopPoll();
+            settleJobMusic(job);
             ctx.toastSuccess('已上传到键盘屏幕');
           }
         } catch { /* 任务接口不可用时靠 WS */ }
@@ -619,6 +706,7 @@ export default {
       if (!d || d.job !== 'tft') return;
       const pct = d.pct ?? (d.total ? Math.round((d.sent / d.total) * 100) : 0);
       state.jobTotal = d.total || state.jobTotal;
+      if (d.musicPaused === true) markJobMusicPaused();
       uploadProgress.set(pct, `上传中 ${d.sent ?? 0} / ${d.total ?? '?'} 包…`);
       jobInfo.firstChild.textContent = `阶段 ${d.phase || 'upload'}`;
       const eta = jobEta(d);
@@ -626,16 +714,19 @@ export default {
     }));
     offs.push(api.on('ws:job', (d) => {
       if (!d || d.job !== 'tft') return;
+      if (d.musicPaused === true) markJobMusicPaused();
       if (d.state === 'done') {
         uploadProgress.done('上传完成');
         jobInfo.lastElementChild.textContent = '完成';
         setUploading(false);
         stopPoll();
+        settleJobMusic(d);
         ctx.toastSuccess('已上传到键盘屏幕');
       } else if (d.state === 'error') {
         uploadProgress.error(d.error === 'cancelled' ? '已取消' : `失败：${d.error || '未知错误'}`);
         setUploading(false);
         stopPoll();
+        settleJobMusic(d);
         if (d.error !== 'cancelled') ctx.toastError(`上传失败：${d.error || '未知错误'}`);
       }
     }));
@@ -759,6 +850,7 @@ export default {
         h('div', { class: 'stack' },
           uploadProgress.el,
           jobInfo,
+          musicPauseNote,
           h('div', { class: 'row' }, uploadBtn, cancelBtn),
           h('div', { class: 'divider-dashed' }),
           restoreBtn,
@@ -795,6 +887,8 @@ export default {
     renderSupportNotice();
     api.get('/api/tft/job').then((job) => {
       if (job && job.running) {
+        resetJobMusicState();
+        syncJobMusicPause(job);
         setUploading(true);
         state.uploadStartedAt = Date.now();
         uploadProgress.indeterminate(`设备上已有上传任务… ${job.sent || 0}/${job.total || '?'}`);
@@ -806,6 +900,7 @@ export default {
       stopPoll();
       stopPlayback();
       doConvert.cancel?.();
+      clearTimeout(musicNoteTimer);
       offs.forEach((off) => off?.());
     };
   },

@@ -427,7 +427,10 @@ class TestIsCustomFallback(unittest.TestCase):
         with mock.patch.object(server_app, "_dev", return_value=fake_dev), \
                 mock.patch.object(server_app.lighting, "get_effect_with_custom_fallback",
                                   return_value={"ok": True}) as fn:
-            self.assertEqual(server_app.api_lighting(), {"ok": True})
+            res = server_app.api_lighting()
+            # v0.1.8.7：响应额外带 ledger（账本 last），原有字段契约不变
+            self.assertEqual(res["ok"], True)
+            self.assertIn("ledger", res)
         fn.assert_called_once_with(fake_dev)
 
 

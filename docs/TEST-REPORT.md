@@ -684,3 +684,24 @@ udev 规则 / 结论；源码环境同一套逻辑在 `probe/linux_hid_check.py`
 | 覆盖缺口（诚实标注） | ① Linux 一键安装只有单测，**未在真实 Linux 桌面 / GNOME / Wayland 环境实测**；② Win/Mac 真机读数来自用户机器上的旧版本，v0.1.8.6 安装包本身尚未实机复测；③ 切模式后「重连 → 音乐恢复 ≤5s」只在假设备单测验证，真机恢复时延未计时；④ Explorer 重启后托盘自动恢复、托盘不可用时关窗最小化，未在真机复现；⑤ 按键扫描 50 次 start/stop 是 dev 构建上的调试实测，安装包上的长循环未跑；⑥ 未做长时间（≥1h）soak |
 | 待真机验证清单 | ① Windows 先退出旧实例（v0.1.8.4 / dev 0.1.8.2）再装 v0.1.8.6；② 两种 Win/Mac 档位各按一次物理 Win 键确认检测与横幅；③ 播放中拨开关确认「等待键盘 → 自动续播」且参数不丢；④ 按键测试连续 start/stop ≥50 次 + 长时间捕获无崩溃；⑤ 重启 Explorer 后托盘图标自动恢复、溢出区提示、托盘不可用关窗最小化、重复启动唤起窗口；⑥ Ubuntu 24.04 GNOME Wayland 上一键安装扩展全流程；⑦ 以 v0.1.8.6 安装包跑一次全量回归 |
 | 发布（v0.1.8.6） | tag `v0.1.8.6`（提交 `948e07c` + CI 修复 `a9302d1`/`971c2b3`）→ CI run [#89](https://github.com/w32394045-dotcom/ajazz-mk87/actions/runs/42350361648) **全绿**（552 tests OK / skipped=1；Windows 便携包+安装包；deb 22.04/24.04 容器卡口；rpm Fedora 容器）→ Release [v0.1.8.6](https://github.com/w32394045-dotcom/ajazz-mk87/releases/tag/v0.1.8.6) 2026-11-07 15:20:08 (+08)。资产：portable 39,214,946 B（`a156f3aa…ffb1`）、setup 30,344,711 B（`a4c47bfa…1227`）、deb 192,394,836 B（`f14e39d1…0600`）、rpm 226,986,978 B（`3dd613bd…bb01`）、`SHA256SUMS.txt` 386 B（`e33ccecb…598a`），与 GitHub 存储 digest 及 SHA256SUMS 逐项一致。发布前本地用同一 spec 构建 portable+setup 并静默启动冒烟：`webVersion=0.1.8.6`、connected=true、托盘 `iconState=visible`、keytest `rawinput` 0 errors、`/api/quit` 干净退出。`releases/latest` 已指向 v0.1.8.6。安装前请先退出旧实例 |
+
+## 27 v0.1.8.7 灯效账本 / 崩溃与拔线恢复 / GIF 上传自动暂停音乐 验证（2026-11-07）
+
+> 触发：用户实机反馈「开音乐律动上传 GIF 必失败」「律动被终止/上传完键盘变逐键灯效」。
+> 根因、修复与日志证据见 [DEVLOG §31](DEVLOG.md)。
+> 环境：Windows 本机（dev 0.1.8.7 + PyInstaller/Inno 打包冒烟）；无 Linux 桌面环境。
+
+| 测试项 | 结果 |
+|---|---|
+| 全量单测（本机实跑） | `cd driver && .\.venv\Scripts\python.exe -m unittest discover -s tests` → **Ran 592 tests in 30.1s，OK (skipped=1)**（v0.1.8.6 为 552，**+40**） |
+| 新增 `test_ledger.py` | **40/40 OK**：状态分类、mode 0 双语义（逐键 vs 关灯）、账本持久化/损坏容错/原子写、恢复链（快照→账本→默认）、离线快速失败、`begin_stream`/`end_stream`（成功/离线保留 pending/目标被拒降级静态恒亮）、重连 `flush_pending`/`resync`、TFT 暂停恢复与重试令牌复用 |
+| 受影响旧测试 | `test_music_watchdog.py`（会话收尾改走账本、离线 pending 保留、在线写回断言）、`test_music_fps.py`（账本 no-op patch，避免单测写真实配置）、`test_battery_lighting_state.py`（`/api/lighting` 新 `ledger` 字段）全部通过 |
+| 真机 A 正常停止律动 | mode=1 → 开律动 6s（121 帧 @19.9fps）→ 停止 2s 内读回 `mode=1`，日志 `灯效已写回: kind=effect mode=1（music-stop）`，账本 `pending=false` |
+| 真机 B 崩溃恢复 | 律动中 `Stop-Process -Force` 强杀 dev server（账本已落盘 pending 目标 mode=1）→ 重启：17:13:09 设备连接、17:13:10.568 `灯效已写回 mode=1（connect）`、17:13:10.597 `待恢复灯效已补写（connect）：effect/1`；`pending` 清空，键盘回静态恒亮（连接后 ~1.5s） |
+| 真机 C TFT 上传自动暂停/恢复 | 音乐运行中写入 **0x4D 静态素材**（MK87 无壁纸页 → 屏幕内容不变）：17:13:44.336「TFT 上传：自动暂停音乐律动（完成后自动恢复，参数已保存）」→ 音乐停止 → 16/16 包 ACK、1.9s 完成 → 17:13:46.237「音乐律动已自动恢复（mode=4 fps=20）」；`/api/tft/job` 结束时 `musicPaused=false` |
+| 真机 D 灯效页改灯 | 音乐运行中 PUT mode=9：日志「切换灯效：先停止音乐律动（避免帧流覆盖新灯效）」→ mode=9 生效并记账 |
+| 真机 E 打包冒烟 | `dist\MK87Config\MK87Config.exe --tray`：`/api/version=0.1.8.7`、connected=true、`/api/tray/status iconState=visible`、开律动 4s 停止后 `mode=1`、账本 `pending=false`、`/api/quit` 干净退出（进程消失、端口关闭） |
+| UI 冒烟（headless Chrome） | `http://127.0.0.1:65447/` 灯光页显示「当前灯效 静态恒亮」；`#/screen` 页面正常渲染；无 JS 报错 |
+| 覆盖缺口（诚实标注） | ① **律动中物理拔插键盘**未实测（pending+重连补写只有单测）；② **完整 140 帧 GIF** 在音乐运行时上传未实测（会替换用户屏幕内容；用 0x4D 静态素材验证了同一独占/暂停/恢复链路）；③ 强杀到重开之间的空窗键盘仍会先显示逐键态（无进程可写灯效，重开 ~1.5s 修复）；④ 未做 ≥1h soak；⑤ Linux 未真机验证（本轮无 Linux 改动） |
+| 待真机验证清单（用户） | ① 升级 v0.1.8.7 前退出旧实例；② 播音乐律动 → 停止：键盘应回到原灯效（不再变逐键）；③ 逐键灯效状态下开/停律动：应回到逐键；④ 律动中拔插键盘：重连后应自动回到原灯效；⑤ 律动中上传 GIF：应提示已暂停律动、上传成功后自动恢复；⑥ 任务管理器强杀 app → 重开：~2s 内灯效自动恢复；⑦ Linux 侧无改动，沿用 v0.1.8.6 待验证项 |
+| 发布（v0.1.8.7） | 【待回填】 |

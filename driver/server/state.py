@@ -6,11 +6,13 @@ import json
 import logging
 import os
 import platform
+import tempfile
 import threading
 import time
 from typing import Dict, List, Optional
 
 from mk87lib import backup, keymap, lighting, macro, music, tft, wireless
+from mk87lib import ledger as ledger_mod
 from mk87lib import keyscan as keyscan_mod
 from mk87lib.device import MK87Device
 from mk87lib.errors import DeviceDisconnected, DeviceNotFound, MK87Error, UnsupportedFeature
@@ -58,10 +60,30 @@ class Settings:
             pass
 
     def save(self) -> None:
+        """原子写 settings.json（临时文件 + os.replace）。
+
+        v0.1.8.7：灯效账本与恢复逻辑依赖配置的完整性；如果崩溃恰好卡在半截写入，
+        旧实现会留下损坏的 JSON、下次启动全部回落默认值。
+        """
         try:
-            os.makedirs(os.path.dirname(self.path), exist_ok=True)
-            with open(self.path, "w", encoding="utf-8") as f:
-                json.dump(self.data, f, ensure_ascii=False, indent=2)
+            d = os.path.dirname(self.path)
+            os.makedirs(d, exist_ok=True)
+            fd, tmp = tempfile.mkstemp(prefix=".settings.", suffix=".tmp", dir=d or ".")
+            try:
+                with os.fdopen(fd, "w", encoding="utf-8") as f:
+                    json.dump(self.data, f, ensure_ascii=False, indent=2)
+                    f.flush()
+                    try:
+                        os.fsync(f.fileno())
+                    except OSError:
+                        pass
+                os.replace(tmp, self.path)
+            except Exception:
+                try:
+                    os.unlink(tmp)
+                except OSError:
+                    pass
+                raise
         except Exception:
             pass
 
@@ -97,6 +119,8 @@ class TftJob:
         self._thread: Optional[threading.Thread] = None
         self.started_at = 0.0
         self.elapsed = 0.0
+        #: 因本任务暂停了音乐律动（前端显示「已自动暂停，完成后恢复」）
+        self.music_paused = False
 
     def status(self) -> dict:
         with self.lock:
@@ -110,6 +134,7 @@ class TftJob:
                 "frames": self.frames,
                 "kind": self.kind,
                 "elapsed": round(self.elapsed, 1),
+                "musicPaused": bool(self.music_paused),
             }
 
     def start(self, *, kind: str, frames: int, runner) -> dict:
@@ -193,6 +218,11 @@ class TftJob:
         finally:
             with self.lock:
                 self.running = False
+            # v0.1.8.7：任务所有结束路径（成功/失败/取消/重试后）统一恢复被暂停的音乐
+            try:
+                self.manager.resume_music_after_upload()
+            except Exception:  # noqa: BLE001
+                log.warning("TFT 结束后恢复音乐律动异常", exc_info=True)
 
     def _wait_reconnect(self, timeout: float) -> bool:
         """等设备自动重连（monitor 线程负责重连），最多 timeout 秒。"""
@@ -259,6 +289,12 @@ class DeviceManager:
         self._ever_connected = False
         #: 连续重连失败次数（达到阈值给用户一次「拔插键盘」提示，重连成功后清零）
         self._reconnect_fails = 0
+        # ---- 灯效账本（v0.1.8.7）：记录用户可见灯效 / 帧流待恢复标记 / 崩溃后补恢复
+        self.ledger = ledger_mod.get()
+        #: 灯效读写串行化（轮询线程 vs 前端写灯效 vs 恢复流程）
+        self._lighting_lock = threading.Lock()
+        #: TFT 上传自动暂停音乐时保存的恢复令牌（重试/结束由 TftJob 统一恢复）
+        self._tft_music_token: Optional[dict] = None
         self.device.add_listener(self._on_device_event)
 
     # ------------------------------------------------------------------ 事件
@@ -313,6 +349,11 @@ class DeviceManager:
             target=self._music_level_loop, name="mk87-music-level", daemon=True
         )
         self._music_level_thread.start()
+        # 灯效账本轮询（v0.1.8.7）：空闲时每 3s 回读一次，检测键盘侧/外部改灯并更新账本
+        self._lighting_thread = threading.Thread(
+            target=self._lighting_poll_loop, name="mk87-lighting-poll", daemon=True
+        )
+        self._lighting_thread.start()
 
     def _music_level_loop(self) -> None:
         """音乐律动运行时推送两类事件（v0.1.8.4 起再加健康/停止事件）：
@@ -438,6 +479,12 @@ class DeviceManager:
         self._stop.set()
         # 顺序：先停音乐并等灯效恢复，再关 HID 句柄（否则 restore 写不进去）
         self.stop_music(3.0)
+        # v0.1.8.7：音乐停止后若还有 pending（离线/失败），退出前再补一次
+        try:
+            if self.ledger.pending():
+                ledger_mod.flush_pending(self.device, reason="app-stop")
+        except Exception:  # noqa: BLE001
+            log.debug("退出前补写灯效失败（保留 pending 待下次启动）", exc_info=True)
         try:
             self.keytest.stop()
         except Exception:  # noqa: BLE001
@@ -484,6 +531,8 @@ class DeviceManager:
                 self.emit({"type": "status", "data": self.status()})
                 # 刚连上时首读可能还是旧值（尤其 2.4G 唤醒/握手未完成）：延迟 2s 再读一次
                 self._schedule_battery_recheck(gen)
+                # 灯效账本对齐：有 pending（上次崩溃/拔线没恢复）先补写，否则记录当前灯效
+                self._schedule_lighting_resync(gen)
                 if self._ever_connected:
                     # 掉线重连（切换键盘背面 Win/Mac 开关会让 USB 重新枚举）：引导用户做一次
                     # 模式检测，否则 Win/Alt 互换后用户只会觉得「按键错乱」。
@@ -535,6 +584,226 @@ class DeviceManager:
             self._refresh_battery()
 
         threading.Thread(target=_run, name="mk87-battery-recheck", daemon=True).start()
+
+    # ------------------------------------------------------------------ 灯效账本
+    def emit_lighting_changed(self, state: Optional[dict]) -> None:
+        """把灯效变化推给前端（WS ``lighting_changed``）。"""
+        if not state:
+            return
+        try:
+            data = ledger_mod.public_view(state)
+        except Exception:  # noqa: BLE001
+            return
+        self.emit({"type": "lighting_changed", "data": data})
+
+    def record_lighting_state(self, state: Optional[dict], *, source: str = "app") -> None:
+        """记录一次「用户可见」灯效（写设备成功 / 检测到外部变化）。"""
+        if not state or state.get("kind") not in ("effect", "custom", "off"):
+            return
+        self.ledger.set_last(state, source=source)
+        self.emit_lighting_changed(state)
+
+    def _schedule_lighting_resync(self, gen: int, delay: float = 1.2) -> None:
+        """连接后延迟对齐灯效账本：有 pending 先补恢复，否则记录设备当前状态。
+
+        用连接代号 gen 防止旧连接的延迟任务把状态写到新连接上。
+        """
+
+        def _run() -> None:
+            if self._stop.wait(max(0.0, float(delay))):
+                return
+            if gen != self._conn_gen or self._stop.is_set():
+                return
+            if (not self.device.status.connected or self.music.running
+                    or self.tft_job.running):
+                return
+            self._lighting_sync_once(reason="connect")
+
+        threading.Thread(target=_run, name="mk87-lighting-resync", daemon=True).start()
+
+    def _lighting_busy(self) -> bool:
+        """当前是否禁止读写灯效：未连接 / 帧流（音乐）运行中 / TFT 上传中。"""
+        if not self.connected:
+            return True
+        if self.music.running or self.tft_job.running:
+            return True
+        if getattr(self.device, "tft_busy", False):
+            return True
+        return False
+
+    def _lighting_sync_once(self, *, reason: str) -> Optional[dict]:
+        """读设备灯效并与账本对齐；有 pending 时优先补恢复。返回最新状态。"""
+        if self._lighting_busy():
+            return None
+        if not self._lighting_lock.acquire(timeout=0.2):
+            return None
+        try:
+            if self.ledger.pending():
+                res = ledger_mod.flush_pending(self.device, reason=reason)
+                current = res.get("current") or (res.get("target") if res.get("ok") else None)
+                if res.get("ok") and current:
+                    self.emit_lighting_changed(current)
+                return current
+            try:
+                cur = ledger_mod.read_state(self.device, deep=False, source="device")
+                if cur.get("kind") == "unknown":
+                    # mode 回读 0：用 0x33 与逐键表比对，区分「关灯」和「逐键态」
+                    cur = ledger_mod.read_state(self.device, deep=True, source="device")
+            except Exception as exc:  # noqa: BLE001
+                log.debug("读取当前灯效失败: %s", exc)
+                return None
+            if self._lighting_states_differ(self.ledger.last(), cur):
+                log.info("检测到灯效变化（可能来自键盘侧/外部）: %s/%s",
+                         cur.get("kind"), cur.get("mode"))
+                self.record_lighting_state(cur, source="device")
+            return cur
+        finally:
+            self._lighting_lock.release()
+
+    @staticmethod
+    def _lighting_states_differ(a: Optional[dict], b: Optional[dict]) -> bool:
+        if not a or not b:
+            return True
+        if a.get("kind") != b.get("kind"):
+            return True
+        try:
+            if int(a.get("mode") or -1) != int(b.get("mode") or -1):
+                return True
+        except Exception:  # noqa: BLE001
+            return True
+        return False
+
+    def _lighting_poll_loop(self) -> None:
+        """空闲时每 3s 回读灯效：检测键盘侧/外部改动并更新账本（v0.1.8.7）。
+
+        帧流（音乐）与 TFT 上传期间必须跳过：一个回读无意义（恒是自定义族），
+        一个并发命令会让固件 USB 复位（docs 实测 1167 / TFT 无 ACK）。
+        """
+        while not self._stop.wait(3.0):
+            try:
+                self._lighting_sync_once(reason="poll")
+            except Exception:  # noqa: BLE001 - 轮询异常不能影响主流程
+                log.debug("灯效轮询异常（忽略）", exc_info=True)
+
+    # ------------------------------------------------------------------ TFT 上传：音乐让路
+    def pause_music_for_upload(self) -> Optional[dict]:
+        """TFT 上传前自动暂停音乐律动（帧流会和上传抢设备，导致第 1 包无 ACK）。
+
+        返回恢复令牌（含原参数）；未在播放音乐时返回 None。
+        """
+        if not self.music.running:
+            # 重试场景：上一次尝试已经暂停过音乐（令牌已保存），沿用同一个令牌
+            return self._tft_music_token
+        st = self.music.status()
+        token = {
+            "params": {
+                "device_id": st.get("deviceId"),
+                "mode": st.get("mode"),
+                "fps": st.get("targetFps"),
+                "backmode": st.get("backmode"),
+                "backmode_brightness": st.get("backmodeBrightness"),
+                "amplitude": st.get("amplitude"),
+                "color": st.get("color"),
+                "sensitivity": st.get("sensitivity"),
+            },
+            "startedAt": time.time(),
+        }
+        self._tft_music_token = token
+        log.info("TFT 上传：自动暂停音乐律动（完成后自动恢复，参数已保存）")
+        self.tft_job.music_paused = True
+        try:
+            self.stop_music(3.0)
+        except Exception:  # noqa: BLE001
+            log.warning("TFT 上传：暂停音乐律动异常", exc_info=True)
+        # 停音乐后确保灯效已写回（避免上传期间键盘停在逐键表）
+        try:
+            if self.ledger.pending():
+                ledger_mod.flush_pending(self.device, reason="tft-pause")
+        except Exception:  # noqa: BLE001
+            pass
+        self.emit({"type": "toast", "data": {
+            "level": "info",
+            "message": "上传期间已自动暂停音乐律动，完成后会自动恢复。",
+        }})
+        return token
+
+    def resume_music_after_upload(self, token: Optional[dict] = None) -> bool:
+        """TFT 上传结束（成功/失败/取消/重试收尾）后恢复音乐律动。
+
+        令牌由 :meth:`pause_music_for_upload` 内部保存，TftJob 在所有结束路径
+        （含设备重枚举后重试）统一调用；显式传 ``token`` 仅为兼容旧调用/单测。
+        """
+        self.tft_job.music_paused = False
+        if token is None:
+            token = self._tft_music_token
+        self._tft_music_token = None
+        if not token or self.music.running:
+            return False
+        params = token.get("params") or {}
+        if not self.connected:
+            log.warning("TFT 上传后设备不在线，跳过音乐律动恢复")
+            return False
+        try:
+            self.music.device = self.device
+            self.music.start(
+                device_id=params.get("device_id"),
+                mode=params.get("mode"),
+                fps=params.get("fps") or music.DEFAULT_FPS,
+                backmode=int(params.get("backmode") or 0),
+                backmode_brightness=int(params.get("backmode_brightness") or 100),
+                amplitude=params.get("amplitude"),
+                color=params.get("color") or music.DEFAULT_COLOR,
+                sensitivity=float(params.get("sensitivity") or 1.0),
+            )
+            log.info("TFT 上传结束：音乐律动已自动恢复（mode=%s fps=%s）",
+                     params.get("mode"), params.get("fps"))
+            self.emit({"type": "toast", "data": {
+                "level": "info", "message": "上传完成，音乐律动已自动恢复。",
+            }})
+            return True
+        except Exception as exc:  # noqa: BLE001
+            log.warning("TFT 上传后恢复音乐律动失败: %s", exc)
+            self.emit({"type": "toast", "data": {
+                "level": "warn",
+                "message": f"上传完成，但音乐律动自动恢复失败：{exc}",
+            }})
+            return False
+
+    def verify_lighting_after_upload(self) -> None:
+        """TFT 上传结束后校验灯效：被固件重置成逐键态时写回账本灯效（v0.1.8.7）。"""
+        time.sleep(1.2)  # 等 TftJob 收尾（tft_exclusive 释放、running=False）
+        try:
+            if self.music.running or self._lighting_busy():
+                return
+            last = self.ledger.last()
+            if not last or last.get("kind") == "custom":
+                return
+            with self._lighting_lock:
+                try:
+                    cur = ledger_mod.read_state(self.device, deep=True, source="device")
+                except Exception:  # noqa: BLE001
+                    return
+                if cur.get("kind") != "custom":
+                    return
+                log.info("TFT 上传后灯效被重置为逐键态，写回账本灯效（kind=%s）",
+                         last.get("kind"))
+                res = ledger_mod.apply_state(self.device, last, reason="tft-done")
+                if res.get("ok"):
+                    self.emit_lighting_changed(last)
+        except Exception:  # noqa: BLE001
+            log.debug("上传后灯效校验异常（忽略）", exc_info=True)
+
+    def emergency_restore(self) -> bool:
+        """崩溃/退出兜底：有 pending 就尽快补写一次灯效（不抛异常）。"""
+        try:
+            if not self.ledger.pending():
+                return True
+            if not self.connected:
+                return False
+            res = ledger_mod.flush_pending(self.device, reason="emergency")
+            return bool(res.get("ok"))
+        except Exception:  # noqa: BLE001
+            return False
 
     def _read_battery_24g(self) -> Optional[int]:
         """2.4G 下读电量（官方用 0x37 回包的 battery 字节）；失败熔断 5 分钟。"""
@@ -637,7 +906,7 @@ class DeviceManager:
         st = self.device.status.to_dict()
         st["mock"] = False
         st["shell"] = bool(getattr(self, "shell_mode", False))
-        st["webVersion"] = "0.1.8.6"
+        st["webVersion"] = "0.1.8.7"
         st["recentNotifications"] = [
             e for e in self.device.recent_events if e.get("type") == "notification"
         ][-10:]

@@ -15,7 +15,7 @@
     backup     备份 / 恢复
 """
 
-__version__ = "0.1.8.6"
+__version__ = "0.1.8.7"
 __all__ = [
     "const", "transport", "protocol", "device", "keymap", "macro",
     "lighting", "tft", "music", "wireless", "keyscan", "backup",

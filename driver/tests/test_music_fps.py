@@ -26,6 +26,7 @@ if DRIVER not in sys.path:
     sys.path.insert(0, DRIVER)
 
 from mk87lib import lighting, music  # noqa: E402
+from mk87lib import ledger as ledger_mod  # noqa: E402
 
 #: 默认档快照矩阵里用的喂料（与 test_music_preview.py 完全一致）
 SNAPSHOT_AMPS = (0, 0, 0, 0, 0, 0, 300, 700, 1000, 520, 0, 0, 0, 0, 0, 820)
@@ -557,6 +558,12 @@ class TestMusicPlayerLoop(unittest.TestCase):
                               lambda dev: {"before": b"\x02"}),
             mock.patch.object(lighting, "restore_effect",
                               lambda dev, raw, fallback=None: True),
+            # v0.1.8.7：会话收尾改走灯效账本（单测里 no-op，不写真实配置文件）
+            mock.patch.object(ledger_mod, "begin_stream",
+                              lambda dev, snapshot=None: {"kind": "effect", "mode": 2}),
+            mock.patch.object(ledger_mod, "end_stream",
+                              lambda dev, snapshot=None, reason="": {
+                                  "ok": True, "result": "restored"}),
             mock.patch.object(lighting, "FrameSender", lambda dev: sender),
         ]
         for patch in patches:
@@ -679,6 +686,12 @@ class TestRealClockPacing(unittest.TestCase):
                               lambda dev: {"before": b"\x02"}),
             mock.patch.object(lighting, "restore_effect",
                               lambda dev, raw, fallback=None: True),
+            # v0.1.8.7：会话收尾改走灯效账本（单测里 no-op，不写真实配置文件）
+            mock.patch.object(ledger_mod, "begin_stream",
+                              lambda dev, snapshot=None: {"kind": "effect", "mode": 2}),
+            mock.patch.object(ledger_mod, "end_stream",
+                              lambda dev, snapshot=None, reason="": {
+                                  "ok": True, "result": "restored"}),
             mock.patch.object(lighting, "FrameSender", lambda dev: sender),
         ]
         for patch in patches:

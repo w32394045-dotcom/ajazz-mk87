@@ -11,13 +11,68 @@ Screenshots and the full feature list live in the repository README:
 **[README.md (English)](https://github.com/w32394045-dotcom/ajazz-mk87/blob/main/README.md)** ·
 **[README.zh-CN.md (简体中文)](https://github.com/w32394045-dotcom/ajazz-mk87/blob/main/README.zh-CN.md)**
 
-## What's new in v0.1.8.6
+## What's new in v0.1.8.7
+
+**Reliability release: lighting no longer gets lost, and GIF uploads no longer fight Music Rhythm.**
+
+### GIF / TFT upload while Music Rhythm is playing
+
+- Root cause: TFT uploads need the whole keyboard, but the Music Rhythm frame stream writes
+  `0xFF68` on its own native HID handle (about 140 packets/s) and bypassed the TFT exclusivity
+  lock, so packet 1/2215 never got its ACK. Log: 16:20:28 upload started, 16:20:43–16:20:53 four
+  attempts without ACK, aborted; after the rhythm was stopped the same file uploaded with
+  2215/2215 ACKs in 332.7 s.
+- Fix: the app now **auto-pauses Music Rhythm right before the first upload packet is written**
+  (GIF conversion/preview still runs with music playing) and **resumes it with the same
+  parameters** when the job ends - success, failure, cancel or re-enumeration retry. The screen
+  page shows "Music Rhythm paused automatically; it will resume when finished".
+
+### The systemic "keyboard falls back to per-key lighting" bug
+
+- While streaming, the keyboard is in the custom family; ~5 s after the last frame the firmware
+  falls back to the per-key table (documented H3). The old restore was skipped whenever the
+  snapshot mode read 0 or the device was offline, leaving the keyboard on the per-key table - and
+  it then repeated forever.
+- New: a **persistent lighting ledger** (`%APPDATA%\mk87\lighting_state.json`, atomic write)
+  records every effect change (effect / off / per-key custom) and, before a frame stream starts,
+  persists the restore target. Restore chain: snapshot → ledger → static white, with read-back
+  verification; offline targets are retried on reconnect and on the next launch.
+- **Per-key custom can be restored too** (hardware-verified: mode 20/21/128 enters the per-key
+  display, `0x33` returns the per-key table; mode 0 is a real "lights off" - this corrects the
+  2026-11-01 note).
+- Crash / force-kill recovery: the target is already on disk; the next launch restores it ~1-2 s
+  after the device connects (verified on the user machine: killed mid-stream, restored
+  17:13:10.57 after reconnect at 17:13:09).
+
+### Other changes
+
+- Changing an effect in the Lighting page stops Music Rhythm first (no more frame stream
+  overwriting the new effect).
+- New read-only "Current effect" badge on the Lighting page plus a "Changed on keyboard" hint for
+  external changes (WebSocket `lighting_changed`).
+- `settings.json` is written atomically (tmp + `os.replace`).
+- 40 new unit tests (592 total, `skipped=1`): state classification, ledger persistence, restore
+  chain, offline pending, reconnect resync, TFT pause/resume including reconnect retries.
+
+### Known limitations / verification status
+
+- Physical USB unplug during Music Rhythm was not tested on hardware in this round (the
+  offline-pending + reconnect-restore path is unit-tested); please verify after upgrading.
+- A full 140-frame GIF upload *with music playing* was not re-run (it would replace the user's
+  screen animation); the same exclusivity/pause/resume path was verified with an invisible 0x4D
+  static material write while music was playing.
+- If the app is force-killed, the keyboard may show per-key lighting until the app is started
+  again (nothing can write to the keyboard meanwhile); restarting restores it within ~2 s.
+- Linux packaging unchanged; no Linux desktop verification this round.
+
+### v0.1.8.6
+
 
 **A diagnostic/reliability release: keyboard Win/Mac mode detection, Music Rhythm recovery after
 mode switches, a real fix for the Key Test crash, and a Windows tray that either really works or
 tells you why. Linux gets a visible one-click AppIndicator install.**
 
-### Keyboard Win/Mac mode (the usual cause of "keys are swapped")
+#### Keyboard Win/Mac mode (the usual cause of "keys are swapped")
 
 - The MK87 has a **physical Win/Mac slide switch on its back**. In Mac mode the firmware swaps
   **Win and Alt**; measured on the user machine (2026-11-07): pressing the physical Win key reports
@@ -32,7 +87,7 @@ tells you why. Linux gets a visible one-click AppIndicator install.**
   protocol channel is unreadable after the USB re-enumeration), so the check is guided by one key
   press instead of pretending to auto-detect.
 
-### Music Rhythm: recovers after a Win/Mac switch
+#### Music Rhythm: recovers after a Win/Mac switch
 
 - Flipping the switch re-enumerates the keyboard on USB. The frame stream used to stop silently in
   that situation; now: reconnect polling every 0.25 s while the keyboard is away, a frame-stream
@@ -40,7 +95,7 @@ tells you why. Linux gets a visible one-click AppIndicator install.**
   after 3 s), and time-limited session teardown so recovery is never blocked by a dead handle.
   Mode / amplitude / back-mode / FPS / colour survive the recovery.
 
-### Key Test: no more crashes, correct modifier names
+#### Key Test: no more crashes, correct modifier names
 
 - Fixed an **access violation** that could kill the whole app when Key Test was started
   (`keyscan.py`: a temporary `WNDPROC` was garbage-collected while the window class still pointed
@@ -50,7 +105,7 @@ tells you why. Linux gets a visible one-click AppIndicator install.**
   left/right Shift/Ctrl/Alt are resolved from the scan code + E0 flag; the Key Test log reads the
   `hid` field correctly (slot numbers show up again).
 
-### Windows: the tray icon problem is now visible and self-healing
+#### Windows: the tray icon problem is now visible and self-healing
 
 - The shell now verifies that the icon is **actually registered** (`Shell_NotifyIconGetRect`)
   instead of only checking that a `pystray.Icon` object exists. It distinguishes
@@ -64,7 +119,7 @@ tells you why. Linux gets a visible one-click AppIndicator install.**
 - Duplicate launch: the existing instance is activated; if activation fails you get a message
   saying where to find the window and the second process **exits instead of starting another copy**.
 
-### Linux: one-click AppIndicator install you can actually find
+#### Linux: one-click AppIndicator install you can actually find
 
 - Settings → System tray is promoted to the top (with a clear alert) on GNOME when the AppIndicator
   extension is missing/disabled; the **one-click install** asks for the admin password once
@@ -76,7 +131,7 @@ tells you why. Linux gets a visible one-click AppIndicator install.**
 - deb `Recommends` `pkexec | policykit-1` + `gnome-shell-extension-appindicator`; rpm `Requires`
   `polkit`, `Recommends` `gnome-shell-extension-appindicator`.
 
-### Known limitations / verification status
+#### Known limitations / verification status
 
 - Key Test crash and VK mapping were verified on the user machine (Windows 10 LTSC 1809);
   Music Rhythm reconnection and tray Explorer-restart recovery are covered by unit tests and still

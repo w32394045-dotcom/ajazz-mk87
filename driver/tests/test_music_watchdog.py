@@ -20,6 +20,8 @@ v0.1.8.6 补充（2026-11-07 用户实机：切换键盘 Win/Mac 模式 → USB 
   看门狗必须强制重建会话，不能静默停更；
 * 设备离线路径的会话收尾必须快速失败（不阻塞在死句柄 close / 灯效恢复上）。
 """
+import os
+import tempfile
 import threading
 import time
 import unittest
@@ -28,10 +30,13 @@ from unittest import mock
 import numpy as np
 
 from mk87lib import lighting, music
+from mk87lib import ledger as ledger_mod
 
-#: 保存真实实现：_MusicTestBase.setUp 会把 lighting.restore_effect 换成 no-op，
-#: 需要验证「设备离线快速失败」的用例要临时换回真实实现。
+#: 保存真实实现：_MusicTestBase.setUp 会把 lighting.restore_effect /
+#: ledger.begin_stream / ledger.end_stream 换成 no-op；需要验证真实恢复行为的
+#: 用例要临时换回真实实现。
 _REAL_RESTORE_EFFECT = lighting.restore_effect
+_REAL_LEDGER_END = ledger_mod.end_stream
 
 
 # ----------------------------------------------------------------------
@@ -145,12 +150,22 @@ def _wait_until(pred, timeout=5.0):
 
 class _MusicTestBase(unittest.TestCase):
     def setUp(self):
+        # 灯效账本隔离到临时文件：不写用户真实配置，也避免用例之间互相污染
+        self._ledger_dir = tempfile.mkdtemp(prefix="mk87-ledger-test-")
+        ledger_mod.reset(os.path.join(self._ledger_dir, "lighting_state.json"))
         self._patches = [
             mock.patch.object(music, "Analyzer", _FakeAnalyzer),
             mock.patch.object(lighting, "ensure_frame_mode",
                               lambda dev: {"before": b"\x02"}),
             mock.patch.object(lighting, "restore_effect",
                               lambda dev, raw, fallback=None: True),
+            # v0.1.8.7：会话收尾改走灯效账本；单测默认 no-op，
+            # 真实恢复行为由 TestCloseSessionFastFail 换回真实实现单独验证。
+            mock.patch.object(ledger_mod, "begin_stream",
+                              lambda dev, snapshot=None: {"kind": "effect", "mode": 2}),
+            mock.patch.object(ledger_mod, "end_stream",
+                              lambda dev, snapshot=None, reason="": {
+                                  "ok": True, "result": "restored"}),
             mock.patch.object(music.powerkeep, "keep_awake",
                               lambda: _FakeKeepAlive()),
         ]
@@ -378,7 +393,11 @@ class TestRecoveryUpdateAndStatus(_MusicTestBase):
 # 5) Win/Mac 模式切换 → USB 重新枚举 → 重连后自动恢复（v0.1.8.6）
 # ----------------------------------------------------------------------
 class _ReenumDevice:
-    """可切换在线状态的假设备（模拟 state 层 monitor 线程的设备重连）。"""
+    """可切换在线状态的假设备（模拟 state 层 monitor 线程的设备重连）。
+
+    v0.1.8.7：补充最简 ``request`` / ``get_led_effect``，用于验证「会话收尾时
+    灯效账本真的把 SET_LED_EFFECT 写回设备并回读校验」。
+    """
 
     transport = "usb"
 
@@ -387,6 +406,20 @@ class _ReenumDevice:
 
     def __init__(self):
         self.status = _ReenumDevice._Status()
+        self.writes = []
+        self._last_effect = None
+
+    def request(self, cmd, payload=b"", **kwargs):
+        from mk87lib import const
+
+        self.writes.append((int(cmd), bytes(payload)))
+        if int(cmd) == const.CMD["SET_LED_EFFECT"]:
+            self._last_effect = bytes(payload)[:16]
+        return b""
+
+    def get_led_effect(self):
+        raw = self._last_effect or bytes(16)
+        return {"raw": raw, "mode": raw[0]}
 
 
 class _Fail1167Sender(_RecordingSender):
@@ -606,17 +639,20 @@ class TestCloseSessionFastFail(_MusicTestBase):
         player = music.MusicPlayer(dev)
         sender = _BlockingCloseSender()
         player._snapshot = {"before": bytes([11] + [0] * 15), "wasMode": 11}
-        with mock.patch.object(lighting, "restore_effect", _REAL_RESTORE_EFFECT):
+        with mock.patch.object(ledger_mod, "end_stream", _REAL_LEDGER_END):
             t0 = time.monotonic()
             player._close_session(None, sender)
             elapsed = time.monotonic() - t0
         self.assertLess(elapsed, 0.8,
                         f"设备离线时会话收尾应在 ~0.25s 内返回，实际 {elapsed:.2f}s")
         self.assertIsNotNone(sender.close_started, "仍应尝试关闭旧发送通道")
-        # 灯效恢复走 lighting 侧的设备离线快速失败（不发命令、立即记录）
+        # 灯效恢复走账本的设备离线快速失败（不发命令、立即记录，pending 保留待重连）
         restore = lighting.restore_state()
         self.assertEqual(restore["result"], "skipped-offline")
         self.assertEqual(restore["mode"], 11)
+        self.assertEqual(dev.writes, [], "设备离线时不应发任何命令")
+        self.assertIsNotNone(ledger_mod.get().pending(),
+                             "离线恢复失败必须保留 pending，等重连/下次启动补写")
         self.assertIsNone(player._snapshot, "快照用掉后要清空，不能下次重复恢复")
 
     def test_restore_effect_offline_sends_no_command(self):
@@ -647,13 +683,15 @@ class TestCloseSessionFastFail(_MusicTestBase):
         player = music.MusicPlayer(dev)
         snap = bytes([11] + [0] * 15)
         player._snapshot = {"before": snap, "wasMode": 11}
-        restore_calls = []
-        with mock.patch.object(
-                lighting, "restore_effect",
-                side_effect=lambda *a, **k: restore_calls.append((a, k)) or True):
+        with mock.patch.object(ledger_mod, "end_stream", _REAL_LEDGER_END):
             player._close_session(None, _RecordingSender())
-        self.assertEqual(len(restore_calls), 1, "设备在线时必须恢复进入前的灯效")
-        self.assertEqual(restore_calls[0][0][1], snap)
+        from mk87lib import const
+
+        effect_writes = [p for c, p in dev.writes if c == const.CMD["SET_LED_EFFECT"]]
+        self.assertTrue(effect_writes, "设备在线时必须恢复进入前的灯效")
+        self.assertEqual(effect_writes[0][0], 11, "必须写回快照的 mode=11")
+        self.assertEqual(lighting.restore_state()["result"], "restored")
+        self.assertIsNone(ledger_mod.get().pending(), "恢复成功后必须清掉 pending")
 
 
 if __name__ == "__main__":

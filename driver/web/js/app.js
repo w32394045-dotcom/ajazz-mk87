@@ -527,6 +527,8 @@ const ctx = {
     if (state.status) fn(state.status);
     return off;
   },
+  /* 后端 WS 事件（含 lighting_changed）由 api.dispatch 统一分发为 ws:<type>，
+     页面在这里订阅即可，不需要在 app.js 里逐个转发。 */
   onEvent(type, fn) { return api.on(`ws:${type}`, fn); },
   async refreshStatus() {
     try {

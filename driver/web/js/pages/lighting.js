@@ -118,6 +118,10 @@ export default {
 
     /* ---------------- 布局骨架 ---------------- */
     const previewBadge = h('span', { class: 'preview-badge' }, h('span', { class: 'pulse' }), '本地预览 · 20 FPS');
+    /* 只读的「当前设备灯效」：外部/键盘侧改动时只更新这里，不重建页面，避免重置正在拖动的滑块 */
+    const currentEffectBadge = badge('—', 'accent');
+    const currentEffectHint = badge('键盘侧已更改', 'warn');
+    currentEffectHint.style.display = 'none';
     const keyboard = new Keyboard({ interactive: false, legends: false, mode: 'lighting' });
     const stage = h('div', { class: 'preview-stage' },
       h('div', { class: 'stage-head' },
@@ -238,6 +242,11 @@ export default {
         badge('可实时写入', 'ok'),
       ),
       h('div', { class: 'card-body' },
+        h('div', { class: 'row', style: { marginBottom: '10px' } },
+          h('span', { class: 'tiny muted' }, '当前灯效'),
+          currentEffectBadge,
+          currentEffectHint,
+        ),
         h('div', { class: 'param-panel' },
           colorModeField,
           colorField,
@@ -303,6 +312,59 @@ export default {
       applyRemote(explicit);
     }
 
+    /* ---------------- 当前灯效（只读同步，不改动参数控件） ---------------- */
+    let disposed = false;
+    let liveHintTimer = null;
+    let liveRefreshTimer = null;
+    let liveRefreshSeq = 0;
+
+    function effectLabel(info) {
+      const mode = Number(info?.mode);
+      const kind = info?.kind;
+      if (kind === 'off' || mode === 0) return '已关灯';
+      if (kind === 'custom' || mode === 20 || mode === 21 || mode === 128) return '自定义逐键灯效';
+      const local = modes.find((m) => Number(m.id) === mode);
+      if (local) return local.name;
+      if (info?.name) return info.name;
+      return Number.isFinite(mode) ? `模式 ${mode}` : '—';
+    }
+
+    function renderCurrentEffect(info) {
+      if (!info) return;
+      currentEffectBadge.textContent = effectLabel(info);
+    }
+
+    /** 键盘侧/外部改动：只在页面内闪一下小徽章，不弹窗、不打断操作 */
+    function flashKeyboardSideHint() {
+      currentEffectHint.style.display = '';
+      clearTimeout(liveHintTimer);
+      liveHintTimer = setTimeout(() => {
+        currentEffectHint.style.display = 'none';
+        liveHintTimer = null;
+      }, 6000);
+    }
+
+    async function refreshCurrentEffect(seq) {
+      try {
+        const resp = await api.get('/api/lighting');
+        if (disposed || seq !== liveRefreshSeq) return;
+        const ledger = resp?.ledger && typeof resp.ledger === 'object' ? resp.ledger : null;
+        renderCurrentEffect(ledger || { mode: resp?.mode });
+      } catch (e) {
+        console.warn('[lighting] 刷新当前灯效失败', e);
+      }
+    }
+
+    /** 同一时间只发一次 GET，避免连续事件（拖动亮度等）打爆接口 */
+    function scheduleCurrentEffectRefresh() {
+      const seq = ++liveRefreshSeq;
+      clearTimeout(liveRefreshTimer);
+      liveRefreshTimer = setTimeout(() => {
+        liveRefreshTimer = null;
+        refreshCurrentEffect(seq);
+      }, 180);
+    }
+
     function selectedMode() {
       return modes.find((m) => m.id === state.mode) || modes[0];
     }
@@ -312,6 +374,7 @@ export default {
       if (!mode) return;
       state.mode = id;
       if (id !== 0) state.lastMode = id;
+      renderCurrentEffect({ mode: id });
       if (mode.direction) state.direction = mode.directionDefault ?? 0;
       if (mode.speed && state.speed < 1) state.speed = 3;
       modeCards.forEach((card, cid) => card.classList.toggle('active', cid === id));
@@ -329,6 +392,7 @@ export default {
         state.lastMode = state.mode;
         state.mode = 0;
       }
+      renderCurrentEffect({ mode: state.mode });
       modeCards.forEach((card, cid) => card.classList.toggle('active', cid === state.mode));
       customHint.style.display = state.mode === 128 ? '' : 'none';
       offBtn.innerHTML = state.mode === 0 ? '开启背光' : '关闭背光';
@@ -487,9 +551,24 @@ export default {
     offBtn.innerHTML = state.mode === 0 ? '开启背光' : '关闭背光';
     offBtn.classList.toggle('soft', state.mode !== 0);
     syncParamVisibility();
+    const initialLedger = lighting.ledger && typeof lighting.ledger === 'object' ? lighting.ledger : null;
+    renderCurrentEffect(initialLedger || { mode: state.mode });
+
+    /* lighting_changed：后端/键盘侧灯效变化（api.dispatch 统一分发为 ws:lighting_changed） */
+    const offLightingChanged = ctx.onEvent('lighting_changed', (data) => {
+      if (disposed) return;
+      if (data?.source === 'device') flashKeyboardSideHint();
+      renderCurrentEffect(data);
+      scheduleCurrentEffectRefresh();
+    });
+
     rafTimer = requestAnimationFrame(tick);
 
     return () => {
+      disposed = true;
+      clearTimeout(liveHintTimer);
+      clearTimeout(liveRefreshTimer);
+      offLightingChanged?.();
       cancelAnimationFrame(rafTimer);
       applyRemote.cancel?.();
       keyboard.destroy();

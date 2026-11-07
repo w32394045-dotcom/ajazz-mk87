@@ -53,7 +53,7 @@ from typing import Dict, List, Optional, Tuple
 
 import numpy as np
 
-from . import keymap, lighting, powerkeep
+from . import keymap, ledger, lighting, powerkeep
 from .errors import MK87Error
 
 log = logging.getLogger("mk87.music")
@@ -2539,16 +2539,19 @@ class MusicPlayer:
                 "关闭音频采集",
             )
         self._capture = None
-        # 4) 恢复进入帧流前的灯效。设备不可用时不阻塞：lighting.restore_effect
-        #    内部会先查设备状态快速失败（并记录 skipped-offline，供 shell 退出 /
-        #    stop_music 的「恢复已发生」确认），不会发命令白等超时。
+        # 4) 恢复进入帧流前的灯效（v0.1.8.7：走灯效账本）。
+        #    fw1.19 停帧约 5s 后会把逐键自定义表顶上来显示，所以必须在 5s 内写回；
+        #    设备离线时 end_stream 会保留 pending 标记，重连 / 下次启动时补写。
+        #    设备不可用时不阻塞：账本内部先查设备状态快速失败，不会发命令白等超时。
         snap = self._snapshot
         self._snapshot = None
-        if snap:
-            try:
-                lighting.restore_effect(self.device, snap["before"])
-            except Exception:  # noqa: BLE001
-                pass
+        try:
+            res = ledger.end_stream(self.device, snap, reason="music-stop")
+            if not res.get("ok"):
+                log.warning("音乐律动结束后灯效恢复未完成（%s），已保留待恢复标记",
+                            res.get("result"))
+        except Exception:  # noqa: BLE001 - 恢复失败不能掩盖停止流程
+            log.warning("音乐律动结束后灯效恢复异常", exc_info=True)
 
     def _note_recovery(self, reason: str, failures: int) -> None:
         """会话中断：累计恢复次数、清空预览并更新健康状态（前端据此显示恢复中）。"""
@@ -2592,6 +2595,8 @@ class MusicPlayer:
             analyzer = Analyzer(capture.samplerate)
             self._engine = self._new_engine()
             self._snapshot = lighting.ensure_frame_mode(self.device)
+            # v0.1.8.7：进入帧流前把「结束后要恢复成什么」落盘（崩溃/拔线后据此自动补写）
+            ledger.begin_stream(self.device, self._snapshot)
             # 帧流走原生通道（Windows）：hidapi 逐包 ACK 只能到 ~10fps，原生通道实测 20fps
             self._sender = sender = lighting.FrameSender(self.device)
             self._session_ok = True

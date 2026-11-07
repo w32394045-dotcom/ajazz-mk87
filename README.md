@@ -8,7 +8,7 @@
 - **Device**: USB `VID 0x0C45 / PID 0x8047`; 2.4G receiver `VID 0x0C45 / PID 0xFEFE`
 - **Official web driver** (reverse-engineered): `https://ajazz.driveall.cn`
 - **Everything local**: no network access, no telemetry, no vendor driver required
-- **Latest release**: [v0.1.8.6](https://github.com/w32394045-dotcom/ajazz-mk87/releases/latest)
+- **Latest release**: [v0.1.8.7](https://github.com/w32394045-dotcom/ajazz-mk87/releases/latest)
 
 ## Screenshots
 
@@ -119,7 +119,36 @@ so the tray icon appears.
   "Copy install commands" there. Use the desktop build (deb / rpm) for the one-click install.
 - If there is no tray host at all, closing the window quits the app (no invisible background process).
 
-## What's new in v0.1.8.6
+## What's new in v0.1.8.7
+
+> **Reliability release: your lighting no longer gets lost.** Fixes GIF/TFT uploads failing while
+> Music Rhythm is running, and the systemic "keyboard falls back to per-key lighting" bug after a
+> rhythm stop, a crash, a USB replug or an upload.
+
+- **Lighting ledger** (persisted in `%APPDATA%\mk87\lighting_state.json`, atomic write). Every
+  effect change is recorded (effect / off / per-key custom), and before a frame stream starts the
+  app persists what to restore afterwards. Restore chain: runtime snapshot → ledger → static white
+  fallback, with read-back verification (mode for normal effects, `GET_ALL_LIGHTS_RGB` vs the
+  per-key table for custom). If the keyboard is offline, the pending restore is retried on
+  reconnect and on the next launch.
+- **Per-key lighting can be restored too.** Measured on hardware: writing `SET_LED_EFFECT` with
+  mode 20/21/128 enters the per-key display (`0x33` returns the per-key table); mode 0 is a real
+  "lights off". This corrects the 2026-11-01 note that mode 128 only turns the LEDs off.
+- **Crash / replug recovery.** If the app is killed while Music Rhythm is playing, the pending
+  target is already on disk; the next launch restores it ~1–2 s after the device connects (verified
+  on the user machine: killed mid-stream, reconnect 17:13:09, restored 17:13:10.57).
+- **GIF / TFT upload auto-pauses Music Rhythm.** The TFT upload needs the whole device; the app
+  pauses Music Rhythm right before the first packet is written and resumes it with the same
+  parameters afterwards (success, failure, cancel or reconnect-retry). The screen page shows
+  "Music Rhythm paused automatically; it will resume when finished".
+- **Changing an effect in the Lighting page stops Music Rhythm first**, so frame streaming can no
+  longer overwrite the new effect.
+- **UI:** the Lighting page now shows a read-only "Current effect" badge and a "Changed on
+  keyboard" hint when the device was changed externally. `settings.json` is written atomically.
+- Tests: **592 unit tests OK (skipped=1)**, including 40 new ledger/restore cases.
+  See [DEVLOG §31](docs/DEVLOG.md) and [TEST-REPORT §27](docs/TEST-REPORT.md).
+
+### v0.1.8.6 (previous release)
 
 > **Diagnostic/reliability release.** Adds keyboard Win/Mac mode detection, Music Rhythm recovery
 > after a mode switch, fixes the Key Test crash (`access violation`) and the `VK_0x12` unknown key,

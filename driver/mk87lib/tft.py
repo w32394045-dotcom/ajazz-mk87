@@ -360,12 +360,28 @@ def _upload_locked(device, cmd: int, data: bytes, header_tail: bytes,
     }
 
 
+def _call_before_upload(before_upload) -> None:
+    """上传真正开始写设备前的钩子（v0.1.8.7：让服务层暂停音乐律动/恢复灯效）。
+
+    放在「转换/校验都完成、即将发第一个 0x4D/0x50 包」之前调用，这样音乐律动只在
+    实际上传的那几分钟里让路，转换预览期间照常播放。
+    """
+    if before_upload is None:
+        return
+    try:
+        before_upload()
+    except Exception as exc:  # noqa: BLE001 - 钩子失败不能中断上传
+        log.warning("上传前钩子失败（忽略）: %s", exc)
+
+
 def upload_material(device, material_id: int, rgb565_data: bytes,
                     progress: Optional[ProgressFn] = None,
-                    cancel_check: Optional[Callable[[], bool]] = None) -> dict:
+                    cancel_check: Optional[Callable[[], bool]] = None,
+                    before_upload: Optional[Callable[[], None]] = None) -> dict:
     """单帧墙纸（0x4D）。MK87 无壁纸页 → 写入不可见。"""
     if len(rgb565_data) != FRAME_BYTES:
         raise MK87Error(f"单帧数据必须是 {FRAME_BYTES} 字节，收到 {len(rgb565_data)}")
+    _call_before_upload(before_upload)
     return _upload(device, const.CMD["SET_TFT_MATERIAL"], rgb565_data,
                    bytes([material_id & 0xFF, (material_id >> 8) & 0xFF]),
                    progress=progress, cancel_check=cancel_check)
@@ -373,7 +389,8 @@ def upload_material(device, material_id: int, rgb565_data: bytes,
 
 def upload_animation(device, delays: List[int], rgb565_data: bytes,
                      progress: Optional[ProgressFn] = None,
-                     cancel_check: Optional[Callable[[], bool]] = None) -> dict:
+                     cancel_check: Optional[Callable[[], bool]] = None,
+                     before_upload: Optional[Callable[[], None]] = None) -> dict:
     """动画上传（0x50），帧数 ≤ tftMaxFrames。"""
     max_frames = device.status.tft_max_frames or const.TFT_MAX_FRAMES
     frame_count = len(rgb565_data) // FRAME_BYTES
@@ -388,6 +405,7 @@ def upload_animation(device, delays: List[int], rgb565_data: bytes,
     blob = build_animation_blob(delays, rgb565_data)
     log.info("TFT 动画上传: %d 帧, 延时表(cs)=%s…, 载荷 %d 字节",
              frame_count, delays[:8], len(blob))
+    _call_before_upload(before_upload)
     res = _upload(device, const.CMD["SET_TFT_USER_ANIMATION"], blob, bytes([80, 6]),
                   progress=progress, cancel_check=cancel_check)
     res["frames"] = frame_count
@@ -395,9 +413,11 @@ def upload_animation(device, delays: List[int], rgb565_data: bytes,
 
 
 def restore_default(device, progress: Optional[ProgressFn] = None,
-                    cancel_check: Optional[Callable[[], bool]] = None) -> dict:
+                    cancel_check: Optional[Callable[[], bool]] = None,
+                    before_upload: Optional[Callable[[], None]] = None) -> dict:
     delays, data = default_animation(device.status.tft_byte_order)
-    res = upload_animation(device, delays, data, progress=progress, cancel_check=cancel_check)
+    res = upload_animation(device, delays, data, progress=progress, cancel_check=cancel_check,
+                           before_upload=before_upload)
     res["default"] = True
     return res
 
@@ -820,11 +840,13 @@ def convert_and_upload(
     trim_end_frame: Optional[int] = None,
     progress: Optional[ProgressFn] = None,
     cancel_check: Optional[Callable[[], bool]] = None,
+    before_upload: Optional[Callable[[], None]] = None,
 ) -> dict:
     """一步完成：高分辨率文件 → 压缩 → 上传（转换耗时 <2s，进度只报上传）。
 
     默认参数与已验证探针 probe/tft_upload_gif2.py 完全一致：
     取前 ≤tftMaxFrames 帧、cover 裁剪、不抽帧、不去重、延时表见 build_animation_blob。
+    ``before_upload`` 在转换完成后、真正写设备前调用（服务层用它暂停音乐律动）。
     """
     _check_tft(device)
     if cancel_check and cancel_check():
@@ -849,7 +871,8 @@ def convert_and_upload(
     data = b"".join(res["_frames565"])
     if progress:
         progress(0, 0, 1)
-    meta = upload_animation(device, delays, data, progress=progress, cancel_check=cancel_check)
+    meta = upload_animation(device, delays, data, progress=progress,
+                            cancel_check=cancel_check, before_upload=before_upload)
     meta.update({
         "sourceFrames": res["sourceFrames"],
         "outputFrames": res["framesCount"],

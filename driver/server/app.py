@@ -23,6 +23,7 @@ from fastapi.staticfiles import StaticFiles
 
 from mk87lib import backup as backup_mod
 from mk87lib import keymap, lighting, logsetup, macro, music, tft, trayenv, wireless
+from mk87lib import ledger as ledger_mod
 from mk87lib import const
 from mk87lib.errors import (
     DeviceDisconnected,
@@ -34,7 +35,7 @@ from mk87lib.errors import (
 from server import state
 
 WEB_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "web")
-VERSION = "0.1.8.6"
+VERSION = "0.1.8.7"
 
 manager = state.manager
 log = logging.getLogger("mk87.http")
@@ -46,11 +47,52 @@ async def _lifespan(_app: FastAPI):
     log.info("服务启动 v%s; 日志目录=%s", VERSION, info.get("dir"))
     manager.attach_loop(asyncio.get_running_loop())
     manager.start()
+    _install_crash_hooks()
     try:
         yield
     finally:
         log.info("服务关闭")
         manager.stop()
+
+
+def _install_crash_hooks() -> None:
+    """崩溃兜底（v0.1.8.7）：异常退出前尽力把灯效写回，避免键盘停在逐键表。
+
+    正常退出走 ``manager.stop()``；这里覆盖未捕获异常 / 线程异常 / 进程正常退出
+    但没走 lifespan 的情况。被强杀（Task Manager / 断电）无法拦截，靠账本 pending
+    在下次启动时补恢复。
+    """
+    import atexit
+    import sys
+
+    def _emergency() -> None:
+        try:
+            manager.emergency_restore()
+        except Exception:  # noqa: BLE001
+            pass
+
+    atexit.register(_emergency)
+    prev_hook = sys.excepthook
+
+    def _hook(exc_type, exc, tb):
+        try:
+            log.error("未捕获异常（尝试补写灯效）", exc_info=(exc_type, exc, tb))
+        except Exception:  # noqa: BLE001
+            pass
+        _emergency()
+        prev_hook(exc_type, exc, tb)
+
+    sys.excepthook = _hook
+    if hasattr(threading, "excepthook"):
+        def _thread_hook(args):  # noqa: ANN001
+            try:
+                log.error("线程未捕获异常（尝试补写灯效）",
+                          exc_info=(args.exc_type, args.exc_value, args.exc_traceback))
+            except Exception:  # noqa: BLE001
+                pass
+            _emergency()
+
+        threading.excepthook = _thread_hook
 
 
 app = FastAPI(
@@ -542,21 +584,53 @@ def api_keymap_actions():
 # ----------------------------------------------------------------------
 # 灯效
 # ----------------------------------------------------------------------
+def _lighting_response(dev) -> dict:
+    """GET/PUT 灯效统一响应：设备实时读数 + 账本 last（v0.1.8.7 新增字段）。"""
+    eff = lighting.get_effect_with_custom_fallback(dev)
+    try:
+        last = manager.ledger.last()
+        eff["ledger"] = (ledger_mod.public_view(last) | {"ts": last.get("ts")}
+                         if last else None)
+    except Exception:  # noqa: BLE001
+        eff["ledger"] = None
+    return eff
+
+
+def _record_lighting_after_write(dev, *, source: str = "app", deep: bool = False) -> None:
+    """写灯效后等 200ms 再回读记账（docs/lighting-hardware-test.md §4：立即读会读到半更新帧）。"""
+    time.sleep(0.2)
+    try:
+        st = ledger_mod.read_state(dev, deep=deep, source=source)
+    except Exception as exc:  # noqa: BLE001
+        log.debug("写灯效后回读失败（记账跳过）: %s", exc)
+        return
+    try:
+        manager.record_lighting_state(st, source=source)
+    except Exception:  # noqa: BLE001
+        log.debug("灯效记账失败（忽略）", exc_info=True)
+
+
 @app.get("/api/lighting")
 def api_lighting():
     dev = _dev()
     # mode 回读 0 时兜底读一次逐键表：fw1.19 会把自定义族固化成 mode=0，
     # 灯其实还亮着自定义逐键颜色。字段不变，只把 isCustom 修正为 true。
-    return lighting.get_effect_with_custom_fallback(dev)
+    return _lighting_response(dev)
 
 
 @app.put("/api/lighting")
 def api_lighting_set(payload: dict = Body(...)):
     dev = _dev()
+    # v0.1.8.7：在灯效页改灯效 = 把灯效所有权从帧流交回页面。先停音乐律动，
+    # 否则帧流会继续发逐键帧，把新灯效覆盖掉（看起来就是「改了没用」）。
+    if manager.music.running:
+        log.info("切换灯效：先停止音乐律动（避免帧流覆盖新灯效）")
+        manager.stop_music(2.5)
     cur = lighting.get_effect(dev)
+    mode = int(payload.get("mode", cur["mode"]))
     lighting.set_effect(
         dev,
-        mode=int(payload.get("mode", cur["mode"])),
+        mode=mode,
         rgb=tuple(payload.get("rgb", cur["rgb"])),
         secondary=tuple(payload.get("secondary", cur["secondary"])),
         color_mode=int(payload.get("colorMode", cur["colorMode"])),
@@ -565,7 +639,8 @@ def api_lighting_set(payload: dict = Body(...)):
         direction=int(payload.get("direction", cur["direction"])),
         effect_mode_type=int(payload.get("effectModeType", cur["effectModeType"])),
     )
-    return lighting.get_effect(dev)
+    _record_lighting_after_write(dev, deep=mode in ledger_mod.CUSTOM_FAMILY)
+    return _lighting_response(dev)
 
 
 @app.get("/api/lighting/modes")
@@ -588,6 +663,9 @@ def api_custom_led():
 @app.put("/api/lighting/custom")
 def api_custom_led_set(payload: dict = Body(...)):
     dev = _dev()
+    if manager.music.running:
+        log.info("写入逐键灯表：先停止音乐律动（避免帧流覆盖）")
+        manager.stop_music(2.5)
     colors = {int(k): tuple(v) for k, v in (payload.get("colors") or {}).items()}
     res = lighting.set_custom(
         dev, colors,
@@ -596,6 +674,9 @@ def api_custom_led_set(payload: dict = Body(...)):
         speed=int(payload.get("speed", 3)),
     )
     res["colors"] = {str(k): list(v) for k, v in sorted(colors.items())}
+    if res.get("ok") and bool(payload.get("apply", True)):
+        # 逐键自定义也是「用户可见灯效」：记账后，帧流结束/崩溃恢复会写回它
+        _record_lighting_after_write(dev, deep=True)
     return res
 
 
@@ -734,6 +815,32 @@ def api_tft_convert(payload: dict = Body(...)):
     return res
 
 
+def _tft_runner(runner_fn):
+    """TFT 任务包装（v0.1.8.7）。
+
+    背景（2026-11-07 真机日志）：TFT 上传要求整机独占，而音乐帧流在自己的原生
+    HID 通道上持续写 0xFF68（20fps≈140 包/s），`tft_exclusive` 挡不住它 →
+    上传第 1 包就 4 次无 ACK 中止。所以：
+
+    * **真正开始写设备前**（转换/预览已完成）自动暂停音乐律动；
+    * 任务结束（成功 / 失败 / 取消）后按原参数自动恢复；
+    * 结束后再校验一次灯效，防止上传把灯效重置后停在逐键态。
+    """
+    def runner(progress, cancel):
+        def before_upload():
+            # 暂停由 manager 内部保存令牌；任务结束（含重试）由 TftJob 统一恢复
+            manager.pause_music_for_upload()
+
+        try:
+            return runner_fn(progress, cancel, before_upload)
+        finally:
+            # 上传结束后再校验一次灯效（避免上传把灯效重置后停在逐键态）
+            threading.Thread(target=manager.verify_lighting_after_upload,
+                             name="mk87-tft-lighting-check", daemon=True).start()
+
+    return runner
+
+
 @app.post("/api/tft/upload_file")
 def api_tft_upload_file(payload: dict = Body(...)):
     """高分辨率图片/GIF → 压缩 → 上传（异步任务，进度走 WS）。"""
@@ -741,10 +848,11 @@ def api_tft_upload_file(payload: dict = Body(...)):
     raw = _decode_upload(payload)
     opts = _tft_options(payload)
 
-    def runner(progress, cancel):
-        return tft.convert_and_upload(dev, raw, progress=progress, cancel_check=cancel, **opts)
+    def runner(progress, cancel, before_upload):
+        return tft.convert_and_upload(dev, raw, progress=progress, cancel_check=cancel,
+                                      before_upload=before_upload, **opts)
 
-    return manager.tft_job.start(kind="file", frames=0, runner=runner)
+    return manager.tft_job.start(kind="file", frames=0, runner=_tft_runner(runner))
 
 
 @app.post("/api/tft/upload")
@@ -762,23 +870,27 @@ def api_tft_upload(payload: dict = Body(...)):
         blobs.append(raw)
     data = b"".join(blobs)
     if mode == "static":
-        def runner(progress, cancel):
-            return tft.upload_material(dev, 0, blobs[0], progress=progress, cancel_check=cancel)
-        return manager.tft_job.start(kind="static", frames=1, runner=runner)
+        def runner(progress, cancel, before_upload):
+            return tft.upload_material(dev, 0, blobs[0], progress=progress,
+                                       cancel_check=cancel, before_upload=before_upload)
+        return manager.tft_job.start(kind="static", frames=1, runner=_tft_runner(runner))
 
     fps = max(1, min(30, int(payload.get("fps", 10))))
     delays = [max(1, int(round(100 / fps)))] * len(blobs)  # 单位 10ms
-    def runner(progress, cancel):
-        return tft.upload_animation(dev, delays, data, progress=progress, cancel_check=cancel)
-    return manager.tft_job.start(kind="animation", frames=len(blobs), runner=runner)
+    def runner(progress, cancel, before_upload):
+        return tft.upload_animation(dev, delays, data, progress=progress,
+                                    cancel_check=cancel, before_upload=before_upload)
+    return manager.tft_job.start(kind="animation", frames=len(blobs),
+                                 runner=_tft_runner(runner))
 
 
 @app.post("/api/tft/default")
 def api_tft_default():
     dev = _dev()
-    def runner(progress, cancel):
-        return tft.restore_default(dev, progress=progress, cancel_check=cancel)
-    return manager.tft_job.start(kind="default", frames=135, runner=runner)
+    def runner(progress, cancel, before_upload):
+        return tft.restore_default(dev, progress=progress, cancel_check=cancel,
+                                   before_upload=before_upload)
+    return manager.tft_job.start(kind="default", frames=135, runner=_tft_runner(runner))
 
 
 @app.get("/api/tft/job")

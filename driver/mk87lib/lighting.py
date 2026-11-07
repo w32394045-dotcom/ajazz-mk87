@@ -370,6 +370,11 @@ def _record_restore(mode, result: str) -> None:
         _restore_state.update({"ts": time.time(), "mode": mode, "result": result})
 
 
+def note_restore(mode, result: str) -> None:
+    """供灯效账本（mk87lib/ledger.py）写入恢复结果（shell 退出/停止音乐时等待用）。"""
+    _record_restore(mode, result)
+
+
 def restore_state() -> dict:
     """最近一次 :func:`restore_effect` 的结果快照（shell 退出时等待恢复用）。"""
     with _restore_lock:
