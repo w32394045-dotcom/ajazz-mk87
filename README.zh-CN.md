@@ -8,7 +8,7 @@ USB / 2.4G 协议的完整逆向实现，全部功能**离线本地运行**。
 - **设备**：USB `VID 0x0C45 / PID 0x8047`；2.4G 接收器 `VID 0x0C45 / PID 0xFEFE`
 - **官方网页驱动**（已逆向）：`https://ajazz.driveall.cn`
 - **全程本地**：不访问外网、不上传数据、不依赖官方驱动
-- **最新版本**：[v0.1.8.5](https://github.com/w32394045-dotcom/ajazz-mk87/releases/latest)
+- **最新版本**：[v0.1.8.6](https://github.com/w32394045-dotcom/ajazz-mk87/releases/latest)
 
 ## 界面截图
 
@@ -85,12 +85,81 @@ v0.1.8.5 起安装器会写日志到 `%TEMP%\Setup Log <日期> #<序号>.txt`�
 
 从应用菜单启动不再弹终端窗口（v0.1.8：`.desktop` 里的 `Terminal=false`）。托盘图标改为 Qt 的
 `QSystemTrayIcon`，在 KDE / XFCE / Cinnamon / MATE / Ubuntu GNOME 上走原生 StatusNotifierItem +
-dbusmenu：**左键显示主窗口，右键打开菜单**（显示主窗口 / 开机自启 / 退出）。**GNOME Shell 原生不显示
-任何托盘图标**，必须安装 `gnome-shell-extension-appindicator` 扩展；如果设置页「系统托盘」卡片提示
-缺少扩展，可直接「一键安装」（需要一次管理员密码，装的是发行版包）。Wayland 下装完请注销重新登录，
-X11 下也可以按 `Alt+F2` 输入 `r`。
+dbusmenu：**左键显示主窗口，右键打开菜单**（显示主窗口 / 开机自启 / 退出）。
 
-## v0.1.8.5 更新
+**GNOME Shell 原生不显示任何托盘图标**，必须安装 `gnome-shell-extension-appindicator` 扩展。
+v0.1.8.6 起不需要再自己进终端装：检测到 GNOME 缺扩展时，主窗口顶部会出现一次性提示条，设置页的
+「系统托盘」卡片也会**自动置顶**并显示醒目提示，直接点 **「一键安装 AppIndicator 扩展（一次管理员
+密码）」**即可 —— 程序会用发行版包管理器安装扩展（通过 pkexec 弹出系统密码框，**只需要输入一次
+当前登录用户的密码**），装完自动启用；随后注销重新登录（Wayland）或按 `Alt+F2` 输入 `r`（X11），
+托盘图标就会出现。
+
+- 扩展已安装但未启用时，按钮变成「启用扩展（无需管理员密码）」。
+- 安装失败时卡片会给出原因（取消提权 / 软件包列表过期 / 网络不可用 / 包管理器被占用等），并提供
+  **可复制的手动命令**；手动命令只是兜底，正常情况用不上：
+  ```bash
+  # Debian / Ubuntu
+  sudo apt update && sudo apt install -y gnome-shell-extension-appindicator
+  # Fedora / RHEL
+  sudo dnf install -y gnome-shell-extension-appindicator
+  # openSUSE
+  sudo zypper install -y gnome-shell-extension-appindicator
+  # Arch
+  sudo pacman -S --noconfirm gnome-shell-extension-appindicator
+  gnome-extensions enable appindicatorsupport@rgcjonas.gmail.com
+  # Wayland：注销重新登录；X11：Alt+F2 → r
+  ```
+- 浏览器模式（直接 `python run.py` 开的网页）没有提权入口，按钮会变成「复制安装命令」；请用桌面版
+  （deb / rpm）打开设置页完成一键安装。
+- 没有托盘宿主时，关闭窗口 = 退出程序（不会留下看不见的后台进程）。
+
+## v0.1.8.6 更新
+
+> **诊断 / 稳定性版本**：新增键盘 Win/Mac 模式检测；切模式后音乐律动自动恢复；修复按键测试的
+> **访问违例崩溃**与 `VK_0x12` 未知键；Windows 托盘改为「实测图标是否注册 + 自动恢复」；Linux
+> 一键安装 AppIndicator 扩展更醒目、更可靠。
+
+- **键盘 Win/Mac 模式（「按键错位」最常见的原因）** —— MK87 **背面/侧面有 Win/Mac 拨动开关**。
+  Mac 模式下固件把 **Win 与 Alt 互换**：用户实机实测，Windows 模式按物理 Win 键上报 `vkey=0x5B`
+  （L-Win / HID 227 / scan 0x5B），Mac 模式按同一个键上报 `vkey=0x12`（VK_MENU/Alt / HID 226 /
+  scan 0x38）。新增**「按键测试 → 键盘模式检测」**：点一下、按一次键盘上印着 Win（⊞）的键即可判定，
+  结果会记住；检测为 Mac 模式时**改键页顶部出现红色横幅提醒**。改键本身不会被阻止。厂商协议不暴露
+  当前模式（`systemMode` 恒 0），所以采用「引导按一次键」的方式而不是假装能自动识别。
+- **切模式后音乐律动自动恢复** —— 拨开关会让键盘 USB 重新枚举，旧逻辑下音乐帧流会静默断掉。现在：
+  设备离线时 0.25s 短轮询重连；新增帧流看门狗（2s 没有成功帧就重建会话，HID 调用卡死 3s 强关通道）；
+  会话收尾全部限时，恢复不会被死句柄卡住；模式/振幅/背景模式/帧率/颜色在恢复后保留。
+- **按键测试不再崩溃** —— 修复 `keyscan.py` 的访问违例（临时 `WNDPROC` 被 GC 后，窗口类里留下悬空
+  函数指针）。修复前复现：8 次 start/stop → 24 条 fatal exception；修复后 50 次：0 条，窗口类/句柄
+  也正确释放。`VK_MENU (0x12)` 现在显示 **L-Alt / HID 226**（不再是 `VK_0x12 / slot — / 未知`）；
+  左右 Shift/Ctrl/Alt 按扫描码 + E0 标志区分；事件日志改为正确读取 `hid` 字段（槽位恢复显示）。
+- **Windows 托盘：可验证、可自愈** —— 不再只看「有没有 pystray.Icon 对象」，而是用
+  `Shell_NotifyIconGetRect` 实测图标是否真的注册，区分**正常显示 / 在「显示隐藏的图标」溢出区 /
+  未确认 / 暂时不可用**（在溢出区不算失败，会提示一次并继续维持）。看门狗能在 **Explorer 重启**后
+  自动重加/重建图标（最多 3 次）。托盘不可用时**关闭窗口只最小化到任务栏**并说明原因，不再「藏起来
+  找不回」；开机 `--tray` 静默启动若 8 秒内没确认图标，会自动显示主窗口。重复启动会唤起已有实例；
+  唤起失败会弹窗告知窗口在哪并**退出第二个进程**，不再静默多开。
+- **Linux：一键安装 AppIndicator 扩展更好找** —— GNOME 缺扩展/未启用时，设置页「系统托盘」卡片会
+  **自动置顶**并给出醒目提示和大按钮：点一次只需输入一次管理员密码（`pkexec`），自动执行
+  `apt-get update && apt-get install`（或 dnf/zypper/pacman）、装完自动 enable，并提示注销重登
+  （Wayland）或 Alt+F2 → r（X11）。失败会用人话归类（取消密码 / 无 polkit / 包管理器被锁 / 源里没包 /
+  网络问题），并给出可复制的手动命令；浏览器模式只复制命令（不提权）。deb 增加
+  `pkexec | policykit-1`、`gnome-shell-extension-appindicator` 弱依赖，rpm 增加 `polkit` Requires。
+- **验证状态（如实说明）** —— 按键测试崩溃、VK 映射、Win/Mac 键值已在用户机器（Windows 10
+  LTSC 1809）实测验证；音乐律动重连与 Explorer 重启恢复目前是单测覆盖，**仍需用本版本真机复测**；
+  Linux 一键安装只有单测覆盖，**尚未在真实 Linux 桌面实测**（目标环境：Ubuntu 24.04 GNOME Wayland）。
+
+### 键盘 Win/Mac 模式（按键看起来「错位」时先看这里）
+
+1. 看 MK87 **背面/侧面**：有一个 **Win/Mac 拨动开关**。Mac 模式下固件把 Win 和 Alt 互换，Windows
+   收到的是「按 Win 键 = Alt、按 Alt 键 = Win」。
+2. 打开**「按键测试 → 键盘模式检测」**，点「开始检测」，然后按一次键盘上印着 **Win（⊞）** 的键；
+   软件会显示 **Windows 模式** 或 **Mac 模式** 并记住结果，「改键」页会出现对应横幅。
+3. 把开关拨回 **Windows** 一侧；键盘会在 USB 上重新枚举（几秒钟，音乐律动会短暂中断并自动恢复），
+   然后再检测一次即可。
+4. 如果切换后程序提示「键盘协议接口无响应」：把键盘 USB 线**拔插一次**，或重启程序。v0.1.8.6 会
+   主动给出这个提示。
+
+### v0.1.8.5
 
 > **仅 Windows 安装包与文档更新：快捷方式可选、安装日志、以及 `Error 5` 安装失败的完整解决办法。**
 > 程序本体没有变化。

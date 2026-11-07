@@ -34,7 +34,7 @@ from mk87lib.errors import (
 from server import state
 
 WEB_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "web")
-VERSION = "0.1.8.5"
+VERSION = "0.1.8.6"
 
 manager = state.manager
 log = logging.getLogger("mk87.http")
@@ -146,6 +146,61 @@ activate_callback = None
 quit_callback = None
 #: 由原生外壳注入：托盘实际状态（可用性 / 后端 / 错误）
 tray_status_callback = None
+#: 由原生外壳注入：Windows 托盘诊断快照（图标是否真的注册 / 是否在溢出区 / 看门狗）
+tray_diagnostics_callback = None
+
+#: Windows 托盘建议文案（v0.1.8.6：区分「正常 / 在溢出区 / 恢复中 / 不可用」）
+_WIN_TRAY_ADVICE = {
+    "windows-ok": {
+        "zh": "Windows 系统托盘图标正常显示：左键显示主窗口，右键可打开菜单。",
+        "en": "The Windows tray icon is showing: click to show the window, right-click for the menu.",
+    },
+    "windows-icon-in-overflow": {
+        "zh": "托盘图标已注册，但当前被收进任务栏的「显示隐藏的图标」溢出区。"
+              "点任务栏右下角的 ^ 找到 MK87 Studio 图标，可拖到常驻区；程序会自动保持图标。",
+        "en": "The tray icon is registered but currently lives in the taskbar overflow "
+              "(“Show hidden icons”). Click the ^ near the clock, find MK87 Studio and drag it "
+              "onto the taskbar if you want it always visible; the app keeps the icon alive.",
+    },
+    "windows-tray-recovering": {
+        "zh": "Windows 托盘图标暂时未能确认，程序正在自动恢复（可能被收进溢出区，或 Explorer 刚重启）。"
+              "这期间关闭窗口只会最小化到任务栏，不会隐藏到托盘。",
+        "en": "The Windows tray icon cannot be confirmed yet and the app is recovering it "
+              "automatically (it may be in the overflow area, or Explorer just restarted). "
+              "While recovering, closing the window only minimizes it instead of hiding it.",
+    },
+    "windows-tray-unavailable": {
+        "zh": "Windows 托盘图标暂时无法显示（已尝试自动重建）。程序会在后台继续重试；"
+              "关闭窗口会最小化到任务栏而不是隐藏。也可以退出后重新启动程序再试。",
+        "en": "The Windows tray icon cannot be shown right now (automatic rebuilds were tried). "
+              "The app keeps retrying in the background; closing the window minimizes it instead "
+              "of hiding. You can also restart the app and try again.",
+    },
+}
+
+
+def _windows_tray_advice(diag: Optional[dict], tray: dict) -> dict:
+    """按 Windows 托盘诊断结果选一条建议（code/zh/en，与 GNOME 分支结构一致）。"""
+    diag = diag or {}
+    icon_state = str(diag.get("iconState") or "")
+    icon = diag.get("icon") if isinstance(diag.get("icon"), dict) else {}
+    state = icon_state or str(icon.get("state") or "")
+    available = tray.get("available")
+    if state == "visible" or (state == "hidden" and icon.get("registered")):
+        code = "windows-ok" if state == "visible" else "windows-icon-in-overflow"
+    elif state == "hidden":
+        code = "windows-icon-in-overflow"
+    elif state == "rebuilding":
+        # 重建中的图标还没重新注册：按「恢复中」提示，别吓用户说不可用
+        code = "windows-tray-recovering"
+    elif state in ("missing",) or available is False:
+        code = "windows-tray-unavailable"
+    elif state in ("unconfirmed",) or available is None:
+        code = "windows-tray-recovering"
+    else:
+        code = "windows-ok"
+    text = _WIN_TRAY_ADVICE[code]
+    return {"code": code, "zh": text["zh"], "en": text["en"]}
 
 
 def _tray_state() -> Optional[dict]:
@@ -208,6 +263,10 @@ def api_status():
     st["tray"] = {
         "available": None if state is None else state.get("available"),
         "backend": None if state is None else state.get("backend"),
+        # v0.1.8.6：前端据此提示「图标在溢出区 / 暂时不可用」，不再一律说「关闭窗口=退出」
+        "iconState": None if state is None else state.get("iconState"),
+        "overflow": None if state is None else state.get("overflow"),
+        "error": None if state is None else state.get("error"),
     }
     return st
 
@@ -220,7 +279,20 @@ def api_tray_status(refresh: bool = False):
     """托盘环境：后端/可用性、桌面环境、GNOME 扩展状态、安装方式与建议文案。"""
     state = _tray_state()
     shell_mode = bool(getattr(manager, "shell_mode", False))
-    return trayenv.status(state, shell_mode=shell_mode, refresh=bool(refresh))
+    out = trayenv.status(state, shell_mode=shell_mode, refresh=bool(refresh))
+    # v0.1.8.6：Windows 再叠加外壳实测诊断（图标是否真的注册 / 在溢出区 / 看门狗）。
+    diag = None
+    if callable(tray_diagnostics_callback):
+        try:
+            diag = tray_diagnostics_callback()
+        except Exception:  # noqa: BLE001
+            log.exception("读取托盘诊断失败")
+            diag = None
+    if isinstance(diag, dict):
+        out["diagnostics"] = diag
+        if str(out.get("platform") or "").lower() == "windows":
+            out["advice"] = _windows_tray_advice(diag, out.get("tray") or {})
+    return out
 
 
 @app.post("/api/tray/install-extension")

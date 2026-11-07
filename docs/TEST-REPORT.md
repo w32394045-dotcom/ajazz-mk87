@@ -659,3 +659,28 @@ udev 规则 / 结论；源码环境同一套逻辑在 `probe/linux_hid_check.py`
 | 全量单测 | **339 tests OK**（本次无 Python 代码改动，回归确认） |
 | 覆盖缺口（诚实标注） | ①未在用户机器上用 v0.1.8.5 新包做「管理员身份安装」复测（本地用 `/CURRENTUSER` 验证了快捷方式行为，避开 UAC）；②CI 用的是 Inno Setup 6.7.1（choco），本地用 6.7.4 编译验证，两者同属 6.x；③中文向导未做（Inno 不随包提供中文 isl，安装器仍为英文 UI） |
 | 发布 | tag `v0.1.8.5`（提交 `665c588`）→ CI run [#82](https://github.com/w32394045-dotcom/ajazz-mk87/actions/runs/42240109130) **全绿**（ubuntu/windows 单测 339 OK；Windows 便携包 + 安装包；deb 打包 + 22.04/24.04 干净容器卡口；rpm 打包 + Fedora 容器）→ Release 2026-11-06 23:15:53。资产：deb 192,262,156 B（sha256 `43c2df0e…7a0c`）、rpm 226,929,254 B（`e6d71c7a…faba`）、portable 39,144,350 B（`cd57d6e1…eddb`）、setup 30,279,874 B（`69c83db7…30d5`）；`SHA256SUMS.txt`（386 B，sha256 `2d9f7a8a…efc8`）与 GitHub 存储资产 digest **逐项一致**；`releases/latest` 已指向 v0.1.8.5 |
+
+
+## 26 v0.1.8.6 五类实机问题修复：Win/Mac 模式检测 / 切模式音乐恢复 / 按键扫描崩溃 / Windows 托盘 / Linux 一键安装（2026-11-07）
+
+> 触发：用户 Windows 实机反馈 5 类问题（按键错位、切 Win/Mac 模式后音乐律动断更、按键测试崩溃、
+> Windows 托盘图标消失、Linux 一键安装 AppIndicator 扩展）。其中 Win/Mac 模式相关是 2026-11-07
+> 14:31–14:33 的受控测试。修复实现与证据见 [DEVLOG §30](DEVLOG.md)。
+> 环境：Windows 本机实跑单测；**无 Linux 桌面环境**，Linux 相关只有单测。
+
+| 测试项 | 结果 |
+|---|---|
+| 全量单测（2026-11-07 本机实跑） | `cd driver && .\.venv\Scripts\python.exe -m unittest discover -s tests` → `Ran 552 tests in 28.750s`，**OK (skipped=1)**。v0.1.8.5 为 339，本次 **+213** |
+| 定向单测 | `python -m unittest tests.test_music_watchdog tests.test_trayenv tests.test_keyscan_vk -v` → `Ran 123 tests in 7.961s`，**OK**（`test_music_watchdog` 15 + `test_trayenv` 87 + `test_keyscan_vk` 21） |
+| 新增/扩展测试拆分（+213） | `test_tray_win.py` **141**（新文件，托盘诊断/看门狗/单实例/关窗降级）+ `test_keyscan_vk.py` **21**（新文件，VK 映射/通用修饰键还原/Raw Input 窗口生命周期）+ `test_music_watchdog.py` 8→**15**（+7：USB 重枚举恢复、离线不虚增恢复次数、帧流看门狗、离线收尾快速失败）+ `test_trayenv.py` 43→**87**（+44：提权链、安装计划、失败归类、装完自动启用、状态字段） |
+| 托盘单测 | `python -m unittest tests.test_tray_win -v` → `Ran 141 tests in 0.724s`，**OK (skipped=1)** |
+| 音乐模块回归 | 7 个 `test_music_*` 模块一起跑 → `Ran 142 tests`，**OK**；再加 `test_powerkeep` 共 `Ran 165 tests`，**OK** |
+| 真机观测：Win/Mac 模式原始读数（用户实机） | Windows 模式按物理 Win 键：raw input `vkey=0x5B`、`name=L-Win`、`HID=227`、`scan=0x5B`、`flags=E0`；Mac 模式按**同一颗**物理 Win 键：`vkey=0x12`（VK_MENU）、`HID=226`、`scan=0x38`。旧版 keytest 对 0x12 显示 `VK_0x12 / slot — / 未知`（keyscan 缺映射，已修） |
+| 真机观测：切模式 USB 重新枚举（用户实机） | 14:31:15 起 `/api/status connected=false`；旧版 0.1.8.2 的 HID 在途 I/O 卡死（`0xFF68` 接口 hidapi write 报 `ERROR_IO_PENDING / 0x3E5`），程序内重开救不回，退出旧程序 + 拔插键盘后恢复（探针 raw 64B 回包 `55 10 30...`）。厂商协议**不暴露**模式（Windows 模式下 systemMode 恒 0；Mac 模式协议通道已断）→ 采用引导式检测 |
+| 旧日志：音乐律动断更（用户实机） | 2026-11-07 13:59:44 设备断开后 51 条 `WriteFile 失败: 1167`（旧版 `errors > 50` 静默退出线程）；v0.1.8.4 已加自动恢复，但本轮仍发现 3 个缺口（短轮询重连 / 会话收尾限时 / 帧流看门狗），已修并补 15 个用例 |
+| 按键扫描崩溃复现与修复 | `crash.log` `Windows fatal exception: access violation` @ `keyscan.py _windows_loop`；复现：8 次 start/stop → **24 条 AV**；修复后 50 次 start/stop → **0 fatal、GDI/USER 对象 delta=0**（dev 构建上调试实测）；`WNDPROC` 强引用 + 窗口类成对注销 + `GetRawInputData` 大小语义 + DefWindowProc 兜底由 `test_keyscan_vk` 21/21 覆盖 |
+| 托盘图标探测证据（用户实机，只读） | 用户机器 dev 0.1.8.2（PID 13212 / 端口 65447）：`/api/tray/status` 返回 `available=true backend=pystray`，但 `Shell_NotifyIconGetRect` 查图标窗口返回 `E_FAIL`；点 X 后 boot log `[window-closing] available=True` → 窗口隐藏而图标不存在。另发现 pystray 0.19.5 用 `hID=` 注册、实际字段是 `uID`（uID 恒 0），诊断按 uID=0 探测并保留兼容候选 |
+| Linux 一键安装（仅单测） | `test_trayenv.py` **87/87 OK**：提权链 `pkexec → sudo（图形 askpass）→ manual`、apt `update + install` 合并为一次提权、失败输出归类成人话、装完 `gnome-extensions enable`（失败回退 gsettings）、Wayland 注销 / X11 `Alt+F2 → r` 提示、浏览器模式只给复制命令、状态字段；打包补 deb `Recommends: pkexec \| policykit-1`、rpm `Requires: polkit` |
+| 覆盖缺口（诚实标注） | ① Linux 一键安装只有单测，**未在真实 Linux 桌面 / GNOME / Wayland 环境实测**；② Win/Mac 真机读数来自用户机器上的旧版本，v0.1.8.6 安装包本身尚未实机复测；③ 切模式后「重连 → 音乐恢复 ≤5s」只在假设备单测验证，真机恢复时延未计时；④ Explorer 重启后托盘自动恢复、托盘不可用时关窗最小化，未在真机复现；⑤ 按键扫描 50 次 start/stop 是 dev 构建上的调试实测，安装包上的长循环未跑；⑥ 未做长时间（≥1h）soak |
+| 待真机验证清单 | ① Windows 先退出旧实例（v0.1.8.4 / dev 0.1.8.2）再装 v0.1.8.6；② 两种 Win/Mac 档位各按一次物理 Win 键确认检测与横幅；③ 播放中拨开关确认「等待键盘 → 自动续播」且参数不丢；④ 按键测试连续 start/stop ≥50 次 + 长时间捕获无崩溃；⑤ 重启 Explorer 后托盘图标自动恢复、溢出区提示、托盘不可用关窗最小化、重复启动唤起窗口；⑥ Ubuntu 24.04 GNOME Wayland 上一键安装扩展全流程；⑦ 以 v0.1.8.6 安装包跑一次全量回归 |
+| 发布（v0.1.8.6） | 版本 `0.1.8.6`；提交 / tag / CI run / Release / 资产体积与 SHA256：`【待回填】`（Lead 发布后补）。安装前请先退出旧实例 |

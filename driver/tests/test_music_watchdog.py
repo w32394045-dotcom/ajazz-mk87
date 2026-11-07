@@ -12,6 +12,13 @@ HID `WriteFile` 永久阻塞，`mk87-music` 线程停在 `NativeHidChannel.write
 * 恢复期间热更新参数不丢；
 * status 暴露 health / recoveries / frameAgeMs / keepAwake 等字段；
 * 用户 stop 能及时退出并停掉保后台。
+
+v0.1.8.6 补充（2026-11-07 用户实机：切换键盘 Win/Mac 模式 → USB 重新枚举）：
+* 发送连续 1167 → 设备离线 → state 层重连成功后 ≤5s 内自动恢复出帧，
+  且 mode/amp/backmode/fps/color 参数不丢；
+* 帧流看门狗：发送调用卡在内核 HID IO 里（不再出帧、也不再抛异常）时，
+  看门狗必须强制重建会话，不能静默停更；
+* 设备离线路径的会话收尾必须快速失败（不阻塞在死句柄 close / 灯效恢复上）。
 """
 import threading
 import time
@@ -21,6 +28,10 @@ from unittest import mock
 import numpy as np
 
 from mk87lib import lighting, music
+
+#: 保存真实实现：_MusicTestBase.setUp 会把 lighting.restore_effect 换成 no-op，
+#: 需要验证「设备离线快速失败」的用例要临时换回真实实现。
+_REAL_RESTORE_EFFECT = lighting.restore_effect
 
 
 # ----------------------------------------------------------------------
@@ -361,6 +372,288 @@ class TestRecoveryUpdateAndStatus(_MusicTestBase):
             self.assertLess(time.monotonic() - started, 3.0, "恢复等待中 stop 必须及时退出")
             self.assertFalse(player.running)
         self.assertTrue(_FakeKeepAlive.instances[0].stopped)
+
+
+# ----------------------------------------------------------------------
+# 5) Win/Mac 模式切换 → USB 重新枚举 → 重连后自动恢复（v0.1.8.6）
+# ----------------------------------------------------------------------
+class _ReenumDevice:
+    """可切换在线状态的假设备（模拟 state 层 monitor 线程的设备重连）。"""
+
+    transport = "usb"
+
+    class _Status:
+        connected = True
+
+    def __init__(self):
+        self.status = _ReenumDevice._Status()
+
+
+class _Fail1167Sender(_RecordingSender):
+    """每次发送都抛 ``WriteFile 失败: 1167``（ERROR_DEVICE_NOT_CONNECTED）。
+
+    首次失败时通过 ``on_first_fail`` 通知测试「设备已断开」（对应实机日志里
+    13:59:44.407 第一条 1167 之后 0.5s state 层打印「设备已断开」）。
+    """
+
+    def __init__(self, on_first_fail=None):
+        super().__init__()
+        self._on_first_fail = on_first_fail
+
+    def send(self, *args, **kwargs):
+        cb = self._on_first_fail
+        if cb is not None:
+            self._on_first_fail = None
+            cb()
+        raise OSError("WriteFile 失败: 1167")
+
+
+class TestModeSwitchReenumeration(_MusicTestBase):
+    """实机 2026-11-07 13:59 场景：模式切换 → USB 重新枚举 → 掉线自动恢复。
+
+    日志证据：连续 51 条 WriteFile 1167 → 「设备已断开」→ 6s 后「设备已连接」，
+    但音乐既不再出帧也没有「自动恢复」日志，直到用户 14:06 手动重开。
+    这里用假设备/假发送器复刻同一条链路，断言重连后 5s 内恢复、计数正确、参数不丢。
+    """
+
+    def test_recovers_within_5s_after_usb_reenumeration(self):
+        dev = _ReenumDevice()
+        senders: list = []
+
+        def sender_factory(device):
+            if not senders:
+                sender = _Fail1167Sender(
+                    on_first_fail=lambda: setattr(dev.status, "connected", False))
+            else:
+                sender = _RecordingSender()
+            senders.append(sender)
+            return sender
+
+        with mock.patch.object(music, "AudioCapture", _NormalCapture), \
+                mock.patch.object(lighting, "FrameSender", sender_factory):
+            player = music.MusicPlayer(dev)
+            self.addCleanup(player.stop)
+            player.start(mode=14, amplitude=80, backmode=3, backmode_brightness=70,
+                         fps=20, color="ice")
+            self.assertTrue(_wait_until(lambda: player.recoveries >= 1, 5.0),
+                            "连续发送 1167 应触发自动恢复计数")
+            self.assertFalse(dev.status.connected)
+            self.assertEqual(player.health, "waiting-device",
+                             "键盘离线时应暴露 waiting-device（前端显示等待键盘）")
+            # 离线等待期：只等重连，不反复累计恢复次数、不出假帧、线程不能死
+            time.sleep(1.0)
+            self.assertEqual(player.recoveries, 1, "离线等待不应反复累计「自动恢复」次数")
+            self.assertEqual(player.frames, 0, "设备离线期间不应有成功下发的帧")
+            self.assertTrue(player.running, "等待重连期间监督线程必须还活着")
+            # 模拟 state 层 monitor 线程重连成功（实机约 6s，测试等 1s）
+            dev.status.connected = True
+            t0 = time.monotonic()
+            self.assertTrue(
+                _wait_until(lambda: player.health == "ok" and player.frames >= 2, 5.0),
+                "设备重连后应在 5s 内自动恢复并继续出帧")
+            latency = time.monotonic() - t0
+            self.assertLess(latency, 5.0, f"重连后恢复耗时 {latency:.2f}s 超过 5s")
+            self.assertEqual(player.recoveries, 1, "一次掉线只应累计一次自动恢复")
+            self.assertGreaterEqual(len(senders), 2, "应重建 HID 发送通道")
+            self.assertTrue(senders[0].closed, "坏掉的旧发送通道应被关闭")
+            # 用户参数不得丢失（mode/amp/backmode/fps/color）
+            st = player.status()
+            self.assertEqual(st["mode"], 14)
+            self.assertEqual(st["requestedMode"], 14)
+            self.assertEqual(st["amplitude"], 80)
+            self.assertEqual(st["backmode"], 3)
+            self.assertEqual(st["backmodeBrightness"], 70)
+            self.assertEqual(st["targetFps"], 20)
+            self.assertEqual(st["color"], "ice")
+            self.assertGreater(st["errors"], 0)
+            self.assertGreaterEqual(st["frames"], 2)
+            started = time.monotonic()
+            player.stop()
+            self.assertLess(time.monotonic() - started, 3.0, "恢复后 stop 必须及时退出")
+
+    def test_recoveries_not_inflated_while_offline(self):
+        """键盘持续离线时：health 停在 waiting-device，不刷 recoveries、不退出。"""
+        dev = _ReenumDevice()
+
+        def sender_factory(device):
+            return _Fail1167Sender(
+                on_first_fail=lambda: setattr(dev.status, "connected", False))
+
+        with mock.patch.object(music, "AudioCapture", _NormalCapture), \
+                mock.patch.object(lighting, "FrameSender", sender_factory):
+            player = music.MusicPlayer(dev)
+            self.addCleanup(player.stop)
+            player.start(fps=20)
+            self.assertTrue(_wait_until(lambda: player.recoveries >= 1, 5.0))
+            time.sleep(1.2)  # 跨过多个 DEVICE_WAIT_POLL 周期
+            self.assertEqual(player.recoveries, 1)
+            self.assertEqual(player.health, "waiting-device")
+            self.assertTrue(player.running)
+
+
+# ----------------------------------------------------------------------
+# 6) 帧流看门狗：发送调用卡死在 HID IO 里也要重建会话（v0.1.8.6）
+# ----------------------------------------------------------------------
+class _StuckSender(_RecordingSender):
+    """前 ``ok_frames`` 帧正常，之后模拟 HID 写卡死（send 不再返回）。
+
+    只有 ``close()`` 才让阻塞的 send 抛异常 —— 对应真实场景里看门狗旁路强关
+    发送通道后，卡在内核里的 WriteFile 以 1167/995 返回。
+    """
+
+    def __init__(self, ok_frames=2):
+        super().__init__()
+        self.ok_frames = ok_frames
+        self.release = threading.Event()
+        self.blocked = threading.Event()
+
+    def send(self, *args, **kwargs):
+        if self.frames >= self.ok_frames:
+            self.blocked.set()
+            self.release.wait(10.0)
+            raise OSError("HID 通道已关闭（看门狗强制重建）")
+        return super().send(*args, **kwargs)
+
+    def close(self):
+        self.release.set()
+        super().close()
+
+
+class TestFrameStallWatchdog(_MusicTestBase):
+    """只看「连续发送异常」覆盖不了的卡死形态：send 永不返回、也不抛异常。"""
+
+    def _player(self, sender_factory):
+        patches = [
+            mock.patch.object(music, "AudioCapture", _NormalCapture),
+            mock.patch.object(lighting, "FrameSender", sender_factory),
+            # 把看门狗阈值压到毫秒级，避免单测真的等 2+3s
+            mock.patch.object(music, "FRAME_STALL_TIMEOUT", 0.3),
+            mock.patch.object(music, "WATCHDOG_INTERVAL", 0.05),
+            mock.patch.object(music, "WATCHDOG_HARD_GRACE", 0.3),
+        ]
+        for p in patches:
+            p.start()
+            self.addCleanup(p.stop)
+        player = music.MusicPlayer(_FakeDevice())
+        self.addCleanup(player.stop)
+        return player
+
+    def test_stalled_frame_stream_is_rebuilt_by_watchdog(self):
+        senders: list = []
+
+        def sender_factory(device):
+            sender = _StuckSender(ok_frames=2) if not senders else _RecordingSender()
+            senders.append(sender)
+            return sender
+
+        player = self._player(sender_factory)
+        player.start(fps=20)
+        self.assertTrue(_wait_until(lambda: senders and senders[0].frames >= 2, 2.0),
+                        "会话建立后应先正常下发 2 帧")
+        # 第 3 帧起 send 永久阻塞：既不出帧也不抛异常
+        self.assertTrue(_wait_until(lambda: senders[0].blocked.is_set(), 2.0))
+        self.assertTrue(_wait_until(lambda: player.stalls >= 1, 3.0),
+                        ">FRAME_STALL_TIMEOUT 无成功帧时看门狗必须介入")
+        self.assertTrue(
+            _wait_until(lambda: len(senders) >= 2 and player.health == "ok"
+                        and senders[-1].frames >= 2, 5.0),
+            "看门狗应强制重建会话并恢复出帧（不能静默停更）")
+        self.assertGreaterEqual(player.recoveries, 1)
+        self.assertTrue(senders[0].closed, "卡死的旧发送通道应被强制关闭")
+        st = player.status()
+        self.assertGreaterEqual(st["stalls"], 1)
+        self.assertEqual(st["health"], "ok")
+        started = time.monotonic()
+        player.stop()
+        self.assertLess(time.monotonic() - started, 3.0, "看门狗场景下 stop 必须及时退出")
+
+    def test_watchdog_does_not_fire_on_healthy_stream(self):
+        senders: list = []
+
+        def sender_factory(device):
+            sender = _RecordingSender()
+            senders.append(sender)
+            return sender
+
+        player = self._player(sender_factory)
+        player.start(fps=20)
+        self.assertTrue(_wait_until(lambda: senders and senders[0].frames >= 6, 3.0))
+        self.assertEqual(player.stalls, 0, "正常出帧时看门狗不能误触发")
+        self.assertEqual(player.recoveries, 0)
+        self.assertEqual(player.health, "ok")
+
+
+# ----------------------------------------------------------------------
+# 7) 设备离线路径：会话收尾快速失败，不阻塞在死句柄/灯效恢复上
+# ----------------------------------------------------------------------
+class _BlockingCloseSender:
+    """close() 模拟在途 IO 收割卡住（真机 NativeHidChannel.close 最长等 2s）。"""
+
+    def __init__(self):
+        self.close_started = None
+        self.closed = False
+
+    def close(self):
+        self.close_started = time.monotonic()
+        time.sleep(2.0)
+        self.closed = True
+
+
+class TestCloseSessionFastFail(_MusicTestBase):
+    def test_offline_close_session_fast_fails(self):
+        dev = _ReenumDevice()
+        dev.status.connected = False
+        player = music.MusicPlayer(dev)
+        sender = _BlockingCloseSender()
+        player._snapshot = {"before": bytes([11] + [0] * 15), "wasMode": 11}
+        with mock.patch.object(lighting, "restore_effect", _REAL_RESTORE_EFFECT):
+            t0 = time.monotonic()
+            player._close_session(None, sender)
+            elapsed = time.monotonic() - t0
+        self.assertLess(elapsed, 0.8,
+                        f"设备离线时会话收尾应在 ~0.25s 内返回，实际 {elapsed:.2f}s")
+        self.assertIsNotNone(sender.close_started, "仍应尝试关闭旧发送通道")
+        # 灯效恢复走 lighting 侧的设备离线快速失败（不发命令、立即记录）
+        restore = lighting.restore_state()
+        self.assertEqual(restore["result"], "skipped-offline")
+        self.assertEqual(restore["mode"], 11)
+        self.assertIsNone(player._snapshot, "快照用掉后要清空，不能下次重复恢复")
+
+    def test_restore_effect_offline_sends_no_command(self):
+        """设备离线时 restore_effect 必须快速失败，不向死句柄发命令。"""
+        calls = []
+
+        class _OfflineDevice:
+            protocol = None
+
+            class status:  # noqa: N801 - 简单命名空间
+                connected = False
+
+            def request(self, *args, **kwargs):
+                calls.append((args, kwargs))
+                return b""
+
+        t0 = time.monotonic()
+        with mock.patch.object(lighting, "restore_effect", _REAL_RESTORE_EFFECT):
+            ok = lighting.restore_effect(_OfflineDevice(), bytes([11] + [0] * 15))
+        elapsed = time.monotonic() - t0
+        self.assertFalse(ok)
+        self.assertLess(elapsed, 0.2, "离线快速失败不能等命令超时")
+        self.assertEqual(calls, [], "设备离线时不应发任何命令")
+        self.assertEqual(lighting.restore_state()["result"], "skipped-offline")
+
+    def test_online_close_session_still_restores_effect(self):
+        dev = _ReenumDevice()
+        player = music.MusicPlayer(dev)
+        snap = bytes([11] + [0] * 15)
+        player._snapshot = {"before": snap, "wasMode": 11}
+        restore_calls = []
+        with mock.patch.object(
+                lighting, "restore_effect",
+                side_effect=lambda *a, **k: restore_calls.append((a, k)) or True):
+            player._close_session(None, _RecordingSender())
+        self.assertEqual(len(restore_calls), 1, "设备在线时必须恢复进入前的灯效")
+        self.assertEqual(restore_calls[0][0][1], snap)
 
 
 if __name__ == "__main__":

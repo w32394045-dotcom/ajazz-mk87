@@ -388,6 +388,17 @@ def restore_effect(device, snapshot: bytes, fallback: Optional[bytes] = None) ->
     """
     raw = bytes(snapshot or b"")
     mode = int(raw[0]) if raw else -1
+    # 设备不可用（拔线 / USB 重新枚举中）时快速失败：命令必然失败，还会白等
+    # 设备锁和命令超时；音乐停止 / 外壳退出在设备离线路径上必须能快速返回，
+    # 不能因为「恢复灯效」把调用方卡住（否则掉线后自动恢复的 5s 预算被吃掉）。
+    status = getattr(device, "status", None)
+    offline = (getattr(status, "connected", None) is False) if status is not None else False
+    if not offline and hasattr(device, "protocol") and getattr(device, "protocol") is None:
+        offline = True
+    if offline:
+        _record_restore(mode, "skipped-offline")
+        log.debug("设备未连接，跳过灯效恢复（mode=%s）", mode)
+        return False
     if len(raw) >= 16 and mode in VALID_EFFECT_MODES:
         try:
             device.request(const.CMD["SET_LED_EFFECT"], raw[:16],

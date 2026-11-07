@@ -8,7 +8,7 @@
 - **Device**: USB `VID 0x0C45 / PID 0x8047`; 2.4G receiver `VID 0x0C45 / PID 0xFEFE`
 - **Official web driver** (reverse-engineered): `https://ajazz.driveall.cn`
 - **Everything local**: no network access, no telemetry, no vendor driver required
-- **Latest release**: [v0.1.8.5](https://github.com/w32394045-dotcom/ajazz-mk87/releases/latest)
+- **Latest release**: [v0.1.8.6](https://github.com/w32394045-dotcom/ajazz-mk87/releases/latest)
 
 ## Screenshots
 
@@ -90,12 +90,89 @@ the above helps, attach that log and the output of `icacls "$env:LOCALAPPDATA\Te
 Launching from the app menu no longer opens a terminal window (v0.1.8: `Terminal=false` in the `.desktop`
 file). The tray icon uses Qt's `QSystemTrayIcon`, which renders the native StatusNotifierItem/dbusmenu on
 KDE, XFCE, Cinnamon, MATE and Ubuntu GNOME: **left-click shows the window, right-click opens the menu**
-(Show window / Launch at start-up / Quit). **GNOME Shell shows no tray icons at all** without the
-`gnome-shell-extension-appindicator` extension; open **Settings → System tray** and use the one-click
-install (one admin password, distro package) if the status card says the extension is missing. After
-installing on Wayland, log out and back in (on X11 you can also press `Alt+F2` and run `r`).
+(Show window / Launch at start-up / Quit).
 
-## What's new in v0.1.8.5
+**GNOME Shell shows no tray icons at all** without the `gnome-shell-extension-appindicator` extension.
+Since v0.1.8.6 you no longer have to install it in a terminal: when GNOME is missing the extension, the
+main window shows a one-time banner and **Settings → System tray** is pinned to the top with a prominent
+**"Install AppIndicator extension (one admin password)"** button. The app installs the distro package via
+`pkexec` (a system password prompt — **enter the password of your logged-in user once**), enables the
+extension automatically, and then asks you to log out and back in (Wayland) or press `Alt+F2` → `r` (X11)
+so the tray icon appears.
+
+- If the extension is installed but disabled, the button becomes "Enable extension (no admin password)".
+- If installation fails, the card explains why (cancelled elevation / stale package lists / no network /
+  package manager busy) and offers **copyable manual commands**. They are only a fallback:
+  ```bash
+  # Debian / Ubuntu
+  sudo apt update && sudo apt install -y gnome-shell-extension-appindicator
+  # Fedora / RHEL
+  sudo dnf install -y gnome-shell-extension-appindicator
+  # openSUSE
+  sudo zypper install -y gnome-shell-extension-appindicator
+  # Arch
+  sudo pacman -S --noconfirm gnome-shell-extension-appindicator
+  gnome-extensions enable appindicatorsupport@rgcjonas.gmail.com
+  # Wayland: log out and back in; X11: Alt+F2 -> r
+  ```
+- Browser mode (a page served by `python run.py`) has no elevation entry point; the button becomes
+  "Copy install commands" there. Use the desktop build (deb / rpm) for the one-click install.
+- If there is no tray host at all, closing the window quits the app (no invisible background process).
+
+## What's new in v0.1.8.6
+
+> **Diagnostic/reliability release.** Adds keyboard Win/Mac mode detection, Music Rhythm recovery
+> after a mode switch, fixes the Key Test crash (`access violation`) and the `VK_0x12` unknown key,
+> makes the Windows tray verifiable/self-healing, and surfaces the Linux one-click AppIndicator
+> install.
+
+- **Keyboard Win/Mac mode (the usual cause of "keys are swapped").** The MK87 has a **physical
+  Win/Mac slide switch on its back**. In Mac mode the firmware swaps **Win and Alt**: measured on the
+  user machine, the physical Win key reports `vkey=0x5B` (L-Win, HID 227, scan 0x5B) in Windows mode
+  but `vkey=0x12` (VK_MENU/Alt, HID 226, scan 0x38) in Mac mode. New **Key Test → Keyboard mode
+  check** asks you to press the key labelled Win (⊞), stores the answer and shows a red banner on the
+  **Key mapping** page while Mac mode is active. Remapping itself is not blocked. The vendor protocol
+  does not expose the mode (`systemMode` stays 0), hence the guided one-key check. See the dedicated
+  section below.
+- **Music Rhythm recovers after a Win/Mac switch.** Flipping the switch re-enumerates the keyboard;
+  the app now reconnects (0.25 s polling), runs a frame-stream watchdog (rebuild after 2 s without a
+  successful frame, force-abort a stuck HID call after 3 s) and tears sessions down with time limits,
+  so recovery is not blocked by a dead handle. Mode/amplitude/back-mode/FPS/colour are preserved.
+- **Key Test no longer crashes.** Fixed an access violation in `keyscan.py` (a temporary `WNDPROC`
+  was garbage-collected while the window class still pointed at it). Reproduced before the fix
+  (8 start/stop cycles → 24 fatal exceptions); 50 cycles after it: 0. `VK_MENU (0x12)` now shows
+  **L-Alt / HID 226** instead of `VK_0x12 / slot —`, left/right modifiers are resolved from the scan
+  code + E0 flag, and the event log reads `hid` correctly.
+- **Windows tray: verified and self-healing.** The shell now checks that the icon is really
+  registered (`Shell_NotifyIconGetRect`) and distinguishes visible / in "Show hidden icons" /
+  unconfirmed / temporarily unavailable. A watchdog re-adds or recreates the icon after an
+  **Explorer restart**; closing the window when the tray is unusable only **minimizes** it with a
+  one-time explanation (never hides the app into nowhere). Duplicate launches now activate the
+  existing instance, or show a message and exit - never a silent second copy.
+- **Linux one-click AppIndicator install is now easy to find.** On GNOME without the extension,
+  Settings → System tray is promoted to the top with a clear alert and a big **one-click install**
+  button (one `pkexec` admin password, `apt-get update && apt-get install`, auto-enable, then log
+  out/in or Alt+F2 → r). Failures are explained in plain language with copyable manual commands; the
+  deb/rpm packages now declare the pkexec/polkit dependencies.
+- **Verification status.** Key Test crash, VK mapping and the Win/Mac key values were verified on the
+  user machine (Windows 10 LTSC 1809). Music Rhythm reconnection and tray Explorer-restart recovery
+  are unit-tested and still need a real-device retest with this build. The Linux one-click install is
+  unit-tested but not yet tried on a real Linux desktop (target: Ubuntu 24.04 GNOME Wayland).
+
+### Keyboard Win/Mac mode (read this if keys seem "swapped")
+
+1. Look at the **back/side of the MK87**: there is a **Win/Mac slide switch**. In Mac mode the
+   firmware swaps Win and Alt; Windows then sees "Win pressed" as Alt and vice versa.
+2. Open **Key Test → Keyboard mode check**, click **Start check** and press the key labelled **Win
+   (⊞)** once. The app reports **Windows mode** or **Mac mode** and remembers it; the **Key mapping**
+   page shows a red Mac-mode banner until you re-check.
+3. Slide the switch back to **Windows**. The keyboard re-enumerates on USB (a few seconds; Music
+   Rhythm briefly stops and recovers automatically). Then run the check again.
+4. If a mode switch ever leaves the app unable to talk to the keyboard ("protocol interface not
+   responding"), unplug/replug the USB cable once, or restart the app. v0.1.8.6 also shows a hint
+   for this case.
+
+### v0.1.8.5
 
 > **Installer-only release (Windows): choose your shortcuts, get a setup log, and a documented fix
 > for the `Error 5` install failure.** The application itself is unchanged.

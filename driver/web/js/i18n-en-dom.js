@@ -695,6 +695,25 @@ export const EN_TEXT = {
   "程序即将退出": "The app is about to quit",
   "正在关闭本地服务与程序窗口；服务停止后可以直接关闭此页面。": "Stopping the local server and closing the app window; you can close this page once the service stops.",
   "浏览器模式请直接关闭服务进程": "Browser mode: close the server process directly",
+  /* ---------- 键盘 Win/Mac 模式检测（v0.1.8.6） ---------- */
+  "键盘模式检测（Windows / Mac）": "Keyboard mode check (Windows / Mac)",
+  "MK87 背面有 Win/Mac 拨动开关；切到 Mac 时 Win 与 Alt 互换，很多「按键错位」其实只是模式不对": "The MK87 has a Win/Mac switch on its back. In Mac mode Win and Alt are swapped, so many “wrong keys” are just the wrong mode.",
+  "开始检测": "Start check",
+  "检测只读：仅监听一次按键，不会修改键盘设置": "Read-only: listens to one key press and never changes keyboard settings",
+  "未检测": "Not checked",
+  "检测中…": "Checking…",
+  "未收到按键": "No key received",
+  "Windows 模式": "Windows mode",
+  "Mac 模式（Win/Alt 互换）": "Mac mode (Win/Alt swapped)",
+  "点「开始检测」后按一下键盘上印着 Win（⊞）的键，用 OS 实际收到的键值判断键盘处于 Windows 还是 Mac 模式。": "Click “Start check”, then press the key labelled Win (⊞) on your keyboard. The key value received by the OS tells whether the keyboard is in Windows or Mac mode.",
+  "请现在按一下键盘上印着 Win（⊞）的键（10 秒内有效；按其他键会继续等）…": "Press the key labelled Win (⊞) now (valid for 10 s; pressing other keys keeps waiting)…",
+  "10 秒内没有收到 Win 键：请确认键盘已连接后重试。（也可以先点「开始测试」，确认页面能看到按键事件。）": "No Win key received within 10 s. Make sure the keyboard is connected and try again (you can also click “Start test” first to confirm key events reach this page).",
+  "检测完成：Windows 模式（Win/Alt 正常）": "Check complete: Windows mode (Win/Alt normal)",
+  "检测到 Mac 模式：Win/Alt 已互换，请把键盘背面开关拨回 Windows": "Mac mode detected: Win and Alt are swapped; flip the switch on the back of the keyboard back to Windows",
+  "检测到键盘处于 Mac 模式（Win/Alt 互换）": "Keyboard detected in Mac mode (Win and Alt swapped)",
+  "把键盘背面 Win/Mac 拨动开关拨回 Windows，等键盘重新连接后，到「按键测试 → 键盘模式检测」重新检测。此提醒只影响理解，不阻止改键。": "Flip the Win/Mac switch on the back of the keyboard back to Windows, wait for it to reconnect, then check again in “Key test → Keyboard mode check”. This reminder is informational and does not block remapping.",
+  "键盘已重新连接。如刚切换过 Win/Mac 开关、感觉按键错位，请到「按键测试 → 键盘模式检测」点一次检测。": "The keyboard reconnected. If you just flipped the Win/Mac switch and keys feel wrong, run “Key test → Keyboard mode check”.",
+  "键盘协议接口无响应（切换模式/驱动卡死时可能出现）：请拔插一次键盘 USB 线；仍不行就重启本程序。": "The keyboard protocol interface is not responding (can happen after switching modes or a driver stall). Unplug and replug the keyboard USB cable; if that does not help, restart this app.",
 };
 
 /* 动态文案：正则 + 替换值（字符串支持 $1..$n，函数接收 match 参数） */
@@ -808,4 +827,14 @@ export const EN_PATTERNS = [
   [/^已自动恢复 (\d+) 次（最近一次：(.*)）$/, 'Auto-recovered $1 time(s) (last: $2)'],
   [/^已自动恢复 (\d+) 次$/, 'Auto-recovered $1 time(s)'],
   [/^音乐律动已停止：(.*)$/, 'Music rhythm stopped: $1'],
+  /* ---------- 键盘 Win/Mac 模式检测：动态文案（v0.1.8.6） ---------- */
+  [/^最近检测：按物理 Win 键得到 VK_0x5B（Win）→ 当前为 Windows 模式，Win\/Alt 位置正常。 检测于 (.*)。$/,
+    'Last check: the physical Win key reported VK_0x5B (Win) → Windows mode is active and Win/Alt are normal. Checked at $1.'],
+  [/^最近检测：按物理 Win 键得到 VK_0x5B（Win）→ 当前为 Windows 模式，Win\/Alt 位置正常。$/,
+    'Last check: the physical Win key reported VK_0x5B (Win) → Windows mode is active and Win/Alt are normal.'],
+  [/^最近检测：按物理 Win 键得到 VK_0x12（Alt）→ 键盘处于 Mac 模式，Win 与 Alt 已互换。把键盘背面 Win\/Mac 拨动开关拨回 Windows，等键盘重新连接（会短暂断连）后重新检测即可。此模式下改键仍然有效，只是按键位置与预期不同。 检测于 (.*)。$/,
+    'Last check: the physical Win key reported VK_0x12 (Alt) → the keyboard is in Mac mode and Win/Alt are swapped. Flip the Win/Mac switch on the back to Windows, wait for it to reconnect (it briefly disconnects), then check again. Remapping still works; only key positions differ from expectation. Checked at $1.'],
+  [/^最近检测：按物理 Win 键得到 VK_0x12（Alt）→ 键盘处于 Mac 模式，Win 与 Alt 已互换。把键盘背面 Win\/Mac 拨动开关拨回 Windows，等键盘重新连接（会短暂断连）后重新检测即可。此模式下改键仍然有效，只是按键位置与预期不同。$/,
+    'Last check: the physical Win key reported VK_0x12 (Alt) → the keyboard is in Mac mode and Win/Alt are swapped. Flip the Win/Mac switch on the back to Windows, wait for it to reconnect (it briefly disconnects), then check again. Remapping still works; only key positions differ from expectation.'],
+  [/^收到「(.*)」，请继续按键盘上印着 Win（⊞）的那个键…$/, 'Received “$1”; please press the key labelled Win (⊞).'],
 ];

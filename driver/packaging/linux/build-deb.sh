@@ -79,7 +79,8 @@ DEPENDS="libc6 (>= 2.35), libgcc-s1, libstdc++6, zlib1g, libbz2-1.0, liblzma5, l
  libcom-err2, libkeyutils1, libgssapi-krb5-2"
 
 RECOMMENDS="libgl1-mesa-dri, pipewire-bin | pulseaudio-utils, fonts-dejavu-core, \
- xdg-utils, libnotify-bin, zenity, libcanberra-gtk3-module"
+ xdg-utils, libnotify-bin, zenity, libcanberra-gtk3-module, \
+ pkexec | policykit-1, gnome-shell-extension-appindicator"
 
 cat > "$PKG/DEBIAN/control" <<EOF
 Package: mk87

@@ -1,6 +1,6 @@
 ; MK87 Studio - Inno Setup installer script (Windows)
 ;
-; Shortcut policy (since v0.1.8.5): the "Select Additional Tasks" wizard page offers two
+; Shortcut policy (since v0.1.8.6): the "Select Additional Tasks" wizard page offers two
 ; independent check boxes - Start Menu shortcut and Desktop shortcut - both checked by
 ; default. If the user clears the Start Menu one, no Start Menu folder is created at all
 ; (the uninstall shortcut lives in that folder too; uninstall is still available from
@@ -11,7 +11,7 @@
 ; troubleshooting - "Setup was unable to create the directory ... Error 5").
 
 #define MyAppName "MK87 Studio"
-#define MyAppVersion "0.1.8.5"
+#define MyAppVersion "0.1.8.6"
 #define MyAppPublisher "MK87 Studio (unofficial)"
 #define MyAppExeName "MK87Config.exe"
 #define MyAppId "{{8E6F3D42-4F7A-4C7B-9B1E-6A2D5E9C0F31}"

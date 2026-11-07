@@ -2,7 +2,7 @@ Name:           mk87
 # PyInstaller 产物没有需要拆分的 ELF 调试信息，不需要生成 -debuginfo 子包
 %global debug_package %{nil}
 # 显式版本号；build-rpm.sh 传 --define version_override 时以它为准（避免改了 __version__ 而 spec 忘记同步）
-Version:        %{?version_override}%{!?version_override:0.1.8.5}
+Version:        %{?version_override}%{!?version_override:0.1.8.6}
 Release:        1%{?dist}
 Summary:        AJAZZ MK87 keyboard configuration tool (unofficial)
 
@@ -37,9 +37,14 @@ Requires:       libwayland-client, libwayland-cursor, libwayland-server
 Requires:       nss, nss-softokn, nspr, alsa-lib, pulseaudio-libs, cups-libs, avahi-libs
 Requires:       gnutls, libgcrypt, libgpg-error, p11-kit, libtasn1, libidn2, nettle, gmp
 Requires:       krb5-libs, libcom_err, keyutils-libs
+# v0.1.8.6：设置页「一键安装 AppIndicator 扩展」需要 pkexec（polkit 提供的图形提权），
+# 否则只能回退复制手动命令。gnome-shell-extension-appindicator 放 Recommends（弱依赖，
+# RHEL 等没有该包的发行版不会阻塞安装；GNOME 用户也可在设置页点按钮现装）。
+Requires:       polkit
 Recommends:     pcre2-utf16, brotli, double-conversion, libb2, md4c, libatomic
 Recommends:     libglvnd-egl, libglvnd-glx, mesa-dri-drivers, pipewire-libs, opus, libvpx
 Recommends:     snappy, xdg-utils, libnotify, libbsd, libmd, lz4-libs, cairo-gobject
+Recommends:     gnome-shell-extension-appindicator
 
 %description
 MK87 Studio is an unofficial cross-platform configuration tool for the

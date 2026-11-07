@@ -34,6 +34,10 @@ DEFAULT_SETTINGS = {
     "language": "zh",      # zh / en
     "startPage": "lighting",
     "autoReconnect": True,
+    # 键盘 OS 模式（Win/Mac 物理开关）检测结果：用户在「按键测试」页点一次检测后写入，
+    # 用于在前端提醒「Win/Alt 可能互换」。"" = 从未检测 / "windows" / "mac"。
+    "osMode": "",
+    "osModeCheckedAt": 0,  # 检测时的 unix 秒
 }
 
 
@@ -251,6 +255,10 @@ class DeviceManager:
         self._stop = threading.Event()
         self._monitor_thread: Optional[threading.Thread] = None
         self._was_connected = False
+        #: 至少成功连接过一次（用于区分首次上电与掉线重连，避免开机就弹提示）
+        self._ever_connected = False
+        #: 连续重连失败次数（达到阈值给用户一次「拔插键盘」提示，重连成功后清零）
+        self._reconnect_fails = 0
         self.device.add_listener(self._on_device_event)
 
     # ------------------------------------------------------------------ 事件
@@ -476,6 +484,16 @@ class DeviceManager:
                 self.emit({"type": "status", "data": self.status()})
                 # 刚连上时首读可能还是旧值（尤其 2.4G 唤醒/握手未完成）：延迟 2s 再读一次
                 self._schedule_battery_recheck(gen)
+                if self._ever_connected:
+                    # 掉线重连（切换键盘背面 Win/Mac 开关会让 USB 重新枚举）：引导用户做一次
+                    # 模式检测，否则 Win/Alt 互换后用户只会觉得「按键错乱」。
+                    self.emit({"type": "toast", "data": {
+                        "level": "info",
+                        "message": "键盘已重新连接。如刚切换过 Win/Mac 开关、感觉按键错位，"
+                                   "请到「按键测试 → 键盘模式检测」点一次检测。",
+                    }})
+                self._ever_connected = True
+                self._reconnect_fails = 0
                 return True
             except Exception as exc:  # noqa: BLE001
                 if not quiet:
@@ -488,6 +506,16 @@ class DeviceManager:
                                "data": {"level": "warn", "message": f"设备已断开：{exc}"}})
                 else:
                     log.debug("扫描未发现设备: %s", exc)
+                # 协议接口可能被上一次连接的在途 I/O 卡死（旧版实测：切 Win/Mac 开关后
+                # 0xFF68 接口 WriteFile 报 ERROR_IO_PENDING，程序内重开也救不回来）。
+                # 连续失败约 16s 后给一次明确的操作提示，而不是一直静默重试。
+                self._reconnect_fails += 1
+                if self._reconnect_fails in (8, 60):
+                    self.emit({"type": "toast", "data": {
+                        "level": "warn",
+                        "message": "键盘协议接口无响应（切换模式/驱动卡死时可能出现）："
+                                   "请拔插一次键盘 USB 线；仍不行就重启本程序。",
+                    }})
                 return False
 
     def _schedule_battery_recheck(self, gen: int, delay: float = 2.0) -> None:
@@ -609,7 +637,7 @@ class DeviceManager:
         st = self.device.status.to_dict()
         st["mock"] = False
         st["shell"] = bool(getattr(self, "shell_mode", False))
-        st["webVersion"] = "0.1.8.5"
+        st["webVersion"] = "0.1.8.6"
         st["recentNotifications"] = [
             e for e in self.device.recent_events if e.get("type") == "notification"
         ][-10:]

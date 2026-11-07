@@ -337,7 +337,23 @@ export default {
           h('div', { class: 'card-desc' }, '选择要绑定到此按键的动作')),
       ), h('div', { class: 'card-body' }, pickerHost)),
     );
-    root.append(h('div', { class: 'grid keymap-layout' }, leftCard, right));
+    /* Win/Mac 模式提醒：检测结果来自「按键测试 → 键盘模式检测」（settings.osMode）。
+       只做提示，不阻止改键 —— Mac 模式下改键本身仍然有效，只是按键位置与预期不同。 */
+    const osModeBanner = h('div', { class: 'banner danger', style: { display: 'none', marginBottom: '14px' } },
+      h('div', { class: 'banner-icon', html: icon('alert-triangle', { size: 17 }) }),
+      h('div', { style: { minWidth: 0 } },
+        h('strong', {}, '检测到键盘处于 Mac 模式（Win/Alt 互换）'),
+        h('div', { class: 'tiny', style: { marginTop: '2px' } },
+          '把键盘背面 Win/Mac 拨动开关拨回 Windows，等键盘重新连接后，到「按键测试 → 键盘模式检测」重新检测。'
+          + '此提醒只影响理解，不阻止改键。'),
+      ),
+    );
+    try {
+      const s = await api.get('/api/settings');
+      if (s?.osMode === 'mac') osModeBanner.style.display = '';
+    } catch { /* ignore */ }
+
+    root.append(osModeBanner, h('div', { class: 'grid keymap-layout' }, leftCard, right));
 
     /* ---------------- 渲染键盘 ---------------- */
     function effectiveAction(layer, slot) {

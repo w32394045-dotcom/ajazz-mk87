@@ -113,7 +113,9 @@ export default {
         slot: slot ?? null,
         vkey: ev.vkey,
         code: ev.code,
-        hidUsage: ev.hidUsage,
+        // 后端 keyscan 事件字段叫 hid（HID usage），旧版前端只认 hidUsage → Alt/Win
+        // 等修饰键会显示成「slot — / 未知」。这里统一映射，兼容两种形状。
+        hidUsage: ev.hidUsage !== undefined ? ev.hidUsage : ev.hid,
       };
       state.log.unshift(entry);
       if (state.log.length > LOG_LIMIT) state.log.pop();
@@ -189,6 +191,94 @@ export default {
     stopBtn.addEventListener('click', stop);
     resetBtn.addEventListener('click', resetStats);
 
+    /* ---------------- 键盘 Win/Mac 模式检测 ----------------
+       MK87 背面有 Win/Mac 拨动开关。固件在 Mac 模式下把 Win/Alt 互换，OS 侧看到的是
+       「按物理 Win 键 → VK 0x12(Alt)」；Windows 模式下则是 VK 0x5B(Win)。
+       这里只监听一次按键做判定，并把结果写进 settings.osMode，供改键页提醒复用。 */
+    const detect = { active: false, timer: null, autoStarted: false };
+    let osMode = '';
+    let osModeAt = 0;
+    const modeBadge = h('span', { class: 'badge' }, '未检测');
+    const modeDesc = h('div', { class: 'tiny muted', style: { lineHeight: '1.7' } },
+      '点「开始检测」后按一下键盘上印着 Win（⊞）的键，用 OS 实际收到的键值判断键盘处于 Windows 还是 Mac 模式。');
+    const modeBtn = h('button', {
+      class: 'btn primary',
+      html: `${icon('keyboard', { size: 15 })}<span>开始检测</span>`,
+      onclick: () => { beginModeDetect(); },
+    });
+
+    function renderOsMode() {
+      if (osMode === 'windows') {
+        modeBadge.className = 'badge ok';
+        modeBadge.textContent = 'Windows 模式';
+        modeDesc.textContent = '最近检测：按物理 Win 键得到 VK_0x5B（Win）→ 当前为 Windows 模式，Win/Alt 位置正常。'
+          + (osModeAt ? ` 检测于 ${fmtClock(osModeAt * 1000)}。` : '');
+      } else if (osMode === 'mac') {
+        modeBadge.className = 'badge danger';
+        modeBadge.textContent = 'Mac 模式（Win/Alt 互换）';
+        modeDesc.textContent = '最近检测：按物理 Win 键得到 VK_0x12（Alt）→ 键盘处于 Mac 模式，Win 与 Alt 已互换。'
+          + '把键盘背面 Win/Mac 拨动开关拨回 Windows，等键盘重新连接（会短暂断连）后重新检测即可。'
+          + '此模式下改键仍然有效，只是按键位置与预期不同。'
+          + (osModeAt ? ` 检测于 ${fmtClock(osModeAt * 1000)}。` : '');
+      } else {
+        modeBadge.className = 'badge';
+        modeBadge.textContent = '未检测';
+      }
+    }
+
+    async function beginModeDetect() {
+      if (detect.active) return;
+      detect.active = true;
+      detect.autoStarted = false;
+      modeBtn.disabled = true;
+      modeBadge.className = 'badge';
+      modeBadge.textContent = '检测中…';
+      modeDesc.textContent = '请现在按一下键盘上印着 Win（⊞）的键（10 秒内有效；按其他键会继续等）…';
+      if (!state.running) {
+        detect.autoStarted = true;
+        await start();
+      }
+      detect.timer = setTimeout(() => { finishModeDetect(null); }, 10000);
+    }
+
+    function finishModeDetect(mode) {
+      if (!detect.active) return;
+      detect.active = false;
+      if (detect.timer) {
+        clearTimeout(detect.timer);
+        detect.timer = null;
+      }
+      modeBtn.disabled = false;
+      if (detect.autoStarted) {
+        detect.autoStarted = false;
+        stop();
+      }
+      if (!mode) {
+        modeBadge.className = 'badge';
+        modeBadge.textContent = '未收到按键';
+        modeDesc.textContent = '10 秒内没有收到 Win 键：请确认键盘已连接后重试。'
+          + '（也可以先点「开始测试」，确认页面能看到按键事件。）';
+        return;
+      }
+      osMode = mode;
+      osModeAt = Math.floor(Date.now() / 1000);
+      renderOsMode();
+      api.put('/api/settings', { osMode, osModeCheckedAt: osModeAt }).catch(() => {});
+      ctx.toast(mode === 'windows'
+        ? '检测完成：Windows 模式（Win/Alt 正常）'
+        : '检测到 Mac 模式：Win/Alt 已互换，请把键盘背面开关拨回 Windows', { timeout: 6000 });
+    }
+
+    function onModeDetectEvent(ev) {
+      if (!detect.active || !ev || typeof ev.down !== 'boolean' || !ev.down) return;
+      const vk = Number(ev.vkey);
+      const name = String(ev.name || '');
+      if (vk === 0x5B) { finishModeDetect('windows'); return; }
+      if (vk === 0x12) { finishModeDetect('mac'); return; }
+      // 其它键：提示继续按 Win，不结束检测
+      if (name) modeDesc.textContent = `收到「${name}」，请继续按键盘上印着 Win（⊞）的那个键…`;
+    }
+
     /* 浏览器事件（mock 模式 / 或后端未提供 keyevent 时兜底） */
     function onKey(e, down) {
       if (!state.running || !ctx.isMock) return;
@@ -196,6 +286,7 @@ export default {
       const slot = codeToLayoutSlot(e.code);
       if (slot === null) return;
       e.preventDefault();
+      if (down && detect.active) onModeDetectEvent({ down, vkey: e.keyCode, name: ALL_KEYS.find((k) => k.slot === slot)?.name });
       handleEvent({ down, name: ALL_KEYS.find((k) => k.slot === slot)?.name, slot, vkey: e.keyCode, code: e.code, hidUsage: codeToHidUsage(e.code), ts: Date.now() });
     }
     const onDown = (e) => onKey(e, true);
@@ -208,11 +299,30 @@ export default {
     /* 后端 WS 事件 */
     offs.push(api.on('ws:keyevent', (d) => {
       if (!state.running || ctx.isMock) return;
+      if (detect.active) onModeDetectEvent(d);
       handleEvent(d);
     }));
 
     /* ---------------- 布局 ---------------- */
     const backendBadge = h('span', { class: 'badge' }, '—');
+
+    const modeCard = h('section', { class: 'card', style: { marginBottom: '16px' } },
+      h('div', { class: 'card-head' },
+        h('div', {},
+          h('div', { class: 'card-title' }, '键盘模式检测（Windows / Mac）'),
+          h('div', { class: 'card-desc' },
+            'MK87 背面有 Win/Mac 拨动开关；切到 Mac 时 Win 与 Alt 互换，很多「按键错位」其实只是模式不对')),
+        h('div', { class: 'spacer' }),
+        modeBadge,
+      ),
+      h('div', { class: 'card-body' },
+        h('div', { class: 'row', style: { marginBottom: '10px', gap: '10px', alignItems: 'center' } },
+          modeBtn,
+          h('span', { class: 'tiny muted' }, '检测只读：仅监听一次按键，不会修改键盘设置'),
+        ),
+        modeDesc,
+      ),
+    );
 
     const kbCard = h('section', { class: 'card' },
       h('div', { class: 'card-head' },
@@ -270,7 +380,7 @@ export default {
       ),
     );
 
-    root.append(h('div', { class: 'grid keytest-layout' },
+    root.append(modeCard, h('div', { class: 'grid keytest-layout' },
       h('div', { class: 'grid-stack' }, kbCard, noteCard),
       h('div', { class: 'grid-stack' }, statsCard, logCard),
     ));
@@ -286,6 +396,12 @@ export default {
         history.filter((ev) => ev && typeof ev.down === 'boolean').forEach((ev) => handleEvent(ev));
       }
     } catch { /* ignore */ }
+    try {
+      const s = await api.get('/api/settings');
+      osMode = s?.osMode === 'windows' || s?.osMode === 'mac' ? s.osMode : '';
+      osModeAt = Number(s?.osModeCheckedAt) || 0;
+    } catch { /* ignore */ }
+    renderOsMode();
 
     updateStats();
     renderLog();
@@ -294,6 +410,8 @@ export default {
     ro.observe(kbCard);
 
     return () => {
+      if (detect.timer) { clearTimeout(detect.timer); detect.timer = null; }
+      detect.active = false;
       window.removeEventListener('keydown', onDown, true);
       window.removeEventListener('keyup', onUp, true);
       window.removeEventListener('blur', onBlur);

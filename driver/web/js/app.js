@@ -32,6 +32,11 @@ const THEME_KEY = 'mk87.theme';
 const LANG_KEY = 'mk87.lang';
 const MOCK_BANNER_KEY = 'mk87.mockBannerDismissed';
 const TRAY_BANNER_KEY = 'mk87.trayBannerDismissed';
+// v0.1.8.6：Windows 图标在溢出区的一次性提示（与「托盘不可用」分开记，避免互相影响）
+const TRAY_OVERFLOW_HINT_KEY = 'mk87.trayOverflowHintDismissed.v1';
+// v0.1.8.6：GNOME 缺 AppIndicator 扩展时的一次性引导（记住已关闭；换 key 让老用户也能看到一次）
+const TRAY_INSTALL_BANNER_KEY = 'mk87.trayInstallBannerDismissed.v1';
+const TRAY_RELOGIN_BANNER_KEY = 'mk87.trayReloginBannerDismissed.v1';
 
 /* ---------------------------------------------------------------- 全局状态 */
 const api = new Api();
@@ -46,6 +51,8 @@ const state = {
   cleanup: null,
   navigating: false,
   booted: false,
+  trayDetail: null,
+  trayDetailLoading: false,
 };
 
 let statusPoll = null;
@@ -235,6 +242,29 @@ function setStatus(status) {
   renderStatusBar();
   renderSidebarDevice();
   renderBanners();
+  refreshTrayDetail();
+}
+
+/** 仅原生外壳模式 + 托盘不可用时，读一次完整托盘环境（GNOME 扩展一键安装引导用）。 */
+async function refreshTrayDetail() {
+  if (state.trayDetailLoading || api.mode !== 'live') return;
+  const st = state.status;
+  if (!st || st.shell !== true) return;
+  if (st.tray?.available === true) {
+    state.trayDetail = null;
+    return;
+  }
+  if (state.trayDetail) return; // 轮询/状态事件频繁触发，探测结果只在首次加载
+  state.trayDetailLoading = true;
+  try {
+    state.trayDetail = await api.get('/api/tray/status');
+  } catch (e) {
+    console.warn('[tray] 读取托盘环境失败', e?.message || e);
+    state.trayDetail = null;
+  } finally {
+    state.trayDetailLoading = false;
+    renderBanners();
+  }
 }
 
 function chip({ iconName, html, cls = '', title = '', onclick }) {
@@ -359,16 +389,77 @@ function renderBanners() {
     }
   }
 
-  // 托盘不可用（v0.1.8）：没有托盘宿主时关闭窗口会直接退出程序，必须让用户知道
-  if (st?.tray && st.tray.available === false && !store.get(TRAY_BANNER_KEY, false)) {
-    const trayMsg = i18n.lang === 'en'
-      ? 'System tray unavailable: closing the window will quit the app. On GNOME install the AppIndicator extension in Settings → System tray.'
-      : '系统托盘不可用：关闭窗口将直接退出程序。GNOME 请到「设置 → 系统托盘」一键安装 AppIndicator 扩展。';
+  // 托盘不可用（v0.1.8）：没有托盘宿主时关闭窗口会直接退出程序，必须让用户知道。
+  // v0.1.8.6：GNOME 缺 AppIndicator 扩展时给一次性的「去设置一键安装」引导（可关闭且记住，
+  // 换用独立 store key 让以前关过旧横幅的用户也能看到一次）。
+  const trayStatus = st?.tray || null;
+  const trayDetail = state.trayDetail;
+  const trayCode = trayDetail?.advice?.code || '';
+  const isGnome = trayCode.startsWith('gnome-') || trayDetail?.gnome?.detected === true;
+  // GNOME 专用引导由上面的 banner 负责：即使这次已被用户关闭，也不要再降级成通用「托盘不可用」横幅打扰
+  const gnomeTrayGuidance = !!trayDetail && trayCode.startsWith('gnome-');
+  let trayBannerShown = false;
+  if (trayDetail && trayDetail.shellMode !== false && trayStatus?.available !== true) {
+    if ((trayCode === 'gnome-missing-extension' || trayCode === 'gnome-extension-disabled')
+        && !store.get(TRAY_INSTALL_BANNER_KEY, false)) {
+      const missing = trayCode === 'gnome-missing-extension';
+      const textZh = missing
+        ? 'GNOME 默认不显示托盘图标：还差一个 AppIndicator 扩展。到「设置 → 系统托盘」点一次「一键安装」（只需输入一次管理员密码）即可，装完注销重新登录。'
+        : 'AppIndicator 扩展已安装但还没启用。到「设置 → 系统托盘」点「启用扩展」（无需管理员密码），再注销重新登录。';
+      const textEn = missing
+        ? 'GNOME does not show tray icons by default: the AppIndicator extension is missing. Open Settings → System tray and click "Install" once (one admin password); log out and back in afterwards.'
+        : 'The AppIndicator extension is installed but not enabled yet. Open Settings → System tray and click "Enable extension" (no admin password), then log out and back in.';
+      banners.append(bannerEl({
+        kind: 'warn', iconName: 'alert-triangle',
+        text: i18n.lang === 'en' ? textEn : textZh,
+        dismissKey: TRAY_INSTALL_BANNER_KEY,
+        action: { label: t('nav.settings'), kind: 'primary', onClick: () => navigate('settings') },
+      }));
+      trayBannerShown = true;
+    } else if (trayCode === 'gnome-needs-relogin' && !store.get(TRAY_RELOGIN_BANNER_KEY, false)) {
+      const textZh = 'AppIndicator 扩展已安装并启用。注销重新登录（Wayland）或按 Alt+F2 → r（X11）后托盘图标就会出现。';
+      const textEn = 'The AppIndicator extension is installed and enabled. Log out and back in (Wayland) or press Alt+F2 → r (X11) and the tray icon will appear.';
+      banners.append(bannerEl({
+        kind: 'info', iconName: 'info',
+        text: i18n.lang === 'en' ? textEn : textZh,
+        dismissKey: TRAY_RELOGIN_BANNER_KEY,
+        action: { label: t('nav.settings'), kind: '', onClick: () => navigate('settings') },
+      }));
+      trayBannerShown = true;
+    }
+  }
+  if (!trayBannerShown && !gnomeTrayGuidance && trayStatus && trayStatus.available === false
+      && !store.get(TRAY_BANNER_KEY, false)) {
+    const windowsTray = /^windows-/.test(trayCode) || trayDetail?.platform === 'windows';
+    const trayMsg = windowsTray
+      ? (i18n.lang === 'en'
+        ? 'The Windows tray icon is temporarily unavailable; the app keeps trying to restore it in the background. Closing the window only minimizes it to the taskbar instead of hiding it. See Settings → System tray for details.'
+        : 'Windows 托盘图标暂时不可用，程序正在后台自动恢复。这期间关闭窗口只会最小化到任务栏（不会隐身）。详情见「设置 → 系统托盘」。')
+      : (isGnome && trayDetail
+        ? (i18n.lang === 'en'
+          ? 'System tray unavailable: closing the window will quit the app. Install the AppIndicator extension in Settings → System tray (one admin password).'
+          : '系统托盘不可用：关闭窗口将直接退出程序。请到「设置 → 系统托盘」一键安装 AppIndicator 扩展（只需一次管理员密码）。')
+        : (i18n.lang === 'en'
+          ? 'System tray unavailable: closing the window will quit the app. See Settings → System tray for details.'
+          : '系统托盘不可用：关闭窗口将直接退出程序。详情见「设置 → 系统托盘」。'));
     banners.append(bannerEl({
       kind: 'warn', iconName: 'alert-triangle',
       text: trayMsg,
       dismissKey: TRAY_BANNER_KEY,
       action: { label: t('nav.settings'), kind: 'primary', onClick: () => navigate('settings') },
+    }));
+  }
+
+  // v0.1.8.6：Windows 托盘图标已注册但被收进「显示隐藏的图标」溢出区时，给一次性提示
+  //（这是「托盘消失」最常见的用户感知：其实只是图标进了 ^ 里）。
+  if (!trayBannerShown && trayStatus?.available === true && trayStatus?.iconState === 'hidden'
+      && !store.get(TRAY_OVERFLOW_HINT_KEY, false)) {
+    banners.append(bannerEl({
+      kind: 'info', iconName: 'info',
+      text: i18n.lang === 'en'
+        ? 'The MK87 Studio tray icon is in the taskbar overflow (“Show hidden icons”, the ^ button near the clock). Click ^ and drag the icon onto the taskbar to keep it visible.'
+        : 'MK87 Studio 的托盘图标在任务栏「显示隐藏的图标」（时钟旁的 ^）溢出区里。点开 ^ 把图标拖到任务栏即可常驻显示。',
+      dismissKey: TRAY_OVERFLOW_HINT_KEY,
     }));
   }
 

@@ -11,7 +11,92 @@ Screenshots and the full feature list live in the repository README:
 **[README.md (English)](https://github.com/w32394045-dotcom/ajazz-mk87/blob/main/README.md)** ·
 **[README.zh-CN.md (简体中文)](https://github.com/w32394045-dotcom/ajazz-mk87/blob/main/README.zh-CN.md)**
 
-## What's new in v0.1.8.5
+## What's new in v0.1.8.6
+
+**A diagnostic/reliability release: keyboard Win/Mac mode detection, Music Rhythm recovery after
+mode switches, a real fix for the Key Test crash, and a Windows tray that either really works or
+tells you why. Linux gets a visible one-click AppIndicator install.**
+
+### Keyboard Win/Mac mode (the usual cause of "keys are swapped")
+
+- The MK87 has a **physical Win/Mac slide switch on its back**. In Mac mode the firmware swaps
+  **Win and Alt**; measured on the user machine (2026-11-07): pressing the physical Win key reports
+  `vkey=0x5B` (`L-Win`, HID 227, scan 0x5B) in Windows mode, but `vkey=0x12` (`VK_MENU`, HID 226,
+  scan 0x38) in Mac mode.
+- **New: Key Test → Keyboard mode check.** One click, then press the key labelled Win (⊞); the app
+  decides from the OS value and stores the result (`settings.osMode`). A red banner on the
+  **Key mapping** page reminds you while the keyboard is in Mac mode, and after a device reconnect
+  the app suggests running the check.
+- Remapping is not blocked in Mac mode - it still works, only the physical key positions differ.
+- The vendor protocol does **not** expose the current mode (`systemMode` stays 0; in Mac mode the
+  protocol channel is unreadable after the USB re-enumeration), so the check is guided by one key
+  press instead of pretending to auto-detect.
+
+### Music Rhythm: recovers after a Win/Mac switch
+
+- Flipping the switch re-enumerates the keyboard on USB. The frame stream used to stop silently in
+  that situation; now: reconnect polling every 0.25 s while the keyboard is away, a frame-stream
+  watchdog (no successful frame for 2 s → rebuild the session; a stuck HID call is force-aborted
+  after 3 s), and time-limited session teardown so recovery is never blocked by a dead handle.
+  Mode / amplitude / back-mode / FPS / colour survive the recovery.
+
+### Key Test: no more crashes, correct modifier names
+
+- Fixed an **access violation** that could kill the whole app when Key Test was started
+  (`keyscan.py`: a temporary `WNDPROC` was garbage-collected while the window class still pointed
+  at it → dangling function pointer). Reproduced before the fix (8 start/stop cycles → 24 fatal
+  exceptions); 50 cycles after the fix: 0. Window class/handles are also released properly.
+- `VK_MENU (0x12)` now maps to **L-Alt / HID 226** instead of `VK_0x12 / unknown / slot —`;
+  left/right Shift/Ctrl/Alt are resolved from the scan code + E0 flag; the Key Test log reads the
+  `hid` field correctly (slot numbers show up again).
+
+### Windows: the tray icon problem is now visible and self-healing
+
+- The shell now verifies that the icon is **actually registered** (`Shell_NotifyIconGetRect`)
+  instead of only checking that a `pystray.Icon` object exists. It distinguishes
+  **visible / in the overflow area / unconfirmed / temporarily unavailable** - an icon in
+  "Show hidden icons" is *not* a failure; the app says so once and keeps it alive.
+- A watchdog detects **Explorer restarts** and re-adds / recreates the icon (up to 3 rebuilds
+  before reporting unavailable).
+- Closing the window when the tray is not usable now **minimizes** instead of hiding the app into
+  nowhere, with a one-time explanation. Silent `--tray` startup falls back to showing the main
+  window if the icon cannot be confirmed within 8 s.
+- Duplicate launch: the existing instance is activated; if activation fails you get a message
+  saying where to find the window and the second process **exits instead of starting another copy**.
+
+### Linux: one-click AppIndicator install you can actually find
+
+- Settings → System tray is promoted to the top (with a clear alert) on GNOME when the AppIndicator
+  extension is missing/disabled; the **one-click install** asks for the admin password once
+  (`pkexec`), runs `apt-get update && apt-get install` (or dnf/zypper/pacman), enables the
+  extension afterwards and tells you to log out/in (Wayland) or press Alt+F2 → r (X11).
+- Failure reasons are classified (cancelled password, no polkit agent, package-manager lock,
+  package not in repo, network…), with copyable manual commands as the fallback. Browser mode only
+  copies commands (no elevation entry point).
+- deb `Recommends` `pkexec | policykit-1` + `gnome-shell-extension-appindicator`; rpm `Requires`
+  `polkit`, `Recommends` `gnome-shell-extension-appindicator`.
+
+### Known limitations / verification status
+
+- Key Test crash and VK mapping were verified on the user machine (Windows 10 LTSC 1809);
+  Music Rhythm reconnection and tray Explorer-restart recovery are covered by unit tests and still
+  need a real-device retest with the new build.
+- The Linux one-click install is covered by unit tests; it has **not** been tested on a real Linux
+  desktop in this release (expected target: Ubuntu 24.04 GNOME Wayland).
+
+> 中文摘要（v0.1.8.6）：这次是「诊断 / 稳定性」版本。①键盘背面有 **Win/Mac 拨动开关**，Mac 模式下
+> 固件把 Win/Alt 互换（实测：Windows 模式按 Win = vkey 0x5B；Mac 模式按同一键 = vkey 0x12/Alt）——
+> 新增「按键测试 → 键盘模式检测」，按一次 Win 键即可判定并持久化提示，改键页会显示 Mac 模式横幅。
+> ②切换开关会让键盘 USB 重新枚举，音乐律动现在会**自动恢复**（0.25s 快速重连 + 帧流看门狗 + 限时收尾，
+> 参数不丢）。③修复按键测试的**访问违例崩溃**（WNDPROC 被 GC 后窗口类悬空指针）和 `VK_0x12` 未知键
+> （现在显示 L-Alt / HID 226，左右修饰键按扫描码区分）。④Windows 托盘改为**实测图标是否注册**，区分
+> 「在溢出区 / 未确认 / 暂时不可用」，Explorer 重启后自动重加图标；托盘不可用时关窗只最小化并解释原因；
+> 单实例唤起失败会弹窗告知而不是静默退出。⑤Linux 设置页「系统托盘」置顶 + 一键安装 AppIndicator
+> 扩展（pkexec 一次密码、自动 enable、失败给可复制命令），deb/rpm 补 pkexec/polkit 依赖。
+> 真机验证：键盘模式 / 崩溃 / VK 映射已在用户机器实测；音乐重连与 Explorer 重启恢复待新构建真机复测；
+> Linux 一键安装仅单测覆盖，待真实 Linux 桌面验证。
+
+### v0.1.8.5
 
 **Installer-only release (Windows): selectable shortcuts, a setup log, and a documented fix for the
 `Error 5` install failure.** The application itself is unchanged.

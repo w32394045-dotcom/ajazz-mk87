@@ -176,6 +176,34 @@ SEND_ERROR_LIMIT = 5
 #: 自动恢复重试退避（秒）：0.5 → 1 → 2 → 5 封顶；键盘离线时等待 monitor 线程重连。
 RECOVER_MIN_DELAY, RECOVER_MAX_DELAY = 0.5, 5.0
 
+# ----------------------------------------------------------------------
+# 帧流看门狗（v0.1.8.6，2026-11-07 实机：切换 Win/Mac 模式 → USB 重新枚举）
+# ----------------------------------------------------------------------
+# 事故现象：连续 WriteFile 1167 后 HID 通道失效，设备 6s 后重连成功，但音乐律动
+# 既没有「自动恢复」日志也不再出帧 —— 界面停在「律动中」，直到用户手动重开。
+# 根因方向：只看「连续发送异常次数」不足以覆盖所有卡死形态 —— 一旦发送调用本身
+# 卡在内核 IO 里（不再返回、也不再抛异常），主循环既不出帧也不进入 send-error
+# 分支，监督循环永远等不到「会话结束」，表现为静默停更/线程卡死。
+# 因此再加一层独立看门狗：主循环还活着（running=True）但超过阈值没有「成功下发帧」，
+# 就由看门狗线程判定卡死 → 标记会话重建（主循环下一轮开头退出会话）；
+# 若主循环连「退出会话」都做不到（真卡在 HID 调用里），宽限期后从旁路强关发送通道，
+# 让阻塞的 write/read 立刻以异常返回，监督循环随即重建会话。
+#: 超过该秒数没有成功下发帧（且健康状态为 ok）→ 判定帧流卡死。
+FRAME_STALL_TIMEOUT = 2.0
+#: 看门狗检查周期（秒）；同时也是「卡死 → 重建」的最小延迟。
+WATCHDOG_INTERVAL = 0.5
+#: 看门狗判定卡死后，等主循环自己退出会话的宽限期（秒）；超时则旁路强关发送通道。
+WATCHDOG_HARD_GRACE = 3.0
+#: 键盘掉线（USB 重新枚举）时的重连轮询间隔（秒）。状态层 monitor 线程负责重连，
+#: 这里短轮询保证「重连完成 → 重建会话」的延迟 ≤ 1s（需求：≤5s 内恢复）。
+DEVICE_WAIT_POLL = 0.25
+#: 关闭旧会话资源的等待上限（秒）：设备在线时给在途 IO 收割留时间；
+#: 设备已断开时快速失败，绝不能把音乐监督线程卡在死句柄上。
+CLOSE_SENDER_TIMEOUT = 0.8
+CLOSE_SENDER_TIMEOUT_OFFLINE = 0.25
+CLOSE_CAPTURE_TIMEOUT = 1.2
+CLOSE_CAPTURE_TIMEOUT_OFFLINE = 0.3
+
 
 def _clamp_fps(fps) -> int:
     """帧率归一（start / update 共用）：``max(5, min(66, int(fps)))``。
@@ -2095,6 +2123,34 @@ def _send_strategy(fps: int, packet_count: int = 7) -> Tuple[bool, int]:
     return True, 0
 
 
+def _call_with_timeout(fn, timeout: float, label: str) -> bool:
+    """在旁路线程执行可能阻塞的清理调用，最多等 ``timeout`` 秒。
+
+    设备被拔掉 / USB 重新枚举时，HID 句柄 ``close()`` 可能卡在收割在途 IO
+    （``NativeHidChannel.close`` 里的 ``_reap_pending`` 最长等 2s）；会话重建是
+    自动恢复的关键路径，不能为了关旧资源把音乐监督线程卡死。超时后直接放弃等待，
+    由后台线程兜底收尾（daemon，异常吞掉），主线程继续重建会话。
+
+    返回 True = 在时限内完成；False = 超时（已放弃等待）。
+    """
+    done = threading.Event()
+
+    def _run() -> None:
+        try:
+            fn()
+        except Exception:  # noqa: BLE001 - 清理失败不能影响恢复
+            log.debug("%s失败（忽略）", label, exc_info=True)
+        finally:
+            done.set()
+
+    t = threading.Thread(target=_run, name="mk87-music-cleanup", daemon=True)
+    t.start()
+    if done.wait(max(0.05, float(timeout))):
+        return True
+    log.warning("%s超时（>%.2fs），已放弃等待，由后台线程兜底收尾", label, timeout)
+    return False
+
+
 class MusicPlayer:
     def __init__(self, device):
         self.device = device
@@ -2158,6 +2214,21 @@ class MusicPlayer:
         self._user_stopped = False
         #: 保后台句柄（音乐律动期间阻止系统休眠；Windows 关闭能效节流）
         self._keepalive = None
+        # ---- 帧流看门狗（v0.1.8.6）：最后成功帧时间 / 会话起始时间 ----
+        self._watchdog_thread: Optional[threading.Thread] = None
+        self._watchdog_stop = threading.Event()
+        #: 帧流卡死次数（看门狗判定 >2s 无成功帧的次数；status 暴露，排障用）
+        self.stalls = 0
+        #: 本次卡死开始时间（单调时钟）；None = 当前没有卡死
+        self._stall_since: Optional[float] = None
+        #: 卡死是否已升级为「旁路强关发送通道」（每次卡死只升级一次）
+        self._stall_escalated = False
+        #: 看门狗要求主循环重建会话（主循环每轮开头检查）
+        self._force_rebuild = threading.Event()
+        #: 当前会话的音频采集引用（看门狗旁路收尾用）
+        self._capture = None
+        #: 当前会话建立时间（还没发出第一帧时，看门狗按它判卡死）
+        self._session_started_ts: Optional[float] = None
 
     @property
     def running(self) -> bool:
@@ -2264,6 +2335,13 @@ class MusicPlayer:
         self.recoveries = 0
         self.last_recovery = None
         self._audio_fallback = False
+        # 帧流看门狗字段：新一轮启动从干净状态开始
+        self.stalls = 0
+        self._stall_since = None
+        self._stall_escalated = False
+        self._force_rebuild.clear()
+        self._capture = None
+        self._session_started_ts = None
         # 保后台：音乐律动期间阻止系统空闲休眠 / 关闭 Windows 能效节流，
         # 否则合盖待机或后台节流会让帧流中断（v0.1.8.4，见文件头会话守护注释）。
         self._keepalive = powerkeep.keep_awake()
@@ -2273,6 +2351,12 @@ class MusicPlayer:
             log.debug("保后台启动失败（忽略）", exc_info=True)
         self._thread = threading.Thread(target=self._loop, name="mk87-music", daemon=True)
         self._thread.start()
+        # 帧流看门狗：主循环活着但不再出帧时兜底重建会话（与业务线程解耦）
+        self._watchdog_stop.clear()
+        self._watchdog_thread = threading.Thread(
+            target=self._watchdog_loop, name="mk87-music-watchdog", daemon=True
+        )
+        self._watchdog_thread.start()
         log.info("音乐律动启动: mode=%s(请求 %s) amplitude=%s backmode=%s bb=%s color=%s "
                  "targetFps=%s send=%s device=%s keepAwake=%s",
                  self.mode, self.requested_mode, self.amplitude_ui,
@@ -2319,6 +2403,82 @@ class MusicPlayer:
             log.debug("音乐律动健康状态: %s -> %s", self.health, state)
             self.health = state
 
+    # ------------------------------------------------------------------ 帧流看门狗
+    def _stop_watchdog(self) -> None:
+        """停止看门狗线程（幂等；最多等 0.6s，不能拖住停止/清理路径）。"""
+        self._watchdog_stop.set()
+        t = self._watchdog_thread
+        self._watchdog_thread = None
+        if t is not None and t.is_alive() and t is not threading.current_thread():
+            t.join(timeout=0.6)
+
+    def _watchdog_loop(self) -> None:
+        """帧流看门狗：主循环还活着但「最后成功帧」太旧 → 判定卡死并重建会话。
+
+        与业务线程解耦的原因：只靠主循环里的「连续发送异常计数」覆盖不了所有卡死
+        形态 —— 一旦某次 HID 写/读调用卡在内核 IO 里再也不返回，主循环既不出帧、
+        也不抛异常、也走不到 send-error 分支，监督循环会一直等下去（界面显示
+        「律动中」但电平条静默冻结）。看门狗按「最后成功帧时间」独立判活：
+        超时先通知主循环退出会话（正常情况下一轮循环内生效）；
+        主循环若连会话都退不出来，宽限期后旁路强关发送通道把它逼醒。
+        """
+        while not self._watchdog_stop.wait(WATCHDOG_INTERVAL):
+            try:
+                if not self.running:
+                    return
+                if self.health == "waiting-device":
+                    # 键盘离线：监督循环在等 monitor 线程重连，本来就不出帧
+                    self._stall_since = None
+                    self._stall_escalated = False
+                    continue
+                if self.health != "ok" and self._stall_since is None:
+                    # 普通恢复中（由 send-error / audio-stalled 等触发），不判卡死
+                    continue
+                now = time.monotonic()
+                age = self._frame_age()
+                if age is None:
+                    # 会话刚建立、还没下发第一帧：按会话建立时间计时
+                    started = self._session_started_ts
+                    if started is None or now - started < FRAME_STALL_TIMEOUT:
+                        if self.health == "ok":
+                            self._stall_since = None
+                            self._stall_escalated = False
+                        continue
+                    age = now - started
+                if age < FRAME_STALL_TIMEOUT:
+                    self._stall_since = None
+                    self._stall_escalated = False
+                    continue
+                if self._stall_since is None:
+                    self._stall_since = now
+                    self.stalls += 1
+                    self.last_error = f"帧流卡死（{age:.1f}s 无成功帧），重建会话"
+                    log.warning("音乐帧流卡死（%.1fs 无成功帧），通知主循环重建会话", age)
+                    # 立即把健康度标成恢复中：前端徽章不必等主循环退出会话
+                    self._set_health("recovering")
+                    self._force_rebuild.set()
+                    continue
+                if (not self._stall_escalated
+                        and now - self._stall_since >= WATCHDOG_HARD_GRACE):
+                    self._stall_escalated = True
+                    log.warning("音乐帧流卡死超过 %.1fs 仍未退出会话，旁路强关发送通道",
+                                WATCHDOG_HARD_GRACE)
+                    self._abort_active_session()
+            except Exception:  # noqa: BLE001 - 看门狗自身异常不能影响音乐线程
+                log.debug("音乐看门狗异常（忽略）", exc_info=True)
+
+    def _abort_active_session(self) -> None:
+        """看门狗兜底：从旁路线程强关当前发送通道，逼醒卡在 HID IO 里的主循环。
+
+        只关发送通道（音频采集的 read 是内存拷贝，不会永久阻塞）。关闭动作放在
+        独立 daemon 线程里并限时等待，避免看门狗自己被死句柄拖住。
+        """
+        sender = self._sender
+        if sender is None:
+            return
+        _call_with_timeout(sender.close, CLOSE_SENDER_TIMEOUT_OFFLINE,
+                           "看门狗强关帧流发送通道")
+
     def _open_capture(self) -> AudioCapture:
         """打开音频采集；原设备失效时回退默认输出回环。
 
@@ -2345,25 +2505,43 @@ class MusicPlayer:
                            color=self.color)
 
     def _close_session(self, capture, sender) -> None:
-        """关闭一次会话的音频/发送资源，并恢复进入前的灯效（失败只告警）。"""
-        if self._drainer is not None:
+        """关闭一次会话的音频/发送资源，并恢复进入前的灯效（失败只告警）。
+
+        设备不可用路径（拔线 / USB 重新枚举）必须快速失败：死句柄上的
+        ``close()`` 可能卡在收割在途 IO 上（``NativeHidChannel.close`` 最长等 2s），
+        一旦在这里阻塞，音乐监督线程就会错过设备重连窗口，表现为「掉线后不自动
+        恢复」。所以设备离线时缩短 close 等待上限；灯效恢复也由 lighting 侧先查
+        设备状态快速失败，不向死句柄发命令。
+        """
+        online = self._device_connected()
+        # 1) 先停 ACK 清道夫：它和发送器共用同一个原生读句柄
+        drainer = self._drainer
+        self._drainer = None
+        if drainer is not None:
             try:
-                self._drainer.stop()
+                drainer.stop()
             except Exception:  # noqa: BLE001
                 pass
-            self._drainer = None
+        # 2) 关闭发送通道：设备在线给宽限收割在途 IO；已断开则快速失败
         if sender is not None:
-            try:
-                sender.close()
-            except Exception:  # noqa: BLE001
-                pass
             if self._sender is sender:
                 self._sender = None
+            _call_with_timeout(
+                sender.close,
+                CLOSE_SENDER_TIMEOUT if online else CLOSE_SENDER_TIMEOUT_OFFLINE,
+                "关闭帧流发送通道",
+            )
+        # 3) 关闭音频采集
         if capture is not None:
-            try:
-                capture.close()
-            except Exception:  # noqa: BLE001
-                pass
+            _call_with_timeout(
+                capture.close,
+                CLOSE_CAPTURE_TIMEOUT if online else CLOSE_CAPTURE_TIMEOUT_OFFLINE,
+                "关闭音频采集",
+            )
+        self._capture = None
+        # 4) 恢复进入帧流前的灯效。设备不可用时不阻塞：lighting.restore_effect
+        #    内部会先查设备状态快速失败（并记录 skipped-offline，供 shell 退出 /
+        #    stop_music 的「恢复已发生」确认），不会发命令白等超时。
         snap = self._snapshot
         self._snapshot = None
         if snap:
@@ -2392,16 +2570,24 @@ class MusicPlayer:
 
         ``stop`` = 用户停止；``first-error`` = 首次启动失败（start() 抛给调用方）；
         ``audio-error`` / ``audio-stalled`` = 音频采集中断/卡死；``send-error`` =
-        HID 帧流连续失败（设备挂起/拔线）；``session-error`` = 会话建立失败。
+        HID 帧流连续失败（设备挂起/拔线）；``frame-stall`` = 帧流看门狗判定卡死；
+        ``session-error`` = 会话建立失败。
         """
         capture = None
         sender = None
+        # 新会话从干净的看门狗状态开始（上一轮卡死标记/强制重建请求不能带进来）
+        self._stall_since = None
+        self._stall_escalated = False
+        self._force_rebuild.clear()
+        self._last_frame_ts = None
+        self._session_started_ts = None
         if not first and not self._device_connected():
             # 键盘还没回来：不要反复开关音频采集，等 monitor 线程自动重连。
             self.last_error = "键盘已断开，等待重新连接"
             return "session-error"
         try:
             capture = self._open_capture()
+            self._capture = capture
             self.audio_backend = getattr(capture, "_backend", "") or ""
             analyzer = Analyzer(capture.samplerate)
             self._engine = self._new_engine()
@@ -2409,6 +2595,7 @@ class MusicPlayer:
             # 帧流走原生通道（Windows）：hidapi 逐包 ACK 只能到 ~10fps，原生通道实测 20fps
             self._sender = sender = lighting.FrameSender(self.device)
             self._session_ok = True
+            self._session_started_ts = time.monotonic()
             self._set_health("ok")
             if first:
                 self._ready.set()
@@ -2432,6 +2619,15 @@ class MusicPlayer:
         consecutive = 0
         try:
             while not self._stop.is_set():
+                # 帧流看门狗要求重建（>2s 无成功帧）：立即退出会话走自动恢复。
+                # 正常情况看门狗只置标记，由这里在下一轮循环生效；只有主循环卡死在
+                # HID 调用里时，看门狗才会旁路强关通道把 send() 逼成异常。
+                if self._force_rebuild.is_set():
+                    self._force_rebuild.clear()
+                    self.last_error = "帧流看门狗触发会话重建"
+                    log.warning("帧流看门狗触发会话重建（连续 %.1fs 无成功帧）",
+                                self._frame_age() or 0.0)
+                    return "frame-stall"
                 frame_start = self._clock()
                 target_fps = _clamp_fps(self.fps)
                 period = 1.0 / target_fps
@@ -2544,7 +2740,8 @@ class MusicPlayer:
         return "stop"
 
     def _cleanup_loop(self) -> None:
-        """监督循环退出：停清道夫/保活，清预览与实测值，健康状态归 stopped。"""
+        """监督循环退出：停清道夫/看门狗/保活，清预览与实测值，健康状态归 stopped。"""
+        self._stop_watchdog()
         if self._drainer is not None:
             try:
                 self._drainer.stop()
@@ -2555,6 +2752,10 @@ class MusicPlayer:
         self._reset_measured_fps()
         self._last_frame_ts = None
         self._sender = None
+        self._capture = None
+        self._stall_since = None
+        self._stall_escalated = False
+        self._force_rebuild.clear()
         keepalive = self._keepalive
         self._keepalive = None
         if keepalive is not None:
@@ -2578,6 +2779,15 @@ class MusicPlayer:
             first = True
             failures = 0
             while not self._stop.is_set():
+                if not first and not self._device_connected():
+                    # 键盘掉线（USB 重新枚举 / Win-Mac 模式切换）：状态层 monitor
+                    # 线程负责重连，这里短轮询等待。不能按失败次数退避 —— 重连可能在
+                    # 5s 退避睡眠中间完成，那样恢复就会超出「重连后 ≤5s」的预算；
+                    # 设备未在线时 _run_session 也只会立即返回 session-error。
+                    self._set_health("waiting-device")
+                    if self._stop.wait(DEVICE_WAIT_POLL):
+                        break
+                    continue
                 was_ok = self._session_ok
                 reason = self._run_session(first=first)
                 first = False
@@ -2588,8 +2798,12 @@ class MusicPlayer:
                 if reason == "session-error" and not was_ok:
                     # 会话还没建立成功（设备未就绪 / 音频设备暂时不可用）：
                     # 只按退避等待重试，不累计「自动恢复」次数，避免 UI 数字乱涨。
-                    self._set_health("recovering" if self._device_connected()
-                                     else "waiting-device")
+                    online = self._device_connected()
+                    self._set_health("recovering" if online else "waiting-device")
+                    if not online:
+                        if self._stop.wait(DEVICE_WAIT_POLL):
+                            break
+                        continue
                     delay = min(RECOVER_MAX_DELAY,
                                 RECOVER_MIN_DELAY * (2 ** min(failures, 3)))
                     failures += 1
@@ -2597,7 +2811,9 @@ class MusicPlayer:
                         break
                     continue
                 self._session_ok = False
-                failures += 1
+                # 建立成功过的会话中断：退避从最短档重新开始（重连/重建要快）；
+                # 只有「连续建立不起来」才逐步拉长，避免一次长时运行后中断要等 5s。
+                failures = 1 if was_ok else failures + 1
                 self._note_recovery(reason, failures)
                 delay = min(RECOVER_MAX_DELAY,
                             RECOVER_MIN_DELAY * (2 ** min(failures - 1, 3)))
@@ -2679,9 +2895,11 @@ class MusicPlayer:
     def stop(self) -> dict:
         self._user_stopped = True
         if self.running:
-            log.info("音乐律动停止: 共 %d 帧, %d 错误, 自动恢复 %d 次",
-                     self.frames, self.errors, self.recoveries)
+            log.info("音乐律动停止: 共 %d 帧, %d 错误, 自动恢复 %d 次, 看门狗触发 %d 次",
+                     self.frames, self.errors, self.recoveries, self.stalls)
         self._stop.set()
+        # 先停看门狗再等业务线程：避免退出过程中看门狗又触发一次「重建」
+        self._stop_watchdog()
         if self._thread is not None:
             self._thread.join(timeout=2.5)
             self._thread = None
@@ -2702,6 +2920,8 @@ class MusicPlayer:
             # 自动恢复次数与最近一次恢复开始时间（前端显示「已自动恢复 N 次」）
             "recoveries": int(self.recoveries),
             "lastRecovery": self.last_recovery,
+            # 帧流看门狗触发次数（>2s 无成功帧 → 重建会话；排障字段，前端忽略）
+            "stalls": int(self.stalls),
             # 距最后一帧成功下发多少毫秒（运行中且出过帧才有；前端可显示卡顿）
             "frameAgeMs": (int(frame_age * 1000) if frame_age is not None else None),
             # 保后台是否生效（阻止系统空闲休眠）；键盘是否在线；音频是否回退默认

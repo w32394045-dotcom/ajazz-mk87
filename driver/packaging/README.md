@@ -111,13 +111,21 @@ sudo rpm -e mk87
 安装时 postinst/postun 会自动 `udevadm control --reload-rules && udevadm trigger`。
 如果按键测试读不到 `/dev/input/event*`，执行 `sudo usermod -aG input $USER` 后注销重登。
 
-### 托盘与 GNOME 扩展（v0.1.8）
+### 托盘与 GNOME 扩展（v0.1.8.6）
 
 - `mk87.desktop` 使用 `Terminal=false`：从应用菜单启动不会再弹出终端窗口。
 - Linux 托盘走 Qt `QSystemTrayIcon`（左键显示窗口、右键原生菜单），KDE / XFCE / Cinnamon /
   MATE / Ubuntu GNOME 开箱可用；**GNOME Shell 原生不显示托盘图标**，需要
-  `gnome-shell-extension-appindicator` 扩展。设置页「系统托盘」卡片会检测状态，并提供一键安装
-  （发行版包 + 一次 `pkexec` 管理员密码），装完注销重登（Wayland）或 `Alt+F2` → `r`（X11）。
+  `gnome-shell-extension-appindicator` 扩展。
+- **一键安装（推荐，不用进终端）**：GNOME 缺扩展时设置页「系统托盘」卡片会自动置顶并显示醒目提示，
+  点「一键安装 AppIndicator 扩展（一次管理员密码）」→ pkexec 弹出系统密码框（只需输入一次）→
+  发行版包管理器自动安装并启用扩展 → 注销重登（Wayland）或 `Alt+F2` → `r`（X11）后托盘出现。
+  扩展已安装未启用时按钮为「启用扩展（无需管理员密码）」；失败时卡片给出原因并提供可复制的
+  手动命令（apt/dnf/zypper/pacman 均按检测到的发行版生成）。
+- 一键安装要求：桌面会话里有 polkit 认证代理（GNOME/KDE 自带）。没有 pkexec 且不是从终端启动时，
+  界面不会尝试 `sudo`（GUI 进程没有 tty 必然失败），而是直接给出手动命令。
+- 浏览器模式（`python run.py`）没有提权入口：按钮显示为「复制安装命令」，一键安装仅在 deb/rpm
+  桌面版内可用。
 - 没有托盘宿主时，关闭窗口 = 退出程序（不会留下看不见的后台进程）。
 
 ## CI（推荐用于产出 rpm/deb）

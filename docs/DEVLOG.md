@@ -1798,3 +1798,221 @@ GLOzone not found for unknown
   `digest` **逐项一致**；`releases/latest` 已指向 v0.1.8.5；deb/rpm 干净容器安装/启动卡口在 CI 内通过。
 - 待办：用户在 Windows 上用 v0.1.8.5 安装包（右键「以管理员身份运行」）复测安装流程与两个快捷方式
   勾选项；Linux 侧本版无改动。
+
+## 30 2026-11-07：v0.1.8.6 修 5 类实机问题 —— Win/Mac 模式检测 / 切模式音乐断更 / 按键扫描崩溃 / Windows 托盘消失 / Linux 一键安装
+
+> 触发：2026-11-07 用户 Windows 实机反馈（MK87 USB fw1.19，系统 Win11）：
+> ① 按键错位 —— 键盘背面 Win/Mac 拨动开关在 Mac 档时 Win/Alt 互换，旧版按键测试显示
+> `VK_0x12 / slot — / 未知`；
+> ② 切回 Windows 档时音乐律动掉线：键盘重新连上了，但律动不再出帧、界面仍显示「律动中」；
+> ③ 打开按键测试后程序崩溃（`crash.log` 访问违例），托盘图标随之消失；
+> ④ Windows 托盘图标消失后窗口藏起来找不回，重复启动还可能留下多实例；
+> ⑤ Linux 一键安装 AppIndicator 扩展的入口不明显，失败时没有可操作提示。
+> 本轮要求：查清根因、直接修，并把「症状 → 根因 → 修法 → 证据」写清楚。
+
+**标注规则**（与 §0 一致）：**已实测** / **待真机** / **推断** / **未记录**。本轮所有单测均为 2026-11-07
+在本机 Windows 实跑（命令与输出见 30.9）；Linux 相关只有单测，未在真实桌面验证。
+
+### 30.1 问题清单总表（用户视角）
+
+| # | 用户症状 | 根因 | 修法 | 证据 / 验证 |
+|---|---|---|---|---|
+| 1 | 按键错位：按物理 Win 键，出来的不是预期 Win/Alt；旧版按键测试显示 `VK_0x12 / slot — / 未知` | 键盘背面 **Win/Mac 拨动开关**在 Mac 档：固件把 Win/Alt 互换，OS 收到 `VK 0x12 (Alt)` / scan 0x38；keyscan 缺 0x12 等 VK 映射；厂商协议**不暴露**当前模式（systemMode byte 恒 0） | keyscan 补全 VK 表并按扫描码/E0 还原左右手；新增「按键测试 → 键盘模式检测」引导式检测（按一次物理 Win 键判定，写 `settings.osMode / osModeCheckedAt`）；改键页顶部 Mac 模式红色横幅；设备重连后 toast 引导再检测；前端修 `hid → hidUsage` 映射 | 用户实机受控测试（14:31–14:33）：Win 模式 vkey=0x5B、L-Win、HID=227、scan=0x5B；Mac 模式 vkey=0x12、HID=226、scan=0x38。单测 `test_keyscan_vk` **21/21 OK**；检测 UI **待真机复测** |
+| 2 | 切换 Win/Mac 开关后音乐律动掉线：键盘重连了，但律动不再出帧，界面仍停在「律动中」 | 切开关会让键盘 **USB 重新枚举**（14:31:15 起 `/api/status connected=false`）。v0.1.8.4 的自动恢复仍有 3 个缺口：掉线通知与重连完成之间没有短轮询；会话收尾可能卡在死句柄/灯效恢复上，吃掉恢复预算；发送调用卡在内核 HID IO 里时「既不出帧也不抛异常」，无人发现 | 离线 **0.25s 短轮询**重连；会话收尾限时（发送通道 0.25s / 采集 0.3s；设备离线时灯效恢复直接跳过）；新增**帧流看门狗**（>2.0s 无成功帧 → 重建会话；3.0s 仍未退出 → 旁路强关发送通道）；重连后 mode/amp/backmode/fps/color 参数不丢 | 旧日志 2026-11-07 13:59:44 设备断开后 51 条 `WriteFile 失败: 1167`（旧版静默退出线程）。单测 `test_music_watchdog` **15/15 OK**，音乐相关 7 模块 **142 tests OK**；真机恢复时延 **待真机复测** |
+| 3 | 打开按键测试后程序崩溃、托盘图标消失 | `keyscan.py` 的 `WNDPROC` 临时对象被 GC：`WNDCLASSW.lpfnWndProc` 只存了 Python 回调的瞬时指针，窗口消息（WM_NCCREATE / WM_INPUT）回调到已释放内存 → `crash.log` `Windows fatal exception: access violation` @ `_windows_loop`；另有 `GetRawInputData` 两次调用的大小语义错误 | 强引用 WNDPROC（DestroyWindow + UnregisterClassW 之后才释放）+ 显式 argtypes/restype + 唯一窗口类名成对注销 + `GetRawInputData` 缓冲区语义修正 + `DefWindowProc` 兜底；VK 表补 0x10/0x11/0x12/0x5B/0x5C/0xA0–0xA5 等，事件按扫描码/E0 还原左右手 | 复现：8 次 start/stop → 24 条 AV；修复后 50 次 start/stop → **0 fatal、GDI/USER 对象 delta=0**（本轮调试实测）。单测 `test_keyscan_vk` 21/21；安装包上的长循环 **待真机复测** |
+| 4 | Windows 托盘图标消失；窗口藏起来后找不回；重复启动可能多实例 | 「图标对象存在」≠「图标注册在通知区域」：用户机器 `/api/tray/status` 返回 `available=true`，但 `Shell_NotifyIconGetRect` 查图标窗口返回 `E_FAIL`；点 X 后窗口隐藏而图标不存在 → 应用找不回。单实例唤起失败时旧代码静默退出 | 新增 `mk87lib/tray_win.py` 只读诊断（图标是否注册 / 是否在溢出区 / Explorer 会话是否换了）；托盘看门狗（Explorer 重启后自动重加图标，失败再重建，重建失败降级「不可用」）；托盘不可用时**关窗改为最小化 + 提示**（不再隐身）；首次隐藏提示可能被收进「显示隐藏的图标」；单实例唤起失败明确弹窗；设置页「系统托盘」状态卡 | 用户实机证据（PID 13212 / dev 0.1.8.2 / 端口 65447）：`/api/tray/status` available=true 但 GetRect `E_FAIL`；点 X 后 boot log `[window-closing] available=True`。单测 `test_tray_win` **141/141 OK（skipped=1）** |
+| 5 | Linux 一键安装 AppIndicator 扩展：卡片埋在第 4 张、没 pkexec 时按钮消失、GUI 下 sudo 必失败、失败没有可读原因 | v0.1.8 只做了骨架：无提权链降级；apt 缺 `update`；失败输出原样抛给用户；入口不显眼；打包未声明 pkexec 依赖 | 置顶醒目卡片 + 大按钮；提权链 **pkexec → sudo（带图形 askpass）→ 手动命令**；apt `update + install` 合并成一次提权；失败按输出归类成人话；装完自动 enable（`gnome-extensions` 失败回退 gsettings）；Wayland 注销 / X11 `Alt+F2 → r` 提示；浏览器模式只给复制命令；顶部一次性引导横幅；打包补 deb `Recommends`（`pkexec` 或 `policykit-1`）、rpm `Requires`（`polkit`） | 单测 `test_trayenv` **87/87 OK**；**未在真实 Linux 桌面实测**，待用户 Ubuntu 24.04 GNOME Wayland 验证 |
+
+### 30.2 现场证据（用户 Windows 实机，只读采集）
+
+#### 30.2.1 Win/Mac 模式原始读数（2026-11-07 14:31–14:33 受控测试）
+
+同一颗**物理 Win 键**（键盘上印 ⊞ 的那个键），两种档位下 Raw Input 收到的值不同：
+
+| 档位 | vkey | name | HID usage | scan | flags |
+|---|---|---|---|---|---|
+| Windows 模式 | `0x5B` | L-Win | 227（0xE3） | `0x5B` | E0 |
+| Mac 模式 | `0x12`（VK_MENU） | L-Alt | 226（0xE2） | `0x38` | — |
+
+旧版按键测试收到 `VK_0x12` 后显示 `VK_0x12 / slot — / 未知`：`_VK_NAMES` / `_VK_TO_HID` 里没有
+0x12，`slot` 也映射不出来 —— 这正是「按键错位」的直接表现。
+
+#### 30.2.2 切开关 = USB 重新枚举（音乐断更的触发条件）
+
+1. 拨动 Win/Mac 开关时键盘会**重新枚举**：14:31:15 起 `/api/status` 返回 `connected=false`；
+2. 旧版（用户当时跑的 0.1.8.2 dev）在途 HID I/O 卡死：`0xFF68` 接口 hidapi write 报
+   `ERROR_IO_PENDING / 0x3E5`，程序内重开救不回来，必须退出旧程序 + 拔插键盘；
+3. 拔插后恢复正常，探针 `GET_DEVICE_INFO` 的 raw 64B 回包以 `55 10 30...` 开头；
+4. 厂商协议**不暴露当前模式**：Windows 模式下 systemMode byte 恒为 0；Mac 模式下协议通道
+   已经断开，也读不到 —— 所以不能用「读协议」做检测，只能引导用户按一次键。
+
+#### 30.2.3 音乐断更的旧日志（2026-11-07 13:59:44）
+
+- 13:59:44 设备断开；随后音乐帧发送连续 **51 条** `WriteFile 失败: 1167`；
+- 旧版 `errors > 50` 直接退出线程（这是 v0.1.8.4 之前的静默停更路径）；
+- v0.1.8.4 加了自动恢复，但本轮排查发现仍有 3 个缺口（见 30.4），在「USB 重新枚举」这个
+  特定时序下会表现为：设备 6s 后重连成功，音乐却既不报「自动恢复」也不再出帧。
+
+#### 30.2.4 按键扫描崩溃（crash.log）
+
+- `crash.log`：`Windows fatal exception: access violation`，栈顶在 `keyscan.py` 的 `_windows_loop`；
+- 复现：8 次 start/stop → **24 条 AV**；
+- 根因：`ctypes.cast(WNDPROC(_wndproc), c_void_p)` 只把瞬时生成的 Python 函数指针塞进
+  `WNDCLASSW`，`WNDPROC` 对象随后立刻被 GC；窗口消息（创建窗口时的 `WM_NCCREATE`、运行期的
+  `WM_INPUT`）回调到已释放内存 = 访问违例。托盘图标消失是同一进程崩溃的连带结果。
+
+#### 30.2.5 托盘「消失」的实机证据
+
+- 用户机器运行 dev 0.1.8.2（PID 13212，端口 65447）；
+- `/api/tray/status` 返回 `available=true backend=pystray`（**有 Icon 对象**）；
+- 但 `Shell_NotifyIconGetRect` 查它的 pystray 图标窗口 → `E_FAIL`（图标**根本没有注册**在通知区域）；
+- 用户点窗口 X：boot log 记 `[window-closing] available=True` → 窗口被隐藏，而图标不存在 →
+  应用彻底找不回。
+- 附带发现：pystray 0.19.5 的 `NOTIFYICONDATAW(..., hID=id(self), ...)` 用错关键字 —— 结构体字段
+  实际叫 `uID`，ctypes **静默忽略**未知关键字，所以注册时 uID 恒为 0；窗口类名里的数字只是
+  `id(self)`，不能当 uID 用（`tray_win.probe_icon` 默认按 uID=0 查，同时保留候选兼容未来版本）。
+
+### 30.3 修复 1：Win/Mac 模式引导式检测（按键错位的正解）
+
+1. **keyscan 补全 VK 映射**（`mk87lib/keyscan.py`）—— `_VK_NAMES` 补 0x10/0x11/0x12、0x5B/0x5C、
+   0xA0–0xA5 等（通用修饰键显示为 L-/R-）；`_VK_TO_HID` 补修饰键 usage（0xE0–0xE7）；新增
+   `_resolve_generic_modifier(vkey, scan, flags)`：Windows raw input 偶尔只给通用 VK
+   （0x10/0x11/0x12），按扫描码和 `RI_KEY_E0` 还原左右手（右 Shift 看 scan 0x36，右 Ctrl/Alt 看 E0）。
+2. **按键测试页「键盘模式检测」**（`web/js/pages/keytest.js`）—— 点「开始检测」后只监视**一次**
+   物理按键（10s 内有效，按其他键会继续等）：收到 `vkey=0x5B` 判 windows、`vkey=0x12` 判 mac；
+   结果写 `settings.osMode / osModeCheckedAt`，供改键页复用；检测期间若按键捕获没开会自动开、
+   结束后自动停。
+3. **改键页红色横幅**（`web/js/pages/keymap.js`）—— `settings.osMode === 'mac'` 时顶部显示
+   「检测到键盘处于 Mac 模式（Win/Alt 互换）」，提示拨回 Windows 并重新检测；**只提示、不阻止改键**
+   （Mac 模式下改键本身仍然有效，只是按键位置与预期不同）。
+4. **设备重连引导**（`server/state.py`）—— 掉线重连（`_ever_connected`）后发一条 info toast：
+   「键盘已重新连接。如刚切换过 Win/Mac 开关、感觉按键错位，请到『按键测试 → 键盘模式检测』点一次检测。」
+   另：连续重连失败到第 8/60 次时发 warn toast，提示拔插 USB / 重启程序（旧版在途 I/O 卡死时
+   程序内重开救不回来）。
+5. **前端事件字段修正**（`web/js/pages/keytest.js`）—— 后端 keyscan 事件字段叫 `hid`（HID usage），
+   旧前端只认 `hidUsage` → Alt/Win 等按 HID 映射的键 `slot` 显示 `—`；现在 `hidUsage: ev.hidUsage ?? ev.hid`。
+
+> 为什么不做「协议读模式」：30.2.2 已实测 systemMode 恒 0、Mac 档协议通道断开；引导式检测是
+> 唯一可靠路径。检测结果只是**提示**，不改变任何写入行为。
+
+### 30.4 修复 2：切模式 → USB 重新枚举后的音乐律动自动恢复
+
+v0.1.8.4 的监督循环（会话中断自动重建）解决的是「会话内部失败」；本轮补上「设备消失/重连」
+这条路径的 3 个缺口（`mk87lib/music.py`）：
+
+| # | 缺口 | 修法 | 常量 / 位置 |
+|---|---|---|---|
+| 1 | 掉线后按 0.5→1→2→5s 退避，重连若发生在退避睡眠中间，恢复会超出「重连后 ≤5s」预算 | 设备离线时不再走退避，改 **0.25s 短轮询**等 monitor 线程重连；`_set_health("waiting-device")` | `DEVICE_WAIT_POLL = 0.25` |
+| 2 | 会话收尾（关发送通道 / 关采集 / 恢复灯效）在设备离线时可能卡满超时，把恢复预算吃掉 | 离线路径用限时 close（发送 0.25s / 采集 0.3s）；`lighting.restore_effect` 在 `device.status.connected is False` 或 `protocol is None` 时**直接跳过**（记录 `skipped-offline`），不发命令也不等设备锁 | `CLOSE_SENDER_TIMEOUT_OFFLINE = 0.25`、`CLOSE_CAPTURE_TIMEOUT_OFFLINE = 0.3`、`lighting.py#restore_effect` |
+| 3 | 发送调用卡在内核 HID IO 里（不再出帧、也不再抛异常）时，主循环走不到 send-error 分支，监督循环永远等不到「会话结束」 | 新增**独立帧流看门狗**线程：主循环 running 但最后成功帧超过 2.0s → 标记 `recovering` + 通知主循环退出会话；再过 3.0s 仍未退出 → 从旁路线程强关发送通道（`_abort_active_session`），逼醒卡住的 write/read | `FRAME_STALL_TIMEOUT = 2.0`、`WATCHDOG_INTERVAL = 0.5`、`WATCHDOG_HARD_GRACE = 3.0` |
+
+另外：恢复期间 `update()` 只缓存参数不写会话（mode / 振幅 / 背景模式 / 背景亮度 / fps / 颜色），
+新会话建立时带入 → 用户切模式时改的参数不丢；`/api/music/status` 的 `health` 在等待设备时为
+`waiting-device`，前端徽章显示「等待键盘」而不是「律动中」。
+
+### 30.5 修复 3：按键扫描崩溃（WNDPROC 生命周期 + Raw Input 语义）
+
+1. **强引用 WNDPROC**：`scanner._wndproc = wndproc` 持有到 `DestroyWindow` + `UnregisterClassW`
+   完成之后才置 None —— 顺序反了就是悬空指针（文件内有注释标注 2026-11-07 crash.log 对应行）。
+2. **唯一窗口类名**：`mk87_keyscan_<pid>_<id(self)>` —— 反复 start/stop 时上一轮窗口类可能尚未注销，
+   复用同名类会让 CreateWindowExW 拿到旧类（及其可能已失效的 WndProc）。
+3. **显式 argtypes/restype**：`DefWindowProcW`、`RegisterClassW`、`RegisterRawInputDevices`、
+   `GetRawInputData`、`GetRawInputDeviceInfoW` 全部声明签名，避免 64 位下指针被截断。
+4. **GetRawInputData 大小语义**：第一次 `pData=NULL` 查所需字节数；第二次 `pcbSize` 必须设成
+   **缓冲区字节数**（不是第一次查到的所需大小），否则两次调用之间数据变化可能越界。
+5. **DefWindowProc 兜底**：`_wndproc` 所有消息交默认处理并吞掉异常（异常不能穿过 ctypes 回调边界）；
+   `WM_INPUT` 处理完仍要 Translate/Dispatch，系统在默认窗口过程里清理 raw input 内部缓冲。
+6. 前端 `slot` 映射修复见 30.3 第 5 条。
+
+### 30.6 修复 4：Windows 托盘（诊断 + 看门狗 + 关窗降级）
+
+- **诊断模块**（新增 `mk87lib/tray_win.py`，纯标准库 + 可选 ctypes）：`probe` 返回
+  `STATE_VISIBLE / STATE_HIDDEN（溢出区）/ STATE_MISSING / STATE_UNKNOWN`；按
+  `Shell_NotifyIconGetRect` 的 `S_OK / S_FALSE / E_FAIL` 语义判断；`S_FALSE` 表示「图标已注册但在
+  『显示隐藏的图标』里」—— 不再直接当成「没有托盘」；另提供 `foreground_app_window` 唤起兜底。
+- **托盘看门狗**（`shell.py`）：定时探测图标状态；missing 先尝试**轻量重加**（同一 hWnd/uID
+  `_tray_readd_icon`，不重建），失败再重建 pystray 图标；连续重建有上限，用尽后降级
+  「不可用」；Explorer 重启（任务栏 token 变化）时重置计数并自动重加。
+- **关窗永不隐身**：Windows 上「确实尝试过托盘但不可用」时，点 X **最小化到任务栏 + 提示原因**，
+  不再隐藏窗口；启动时 2.5s 内没确认图标真的显示（`GetRect` 失败可能只是溢出/Explorer 恢复中）
+  也按保守策略处理（只最小化）。
+- **首次隐藏提示**：首次隐藏到托盘时发一次气泡，若通知区域是「自动隐藏」模式则附带
+  「图标可能在『显示隐藏的图标』里」的提示。
+- **单实例**：重复启动唤起已有窗口，成功/失败都**确定性退出**本进程；唤起失败弹 Windows
+  MessageBox 明确告知去哪里找窗口（旧逻辑失败时会静默变成第二个实例）。
+- **静默启动兜底**（`--tray`）：若静默启动后托盘最终不可用，把主窗口显示出来并提示，避免
+  「开机自启后什么都没有」。
+- **设置页**：系统托盘卡片展示真实状态（`available / backend / error / overflow`）；
+  具体文案以 `driver/web/js/pages/settings.js` 为准。
+
+### 30.7 修复 5：Linux 一键安装 AppIndicator 扩展
+
+- **入口**：设置页「系统托盘」卡片在 GNOME 缺扩展时**自动置顶**并显示醒目提示 + 大按钮
+  「一键安装 AppIndicator 扩展（一次管理员密码）」；扩展已安装未启用时按钮为「启用扩展（无需管理员密码）」。
+- **提权链**（`mk87lib/trayenv.py`）：`pkexec`（图形密码框）→ `sudo`（仅当从终端启动或找到图形
+  askpass 时；GUI 进程没有 tty，盲目 `sudo` 必然失败）→ 都不行时给**可复制的手动命令**，并在
+  浏览器模式（`python run.py`）下只显示复制命令。
+- **一次提权完成全部安装**：apt 系把 `apt-get update` 与 `apt-get install -y` 合并进同一个
+  `sh -c`，只弹一次密码框（软件源过期时「找不到包」是旧版最常见的失败原因）；其他发行版按
+  `dnf / zypper / pacman / rpm-ostree` 生成对应命令。
+- **失败归类成人话**：`_classify_failure` 把「没有 polkit 认证代理 / 密码取消 / 包管理器正忙 /
+  找不到包 / 网络失败」等输出映射成中文/英文提示，并给出下一步操作；安装输出截断后回传，避免
+  pkexec/apt 输出刷爆界面。
+- **装完自动启用**：先 `gnome-extensions enable`，失败回退直接写
+  `gsettings org.gnome.shell enabled-extensions` 并回读验证；然后提示 Wayland 注销重登 /
+  X11 `Alt+F2 → r`。
+- **顶部一次性引导横幅**（`web/js/app.js`）：原生外壳 + 托盘不可用时读一次托盘环境，GNOME 缺扩展
+  就给一次「去设置一键安装」的引导（可关闭且记住；换 key 让老用户也能看到一次）。
+- **打包依赖**：deb `Recommends: pkexec | policykit-1, gnome-shell-extension-appindicator`；
+  rpm `Requires: polkit` + `Recommends: gnome-shell-extension-appindicator`
+  （`driver/packaging/linux/build-deb.sh`、`mk87.spec`）。**未在真实 Linux 桌面实测**。
+
+### 30.8 本轮变更文件（工作区，未提交）
+
+- 新增：`driver/mk87lib/tray_win.py`、`driver/tests/test_tray_win.py`（141）、
+  `driver/tests/test_keyscan_vk.py`（21）、`docs/ISSUES.md`。
+- 修改（代码）：`driver/mk87lib/keyscan.py`（+400）、`music.py`（+258）、`trayenv.py`（+877）、
+  `lighting.py`（+11）、`driver/shell.py`（+1055）、`driver/server/state.py`、`driver/server/app.py`、
+  `driver/web/js/{app,keytest,keymap,settings,i18n-en-dom}.js`、`driver/mk87lib/__init__.py`（版本号）。
+- 修改（打包）：`driver/packaging/{README.md, linux/build-deb.sh, linux/mk87.spec,
+  windows/mk87.iss, windows/version_info.txt}`、`driver/tests/{test_music_watchdog.py, test_trayenv.py}`。
+- 文档（本轮）：`docs/DEVLOG.md` §30、`docs/TEST-REPORT.md` §26、`docs/ISSUES.md` 新建；
+  README 中英、`.github/release-notes.md` 与版本号/打包/提交由 Lead 统一处理。
+
+### 30.9 验证
+
+| 项 | 命令 / 方式 | 结果 | 标注 |
+|---|---|---|---|
+| Win/Mac 模式读数 | 用户实机受控测试 2026-11-07 14:31–14:33 | 见 30.2.1；旧版 keytest 对 0x12 显示 `VK_0x12 / slot — / 未知` | 已实测（用户实机） |
+| 切模式 USB 重新枚举 | `/api/status` + 旧版日志 | 14:31:15 起 `connected=false`；旧版在途 I/O 卡死（0xFF68 / `ERROR_IO_PENDING 0x3E5`），退出程序 + 拔插后恢复 | 已实测（用户实机） |
+| 音乐断更旧日志 | `%LOCALAPPDATA%\mk87\logs`（只读） | 13:59:44 断开后 51 条 `WriteFile 失败: 1167`，线程退出 | 已实测（用户实机） |
+| 按键扫描崩溃复现/修复 | dev 构建连续 start/stop | 8 次 → 24 条 AV；修复后 50 次 → 0 fatal、GDI/USER delta=0 | 已实测（本轮调试） |
+| 托盘诊断证据 | `Shell_NotifyIconGetRect`（只读） | 用户机器 available=true 但 GetRect `E_FAIL`；点 X 后窗口隐藏、图标缺失 | 已实测（用户实机） |
+| 全量单测 | `cd driver && .\.venv\Scripts\python.exe -m unittest discover -s tests` | **552 tests OK（skipped=1）**，28.750s（v0.1.8.5 为 339，+213） | 已实测 |
+| 定向单测 | `... tests.test_music_watchdog tests.test_trayenv tests.test_keyscan_vk -v` | **123 tests OK**（15 + 87 + 21），7.961s | 已实测 |
+| 托盘单测 | `... tests.test_tray_win -v` | **141 tests OK（skipped=1）**，0.724s | 已实测 |
+| 音乐模块回归 | 7 个 `test_music_*` 模块 + `test_powerkeep` | **142 tests OK**（含保后台共 165） | 已实测 |
+| v0.1.8.6 真机复测 | 见 30.10 | 未执行 | 待真机 |
+| CI / 发布 | tag `v0.1.8.6` | 【待回填】 | 未记录 |
+
+### 30.10 待真机 / 未完成（诚实清单）
+
+1. **Windows 安装 v0.1.8.6 前先退出旧实例**（用户机器当前装着 v0.1.8.4，且有过 dev 0.1.8.2
+   实例），再安装/启动，避免旧版在途 I/O 卡死干扰判断。
+2. **Win/Mac 检测**：两种档位各按一次物理 Win 键，确认检测结果、改键页横幅、重连 toast 都符合预期。
+3. **切换模式音乐恢复**：播放中拨 Win/Mac 开关 → 徽章应显示「等待键盘 / 恢复中…」→ 键盘重连后
+   **≤5s 内自动续播**且参数不丢；最终以用户真机计时为准。
+4. **按键测试稳定性**：连续 start/stop ≥50 次 + 长时间捕获，确认无 AV、托盘图标不消失。
+5. **托盘**：任务管理器重启 Explorer 后图标自动恢复；图标被收进溢出区时有提示；托盘不可用时
+   关窗只最小化；重复启动唤起已有窗口（失败有明确弹窗）。
+6. **Linux（用户 Ubuntu 24.04 GNOME Wayland）**：设置 → 系统托盘一键安装 → pkexec 密码框 →
+   自动启用 → 注销重登后托盘出现；无 pkexec / 无 polkit 时给出手动命令；新 deb/rpm 依赖可正常安装。
+7. **CI 打包 / 资产哈希 / Release 正文**：【待回填】（Lead 发布后补）。
+
+### 30.11 发布记录（v0.1.8.6）【待回填】
+
+- 版本号：工作区已改为 `0.1.8.6`（6 处，Lead 负责）；本轮只写文档，未改版本号、未 commit / push。
+- 提交 / tag：`【待回填】`；CI run：`【待回填】`；Release：`【待回填】`。
+- 附件体积与 SHA256：`【待回填】`（portable.zip / setup.exe / .deb / .rpm / SHA256SUMS.txt）。
+- 已知限制：Linux 一键安装未在真实 Linux 桌面验证；Win/Mac 检测与切模式音乐恢复待用户 v0.1.8.6
+  真机复测；Fedora rpm 的 numpy/OpenBLAS page-alignment 提示级问题继续观察。

@@ -1,13 +1,17 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""v0.1.8 托盘环境探测单元测试（Linux 逻辑在 Windows 上也能测）。
+"""v0.1.8 / v0.1.8.6 托盘环境探测单元测试（Linux 逻辑在 Windows 上也能测）。
 
 覆盖：
 * 桌面环境 / 会话类型解析（XDG_CURRENT_DESKTOP、Wayland/X11 推断）；
-* /etc/os-release 解析；
+* /etc/os-release 解析、发行版家族识别（debian/fedora/suse/arch/unknown、rpm-ostree）；
 * GNOME AppIndicator 扩展「已装/未装/启用/未启用」判定（gsettings + gnome-extensions）；
-* 包管理器 / 提权工具识别、安装计划与手动命令；
-* 汇总状态（Windows / 非 GNOME / GNOME 缺扩展 / 已装未启用 / 已装启用需重登）；
+* 包管理器识别与发行版偏好、提权方式（pkexec / sudo-tty / sudo-askpass / 无提权）；
+* 安装命令生成（apt 先 update 且只提权一次、dnf/zypper/pacman、rpm-ostree 重启）；
+* 安装计划与手动兜底命令（按发行版生成；已装未启用只启用、已装已启用不重装）；
+* 安装失败归类（取消提权 / 无 polkit 代理 / 包管理器锁 / 源里没有 / 网络 / 超时 / 未知）；
+* 汇总状态（Windows / 非 GNOME / GNOME 缺扩展 / 已装未启用 / 已装启用需重登 / 浏览器模式）
+  以及 v0.1.8.6 的 action / shellMode / canAutoInstall / 发行版字段；
 * 外壳「无托盘时点 X 直接退出」逻辑。
 """
 from __future__ import annotations
@@ -215,6 +219,9 @@ class TestInstallPlan(unittest.TestCase):
         self.assertEqual(plan["reason"], "installed-disabled")
         self.assertTrue(plan["needsEnable"])
         self.assertFalse(plan["supported"])
+        # 已装未启用：兜底命令只启用，不重复安装包
+        self.assertIn("gnome-extensions enable", "\n".join(plan["manualCommands"]))
+        self.assertNotIn("install -y", "\n".join(plan["manualCommands"]))
 
     def test_fedora_pkexec_command(self):
         with TmpExtensionDirs(installed=False, enabled=False):
@@ -227,17 +234,21 @@ class TestInstallPlan(unittest.TestCase):
         self.assertTrue(plan["supported"])
         self.assertEqual(plan["elevatedVia"], "pkexec")
         self.assertEqual(plan["manager"]["id"], "dnf")
-        self.assertEqual(plan["command"][:2], ["pkexec", "/usr/bin/dnf"])
+        # 提权工具用绝对路径（pkexec 要求可执行文件路径），方便日志与复制
+        self.assertEqual(plan["command"][:2], ["/usr/bin/pkexec", "/usr/bin/dnf"])
         self.assertEqual(plan["command"][-1], trayenv.PACKAGE_NAME)
+        self.assertTrue(plan["requiresAdminPassword"])
         self.assertIn("gnome-extensions enable", "\n".join(plan["manualCommands"]))
 
     def test_apt_with_sudo_fallback(self):
-        plan = trayenv.install_plan(
-            extension={"installed": False, "enabled": None},
-            desktop=self._desktop(),
-            which=_which_factory({"apt-get", "sudo"}),
-            system="Linux",
-        )
+        # 终端启动（有 tty）时 sudo 才能弹密码；GUI 无 tty 的情况见 TestElevation
+        with mock.patch.object(trayenv, "_stdin_is_tty", lambda: True):
+            plan = trayenv.install_plan(
+                extension={"installed": False, "enabled": None},
+                desktop=self._desktop(),
+                which=_which_factory({"apt-get", "sudo"}),
+                system="Linux",
+            )
         self.assertTrue(plan["supported"])
         self.assertEqual(plan["elevatedVia"], "sudo")
         self.assertEqual(plan["manager"]["id"], "apt")
@@ -572,6 +583,527 @@ class TestRenderEnvFallback(unittest.TestCase):
         for key in ("MK87_LAUNCH_MODE", "MK87_SOFTWARE_RENDERING",
                     "QTWEBENGINE_CHROMIUM_FLAGS", "LIBGL_ALWAYS_SOFTWARE"):
             self.assertIn(key, snap)
+
+
+class TestDistroInfo(unittest.TestCase):
+    """v0.1.8.6：发行版家族识别 + 首选包管理器（决定一键安装命令与兜底命令）。"""
+
+    def test_family_mapping(self):
+        cases = {
+            "ubuntu": ("debian", "apt"),
+            "linuxmint": ("debian", "apt"),
+            "fedora": ("fedora", "dnf"),
+            "rhel": ("fedora", "dnf"),
+            "opensuse-tumbleweed": ("suse", "zypper"),
+            "arch": ("arch", "pacman"),
+            "endless": ("unknown", ""),
+        }
+        for distro_id, (family, hint) in cases.items():
+            info = trayenv.distro_info({"id": distro_id})
+            self.assertEqual(info["family"], family, msg=distro_id)
+            self.assertEqual(info["packageManagerHint"], hint, msg=distro_id)
+
+    def test_id_like_fallback(self):
+        info = trayenv.distro_info({"id": "nobara", "id_like": "fedora"})
+        self.assertEqual(info["family"], "fedora")
+        self.assertEqual(info["packageManagerHint"], "dnf")
+
+    def test_unknown_keeps_labels(self):
+        info = trayenv.distro_info({"id": "plan9", "name": "Plan 9"})
+        self.assertEqual(info["family"], "unknown")
+        self.assertEqual(info["name"], "Plan 9")
+        self.assertEqual(info["packageManagerLabel"], "未知发行版")
+
+    def test_atomic_flag_from_variant(self):
+        info = trayenv.distro_info({"id": "kinoite", "id_like": "fedora"})
+        self.assertTrue(info["atomic"])
+
+    def test_ubuntu_os_release_end_to_end(self):
+        with tempfile.NamedTemporaryFile("w", encoding="utf-8", suffix=".release", delete=False) as f:
+            f.write('NAME="Ubuntu"\nID=ubuntu\nID_LIKE=debian\nVERSION_ID="24.04"\n')
+            path = f.name
+        try:
+            parsed = trayenv.read_os_release(path)
+            # 注意：不能在这里再 mock read_os_release 后调它自己（会无限递归）
+            with mock.patch.object(trayenv, "read_os_release", lambda *a, **k: dict(parsed)):
+                info = trayenv.distro_info()
+        finally:
+            os.unlink(path)
+        self.assertEqual(info["family"], "debian")
+        self.assertEqual(info["packageManagerHint"], "apt")
+        self.assertEqual(info["version"], "24.04")
+
+
+class TestPackageManager(unittest.TestCase):
+    """包管理器探测：发行版首选 + rpm-ostree 原子化系统。"""
+
+    def test_ostree_preferred_on_atomic_system(self):
+        with mock.patch.object(trayenv, "_ostree_booted", lambda: True):
+            manager = trayenv.package_manager(
+                which=_which_factory({"rpm-ostree", "dnf", "pkexec"}),
+                os_release={"id": "fedora"},
+            )
+        self.assertEqual(manager["id"], "rpm-ostree")
+        self.assertTrue(manager["rebootRequired"])
+        self.assertIn("rpm-ostree", manager["path"])
+
+    def test_debian_prefers_apt_even_if_dnf_installed(self):
+        manager = trayenv.package_manager(
+            which=_which_factory({"dnf", "apt-get"}),
+            os_release={"id": "ubuntu", "id_like": "debian"},
+        )
+        self.assertEqual(manager["id"], "apt")
+        self.assertTrue(manager["updateRequired"])
+
+    def test_fedora_prefers_dnf(self):
+        manager = trayenv.package_manager(
+            which=_which_factory({"apt-get", "dnf"}),
+            os_release={"id": "fedora"},
+        )
+        self.assertEqual(manager["id"], "dnf")
+        self.assertFalse(manager["updateRequired"])
+
+    def test_no_manager(self):
+        manager = trayenv.package_manager(which=_which_factory(set()),
+                                          os_release={"id": "arch"})
+        self.assertIsNone(manager["id"])
+
+
+class TestElevation(unittest.TestCase):
+    """提权探测：pkexec 优先；只有 sudo 时必须能真的弹密码（tty / 图形 askpass）。"""
+
+    def test_pkexec_preferred_over_sudo(self):
+        info = trayenv.elevation_info(which=_which_factory({"pkexec", "sudo"}))
+        self.assertEqual(info["tool"], "pkexec")
+        self.assertTrue(info["available"])
+        self.assertTrue(info["gui"])
+        self.assertEqual(trayenv.elevation_tool(which=_which_factory({"pkexec", "sudo"})), "pkexec")
+
+    def test_sudo_without_tty_is_unusable(self):
+        with mock.patch.object(trayenv, "_stdin_is_tty", lambda: False), \
+                mock.patch.dict(os.environ, {"SUDO_ASKPASS": ""}):
+            info = trayenv.elevation_info(which=_which_factory({"sudo"}))
+            tool = trayenv.elevation_tool(which=_which_factory({"sudo"}))
+        self.assertEqual(info["tool"], "sudo")
+        self.assertFalse(info["available"])
+        self.assertEqual(info["reason"], "sudo-no-tty")
+        self.assertIsNone(tool)
+
+    def test_sudo_with_tty_usable(self):
+        with mock.patch.object(trayenv, "_stdin_is_tty", lambda: True):
+            info = trayenv.elevation_info(which=_which_factory({"sudo"}))
+        self.assertTrue(info["available"])
+        self.assertFalse(info["gui"])
+        self.assertEqual(info["reason"], "sudo-tty")
+
+    def test_sudo_with_askpass_usable(self):
+        with mock.patch.object(trayenv, "_stdin_is_tty", lambda: False), \
+                mock.patch.dict(os.environ, {"SUDO_ASKPASS": "/usr/bin/ssh-askpass"}):
+            info = trayenv.elevation_info(which=_which_factory({"sudo"}))
+        self.assertTrue(info["available"])
+        self.assertEqual(info["args"], ["-A"])
+        self.assertTrue(info["gui"])
+
+    def test_no_elevation_tool(self):
+        info = trayenv.elevation_info(which=_which_factory(set()))
+        self.assertIsNone(info["tool"])
+        self.assertEqual(info["reason"], "no-elevation")
+
+
+class TestInstallCommand(unittest.TestCase):
+    """安装命令生成：apt 先 update 且只提权一次；提权不可用时不动命令。"""
+
+    GNOME_ENV = {"XDG_CURRENT_DESKTOP": "GNOME", "XDG_SESSION_TYPE": "wayland"}
+
+    def _plan(self, which, distro=None, desktop=None):
+        return trayenv.install_plan(
+            extension={"installed": False, "enabled": None, "uuid": trayenv.APPINDICATOR_UUID},
+            desktop=desktop or trayenv.desktop_environment(self.GNOME_ENV),
+            which=which,
+            system="Linux",
+            distro=distro,
+        )
+
+    def test_apt_plan_runs_update_then_install_in_one_elevation(self):
+        plan = self._plan(_which_factory({"apt-get", "pkexec"}),
+                          distro={"id": "ubuntu", "family": "debian"})
+        self.assertTrue(plan["supported"])
+        self.assertTrue(plan["updateRequired"])
+        cmd = plan["command"]
+        self.assertEqual(cmd[:3], ["/usr/bin/pkexec", "/bin/sh", "-c"])
+        script = cmd[3]
+        self.assertIn("apt-get update", script)
+        self.assertIn("apt-get install -y " + trayenv.PACKAGE_NAME, script)
+        self.assertIn("DEBIAN_FRONTEND=noninteractive", script)
+        self.assertEqual(plan["commandText"].split()[0], "/usr/bin/pkexec")
+        # 只调用一次提权（一次密码框）
+        self.assertEqual(sum(1 for part in cmd if "pkexec" in part), 1)
+
+    def test_dnf_plan_is_single_direct_command(self):
+        plan = self._plan(_which_factory({"dnf", "pkexec"}), distro={"id": "fedora", "family": "fedora"})
+        self.assertEqual(plan["command"][:2], ["/usr/bin/pkexec", "/usr/bin/dnf"])
+        self.assertNotIn("/bin/sh", plan["command"])
+        self.assertFalse(plan["updateRequired"])
+
+    def test_ostree_plan_marks_reboot_required(self):
+        with mock.patch.object(trayenv, "_ostree_booted", lambda: True):
+            plan = self._plan(_which_factory({"rpm-ostree", "pkexec"}), distro={"id": "fedora"})
+        self.assertTrue(plan["supported"])
+        self.assertTrue(plan["rebootRequired"])
+        self.assertIn("rpm-ostree", plan["command"][1])
+
+    def test_no_gui_elevation_reason(self):
+        with mock.patch.object(trayenv, "_stdin_is_tty", lambda: False), \
+                mock.patch.dict(os.environ, {"SUDO_ASKPASS": ""}):
+            plan = self._plan(_which_factory({"apt-get", "sudo"}),
+                              distro={"id": "ubuntu", "family": "debian"})
+        self.assertFalse(plan["supported"])
+        self.assertEqual(plan["reason"], "no-gui-elevation")
+        self.assertEqual(plan["action"], "manual")
+        # 兜底命令仍然给 apt 版本，而不是让用户自己猜包名
+        self.assertIn("sudo apt update", plan["manualCommands"][0])
+        self.assertIn("gnome-extensions enable", "\n".join(plan["manualCommands"]))
+
+    def test_manual_commands_use_distro_family_when_manager_missing(self):
+        plan = {"platform": "linux", "reason": "no-package-manager", "manager": None,
+                "distro": {"family": "arch"}, "uuid": trayenv.APPINDICATOR_UUID}
+        commands = trayenv.manual_commands(plan)
+        self.assertIn("sudo pacman -S --noconfirm " + trayenv.PACKAGE_NAME, commands)
+
+    def test_manual_commands_empty_when_nothing_to_do(self):
+        for reason in ("already-enabled", "not-gnome", "unsupported-platform"):
+            plan = {"platform": "linux", "reason": reason, "manager": None,
+                    "distro": {"family": "debian"}, "uuid": trayenv.APPINDICATOR_UUID}
+            self.assertEqual(trayenv.manual_commands(plan), [], msg=reason)
+
+    def test_manual_commands_for_ostree_include_reboot(self):
+        plan = {"platform": "linux", "reason": "install",
+                "manager": {"id": "rpm-ostree"}, "distro": {"family": "fedora"},
+                "uuid": trayenv.APPINDICATOR_UUID}
+        commands = trayenv.manual_commands(plan)
+        self.assertTrue(commands[0].startswith("sudo rpm-ostree install"))
+        self.assertIn("reboot", commands[1])
+
+
+class TestFailureClassification(unittest.TestCase):
+    """安装失败归类：把 pkexec / 包管理器输出翻成用户看得懂的原因。"""
+
+    def test_lock(self):
+        out = "E: Could not get lock /var/lib/dpkg/lock-frontend. It is held by process 123"
+        failure = trayenv._classify_failure(100, out)
+        self.assertEqual(failure["code"], "package-lock")
+        self.assertTrue(failure["retryable"])
+        self.assertTrue(failure["zh"] and failure["en"])
+
+    def test_package_not_found(self):
+        failure = trayenv._classify_failure(
+            100, "E: Unable to locate package gnome-shell-extension-appindicator")
+        self.assertEqual(failure["code"], "package-not-found")
+
+    def test_network(self):
+        failure = trayenv._classify_failure(100, "Temporary failure resolving 'archive.ubuntu.com'")
+        self.assertEqual(failure["code"], "network")
+
+    def test_auth_cancelled(self):
+        failure = trayenv._classify_failure(126, "Error executing command as another user: Not authorized")
+        self.assertEqual(failure["code"], "auth-cancelled")
+        self.assertTrue(failure["retryable"])
+
+    def test_no_polkit_agent(self):
+        failure = trayenv._classify_failure(127, "No authentication agent found")
+        self.assertEqual(failure["code"], "no-polkit-agent")
+
+    def test_timeout(self):
+        failure = trayenv._classify_failure(124, "")
+        self.assertEqual(failure["code"], "timeout")
+
+    def test_unknown(self):
+        failure = trayenv._classify_failure(1, "something exploded")
+        self.assertEqual(failure["code"], "unknown")
+        self.assertTrue(failure["manualFallback"])
+
+    def test_output_tail_truncation(self):
+        text = "x" * 10000
+        tail = trayenv._tail(text)
+        self.assertTrue(tail.startswith("…"))
+        self.assertEqual(len(tail), trayenv.OUTPUT_LIMIT + 1)
+        self.assertEqual(trayenv._tail("short"), "short")
+
+
+class TestInstallExtensionResult(unittest.TestCase):
+    """install_extension 的返回契约（前端据此渲染进度/失败回退/重登提示）。"""
+
+    AWAYLAND = {"family": "gnome", "isWayland": True, "sessionType": "wayland"}
+
+    def _patch_env(self, *, plan, states, run, enable=None):
+        """states：extension_state 依次返回值（最后一个重复使用）。"""
+        state_list = list(states)
+
+        def ext_state():
+            return state_list.pop(0) if len(state_list) > 1 else state_list[0]
+
+        patches = [
+            mock.patch.object(trayenv, "desktop_environment", lambda: dict(self.AWAYLAND)),
+            mock.patch.object(trayenv, "extension_state", ext_state),
+            mock.patch.object(trayenv, "install_plan", lambda **kwargs: dict(plan)),
+            mock.patch.object(trayenv, "_run", run),
+        ]
+        if enable is not None:
+            patches.append(mock.patch.object(trayenv, "enable_extension", lambda **k: dict(enable)))
+        return patches
+
+    def _plan(self, **over):
+        base = {
+            "supported": True, "reason": "install", "action": "install",
+            "reasonText": {"zh": "可安装", "en": "installable"},
+            "manager": {"id": "dnf"}, "elevation": {"tool": "pkexec", "gui": True, "available": True},
+            "command": ["/usr/bin/pkexec", "/usr/bin/dnf", "install", "-y", trayenv.PACKAGE_NAME],
+            "commandText": "/usr/bin/pkexec /usr/bin/dnf install -y " + trayenv.PACKAGE_NAME,
+            "rebootRequired": False, "needsEnable": False,
+            "manualCommands": ["sudo dnf install -y " + trayenv.PACKAGE_NAME],
+        }
+        base.update(over)
+        return base
+
+    def test_failure_is_classified_with_manual_fallback(self):
+        not_installed = {"uuid": trayenv.APPINDICATOR_UUID, "installed": False, "enabled": None}
+        run = mock.MagicMock(return_value=(100, "", "E: Unable to locate package x"))
+        patches = self._patch_env(plan=self._plan(), states=[not_installed], run=run)
+        for p in patches:
+            p.start()
+        try:
+            out = trayenv.install_extension()
+        finally:
+            for p in reversed(patches):
+                p.stop()
+        self.assertFalse(out["ok"])
+        self.assertEqual(out["action"], "manual")
+        self.assertEqual(out["failure"]["code"], "package-not-found")
+        self.assertTrue(out["manualCommands"])
+        self.assertIn("Unable to locate", out["output"])
+        self.assertTrue(out["commandText"].startswith("/usr/bin/pkexec"))
+        self.assertIn("退出码 100", out["message"])
+
+    def test_timeout_message_marks_timeout(self):
+        not_installed = {"uuid": trayenv.APPINDICATOR_UUID, "installed": False, "enabled": None}
+        run = mock.MagicMock(return_value=(124, "", ""))
+        patches = self._patch_env(plan=self._plan(), states=[not_installed], run=run)
+        for p in patches:
+            p.start()
+        try:
+            out = trayenv.install_extension(timeout=5)
+        finally:
+            for p in reversed(patches):
+                p.stop()
+        self.assertFalse(out["ok"])
+        self.assertEqual(out["failure"]["code"], "timeout")
+        self.assertIn("超时", out["message"])
+
+    def test_success_auto_enables_and_warns_on_enable_failure(self):
+        states = [
+            {"uuid": trayenv.APPINDICATOR_UUID, "installed": False, "enabled": None},
+            {"uuid": trayenv.APPINDICATOR_UUID, "installed": True, "enabled": False},
+            {"uuid": trayenv.APPINDICATOR_UUID, "installed": True, "enabled": False},
+        ]
+        run = mock.MagicMock(return_value=(0, "installed ok", ""))
+        patches = self._patch_env(plan=self._plan(), states=states, run=run,
+                                  enable={"ok": False, "message": "启用失败"})
+        for p in patches:
+            p.start()
+        try:
+            out = trayenv.install_extension()
+        finally:
+            for p in reversed(patches):
+                p.stop()
+        self.assertTrue(out["ok"])
+        self.assertEqual(out["action"], "relogin")
+        self.assertTrue(out["needsLogout"])
+        self.assertIn("注销重新登录", out["message"])
+        self.assertTrue(out["warnings"])
+        self.assertEqual(out["warnings"][0]["code"], "enable-failed")
+        self.assertIn("installed ok", out["output"])
+
+    def test_success_warns_when_extension_not_detected(self):
+        """极少见：包 rc=0 但扩展目录没探测到 —— 仍尝试启用并给出 not-detected 警告。"""
+        not_installed = {"uuid": trayenv.APPINDICATOR_UUID, "installed": False, "enabled": None}
+        run = mock.MagicMock(return_value=(0, "installed ok", ""))
+        patches = self._patch_env(plan=self._plan(), states=[not_installed, not_installed, not_installed],
+                                  run=run, enable={"ok": True, "message": "已启用"})
+        for p in patches:
+            p.start()
+        try:
+            out = trayenv.install_extension()
+        finally:
+            for p in reversed(patches):
+                p.stop()
+        self.assertTrue(out["ok"])
+        self.assertTrue(out["warnings"])
+        self.assertEqual(out["warnings"][0]["code"], "not-detected")
+
+    def test_success_on_x11_tells_alt_f2(self):
+        x11 = {"family": "gnome", "isWayland": False, "sessionType": "x11"}
+        states = [
+            {"uuid": trayenv.APPINDICATOR_UUID, "installed": False, "enabled": None},
+            {"uuid": trayenv.APPINDICATOR_UUID, "installed": True, "enabled": True},
+        ]
+        run = mock.MagicMock(return_value=(0, "", ""))
+        patches = [
+            mock.patch.object(trayenv, "desktop_environment", lambda: dict(x11)),
+            mock.patch.object(trayenv, "extension_state",
+                              lambda: states.pop(0) if len(states) > 1 else states[0]),
+            mock.patch.object(trayenv, "install_plan", lambda **kwargs: dict(self._plan())),
+            mock.patch.object(trayenv, "_run", run),
+        ]
+        for p in patches:
+            p.start()
+        try:
+            out = trayenv.install_extension()
+        finally:
+            for p in reversed(patches):
+                p.stop()
+        self.assertTrue(out["ok"])
+        self.assertFalse(out["needsLogout"])
+        self.assertIn("Alt+F2", out["reloadHint"]["zh"])
+
+    def test_already_enabled_is_not_reinstalled(self):
+        installed = {"uuid": trayenv.APPINDICATOR_UUID, "installed": True, "enabled": True}
+        plan = {"supported": False, "reason": "already-enabled", "needsEnable": False,
+                "reasonText": {"zh": "已启用", "en": "enabled"}, "manualCommands": []}
+        run = mock.MagicMock(return_value=(0, "", ""))
+        patches = self._patch_env(plan=plan, states=[installed], run=run)
+        for p in patches:
+            p.start()
+        try:
+            out = trayenv.install_extension()
+        finally:
+            for p in reversed(patches):
+                p.stop()
+        self.assertTrue(out["ok"])
+        self.assertTrue(out.get("alreadyInstalled"))
+        self.assertEqual(out["manualCommands"], [])
+        self.assertEqual(out["command"], [])
+        run.assert_not_called()
+
+    def test_installed_disabled_only_enables(self):
+        installed_disabled = {"uuid": trayenv.APPINDICATOR_UUID, "installed": True, "enabled": False}
+        plan = {"supported": False, "reason": "installed-disabled", "needsEnable": True,
+                "reasonText": {"zh": "未启用", "en": "disabled"}, "manualCommands": []}
+        run = mock.MagicMock(return_value=(0, "", ""))
+        patches = self._patch_env(
+            plan=plan, states=[installed_disabled], run=run,
+            enable={"ok": True, "message": "扩展已启用", "needsLogout": True,
+                    "needsReload": True, "reloadHint": {"zh": "注销重登", "en": "relogin"}})
+        for p in patches:
+            p.start()
+        try:
+            out = trayenv.install_extension()
+        finally:
+            for p in reversed(patches):
+                p.stop()
+        self.assertTrue(out["ok"])
+        self.assertEqual(out["action"], "enable")
+        self.assertEqual(out["command"], [])
+        run.assert_not_called()
+
+    def test_unsupported_keeps_manual_commands(self):
+        not_installed = {"uuid": trayenv.APPINDICATOR_UUID, "installed": False, "enabled": None}
+        plan = {"supported": False, "reason": "no-elevation", "needsEnable": False,
+                "reasonText": {"zh": "没有提权工具", "en": "no elevation"},
+                "manualCommands": ["sudo dnf install -y x"],
+                "command": [], "commandText": ""}
+        patches = self._patch_env(plan=plan, states=[not_installed], run=mock.MagicMock())
+        for p in patches:
+            p.start()
+        try:
+            out = trayenv.install_extension()
+        finally:
+            for p in reversed(patches):
+                p.stop()
+        self.assertFalse(out["ok"])
+        self.assertEqual(out["failure"]["code"], "no-elevation")
+        self.assertEqual(out["manualCommands"], ["sudo dnf install -y x"])
+
+    def test_enable_failure_uses_installed_uuid(self):
+        uuid = "ubuntu-appindicators@ubuntu.com"
+
+        def failing_run(cmd, timeout=8.0, env=None):
+            if list(cmd)[:2] == ["gnome-extensions", "enable"]:
+                return 1, "", "not loaded"
+            if list(cmd)[:2] == ["gsettings", "set"]:
+                return 1, "", "cannot set"
+            return 0, "@as []", ""
+
+        with TmpExtensionDirs(uuid=uuid, installed=True, enabled=False), \
+                mock.patch.object(trayenv, "desktop_environment",
+                                  lambda: {"family": "gnome", "isWayland": True}):
+            with mock.patch.object(trayenv, "_run", failing_run):
+                out = trayenv.enable_extension()
+        self.assertFalse(out["ok"])
+        self.assertIn(uuid, "\n".join(out["manualCommands"]))
+
+
+class TestStatusExtraFields(unittest.TestCase):
+    """v0.1.8.6：/api/tray/status 新增 action / shellMode / canAutoInstall / 发行版字段。"""
+
+    GNOME_ENV = {"XDG_CURRENT_DESKTOP": "GNOME", "XDG_SESSION_TYPE": "wayland"}
+    #: 注意用 staticmethod：普通 class 属性里的函数会被绑定成方法（which(name) 传成 self）
+    WHICH = staticmethod(_which_factory({"dnf", "pkexec", "gsettings", "gnome-extensions"}))
+
+    def _status(self, tray, *, shell_mode=True, env=None):
+        with mock.patch.object(trayenv, "read_os_release",
+                               lambda *a, **k: {"id": "fedora", "name": "Fedora Linux 43",
+                                                "pretty_name": "Fedora Linux 43",
+                                                "version_id": "43"}):
+            return trayenv.status(tray, shell_mode=shell_mode, environ=env or self.GNOME_ENV,
+                                  system="Linux", which=self.WHICH)
+
+    def test_missing_extension_action_install(self):
+        with TmpExtensionDirs(installed=False, enabled=False):
+            out = self._status({"available": False, "backend": "qt"})
+        install = out["install"]
+        self.assertEqual(install["action"], "install")
+        self.assertTrue(install["canAutoInstall"])
+        self.assertTrue(install["shellMode"])
+        self.assertFalse(install["browserMode"])
+        self.assertEqual(install["elevation"]["tool"], "pkexec")
+        self.assertEqual(out["os"]["family"], "fedora")
+        self.assertEqual(out["os"]["name"], "Fedora Linux 43")
+
+    def test_browser_mode_marks_manual_install(self):
+        with TmpExtensionDirs(installed=False, enabled=False):
+            out = self._status({"available": False, "backend": "qt"}, shell_mode=False)
+        install = out["install"]
+        self.assertEqual(install["action"], "manual-install")
+        self.assertFalse(install["canAutoInstall"])
+        self.assertTrue(install["browserMode"])
+        self.assertTrue(install["manualCommands"])
+
+    def test_disabled_extension_action_enable(self):
+        with TmpExtensionDirs(installed=True, enabled=False):
+            out = self._status({"available": False, "backend": "qt"})
+        self.assertEqual(out["install"]["action"], "enable")
+        self.assertTrue(out["install"]["canEnable"])
+
+    def test_needs_relogin_action(self):
+        with TmpExtensionDirs(installed=True, enabled=True):
+            out = self._status({"available": False, "backend": "qt"})
+        self.assertEqual(out["advice"]["code"], "gnome-needs-relogin")
+        self.assertEqual(out["install"]["action"], "relogin")
+
+    def test_tray_ok_action_none(self):
+        with TmpExtensionDirs(installed=True, enabled=True):
+            out = self._status({"available": True, "backend": "qt"})
+        self.assertEqual(out["advice"]["code"], "ok")
+        self.assertEqual(out["install"]["action"], "none")
+
+    def test_windows_install_shape_is_stable(self):
+        out = trayenv.status({"available": True, "backend": "pystray"}, shell_mode=True,
+                             system="Windows")
+        install = out["install"]
+        self.assertEqual(install["action"], "none")
+        self.assertIn("elevation", install)
+        self.assertFalse(install["canAutoInstall"])
+        self.assertIn("family", out["os"])
 
 
 if __name__ == "__main__":
