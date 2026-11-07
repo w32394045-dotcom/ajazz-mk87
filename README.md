@@ -85,6 +85,48 @@ Fix it in this order (item 1 has been verified on the user machine):
 Since v0.1.8.5 the installer also writes a log to `%TEMP%\Setup Log <date> #<n>.txt`; if none of
 the above helps, attach that log and the output of `icacls "$env:LOCALAPPDATA\Temp"` to your report.
 
+### Windows Defender false positive: `Trojan:Win32/Bearfoos.A!ml` (v0.1.8.7)
+
+On 2026-11-07 Windows Defender flagged the **CI-built** `MK87Config.exe` inside the official
+v0.1.8.7 installer as `Trojan:Win32/Bearfoos.A!ml` while the installer was unpacking it, then
+removed the exe (and with it the Start-Menu shortcut / uninstall key). **This is a false
+positive**, not an infection:
+
+- the installer file matches the published SHA256 (`54fbbaae6eb2c6565dba76a923b58e3e1beab3bd83454b07267589ecde3d6c5f`);
+- `!ml` means a machine-learning heuristic (no malware signature matched);
+- a **local build of the same commit and same PyInstaller 6.22.3** (`da8e7aef…`) scans clean and
+  installs clean on the same machine, while only the CI-built hash (`6edca9ab…`) is flagged;
+- the app is fully offline, the source is public and the previous release (v0.1.8.6, same
+  packaging technology) ran on the same machine without detection.
+
+This is a known false-positive class for unsigned PyInstaller binaries (for example Microsoft's
+own `microsoft/apm` issue #487 was the same `Bearfoos.B!ml` family). It is fixed by code signing +
+Microsoft whitelisting, not by changing the app.
+
+If you hit it:
+
+1. **Restore the file**: Windows Security -> Virus & threat protection -> Protection history ->
+   open the `Trojan:Win32/Bearfoos.A!ml` entry -> **Actions** -> **Restore** (if listed as
+   removed, reinstall instead) -> **Allow on device**.
+2. **Add a temporary exclusion** so the installer can finish:
+   Virus & threat protection -> Manage settings -> Exclusions -> add the folder
+   `C:\Program Files\MK87 Studio` (and, if needed, the installer path), then re-run the installer.
+   Remove the exclusion once Microsoft updates the definition and the unmodified release installs
+   cleanly.
+3. **Report the false positive** - this is the real fix and takes two minutes:
+   <https://www.microsoft.com/en-us/wdsi/filesubmission> -> "Software developer" ->
+   "I believe this file is incorrectly detected (false positive)"; upload
+   `MK87Studio-0.1.8.7-win64-setup.exe`, threat name `Trojan:Win32/Bearfoos.A!ml`, detection date
+   2026-11-07, SHA256 `54fbbaae…d6c5f`, and the repository link
+   <https://github.com/w32394045-dotcom/ajazz-mk87>. Microsoft usually corrects ML false positives
+   within a day.
+4. **Temporary workaround**: binaries rebuilt locally from the same commit
+   (`MK87Studio-0.1.8.7-win64-setup-localbuild.exe`, SHA256 `c2ac3852…9ed64f`) install and run
+   clean on Defender today. They are offered only until Microsoft fixes the definition; the
+   official release remains the CI-built artifact above.
+5. If you use the official build, prefer the **portable zip** only after extraction with the
+   exclusion in place - the packaged exe is the same flagged binary.
+
 ### Linux tray icon
 
 Launching from the app menu no longer opens a terminal window (v0.1.8: `Terminal=false` in the `.desktop`

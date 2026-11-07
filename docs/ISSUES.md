@@ -49,7 +49,23 @@ TFT 上传需要键盘「整机独占」，于是上传的第 1 个包永远等�
 2. 直接覆盖安装即可（Windows 安装版 / 便携版 / Linux deb、rpm），无需重装驱动。
 3. 若新版本识别不到键盘：拔插一次键盘 USB 线，或重启程序。
 
-## 5. 还有问题怎么反馈
+## 5. 关于 Windows Defender 误报（2026-11-07）
+
+v0.1.8.7 的 **CI 构建**被 Defender 报成 `Trojan:Win32/Bearfoos.A!ml`（安装时删除了
+`MK87Config.exe`，连带快捷方式/卸载项被清理）。这是**机器学习启发式误报**（`!ml`），不是病毒：
+同提交本地构建扫描安装均干净、上一版 v0.1.8.6 同技术从未被报、安装包哈希与发布页一致。
+
+处理办法：
+1. Windows 安全中心 → 病毒和威胁防护 → 保护历史记录 → 找到该威胁 →「还原」/「允许在设备上」；
+2. 临时加排除项 `C:\Program Files\MK87 Studio` 后重装（微软修复特征库后记得删掉）；
+3. 提交误报（推荐，2 分钟）：<https://www.microsoft.com/en-us/wdsi/filesubmission>，
+   威胁名 `Trojan:Win32/Bearfoos.A!ml`，上传 v0.1.8.7 安装包，附仓库链接；
+4. 想马上用：安装包旁边的 `MK87Studio-0.1.8.7-win64-setup-localbuild.exe`
+   （同提交本地重打，本机 Defender 干净，SHA256 `c2ac3852…9ed64f`）。
+
+详细说明（中英）见 README 的「Windows Defender 误报」小节。
+
+## 6. 还有问题怎么反馈
 
 - 应用内：**设置 → 日志与诊断 → 一键导出诊断包**；
 - 日志位置：Windows `%LOCALAPPDATA%\mk87\logs`（`crash.log` 记录崩溃栈）；Linux
