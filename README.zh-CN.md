@@ -81,39 +81,56 @@ mk87 --diagnose     # 打印 hidapi 后端、hidraw 节点、usage page、权限
 v0.1.8.5 起安装器会写日志到 `%TEMP%\Setup Log <日期> #<序号>.txt`；如果以上都不行，把该日志和
 `icacls "$env:LOCALAPPDATA\Temp"` 的输出一起发过来。
 
-### Windows Defender 误报：`Trojan:Win32/Bearfoos.A!ml`（v0.1.8.7）
+### Windows Defender 误报处理（v0.1.8.7）
 
-2026-11-07，Windows Defender 在安装器解包时把官方 v0.1.8.7 安装包里的 **CI 构建**的
-`MK87Config.exe` 报成 `Trojan:Win32/Bearfoos.A!ml`，并删除了 exe（连带开始菜单快捷方式 /
-卸载注册项）。**这是误报，不是中毒**：
+> Windows Defender 把 v0.1.8.7 **CI 构建**的 `MK87Config.exe` 误报为
+> `Trojan:Win32/Bearfoos.A!ml`（安装时删除 exe，并连带清理开始菜单快捷方式/卸载项）。
+> 这是未签名 PyInstaller 程序常见的机器学习误报，**不是病毒**：同提交、同 PyInstaller 6.22.3
+> 的本地构建扫描/安装均干净，只有 CI 构建的那个哈希被点名；安装包 SHA256 与发布页一致
+> （`54fbbaae6eb2c6565dba76a923b58e3e1beab3bd83454b07267589ecde3d6c5f`）。
+> 我们不会重打一版来"绕过"它——正确做法是加入白名单/提交误报，等微软更新特征库。
 
-- 安装包哈希与发布页 SHA256 完全一致（`54fbbaae6eb2c6565dba76a923b58e3e1beab3bd83454b07267589ecde3d6c5f`）；
-- `!ml` 后缀表示机器学习启发式判定（没有命中任何病毒特征码）；
-- **同一提交、同一 PyInstaller 6.22.3 的本地构建**（`da8e7aef…`）在本机扫描/安装完全干净，
-  只有 CI 构建的那个哈希（`6edca9ab…`）被点名；
-- 程序完全离线运行、源码公开，上一版 v0.1.8.6（同一种打包技术）在同一台机器上从未被报毒。
+### 一次性处理（脚本，需管理员权限）
 
-这是未签名 PyInstaller 程序的常见误报类型（微软自己的 `microsoft/apm` issue #487 就是同一类
-`Bearfoos.B!ml`）。根治办法是代码签名 + 微软白名单，而不是改程序。
+仓库自带脚本 [`driver/tools/whitelist_defender.ps1`](https://github.com/w32394045-dotcom/ajazz-mk87/blob/main/driver/tools/whitelist_defender.ps1)：
 
-遇到时：
+1. 右键「以 PowerShell 运行」（脚本会自动弹 UAC 提权）；
+2. 它会：把安装目录 `C:\Program Files\MK87 Studio` 和安装包加入 Defender 排除项 → 尝试恢复被隔离的
+   `MK87Config.exe` → 打印后续步骤；
+3. 重新运行官方 `MK87Studio-0.1.8.7-win64-setup.exe` 即可。
 
-1. **还原文件**：Windows 安全中心 → 病毒和威胁防护 → 保护历史记录 → 找到
-   `Trojan:Win32/Bearfoos.A!ml` 那条 →「操作」→「还原」（若已显示删除，直接重装）→
-   「允许在设备上」。
-2. **临时加排除项**让安装器跑完：病毒和威胁防护 → 管理设置 → 排除项 → 添加文件夹
-   `C:\Program Files\MK87 Studio`（必要时加安装包路径），然后重跑安装包。等微软更新特征库、
-   官方包能正常安装后把排除项删掉。
-3. **提交误报**（这才是真正的修复，2 分钟）：
-   <https://www.microsoft.com/en-us/wdsi/filesubmission> → 选「软件开发者」→
-   「我认为此文件被错误检测（误报）」；上传 `MK87Studio-0.1.8.7-win64-setup.exe`，威胁名
-   `Trojan:Win32/Bearfoos.A!ml`，检测日期 2026-11-07，SHA256 `54fbbaae…d6c5f`，附仓库链接
-   <https://github.com/w32394045-dotcom/ajazz-mk87>。机器学习类误报通常一天内修正。
-4. **临时可用方案**：同提交本地重新打包的 `MK87Studio-0.1.8.7-win64-setup-localbuild.exe`
-   （SHA256 `c2ac3852…9ed64f`）当前在本机 Defender 下安装/运行干净；它只作为微软修复前的
-   过渡，官方发布仍以 CI 构建为准。
-5. 若要用官方包，请先按第 2 步加排除项再解压/安装——便携包里的 exe 与安装包内的 exe 是同一个
-   被误报的二进制。
+手动做同样的事：
+
+- **还原**：Windows 安全中心 → 病毒和威胁防护 → 保护历史记录 → 找到
+  `Trojan:Win32/Bearfoos.A!ml` →「操作」→「还原」/「允许在设备上」（若已显示删除，直接重装）；
+- **排除项**：Windows 安全中心 → 病毒和威胁防护 → 管理设置 → 排除项 → 添加文件夹
+  `C:\Program Files\MK87 Studio`（必要时加安装包所在路径）；
+- 然后重跑官方安装包。
+
+### 提交误报给微软（真正的修复，2 分钟）
+
+<https://www.microsoft.com/en-us/wdsi/filesubmission> →「软件开发者」→
+「我认为此文件被错误检测（误报）」→ 上传 `MK87Studio-0.1.8.7-win64-setup.exe`，
+威胁名填 `Trojan:Win32/Bearfoos.A!ml`，检测日期 2026-11-07，SHA256
+`54fbbaae…d6c5f`，附仓库链接。`!ml` 类误报通常一天内修正。
+
+### 微软修复之后
+
+删除临时排除项（管理员 PowerShell）：
+
+```powershell
+Remove-MpPreference -ExclusionPath "C:\Program Files\MK87 Studio"
+```
+
+然后从 [Releases](https://github.com/w32394045-dotcom/ajazz-mk87/releases/latest) 重新下载安装官方包，
+确认不再被拦截。
+
+### 为什么会这样 / 长期怎么避免
+
+`!ml` 表示没有命中病毒特征码，是机器学习模型对二进制的启发式打分；未签名、低信誉的
+PyInstaller 打包程序是这类误报的常客（例如微软自家 `microsoft/apm` issue #487 的
+`Bearfoos.B!ml`）。长期解法是**代码签名证书**（OV/EV）+ 每次发版向微软提交白名单；在那之前，
+遇到误报请按上面的步骤处理并顺手提交一次误报，帮助特征库尽快修正。
 
 ### Linux 托盘与终端窗口
 

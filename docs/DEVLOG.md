@@ -2176,3 +2176,30 @@ v0.1.8.4 的监督循环（会话中断自动重建）解决的是「会话内�
   setup 30,998,805 B；便携包 `--tray` 静默启动 → `/api/version=0.1.8.7`、connected=true、
   托盘 `iconState=visible`、开律动 4s 停止后 `mode=1`、`/api/quit` 干净退出。真机 A–E 场景见 31.5。
 - 已知限制：见 31.6（拔插/完整 140 帧 GIF 上传两项待用户真机复测；Linux 本轮无改动）。
+
+### 31.8 Windows Defender 误报事件与白名单处置（v0.1.8.7 CI 构建，2026-11-07）
+
+- **现象**：用户安装 v0.1.8.7 后，Defender 于 17:36–17:38 连续 4 次把
+  `C:\Program Files\MK87 Studio\MK87Config.exe` 报成 `Trojan:Win32/Bearfoos.A!ml`
+  （实时保护、快速路径，触发进程是安装器的临时解包进程），自动隔离/删除 exe，并连带清理开始菜单
+  快捷方式与卸载注册项（`HKLM\...\UNINSTALL\{8E6F3D42-...}_is1`）；安装目录只剩
+  `_internal` / `README.md` / `unins000.*`，程序不可用。
+- **判定：机器学习误报（非感染）**。证据：
+  1. 安装包 SHA256 与发布页/`SHA256SUMS.txt` 一致（`54fbbaae…d6c5f`），资产未被掉包；
+  2. `!ml` 后缀 = 无病毒特征码匹配，纯 ML 启发式打分；`Bearfoos` 是未签名 PyInstaller 程序的
+     常见误报家族（微软自家 `microsoft/apm` issue #487 为同族 `Bearfoos.B!ml`）；
+  3. **同一提交、同一 PyInstaller 6.22.3 的本地构建**：exe `da8e7aef…` 扫描/运行干净，
+     setup `c2ac3852…` 静默安装到临时目录全程 0 检测；只有 CI 构建的 exe（`6edca9ab…`）被点名；
+  4. 上一版 v0.1.8.6（同打包方式）在同一台机器从未被报；系统里只有这一条威胁记录；
+  5. 程序完全离线、源码公开，不含任何下载/加密/挖矿/外联行为。
+- **处置（按用户决定：不重打包"绕过"，走白名单 + 文档）**：
+  - 新增 `driver/tools/whitelist_defender.ps1`：自提权（UAC）→ 添加 `C:\Program Files\MK87 Studio`
+    与安装包到 Defender 排除项 → 尝试 `MpCmdRun -Restore -Name "Trojan:Win32/Bearfoos.A!ml"`
+    → 打印"重新运行官方安装包 / 提交误报 / 修复后删除排除项"步骤；
+  - README 中英各新增「Windows Defender 误报处理」章节：现象、为什么是误报、脚本一键处理、
+    手动还原/排除步骤、提交微软误报（`wdsi/filesubmission`，附威胁名/日期/SHA256）、
+    修复后 `Remove-MpPreference` 删除临时排除项、长期解法（代码签名 + 每版提交白名单）；
+  - `docs/ISSUES.md` 第 5 节同步；GitHub Release 正文顶部加提醒（含脚本路径与提交误报链接）；
+  - **不发布 v0.1.8.8 重打包版本**（用户明确"不打了"）：官方资产保持 CI 构建不动。
+- **状态**：本机排除项需管理员执行（脚本已就绪，待用户双击）；微软误报提交为用户手动作；
+  长期待办 = 代码签名证书（OV/EV）+ 发版流程加入微软白名单提交。

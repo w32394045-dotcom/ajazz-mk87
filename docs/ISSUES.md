@@ -49,21 +49,30 @@ TFT 上传需要键盘「整机独占」，于是上传的第 1 个包永远等�
 2. 直接覆盖安装即可（Windows 安装版 / 便携版 / Linux deb、rpm），无需重装驱动。
 3. 若新版本识别不到键盘：拔插一次键盘 USB 线，或重启程序。
 
-## 5. 关于 Windows Defender 误报（2026-11-07）
+## 5. Windows Defender 误报（v0.1.8.7）
 
-v0.1.8.7 的 **CI 构建**被 Defender 报成 `Trojan:Win32/Bearfoos.A!ml`（安装时删除了
-`MK87Config.exe`，连带快捷方式/卸载项被清理）。这是**机器学习启发式误报**（`!ml`），不是病毒：
-同提交本地构建扫描安装均干净、上一版 v0.1.8.6 同技术从未被报、安装包哈希与发布页一致。
+v0.1.8.7 的 **CI 构建**被 Defender 报成 `Trojan:Win32/Bearfoos.A!ml`（安装时删除
+`MK87Config.exe`，连带快捷方式/卸载项被清理）。这是**机器学习误报**（`!ml` 没有命中任何病毒
+特征码），不是病毒：同提交、同 PyInstaller 6.22.3 的本地构建扫描/安装均干净，只有 CI 构建的
+哈希被点名；安装包 SHA256 与发布页完全一致。**我们不重打"绕过"包，按白名单 + 提交误报处理。**
 
-处理办法：
+一键处理（推荐）：仓库里的
+[`driver/tools/whitelist_defender.ps1`](https://github.com/w32394045-dotcom/ajazz-mk87/blob/main/driver/tools/whitelist_defender.ps1)
+→ 右键「以 PowerShell 运行」（自动弹 UAC）→ 会把安装目录和安装包加入 Defender 排除项、尝试恢复
+被隔离文件 → 重新运行官方 v0.1.8.7 安装包。
+
+手动做：
 1. Windows 安全中心 → 病毒和威胁防护 → 保护历史记录 → 找到该威胁 →「还原」/「允许在设备上」；
-2. 临时加排除项 `C:\Program Files\MK87 Studio` 后重装（微软修复特征库后记得删掉）；
-3. 提交误报（推荐，2 分钟）：<https://www.microsoft.com/en-us/wdsi/filesubmission>，
-   威胁名 `Trojan:Win32/Bearfoos.A!ml`，上传 v0.1.8.7 安装包，附仓库链接；
-4. 想马上用：安装包旁边的 `MK87Studio-0.1.8.7-win64-setup-localbuild.exe`
-   （同提交本地重打，本机 Defender 干净，SHA256 `c2ac3852…9ed64f`）。
+2. 病毒和威胁防护 → 管理设置 → 排除项 → 添加文件夹 `C:\Program Files\MK87 Studio`；
+3. 重跑官方 v0.1.8.7 安装包。
 
-详细说明（中英）见 README 的「Windows Defender 误报」小节。
+然后请顺手提交误报（真正修复，2 分钟）：<https://www.microsoft.com/en-us/wdsi/filesubmission>
+→「软件开发者」→「我认为此文件被错误检测（误报）」；威胁名 `Trojan:Win32/Bearfoos.A!ml`，
+检测日期 2026-11-07，SHA256 `54fbbaae…d6c5f`，附仓库链接。微软修复后删掉临时排除项
+（管理员 PowerShell）：
+`Remove-MpPreference -ExclusionPath "C:\Program Files\MK87 Studio"`。
+
+详细说明（中英）见 README 的「Windows Defender 误报处理」小节。
 
 ## 6. 还有问题怎么反馈
 

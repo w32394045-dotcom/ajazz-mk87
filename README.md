@@ -85,47 +85,64 @@ Fix it in this order (item 1 has been verified on the user machine):
 Since v0.1.8.5 the installer also writes a log to `%TEMP%\Setup Log <date> #<n>.txt`; if none of
 the above helps, attach that log and the output of `icacls "$env:LOCALAPPDATA\Temp"` to your report.
 
-### Windows Defender false positive: `Trojan:Win32/Bearfoos.A!ml` (v0.1.8.7)
+### Windows Defender false positive (v0.1.8.7)
 
-On 2026-11-07 Windows Defender flagged the **CI-built** `MK87Config.exe` inside the official
-v0.1.8.7 installer as `Trojan:Win32/Bearfoos.A!ml` while the installer was unpacking it, then
-removed the exe (and with it the Start-Menu shortcut / uninstall key). **This is a false
-positive**, not an infection:
+> Windows Defender flags the **CI-built** `MK87Config.exe` inside the official v0.1.8.7 installer
+> as `Trojan:Win32/Bearfoos.A!ml` (it removes the exe during install, together with the Start-Menu
+> shortcut / uninstall key). This is a machine-learning false positive common to unsigned
+> PyInstaller binaries - **not an infection**: a local build of the same commit with the same
+> PyInstaller 6.22.3 scans and installs clean, only the CI-built hash is flagged, and the installer
+> SHA256 matches the release
+> (`54fbbaae6eb2c6565dba76a923b58e3e1beab3bd83454b07267589ecde3d6c5f`).
+> We intentionally do **not** re-pack a build to dodge the signature - the right fix is
+> whitelisting + a false-positive report so Microsoft updates the definition.
 
-- the installer file matches the published SHA256 (`54fbbaae6eb2c6565dba76a923b58e3e1beab3bd83454b07267589ecde3d6c5f`);
-- `!ml` means a machine-learning heuristic (no malware signature matched);
-- a **local build of the same commit and same PyInstaller 6.22.3** (`da8e7aef…`) scans clean and
-  installs clean on the same machine, while only the CI-built hash (`6edca9ab…`) is flagged;
-- the app is fully offline, the source is public and the previous release (v0.1.8.6, same
-  packaging technology) ran on the same machine without detection.
+### One-shot fix (script, administrator required)
 
-This is a known false-positive class for unsigned PyInstaller binaries (for example Microsoft's
-own `microsoft/apm` issue #487 was the same `Bearfoos.B!ml` family). It is fixed by code signing +
-Microsoft whitelisting, not by changing the app.
+The repository ships
+[`driver/tools/whitelist_defender.ps1`](https://github.com/w32394045-dotcom/ajazz-mk87/blob/main/driver/tools/whitelist_defender.ps1):
 
-If you hit it:
+1. Right-click -> "Run with PowerShell" (it self-elevates via UAC);
+2. it adds `C:\Program Files\MK87 Studio` and the installer to the Defender exclusions, tries to
+   restore the quarantined `MK87Config.exe`, then prints the next steps;
+3. re-run the official `MK87Studio-0.1.8.7-win64-setup.exe`.
 
-1. **Restore the file**: Windows Security -> Virus & threat protection -> Protection history ->
-   open the `Trojan:Win32/Bearfoos.A!ml` entry -> **Actions** -> **Restore** (if listed as
-   removed, reinstall instead) -> **Allow on device**.
-2. **Add a temporary exclusion** so the installer can finish:
-   Virus & threat protection -> Manage settings -> Exclusions -> add the folder
-   `C:\Program Files\MK87 Studio` (and, if needed, the installer path), then re-run the installer.
-   Remove the exclusion once Microsoft updates the definition and the unmodified release installs
-   cleanly.
-3. **Report the false positive** - this is the real fix and takes two minutes:
-   <https://www.microsoft.com/en-us/wdsi/filesubmission> -> "Software developer" ->
-   "I believe this file is incorrectly detected (false positive)"; upload
-   `MK87Studio-0.1.8.7-win64-setup.exe`, threat name `Trojan:Win32/Bearfoos.A!ml`, detection date
-   2026-11-07, SHA256 `54fbbaae…d6c5f`, and the repository link
-   <https://github.com/w32394045-dotcom/ajazz-mk87>. Microsoft usually corrects ML false positives
-   within a day.
-4. **Temporary workaround**: binaries rebuilt locally from the same commit
-   (`MK87Studio-0.1.8.7-win64-setup-localbuild.exe`, SHA256 `c2ac3852…9ed64f`) install and run
-   clean on Defender today. They are offered only until Microsoft fixes the definition; the
-   official release remains the CI-built artifact above.
-5. If you use the official build, prefer the **portable zip** only after extraction with the
-   exclusion in place - the packaged exe is the same flagged binary.
+Doing it by hand instead:
+
+- **Restore**: Windows Security -> Virus & threat protection -> Protection history -> open the
+  `Trojan:Win32/Bearfoos.A!ml` entry -> Actions -> Restore / Allow on device (if it says removed,
+  just reinstall);
+- **Exclusion**: Windows Security -> Virus & threat protection -> Manage settings -> Exclusions ->
+  add the folder `C:\Program Files\MK87 Studio` (and the installer path if needed);
+- re-run the official installer.
+
+### Report the false positive (the real fix, 2 minutes)
+
+<https://www.microsoft.com/en-us/wdsi/filesubmission> -> "Software developer" ->
+"I believe this file is incorrectly detected (false positive)" -> upload
+`MK87Studio-0.1.8.7-win64-setup.exe`, threat name `Trojan:Win32/Bearfoos.A!ml`, detection date
+2026-11-07, SHA256 `54fbbaae…d6c5f`, plus the repository link. ML false positives are usually
+corrected within a day.
+
+### After Microsoft fixes it
+
+Remove the temporary exclusion (administrator PowerShell):
+
+```powershell
+Remove-MpPreference -ExclusionPath "C:\Program Files\MK87 Studio"
+```
+
+Then re-download the official installer from
+[Releases](https://github.com/w32394045-dotcom/ajazz-mk87/releases/latest) and confirm it installs
+without a warning.
+
+### Why it happens / long-term fix
+
+The `!ml` suffix means no malware signature matched - it is an ML heuristic score on the binary;
+unsigned, low-reputation PyInstaller bundles are a known false-positive class (for example
+Microsoft's own `microsoft/apm` issue #487, `Bearfoos.B!ml`). The durable fix is a **code-signing
+certificate** (OV/EV) plus submitting each release for whitelisting. Until then, follow the steps
+above and report the false positive so the definition gets corrected.
 
 ### Linux tray icon
 
