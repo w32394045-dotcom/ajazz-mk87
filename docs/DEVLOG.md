@@ -1967,7 +1967,7 @@ v0.1.8.4 的监督循环（会话中断自动重建）解决的是「会话内�
   rpm `Requires: polkit` + `Recommends: gnome-shell-extension-appindicator`
   （`driver/packaging/linux/build-deb.sh`、`mk87.spec`）。**未在真实 Linux 桌面实测**。
 
-### 30.8 本轮变更文件（工作区，未提交）
+### 30.8 本轮变更文件（已提交，tag `v0.1.8.6`）
 
 - 新增：`driver/mk87lib/tray_win.py`、`driver/tests/test_tray_win.py`（141）、
   `driver/tests/test_keyscan_vk.py`（21）、`docs/ISSUES.md`。
@@ -1977,7 +1977,8 @@ v0.1.8.4 的监督循环（会话中断自动重建）解决的是「会话内�
 - 修改（打包）：`driver/packaging/{README.md, linux/build-deb.sh, linux/mk87.spec,
   windows/mk87.iss, windows/version_info.txt}`、`driver/tests/{test_music_watchdog.py, test_trayenv.py}`。
 - 文档（本轮）：`docs/DEVLOG.md` §30、`docs/TEST-REPORT.md` §26、`docs/ISSUES.md` 新建；
-  README 中英、`.github/release-notes.md` 与版本号/打包/提交由 Lead 统一处理。
+  README 中英、`.github/release-notes.md`、版本号 6 处、Linux 打包依赖与提交/tag/发布由 Lead 统一处理
+  （提交 `948e07c` + CI 修复 `a9302d1`、`971c2b3`）。
 
 ### 30.9 验证
 
@@ -1993,7 +1994,7 @@ v0.1.8.4 的监督循环（会话中断自动重建）解决的是「会话内�
 | 托盘单测 | `... tests.test_tray_win -v` | **141 tests OK（skipped=1）**，0.724s | 已实测 |
 | 音乐模块回归 | 7 个 `test_music_*` 模块 + `test_powerkeep` | **142 tests OK**（含保后台共 165） | 已实测 |
 | v0.1.8.6 真机复测 | 见 30.10 | 未执行 | 待真机 |
-| CI / 发布 | tag `v0.1.8.6` | 【待回填】 | 未记录 |
+| CI / 发布 | tag `v0.1.8.6`（`971c2b3`） | CI run [#89](https://github.com/w32394045-dotcom/ajazz-mk87/actions/runs/42350361648) **全绿**；Release 2026-11-07 15:20:08 (+08) 已发布 | 已发布 |
 
 ### 30.10 待真机 / 未完成（诚实清单）
 
@@ -2007,12 +2008,42 @@ v0.1.8.4 的监督循环（会话中断自动重建）解决的是「会话内�
    关窗只最小化；重复启动唤起已有窗口（失败有明确弹窗）。
 6. **Linux（用户 Ubuntu 24.04 GNOME Wayland）**：设置 → 系统托盘一键安装 → pkexec 密码框 →
    自动启用 → 注销重登后托盘出现；无 pkexec / 无 polkit 时给出手动命令；新 deb/rpm 依赖可正常安装。
-7. **CI 打包 / 资产哈希 / Release 正文**：【待回填】（Lead 发布后补）。
+7. **CI 打包 / 资产哈希 / Release 正文**：已完成（见 30.11）；发布后剩余待真机项为 1–6。
 
-### 30.11 发布记录（v0.1.8.6）【待回填】
+### 30.11 发布记录（v0.1.8.6）
 
-- 版本号：工作区已改为 `0.1.8.6`（6 处，Lead 负责）；本轮只写文档，未改版本号、未 commit / push。
-- 提交 / tag：`【待回填】`；CI run：`【待回填】`；Release：`【待回填】`。
-- 附件体积与 SHA256：`【待回填】`（portable.zip / setup.exe / .deb / .rpm / SHA256SUMS.txt）。
+- 版本号：`driver/mk87lib/__init__.py`、`driver/server/app.py`、`driver/server/state.py`、
+  `driver/packaging/linux/mk87.spec`、`driver/packaging/windows/mk87.iss`、
+  `driver/packaging/windows/version_info.txt` 共 6 处改为 `0.1.8.6`。
+- 提交 / tag：代码提交 `948e07c`（v0.1.8.6 主体）；CI 修复 `a9302d1`（tray_win 非 Windows import 保护）、
+  `971c2b3`（`test_foreign_platform_not_reused` 跨平台）后 tag `v0.1.8.6` 指向 `971c2b3`（轻量 tag）。
+- CI run：[#89](https://github.com/w32394045-dotcom/ajazz-mk87/actions/runs/42350361648) **全绿**
+  （Windows/Ubuntu 单测 552 OK / skipped=1；Windows 便携包 + 安装包；deb 打包 + 22.04/24.04 干净容器卡口；
+  rpm 打包 + Fedora 容器）。首次 tag run（#85/#87）曾因 `tray_win.py` 在 Linux 上
+  `ctypes.WINFUNCTYPE` 不存在（13 errors）以及上面的测试跨平台问题（1 failure）失败，修复后重打 tag，
+  #89 全绿。
+- Release：[v0.1.8.6](https://github.com/w32394045-dotcom/ajazz-mk87/releases/tag/v0.1.8.6)，
+  **2026-11-07 15:20:08 (+08)** 发布（GitHub release id `437411051`）；`releases/latest` 已指向它，
+  README 中英「最新版本」链接已更新。
+- 附件体积 / SHA256（与 GitHub 存储 digest、`SHA256SUMS.txt` **逐项一致**，已下载核对）：
+  - `MK87Studio-0.1.8.6-win64-portable.zip`：39,214,946 B，
+    sha256 `a156f3aa4e919ff628c01ba8df3124684b3f36558d67b52a7d388f486a82ffb1`
+  - `MK87Studio-0.1.8.6-win64-setup.exe`：30,344,711 B，
+    sha256 `a4c47bfaed9b4855520eb2b00bb396abb83c2beb2bdd3ca16ea29392e44c1227`
+  - `mk87_0.1.8.6_amd64.deb`：192,394,836 B，
+    sha256 `f14e39d10240e6ee58a4b320bdbbfcea1543ba848fcb0c5df938ed66793a0600`
+  - `mk87-0.1.8.6-1.x86_64.rpm`：226,986,978 B，
+    sha256 `3dd613bd64d24126db0bd013d889fe86b44e1098ed1ffc812e12d1747cedbb01`
+  - `SHA256SUMS.txt`：386 B，sha256 `e33ccecb7b8df7a5a3f380fd475124adb3faa84ee3e4b24b334fc109949f598a`
+- 体积对比 v0.1.8.5：portable 39,144,350 → 39,214,946（+70,596 B）；setup 30,279,874 → 30,344,711
+  （+64,837 B）；deb 192,262,156 → 192,394,836（+132,680 B）；rpm 226,929,254 → 226,986,978
+  （+57,724 B）。
+- 发布前本地补充验证（Windows 本机，同一 spec/脚本）：PyInstaller 6.22.3 构建
+  `MK87Studio-0.1.8.6-win64-portable.zip`（40,122,190 B）+ Inno Setup 6.7.4 构建英文安装器；
+  便携包 `--tray` 静默启动后 `/api/status webVersion=0.1.8.6 connected=true`，`/api/tray/status`
+  `advice=windows-ok / iconState=visible`（GetRect `S_OK`、rect 有效），`/api/keytest/start` 返回
+  `rawinput`、0 errors，随后 `/api/quit` 干净退出（PID 消失、端口关闭）。**本次真机只验证了"能跑/
+  托盘注册/按键扫描启动"，用户要求的三项行为（模式检测、切模式音乐恢复、50 次 start/stop）仍需用户
+  安装 v0.1.8.6 后按 30.10 复测。**
 - 已知限制：Linux 一键安装未在真实 Linux 桌面验证；Win/Mac 检测与切模式音乐恢复待用户 v0.1.8.6
   真机复测；Fedora rpm 的 numpy/OpenBLAS page-alignment 提示级问题继续观察。

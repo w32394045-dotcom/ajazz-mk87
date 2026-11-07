@@ -81,4 +81,5 @@ Windows 侧已按用户实机证据修复并通过单测；Linux 一键安装只
 - 附上操作时间（尽量精确到分）、键盘连接方式（USB / 2.4G）与现象截图，便于对照日志时间线。
 
 > 待真机项与每项的具体证据见 [DEVLOG §30](DEVLOG.md) 与 [TEST-REPORT §26](TEST-REPORT.md)；
-> 真机复测结果、CI 运行号与资产哈希会随 v0.1.8.6 发布更新。
+> v0.1.8.6 已于 **2026-11-07 15:20（+08）** 发布（[Release 页](https://github.com/w32394045-dotcom/ajazz-mk87/releases/tag/v0.1.8.6)），
+> 真机复测结果会继续回填到 DEVLOG / TEST-REPORT。
