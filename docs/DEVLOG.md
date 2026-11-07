@@ -2147,4 +2147,32 @@ v0.1.8.4 的监督循环（会话中断自动重建）解决的是「会话内�
 4. Linux 无桌面环境，未做真机验证（本轮 Linux 侧无改动）。
 5. 逐键表为空时 mode=0 无法与「关灯」区分，按关灯处理（不影响有颜色的逐键配置）。
 
-### 31.7 发布记录（v0.1.8.7）【待回填】
+### 31.7 发布记录（v0.1.8.7）
+
+- 版本号：`driver/mk87lib/__init__.py`、`driver/server/app.py`、`driver/server/state.py`、
+  `driver/packaging/linux/mk87.spec`、`driver/packaging/windows/mk87.iss`、
+  `driver/packaging/windows/version_info.txt` 共 6 处改为 `0.1.8.7`。
+- 提交 / tag：提交 `eead0d9`（v0.1.8.7 全部代码 + 文档），轻量 tag `v0.1.8.7` 指向它；
+  **CI 首次即全绿**（没有 v0.1.8.6 那种修 CI 后重打 tag）。
+- CI run：[#92](https://github.com/w32394045-dotcom/ajazz-mk87/actions/runs/42359591766) **success**
+  （Windows/Ubuntu 单测 **592 OK / skipped=1**；Windows 便携包 + 安装包；deb 打包 + 22.04/24.04 干净
+  容器卡口；rpm 打包 + Fedora 容器），2026-11-07 09:24:16Z 开始、09:32:53Z 完成（约 8.5 分钟）。
+- Release：[v0.1.8.7](https://github.com/w32394045-dotcom/ajazz-mk87/releases/tag/v0.1.8.7)
+  **2026-11-07 17:32:50 (+08)** 发布（GitHub release id `437471908`）；`releases/latest` 已指向它，
+  README 中英「最新版本」链接已更新。
+- 附件体积 / SHA256（与 GitHub API `digest`、`SHA256SUMS.txt` **逐项一致**；setup 已下载重算核对）：
+  - `MK87Studio-0.1.8.7-win64-portable.zip`：39,243,040 B，
+    sha256 `818f39fe43ebac46c0eef616e0ab269771c9cad484db1985227d234056976e50`
+  - `MK87Studio-0.1.8.7-win64-setup.exe`：30,376,386 B，
+    sha256 `54fbbaae6eb2c6565dba76a923b58e3e1beab3bd83454b07267589ecde3d6c5f`
+  - `mk87_0.1.8.7_amd64.deb`：192,404,616 B，
+    sha256 `4f4b3754fcfa0f9f69a3845b80dd213e6f7b919e453891522099b87171f5ce12`
+  - `mk87-0.1.8.7-1.x86_64.rpm`：227,005,110 B，
+    sha256 `de7d9a120c27a92dcc254e4b77666e23620fd0c18a19c3c0dc93adae77bd065d`
+  - `SHA256SUMS.txt`：386 B，sha256 `8a20230694a619e53feacaaf12f1920386e417776ebaae706c6b266f63a37493`
+- 体积对比 v0.1.8.6：portable 39,214,946 → 39,243,040（+28,094 B）；setup 30,344,711 → 30,376,386
+  （+31,675 B）；deb 192,394,836 → 192,404,616（+9,780 B）；rpm 226,986,978 → 227,005,110（+18,132 B）。
+- 发布前本地补充验证（同一 spec/脚本）：PyInstaller 构建 portable 40,149,935 B + Inno Setup 构建
+  setup 30,998,805 B；便携包 `--tray` 静默启动 → `/api/version=0.1.8.7`、connected=true、
+  托盘 `iconState=visible`、开律动 4s 停止后 `mode=1`、`/api/quit` 干净退出。真机 A–E 场景见 31.5。
+- 已知限制：见 31.6（拔插/完整 140 帧 GIF 上传两项待用户真机复测；Linux 本轮无改动）。

@@ -57,4 +57,4 @@ TFT 上传需要键盘「整机独占」，于是上传的第 1 个包永远等�
 - 附上操作时间（精确到分）、连接方式（USB / 2.4G）与现象，便于对照日志时间线。
 
 > 待真机项与证据见 [DEVLOG §31](DEVLOG.md) 与 [TEST-REPORT §27](TEST-REPORT.md)；
-> v0.1.8.7 发布信息【待回填】。
+> v0.1.8.7 已于 **2026-11-07 17:32（+08）** 发布（[Release 页](https://github.com/w32394045-dotcom/ajazz-mk87/releases/tag/v0.1.8.7)），真机复测结果会继续回填到 DEVLOG / TEST-REPORT。
