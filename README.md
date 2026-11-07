@@ -87,6 +87,13 @@ the above helps, attach that log and the output of `icacls "$env:LOCALAPPDATA\Te
 
 ### Windows Defender false positive (v0.1.8.7)
 
+**Update (2026-11-07, 19:50 +08): fixed in Defender signature 1.463.174.0.** After updating
+Security Intelligence (`MpCmdRun.exe -SignatureUpdate`, or Windows Update), the exact CI-built
+`MK87Config.exe` (SHA256 `6edca9ab…`) scans clean and no new detections appear; Microsoft closed the
+submission as no-repro because the newer definition no longer flags it. If you already added an
+exclusion, remove it now. If the detection still shows up, **update Defender first**, then follow
+the steps below.
+
 > Windows Defender flags the **CI-built** `MK87Config.exe` inside the official v0.1.8.7 installer
 > as `Trojan:Win32/Bearfoos.A!ml` (it removes the exe during install, together with the Start-Menu
 > shortcut / uninstall key). This is a machine-learning false positive common to unsigned

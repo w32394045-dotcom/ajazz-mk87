@@ -83,6 +83,11 @@ v0.1.8.5 起安装器会写日志到 `%TEMP%\Setup Log <日期> #<序号>.txt`�
 
 ### Windows Defender 误报处理（v0.1.8.7）
 
+**更新（2026-11-07 19:50 +08）：该误报已随 Defender 特征库 1.463.174.0 修复。** 更新特征库
+（`MpCmdRun.exe -SignatureUpdate` 或 Windows Update）后，同一个 CI 构建的 `MK87Config.exe`
+（SHA256 `6edca9ab…`）扫描已干净、不再产生新检测；微软因无法复现关闭了提交。**若你之前加过排除项，
+现在可以删掉**；如果仍被报，请先更新 Defender 特征库，再按下面的步骤处理。
+
 > Windows Defender 把 v0.1.8.7 **CI 构建**的 `MK87Config.exe` 误报为
 > `Trojan:Win32/Bearfoos.A!ml`（安装时删除 exe，并连带清理开始菜单快捷方式/卸载项）。
 > 这是未签名 PyInstaller 程序常见的机器学习误报，**不是病毒**：同提交、同 PyInstaller 6.22.3
