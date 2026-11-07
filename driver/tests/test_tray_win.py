@@ -772,8 +772,11 @@ class TestProbeServerIdentity(unittest.TestCase):
         self.assertEqual(out["error"], "mock-server")
 
     def test_foreign_platform_not_reused(self):
+        # 注意：本测试要在 Windows(os.name=nt) 与 Linux(os.name=posix) 上都成立，
+        # 所以「外国平台」必须按当前 os.name 动态取反，不能写死 posix。
+        foreign = "nt" if os.name != "nt" else "posix"
         payload = json.dumps({"version": "x", "mock": False,
-                              "platform": "posix"}).encode()
+                              "platform": foreign}).encode()
         with mock.patch("urllib.request.urlopen", fake_urlopen(payload)):
             out = shell._probe_server_identity(65447)
         self.assertFalse(out["match"])
