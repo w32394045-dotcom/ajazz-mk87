@@ -111,7 +111,9 @@ class FlashWindowInfo(ctypes.Structure):
     ]
 
 
-_WNDENUMPROC = ctypes.WINFUNCTYPE(wintypes.BOOL, wintypes.HWND, wintypes.LPARAM)
+_WNDENUMPROC = None
+if sys.platform == "win32":  # Linux/macOS：没有 WINFUNCTYPE，import 必须保持安全
+    _WNDENUMPROC = ctypes.WINFUNCTYPE(wintypes.BOOL, wintypes.HWND, wintypes.LPARAM)
 
 
 def _to_uint32(value) -> int:
